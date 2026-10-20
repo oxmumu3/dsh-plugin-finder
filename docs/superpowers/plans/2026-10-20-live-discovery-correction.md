@@ -49,5 +49,9 @@ Files: README, installation/verification records, package version, prebuilt clie
 - [x] Run real online searches for three non-seeded tasks and save sanitized provenance/results, including failure checks.
 - [x] Use a disposable DSH profile to run a real host-model recommendation for a discovered non-seeded candidate and inspect native draft readback.
 - [x] Record installation confirmation and first-use execution separately. Do not execute unreviewed candidate lifecycle scripts merely to create a success claim.
-- [ ] Publish the corrected preview, anonymously download/checksum and install/uninstall in a clean profile. Mark the old release superseded.
+- [x] Publish the corrected preview, anonymously download/checksum and install/uninstall in a clean profile. Mark the old release superseded.
 - [x] Document comparison tasks against manual/source-native discovery, remaining friction and the real-user feedback protocol; do not invent external usage.
+
+## Final checkpoint — 2026-10-20
+
+Version `0.2.0-preview.1` released at https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.2.0-preview.1 . Final build and 126 tests passed. Real host-model discovery led to `dsh-md-studio@1.2.0`, a native installation and a successful synthetic Mermaid task; formula rendering was already native and was treated as regression coverage. Restart restored the actual task without another model request; exact-session preserved-draft navigation and workflow reset were read back. The public asset was anonymously downloaded, hash-checked and installed in a second clean profile; native disable/re-enable and uninstall/restart cleanup were observed. External-user adoption and comparative growth impact remain unmeasured.
