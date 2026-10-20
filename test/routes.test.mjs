@@ -29,3 +29,33 @@ test('explicit feedback writes are serialized and bounded',async()=>{
   await Promise.all(Array.from({length:105},(_,i)=>store.append({id:String(i),outcome:'partial',note:'test'})));
   const rows=await store.list();assert.equal(rows.length,100);assert.equal(rows.at(-1).id,'104');assert.equal(new Set(rows.map(r=>r.id)).size,100);
 });
+
+test('history routes retain exact task and revision identity without a model or installation side effect',async()=>{
+  const routes=[],called=[];const ctx={get:()=>({fetch:{register:r=>{routes.push(r);return()=>{};}}}),effect:fn=>fn()};
+  const service=Object.fromEntries(['history','open','refine','handoff','importBackup','exportTask'].map(name=>[name,async body=>{called.push({name,body});return{ok:true};}]));
+  registerFinderRoutes(ctx,service);
+  for(const [path,name] of [['history','history'],['open','open'],['refine','refine'],['handoff','handoff'],['import','importBackup'],['export','exportTask']]){
+    const route=routes.find(r=>r.path.endsWith('/'+path));assert.ok(route,'missing '+path);
+    const response=await route.fetch(new Request('http://local'+route.path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({taskId:'task-a',revisionId:'rev-a'})}));
+    assert.equal(response.status,200);assert.equal(called.at(-1).name,name);assert.equal(called.at(-1).body.taskId,'task-a');assert.equal(called.at(-1).body.revisionId,'rev-a');
+    assert.equal(response.headers.get('cache-control'),'no-store');
+  }
+});
+
+test('a local backup larger than an ordinary request can roundtrip through the bounded import route',async()=>{
+  const routes=[];let imported=false;const ctx={get:()=>({fetch:{register:r=>{routes.push(r);return()=>{};}}}),effect:fn=>fn()};
+  registerFinderRoutes(ctx,{importBackup:async()=>{imported=true;return{imported:true};},analyze:()=>assert.fail('oversized analysis must not call model')});
+  const body=JSON.stringify({workflow:{text:'原始研究'.repeat(15000)},origin:'本机备份.json'});
+  const request=route=>new Request('http://local'+route.path,{method:'POST',headers:{'Content-Type':'application/json'},body});
+  const route=routes.find(r=>r.path.endsWith('/import'));assert.ok(route);
+  assert.equal((await route.fetch(request(route))).status,200);assert.equal(imported,true);
+  const analyze=routes.find(r=>r.path.endsWith('/analyze'));assert.equal((await analyze.fetch(request(analyze))).status,413);
+});
+
+
+test('new-request route forwards exact current task and revision identity',async()=>{
+  const handlers=new Map();let seen;const ctx={get:()=>({fetch:{register:spec=>{handlers.set(spec.path,spec.fetch);return()=>{};}}}),effect:()=>{}};
+  registerFinderRoutes(ctx,{reset:async input=>{seen=input;return{cleared:true};}});
+  const result=await handlers.get('/api/plugin_finder/reset')(new Request('http://local/api/plugin_finder/reset',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({taskId:'task-a',revisionId:'revision-a'})}));
+  assert.equal(result.status,200);assert.equal(seen.taskId,'task-a');assert.equal(seen.revisionId,'revision-a');
+});

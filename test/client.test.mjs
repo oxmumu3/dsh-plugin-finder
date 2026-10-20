@@ -415,7 +415,7 @@ test('malformed saved workflow is not restored and leaves a usable fresh task fo
   assert.match(controller.getSnapshot().notice, /无法恢复|格式/); controller.close();
 });
 
-test('newRequest clears local workflow and server record without models, and failure remains retryable', async () => {
+test('newRequest preserves visible work on failure and starts blank only after acknowledgment', async () => {
   const { module } = await loadClient(); const h = host(); let failed = true;
   const api = server({
     bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(savedWorkflow('plan')) }),
@@ -423,10 +423,10 @@ test('newRequest clears local workflow and server record without models, and fai
   });
   const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
   assert.equal(typeof controller.newRequest, 'function'); assert.equal(await controller.newRequest(), false);
-  assert.equal(controller.getSnapshot().stage, 'describe'); assert.equal(controller.getSnapshot().request, '');
-  assert.equal(controller.getSnapshot().plan, null); assert.equal(controller.getSnapshot().resetPending, true);
+  assert.equal(controller.getSnapshot().stage, 'plan'); assert.equal(controller.getSnapshot().request, savedWorkflow('plan').request);
+  assert.deepEqual(copy(controller.getSnapshot().plan), fixturePlan()); assert.equal(controller.getSnapshot().resetPending, true);
   assert.match(controller.getSnapshot().error, /本机任务记录未能清除/);
-  const rendered = await renderWorkbench(controller.getSnapshot()); assert.match(rendered.text, /旧记录.*清除|本机旧任务记录/);
+  const rendered = await renderWorkbench(controller.getSnapshot()); assert.match(rendered.text, /未能|失败|未确认/);
   failed = false; assert.equal(await controller.newRequest(), true); assert.equal(controller.getSnapshot().resetPending, false);
   assert.deepEqual(api.calls.map(call => call.url), ['/api/plugin_finder/bootstrap', '/api/plugin_finder/reset', '/api/plugin_finder/reset']);
   controller.close();
@@ -526,4 +526,164 @@ test('an explicit preserved-draft opener refuses busy state and a subsequent han
   const pending = controller.handoff(); assert.equal(controller.getSnapshot().preservedTarget, null); assert.equal(controller.openPreservedDraft(), false);
   controller.cancel(); assert.equal(await pending, false); releaseConnect('session-a');
   assert.equal(h.opened.length, 0); controller.close();
+});
+
+const identifiedWorkflow = (taskId = 'task-a', revisionNumber = 1, stage = 'plan') => ({
+  ...savedWorkflow(stage), taskId, revisionId: `${taskId}-revision-${revisionNumber}`, revisionNumber,
+  createdAt: '2026-10-20T12:00:00Z', updatedAt: '2026-10-20T12:30:00Z',
+  revisions: [{ revisionId: `${taskId}-revision-1`, revisionNumber: 1, stage: 'plan', createdAt: '2026-10-20T12:00:00Z', title: '初版方案' }],
+  feedback: [{ revisionId: `${taskId}-revision-1`, outcome: 'partial', note: '缺少出处', createdAt: '2026-10-20T12:20:00Z' }],
+  handoff: null,
+});
+const summaryFor = workflow => ({ taskId: workflow.taskId, request: workflow.request, title: workflow.plan?.title ?? workflow.intent.goal, updatedAt: workflow.updatedAt, revisionCount: workflow.revisions.length, latestRevisionId: workflow.revisionId, latestRevisionNumber: workflow.revisionNumber, stage: workflow.stage });
+const historyEnvelope = workflow => ({ workflow, history: [summaryFor(workflow)], historyTotal: 1 });
+
+test('blank workflow still exposes 我的方案 and opens exact task versions without model calls', async () => {
+  const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow();
+  const api = server({ history: async () => ({ ok: true, json: async () => historyEnvelope(a) }), open: async () => ({ ok: true, json: async () => historyEnvelope(a) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  const blank = await renderWorkbench(controller.getSnapshot()); assert.match(blank.text, /找方案/); assert.match(blank.text, /我的方案/);
+  assert.equal(await controller.showHistory(), true); assert.equal(controller.getSnapshot().view, 'history');
+  assert.equal(await controller.openTask('task-a', 'task-a-revision-1'), true);
+  assert.equal(controller.getSnapshot().taskId, 'task-a'); assert.equal(controller.getSnapshot().revisionId, 'task-a-revision-1');
+  assert.deepEqual(JSON.parse(api.calls.at(-1).options.body), { taskId: 'task-a', revisionId: 'task-a-revision-1' });
+  assert.equal(controller.getSnapshot().view, 'find'); assert.equal(controller.getSnapshot().feedback.length, 1);
+  assert.equal(api.calls.some(call => /analyze|recommend/.test(call.url)), false); assert.equal(h.connected.length, 0);
+  controller.close();
+});
+
+test('task writes carry exact identities and refinement returns to confirmation without losing old versions', async () => {
+  const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow(); const revised = { ...identifiedWorkflow('task-a', 2, 'understand'), feedback: [], revisions: [...a.revisions, { revisionId: 'task-a-revision-2', revisionNumber: 2, stage: 'understand', createdAt: '2026-10-20T13:00:00Z' }] };
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(a), ...historyEnvelope(a) }) }), recommend: async () => ({ ok: true, json: async () => historyEnvelope(a) }), feedback: async () => ({ ok: true, json: async () => ({ saved: true, ...historyEnvelope(a) }) }), refine: async () => ({ ok: true, json: async () => historyEnvelope(revised) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  await controller.recommend(); assert.equal(JSON.parse(api.calls.at(-1).options.body).taskId, 'task-a');
+  await controller.saveFeedback('partial', '缺少出处'); const body = JSON.parse(api.calls.at(-1).options.body);
+  assert.equal(body.taskId, 'task-a'); assert.equal(body.revisionId, 'task-a-revision-1');
+  assert.equal(await controller.refine('请保留原始出处'), true);
+  assert.deepEqual(JSON.parse(api.calls.at(-1).options.body), { taskId: 'task-a', revisionId: 'task-a-revision-1', feedback: '请保留原始出处' });
+  const state = controller.getSnapshot(); assert.equal(state.stage, 'understand'); assert.equal(state.revisionNumber, 2); assert.equal(state.revisions.length, 2);
+  assert.equal(state.feedback.length, 0); assert.equal(state.plan, null);
+  assert.match(state.notice, /确认|核对/); assert.equal(h.connected.length, 0); controller.close();
+});
+
+test('failed refinement and failed historical opens preserve the displayed task and feedback', async () => {
+  const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow();
+  const failed = async () => ({ ok: false, json: async () => ({ error: { message: '本机历史暂时无法保存。' } }) });
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(a), ...historyEnvelope(a) }) }), refine: failed, open: failed });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  assert.equal(await controller.refine('缺少出处'), false); assert.equal(controller.getSnapshot().revisionId, a.revisionId); assert.equal(controller.getSnapshot().stage, 'plan');
+  assert.equal(await controller.openTask('task-b'), false); assert.equal(controller.getSnapshot().taskId, 'task-a'); assert.equal(controller.getSnapshot().feedback[0].note, '缺少出处');
+  controller.close();
+});
+
+test('handoff stores exact workspace and session IDs and saved-session continuation never injects or reconnects', async () => {
+  const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow();
+  const linked = { ...a, handoff: { workspaceId: 'workspace-a', sessionId: 'session-a', status: 'applied', createdAt: '2026-10-20T13:00:00Z' } };
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(a), ...historyEnvelope(a) }) }), handoff: async () => ({ ok: true, json: async () => historyEnvelope(linked) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.selectWorkspace('workspace-a');
+  assert.equal(await controller.handoff(), true);
+  const body = JSON.parse(api.calls.at(-1).options.body); assert.deepEqual(body, { taskId: 'task-a', revisionId: 'task-a-revision-1', workspaceId: 'workspace-a', sessionId: 'session-a', status: 'applied' });
+  h.setSnapshot({ phase: 'ready', items: [{ workspaceId: 'workspace-a', title: '项目', sessionIds: ['session-a'] }] });
+  assert.equal(await controller.continueSession(), true);
+  assert.equal(h.connected.length, 1); assert.equal(h.drafts.length, 1); assert.equal(h.retained.length, 2); assert.deepEqual(h.opened, ['session-a', 'session-a']);
+  h.setSnapshot({ phase: 'ready', items: [{ workspaceId: 'workspace-a', title: '项目', sessionIds: [] }] });
+  assert.equal(await controller.continueSession(), false); assert.equal(h.opened.length, 2); assert.match(controller.getSnapshot().error, /会话|绑定/);
+  controller.close();
+});
+
+test('import is explicit and does not replace current task; export addresses the whole current task', async () => {
+  const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow(); const b = identifiedWorkflow('task-b');
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(a), ...historyEnvelope(a) }) }), import: async () => ({ ok: true, json: async () => ({ workflow: b, history: [summaryFor(b), summaryFor(a)], historyTotal: 2 }) }), export: async () => ({ ok: true, json: async () => ({ format: 'plugin-finder-task', task: { id: 'task-a' } }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  assert.equal(await controller.importBackup(b, 'checkpoint.json'), true); assert.equal(controller.getSnapshot().taskId, 'task-a'); assert.equal(controller.getSnapshot().historyTotal, 2);
+  assert.deepEqual(JSON.parse(api.calls.at(-1).options.body), { workflow: b, origin: 'checkpoint.json' }); assert.match(controller.getSnapshot().notice, /备份|恢复|导入/);
+  const exported = await controller.exportTask(); assert.equal(exported.task.id, 'task-a'); assert.deepEqual(JSON.parse(api.calls.at(-1).options.body), { taskId: 'task-a' });
+  controller.close();
+});
+
+test('history navigation remains reachable after starting blank and no copy promises history deletion', async () => {
+  const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(a), ...historyEnvelope(a) }) }), reset: async () => ({ ok: true, json: async () => ({ cleared: true, history: [summaryFor(a)], historyTotal: 1 }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); await controller.newRequest();
+  assert.deepEqual(JSON.parse(api.calls.at(-1).options.body), { taskId: 'task-a', revisionId: 'task-a-revision-1' });
+  const state = controller.getSnapshot(); assert.equal(state.stage, 'describe'); assert.equal(state.taskId, null); assert.equal(state.historyTotal, 1);
+  const rendered = await renderWorkbench(state); assert.match(rendered.text, /我的方案/); assert.doesNotMatch(rendered.text, /新需求.*会清除|正在清除当前|已清除本机任务/);
+  controller.close();
+});
+
+test('cross-task recommendation and cross-version feedback responses cannot replace the chosen history', async () => {
+  const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(a), ...historyEnvelope(a) }) }), recommend: async () => ({ ok: true, json: async () => historyEnvelope(identifiedWorkflow('task-b')) }), feedback: async () => ({ ok: true, json: async () => ({ saved: true, ...historyEnvelope(identifiedWorkflow('task-a', 2)) }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  assert.equal(await controller.recommend(), false); assert.equal(controller.getSnapshot().taskId, 'task-a');
+  assert.equal(await controller.saveFeedback('complete', '结果'), false); assert.equal(controller.getSnapshot().revisionId, 'task-a-revision-1'); assert.equal(controller.getSnapshot().feedbackSaved, false);
+  controller.close();
+});
+
+test('a failed handoff association can be retried without connecting or injecting the prepared draft again', async () => {
+  const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow(); let fail = true;
+  const linked = { ...a, handoff: { taskId: a.taskId, revisionId: a.revisionId, workspaceId: 'workspace-a', sessionId: 'session-a', status: 'applied' } };
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(a), ...historyEnvelope(a) }) }), handoff: async () => fail ? { ok: false, json: async () => ({ error: { message: '存储失败' } }) } : { ok: true, json: async () => historyEnvelope(linked) } });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.selectWorkspace('workspace-a');
+  assert.equal(await controller.handoff(), false); assert.equal(controller.getSnapshot().handoffRequested, true); assert.equal(controller.getSnapshot().pendingHandoff.sessionId, 'session-a');
+  assert.match(controller.getSnapshot().error, /草稿已准备.*关联未能/); fail = false; assert.equal(await controller.retryHandoffSave(), true);
+  assert.equal(h.connected.length, 1); assert.equal(h.drafts.length, 1); assert.equal(controller.getSnapshot().pendingHandoff, null);
+  controller.close();
+});
+
+test('saved-session continuation rejects expired bindings and releases the retained reference', async () => {
+  const { module } = await loadClient(); const h = host({ expired: true }); const a = { ...identifiedWorkflow(), handoff: { workspaceId: 'workspace-a', sessionId: 'session-a', status: 'applied' } };
+  h.setSnapshot({ phase: 'ready', items: [{ workspaceId: 'workspace-a', title: '项目', sessionIds: ['session-a'] }] });
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(a), ...historyEnvelope(a) }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  assert.equal(await controller.continueSession(), false); assert.equal(h.opened.length, 0); assert.equal(h.connected.length, 0); assert.equal(h.drafts.length, 0); assert.deepEqual(h.released, ['session-a']);
+  assert.match(controller.getSnapshot().error, /绑定/); controller.close();
+});
+
+test('history rendering shows restoration origin, version choices and only selected-version feedback', async () => {
+  const { module } = await loadClient(); const h = host(); const a = { ...identifiedWorkflow(), origin: { type: 'backup', label: '原始需求备份.json', importedAt: '2026-10-20T14:00:00Z' } };
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(a), ...historyEnvelope(a) }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  const rendered = await renderWorkbench(controller.getSnapshot()); assert.match(rendered.text, /恢复来源：原始需求备份.json/); assert.match(rendered.text, /这个版本的反馈/); assert.match(rendered.text, /缺少出处/);
+  assert.ok(rendered.nodes.some(node => node.type === 'select' && node.props['aria-label'] === '历史版本'));
+  assert.ok(rendered.nodes.some(node => node.type === 'button' && node.children.includes('反馈并优化方案'))); controller.close();
+});
+
+test('handoff refuses a different active task before connecting or writing any draft', async () => {
+  const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow(); let reads = 0;
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => { const workflow = ++reads === 1 ? a : identifiedWorkflow('task-b'); return { ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }; } }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.selectWorkspace('workspace-a');
+  assert.equal(await controller.handoff(), false); assert.equal(h.connected.length, 0); assert.equal(h.retained.length, 0); assert.equal(h.drafts.length, 0);
+  assert.equal(controller.getSnapshot().taskId, 'task-a'); assert.equal(controller.getSnapshot().stage, 'plan'); assert.match(controller.getSnapshot().error, /另一|当前任务|版本.*变化|重新打开/);
+  assert.equal(api.calls.some(call => call.url.endsWith('/handoff')), false); controller.close();
+});
+
+test('handoff refuses a different active revision or failed preflight before any Host side effect', async () => {
+  const { module } = await loadClient();
+  for (const failure of ['revision', 'unavailable', 'blank']) {
+    const h = host(); const a = identifiedWorkflow(); let reads = 0;
+    const api = server({ bootstrap: async () => ++reads === 1 ? { ok: true, json: async () => ({ ...restoredBootstrap(a), ...historyEnvelope(a) }) } : failure === 'unavailable' ? { ok: false, json: async () => ({ error: { message: '服务暂不可用' } }) } : { ok: true, json: async () => ({ ...restoredBootstrap(undefined), workflow: failure === 'blank' ? null : identifiedWorkflow('task-a', 2) }) } });
+    const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.selectWorkspace('workspace-a');
+    assert.equal(await controller.handoff(), false); assert.equal(h.connected.length, 0); assert.equal(h.drafts.length, 0); assert.equal(controller.getSnapshot().revisionId, a.revisionId); controller.close();
+  }
+});
+
+test('a cancelled history open cannot overwrite a later request when its response finally arrives', async () => {
+  const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow(); let release;
+  const api = server({ open: async () => new Promise(resolve => { release = resolve; }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const pending = controller.openTask('task-a', a.revisionId);
+  controller.cancel(); controller.setRequest('后来填写的新需求');
+  release({ ok: true, json: async () => historyEnvelope(a) }); assert.equal(await pending, false);
+  assert.equal(controller.getSnapshot().request, '后来填写的新需求'); assert.equal(controller.getSnapshot().taskId, null); controller.close();
+});
+
+test('saved-session opener refuses a handoff record belonging to another task or revision', async () => {
+  const { module } = await loadClient();
+  for (const mismatch of [{ taskId: 'task-b', revisionId: 'task-a-revision-1' }, { taskId: 'task-a', revisionId: 'task-a-revision-2' }]) {
+    const h = host(); const a = { ...identifiedWorkflow(), handoff: { ...mismatch, workspaceId: 'workspace-a', sessionId: 'session-a', status: 'applied' } };
+    h.setSnapshot({ phase: 'ready', items: [{ workspaceId: 'workspace-a', title: '项目', sessionIds: ['session-a'] }] });
+    const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(a), ...historyEnvelope(a) }) }) });
+    const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+    assert.equal(await controller.continueSession(), false); assert.equal(h.opened.length, 0); assert.equal(h.retained.length, 0); controller.close();
+  }
 });

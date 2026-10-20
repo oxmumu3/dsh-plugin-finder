@@ -101,12 +101,15 @@ export function createFinderController(ctx, options = {}) {
   let operation = null;
   let sequence = 0;
   let draftRevision = 0;
+  let resetRevision = null;
   let state = Object.freeze({
     stage: 'describe', request: '', bootstrap: null, bootstrapLoaded: false,
     intent: null, plan: null, candidates: [], catalogUpdatedAt: '', discovery: null, warnings: [],
     busy: null, error: '', notice: '', workspaceId: '', workspaces: [],
     workspacePhase: 'pending', feedbackSaved: false, handoffRequested: false, preservedTarget: null,
     modelLabel: '', resetPending: false, storageWarning: '',
+    view: 'find', history: [], historyTotal: 0, historyOffset: 0, unlinkedFeedback: [],
+    taskId: null, revisionId: null, revisionNumber: null, revisions: [], feedback: [], handoff: null, origin: null, restoredFrom: '', pendingHandoff: null,
   });
   const publish = patch => {
     if (closed) return;
@@ -158,9 +161,37 @@ export function createFinderController(ctx, options = {}) {
       if (operation?.id === id) { operation = null; publish({ busy: null }); }
     }
   };
-  const clearStoredWorkflow = () => run('reset', 'reset', {}, value => {
-    if (value?.cleared !== true) throw handoffFailure('本机旧任务记录未能确认清除，请重试。');
-    publish({ resetPending: false, notice: '已清除本机任务与方案，可以开始新需求。' });
+  const historyPatch = value => ({
+    ...(Array.isArray(value?.history) ? { history: value.history.filter(item => item && typeof item.taskId === 'string').slice(0, 100), historyOffset: 0 } : {}),
+    ...(Number.isSafeInteger(value?.historyTotal) && value.historyTotal >= 0 ? { historyTotal: value.historyTotal } : {}),
+    ...(Array.isArray(value?.unlinkedFeedback) ? { unlinkedFeedback: value.unlinkedFeedback } : {}),
+  });
+  const identity = () => state.taskId && state.revisionId ? { taskId: state.taskId, revisionId: state.revisionId } : {};
+  const applyWorkflow = (workflow, extra = {}) => {
+    if (!validSavedWorkflow(workflow)) throw handoffFailure('本机方案格式无法恢复，当前内容已保留。');
+    const changed = state.taskId !== workflow.taskId || state.revisionId !== workflow.revisionId;
+    publish({
+      stage: workflow.stage, request: workflow.request, intent: workflow.intent, plan: workflow.stage === 'plan' ? workflow.plan : null,
+      candidates: workflow.candidates, discovery: workflow.discovery && typeof workflow.discovery === 'object' ? workflow.discovery : null,
+      warnings: strings(workflow.warnings), catalogUpdatedAt: text(workflow.catalogUpdatedAt),
+      taskId: text(workflow.taskId) || null, revisionId: text(workflow.revisionId) || null, revisionNumber: Number.isSafeInteger(workflow.revisionNumber) ? workflow.revisionNumber : null,
+      revisions: Array.isArray(workflow.revisions) ? workflow.revisions : [], feedback: Array.isArray(workflow.feedback) ? workflow.feedback : [], handoff: workflow.handoff ?? null,
+      origin: workflow.origin ?? null, modelLabel: text(workflow.model?.label) || state.modelLabel,
+      ...(changed ? { workspaceId: '', feedbackSaved: false, handoffRequested: false, preservedTarget: null, pendingHandoff: null } : {}), ...extra,
+    });
+  };
+  const ensureResponseIdentity = (value, exactRevision = false) => {
+    if (state.taskId && (value?.workflow?.taskId !== state.taskId || exactRevision && value.workflow.revisionId !== state.revisionId)) throw handoffFailure('返回的方案与当前任务或版本不一致，当前内容已保留。请重新打开所选方案后重试。');
+  };
+  const applyEnvelope = (value, extra = {}) => {
+    if (!validSavedWorkflow(value?.workflow)) throw handoffFailure('本机方案格式无法恢复，当前内容已保留。');
+    applyWorkflow(value.workflow, { ...historyPatch(value), ...extra });
+  };
+  const blank = () => ({ stage: 'describe', request: '', intent: null, plan: null, candidates: [], discovery: null, warnings: [], workspaceId: '', feedbackSaved: false, handoffRequested: false, preservedTarget: null, pendingHandoff: null, storageWarning: '', taskId: null, revisionId: null, revisionNumber: null, revisions: [], feedback: [], handoff: null, origin: null, restoredFrom: '', view: 'find' });
+  const clearStoredWorkflow = () => run('reset', 'reset', identity(), value => {
+    if (value?.cleared !== true) throw handoffFailure('开始新需求尚未确认，当前方案已保留，请重试。');
+    const shouldClear = resetRevision === draftRevision;
+    publish({ ...historyPatch(value), ...(shouldClear ? blank() : {}), resetPending: false, notice: '可以开始新需求，已有方案和反馈仍在「我的方案」。' });
   });
   const buildPrompt = () => {
     if (!state.intent || !state.plan) return '';
@@ -193,10 +224,10 @@ export function createFinderController(ctx, options = {}) {
         if (typeof value?.model?.configured !== 'boolean') throw new Error('invalid bootstrap');
         const { workflow, workflowWarning: warningValue, ...bootstrap } = value;
         const warning = workflowWarning(warningValue);
-        publish({ bootstrap, bootstrapLoaded: true, modelLabel: text(value.model.label), storageWarning: warning, ...(warning ? { notice: warning } : {}) });
+        publish({ bootstrap, bootstrapLoaded: true, modelLabel: text(value.model.label), storageWarning: warning, ...historyPatch(value), ...(warning ? { notice: warning } : {}) });
         if (firstRead && revision === 0 && draftRevision === revision && !state.request.trim() && state.stage === 'describe' && workflow) {
           if (validSavedWorkflow(workflow)) {
-            publish({ stage: workflow.stage, request: workflow.request, intent: workflow.intent, plan: workflow.stage === 'plan' ? workflow.plan : null, candidates: workflow.candidates, discovery: workflow.discovery && typeof workflow.discovery === 'object' ? workflow.discovery : null, warnings: strings(workflow.warnings), workspaceId: '', feedbackSaved: false, handoffRequested: false, preservedTarget: null, notice: warning || '已恢复本机任务与方案，可继续安装或接续会话。' });
+            applyWorkflow(workflow, { restoredFrom: '本机历史', notice: warning || '已恢复本机任务与方案，可继续安装或接续会话。' });
           } else if (!warning) publish({ notice: '本机记录格式无法恢复，可继续填写新需求。' });
         }
       });
@@ -206,8 +237,13 @@ export function createFinderController(ctx, options = {}) {
       if (closed || operation) return false;
       if (!state.bootstrap?.model?.configured) { publish({ error: '请先在 DSH 设置中配置默认模型，再重新读取配置。' }); return false; }
       if (typeof request !== 'string' || !request.trim() || request.length > 6000) { publish({ error: '请用 1—6000 个字描述要完成的任务。' }); return false; }
-      publish({ request, intent: null, plan: null, candidates: [], discovery: null, warnings: [], feedbackSaved: false, handoffRequested: false, preservedTarget: null });
-      return run('analyze', 'analyze', { request }, value => {
+      publish({ request });
+      return run('analyze', 'analyze', { request, ...identity() }, value => {
+        if (value?.workflow) {
+          ensureResponseIdentity(value);
+          const warning = workflowWarning(value.workflowWarning);
+          applyEnvelope(value, { view: 'find', restoredFrom: '', feedbackSaved: false, handoffRequested: false, preservedTarget: null, storageWarning: warning, notice: [...new Set([workflowWarning(value.analysisWarning), warning].filter(Boolean))].join('\n') }); return;
+        }
         if (!validIntent(value?.intent)) throw new Error('invalid intent');
         const warning = workflowWarning(value.workflowWarning);
         const analysisWarning = workflowWarning(value.analysisWarning);
@@ -226,7 +262,8 @@ export function createFinderController(ctx, options = {}) {
       const intent = { ...state.intent, ...Object.fromEntries(['constraints', 'capabilities', 'queries'].map(key => [key, state.intent[key].map(item => item.trim()).filter(Boolean)])) };
       if (!intent.goal.trim() || !intent.capabilities.length) { publish({ error: '请补全目标和至少一项所需能力。' }); return Promise.resolve(false); }
       publish({ intent });
-      return run('recommend', 'recommend', { intent }, value => {
+      return run('recommend', 'recommend', { intent, ...identity() }, value => {
+        if (value?.workflow) { ensureResponseIdentity(value); const warning = workflowWarning(value.workflowWarning); applyEnvelope(value, { view: 'find', feedbackSaved: false, handoffRequested: false, preservedTarget: null, pendingHandoff: null, storageWarning: warning, notice: warning }); return; }
         const plan = value?.plan;
         if (!plan || !['native', 'single', 'combo', 'gap'].includes(plan.kind) || !Array.isArray(plan.pluginIds) || !Array.isArray(plan.steps) || !Array.isArray(value.candidates)) throw new Error('invalid recommendation');
         const warning = workflowWarning(value.workflowWarning);
@@ -244,6 +281,7 @@ export function createFinderController(ctx, options = {}) {
       const actual = workspaceSnapshot();
       if (actual?.phase !== 'ready' || !actual.items?.some(item => item.workspaceId === state.workspaceId)) { syncWorkspaces(); publish({ error: '请明确选择一个仍在 DSH 列表中的工作区。' }); return false; }
       const workspaceId = state.workspaceId;
+      const targetIdentity = identity();
       const id = ++sequence;
       const controller = new AbortController();
       operation = { id, controller, kind: 'handoff' };
@@ -251,8 +289,29 @@ export function createFinderController(ctx, options = {}) {
       const stillCurrent = () => !closed && id === sequence && workspaceSnapshot()?.phase === 'ready' && workspaceSnapshot()?.items?.some(item => item.workspaceId === workspaceId) && state.workspaceId === workspaceId;
       const timer = setTimeout(() => controller.abort('timeout'), 45000);
       try {
+        if (targetIdentity.taskId) {
+          const response = await waitForHandoff(fetchRequest(endpoint + 'bootstrap', { method: 'GET', credentials: 'same-origin', redirect: 'error', cache: 'no-store', signal: controller.signal }), controller.signal);
+          const value = await waitForHandoff(response.json(), controller.signal);
+          if (!stillCurrent() || controller.signal.aborted) return false;
+          if (!response.ok) throw handoffFailure('接续前未能确认当前方案，未创建会话或写入草稿。请稍后重试。');
+          if (value?.workflow?.taskId !== targetIdentity.taskId || value.workflow.revisionId !== targetIdentity.revisionId) throw handoffFailure('当前活动方案已在另一窗口或标签页变化。请从「我的方案」重新打开所选版本后再接续；尚未创建会话或写入草稿。');
+        }
         const result = await prepareSessionDraft(ctx, workspaceId, buildPrompt(), controller.signal, stillCurrent);
         if (!stillCurrent() || controller.signal.aborted) return false;
+        if (['applied', 'preserved'].includes(result.status) && targetIdentity.taskId) {
+          const link = { ...targetIdentity, workspaceId, sessionId: result.sessionId, status: result.status };
+          publish({ pendingHandoff: link, ...(result.status === 'applied' ? { handoffRequested: true } : { preservedTarget: { sessionId: result.sessionId, workspaceId } }) });
+          try {
+            const response = await fetchRequest(endpoint + 'handoff', { method: 'POST', credentials: 'same-origin', redirect: 'error', cache: 'no-store', signal: controller.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(link) });
+            const value = await response.json();
+            if (!stillCurrent() || controller.signal.aborted) return false;
+            if (!response.ok || !validSavedWorkflow(value?.workflow) || value.workflow.taskId !== targetIdentity.taskId || value.workflow.revisionId !== targetIdentity.revisionId) throw new Error('handoff save failed');
+            applyEnvelope(value, { pendingHandoff: null });
+          } catch {
+            if (!stillCurrent() || controller.signal.aborted) return false;
+            publish({ error: result.status === 'applied' ? '草稿已准备，但原会话关联未能保存在本机。请重试保存关联；不会再次写入草稿。' : '已有草稿已保留，但原会话关联未能保存在本机。请重试保存关联。' }); return false;
+          }
+        }
         if (result.status === 'preserved') { publish({ preservedTarget: { sessionId: result.sessionId, workspaceId }, notice: '已有草稿或附件已保留，本次方案没有写入。可打开已有草稿继续处理，或在下方预览并复制本次方案。' }); return false; }
         if (result.status === 'blocked') { publish({ error: '目标会话正在提交或草稿暂不可用，本次方案没有写入。请稍后核对再手动重试。' }); return false; }
         publish({ handoffRequested: true, notice: '方案草稿已准备在选定会话中。请核对后自行发送；尚未发送或执行任务。' });
@@ -291,28 +350,98 @@ export function createFinderController(ctx, options = {}) {
     },
     async saveFeedback(outcome, note = '') {
       if (!state.plan || !['complete', 'partial', 'blocked'].includes(outcome)) { publish({ error: '请先选择这次方案的实际结果。' }); return false; }
-      return run('feedback', 'feedback', { outcome, pluginIds: state.plan.pluginIds, note: text(note).slice(0, 1200), stage: state.handoffRequested ? 'handoff' : state.stage }, value => {
+      return run('feedback', 'feedback', { ...identity(), outcome, pluginIds: state.plan.pluginIds, note: text(note).slice(0, 1200), stage: state.handoffRequested ? 'handoff' : state.stage }, value => {
         if (value?.saved !== true) throw new Error('feedback not saved');
+        if (value.workflow) { ensureResponseIdentity(value, true); applyEnvelope(value); }
         publish({ feedbackSaved: true, notice: '反馈已保存在本机，没有向作者或第三方发送。' });
       });
     },
     showUnderstanding() { if (!closed && !operation && state.intent) publish({ stage: 'understand', error: '', notice: '' }); },
     newRequest() {
       if (closed || operation) return Promise.resolve(false);
-      draftRevision += 1;
-      publish({ stage: 'describe', request: '', intent: null, plan: null, candidates: [], discovery: null, warnings: [], workspaceId: '', error: '', notice: '', feedbackSaved: false, handoffRequested: false, preservedTarget: null, resetPending: true, storageWarning: '', modelLabel: text(state.bootstrap?.model?.label) });
+      draftRevision += 1; resetRevision = draftRevision;
+      publish({ resetPending: true });
       return clearStoredWorkflow();
     },
     retryReset() { return closed || operation || !state.resetPending ? Promise.resolve(false) : clearStoredWorkflow(); },
+    showFind() { if (!closed && !operation) publish({ view: 'find' }); },
+    showHistory(offset = 0) {
+      const start = Number.isSafeInteger(offset) && offset >= 0 ? offset : 0;
+      return run('history', 'history', { offset: start, limit: 20 }, value => {
+        if (!Array.isArray(value?.history)) throw new Error('invalid history');
+        publish({ ...historyPatch(value), historyOffset: start, view: 'history' });
+      });
+    },
+    openTask(taskId, revisionId) {
+      if (typeof taskId !== 'string' || !taskId || revisionId != null && (typeof revisionId !== 'string' || !revisionId)) return Promise.resolve(false);
+      return run('open', 'open', { taskId, ...(revisionId ? { revisionId } : {}) }, value => {
+        if (value?.workflow?.taskId !== taskId || revisionId && value.workflow.revisionId !== revisionId) throw handoffFailure('返回的历史方案与所选版本不一致，当前内容已保留。');
+        draftRevision += 1;
+        applyEnvelope(value, { view: 'find', restoredFrom: value.workflow.origin ? '从备份恢复的历史' : '本机历史', notice: '已打开历史方案；来源和搜索时间沿用当时记录，没有重新搜索或调用模型。', feedbackSaved: false, handoffRequested: false, preservedTarget: null, pendingHandoff: null });
+      });
+    },
+    refine(feedback) {
+      const note = text(feedback).trim();
+      if (!state.taskId || !state.revisionId || !note || note.length > 1200) { publish({ error: '请填写 1—1200 字的调整意见，原方案与反馈会保留。' }); return Promise.resolve(false); }
+      return run('refine', 'refine', { ...identity(), feedback: note }, value => {
+        ensureResponseIdentity(value);
+        if (value?.workflow?.stage !== 'understand') throw handoffFailure('调整后的需求未能确认，原方案已保留。');
+        applyEnvelope(value, { view: 'find', restoredFrom: '', notice: '已根据调整意见生成新版本，请先核对理解，再确认搜索。旧方案与反馈保留在历史版本中。', feedbackSaved: false, handoffRequested: false, preservedTarget: null, pendingHandoff: null });
+      });
+    },
+    retryHandoffSave() {
+      const link = state.pendingHandoff;
+      if (!link || link.taskId !== state.taskId || link.revisionId !== state.revisionId) return Promise.resolve(false);
+      return run('handoff-save', 'handoff', link, value => {
+        if (value?.workflow?.taskId !== link.taskId || value.workflow.revisionId !== link.revisionId) throw handoffFailure('会话关联没有保存到所选方案，请重试。');
+        applyEnvelope(value, { pendingHandoff: null, notice: '原会话关联已保存在本机。没有再次写入或发送草稿。' });
+      });
+    },
+    async continueSession() {
+      if (closed || operation || !state.handoff) return false;
+      const target = state.handoff;
+      const currentTask = state.taskId, currentRevision = state.revisionId;
+      const validTarget = () => {
+        const snapshot = workspaceSnapshot();
+        return !closed && currentTask === state.taskId && currentRevision === state.revisionId && (!target.taskId || target.taskId === currentTask) && (!target.revisionId || target.revisionId === currentRevision) && snapshot?.phase === 'ready' && snapshot.items?.some(item => item.workspaceId === target.workspaceId && Array.isArray(item.sessionIds) && item.sessionIds.includes(target.sessionId));
+      };
+      if (!validTarget()) { publish({ error: '原会话的工作区或会话绑定已不存在，无法确定接续目标。请到 DSH 手动核对。' }); return false; }
+      const id = ++sequence, controller = new AbortController(); operation = { id, controller, kind: 'continue' };
+      publish({ busy: 'continue', error: '', notice: '' });
+      let reference; const timer = setTimeout(() => controller.abort('timeout'), 45000);
+      try {
+        if (typeof ctx.sessions?.retain !== 'function' || typeof ctx.sessions?.binding !== 'function' || typeof ctx.uiWorkspace?.openSession !== 'function' || typeof ctx.layout?.selectPanel !== 'function') throw handoffFailure('当前宿主无法核对原会话绑定，请在 DSH 手动打开。');
+        reference = ctx.sessions.retain(target.sessionId, { source: 'controllerOperation', signal: controller.signal });
+        await waitForHandoff(reference.ready, controller.signal);
+        if (id !== sequence || !validTarget() || reference.binding?.sessionId !== target.sessionId || ctx.sessions.binding(target.sessionId) !== reference.binding) throw handoffFailure('原会话绑定已变化，未打开其他会话，请在 DSH 手动核对。');
+        ctx.uiWorkspace.openSession(target.sessionId); ctx.layout.selectPanel(null);
+        publish({ notice: '已打开原会话，没有新建会话、写入草稿或发送消息。' }); return true;
+      } catch (error) { if (!closed && id === sequence) publish({ error: error?.safeForUser ? error.message : '原会话暂时无法打开，请在 DSH 核对。' }); return false; }
+      finally { clearTimeout(timer); reference?.release(); if (operation?.id === id) { operation = null; publish({ busy: null }); } }
+    },
+    importBackup(workflow, origin = '本机备份') {
+      if (!workflow || typeof workflow !== 'object') { publish({ error: '请选择有效的 JSON 方案备份。' }); return Promise.resolve(false); }
+      return run('import', 'import', { workflow, origin: text(origin).slice(0, 180) }, value => {
+        if (!Array.isArray(value?.history)) throw handoffFailure('备份导入结果未确认，当前任务已保留。');
+        publish({ ...historyPatch(value), notice: value.duplicate ? '该备份已经恢复过，可在「我的方案」回看。当前任务未替换。' : '备份已导入「我的方案」，并标明恢复来源。当前任务未替换。' });
+      });
+    },
+    async exportTask() {
+      if (!state.taskId) { publish({ error: '请先打开一个已保存的方案。' }); return null; }
+      let result = null;
+      const success = await run('export', 'export', { taskId: state.taskId }, value => { if (!value || typeof value !== 'object' || !value.task) throw new Error('invalid backup'); result = value; });
+      return success ? result : null;
+    },
     reset() { return this.newRequest(); },
     cancel() {
       const cancelledKind = operation?.kind;
       sequence += 1;
       if (operation) operation.controller.abort('cancelled');
       operation = null;
-      publish({ busy: null, notice: cancelledKind === 'reset' ? '本机旧记录是否清除尚未确认，可重试清除。' : '已取消这一步。已填写的内容仍保留。', error: '' });
+      publish({ busy: null, notice: cancelledKind === 'reset' ? '开始新需求尚未确认，原内容仍保留，可重试。' : '已取消这一步。已填写的内容仍保留。', error: '' });
     },
     notify(message) { publish({ notice: text(message), error: '' }); },
+    reportError(message) { publish({ error: text(message).slice(0, 600), notice: '' }); },
     close() {
       if (closed) return;
       closed = true; sequence += 1; operation?.controller.abort('disposed'); operation = null;
@@ -363,6 +492,8 @@ export function apply(ctx) {
     const [feedbackOutcome, setFeedbackOutcome] = React.useState('');
     const [feedbackNote, setFeedbackNote] = React.useState('');
     const active = React.useRef(true);
+    const importInput = React.useRef(null);
+    React.useEffect(() => { setFeedbackOutcome(''); setFeedbackNote(''); }, [state.taskId, state.revisionId, state.request]);
     React.useEffect(() => { active.current = true; if (!controller.getSnapshot().bootstrapLoaded) void controller.bootstrap(); return () => { active.current = false; }; }, []);
     const busy = state.busy !== null;
     const taskInputBusy = busy && state.busy !== 'bootstrap';
@@ -395,6 +526,43 @@ export function apply(ctx) {
         if (active.current) controller.notify('已复制。');
       } catch { if (active.current) controller.notify('未能自动复制，请手动选择下方文本复制。'); }
     };
+    const importFile = async event => {
+      const file = event.target.files?.[0]; event.target.value = '';
+      if (!file) return;
+      if (file.size > 8100000) { controller.reportError('备份文件超过导入上限（8.1 MB），当前内容未修改。'); return; }
+      try {
+        const parsed = JSON.parse(await file.text());
+        if (!active.current) return;
+        await controller.importBackup(parsed, file.name);
+      } catch { if (active.current) controller.reportError('备份文件不是有效 JSON，当前内容未修改。'); }
+    };
+    const downloadTask = async () => {
+      const backup = await controller.exportTask(); if (!backup || !active.current) return;
+      let url;
+      try {
+        url = URL.createObjectURL(new Blob([JSON.stringify(backup)], { type: 'application/json' }));
+        const link = document.createElement('a'); link.href = url; link.download = `plugin-finder-${text(state.taskId).replace(/[^a-z0-9_-]/gi, '-').slice(0, 100)}.json`; document.body.appendChild(link); link.click(); link.remove();
+        controller.notify('已生成本机方案备份，包含该任务的版本、反馈和会话关联。请妥善保存。');
+      } catch { controller.reportError('本机备份下载未能开始，请重试。'); }
+      finally { if (url) setTimeout(() => URL.revokeObjectURL(url), 1000); }
+    };
+    const outcomeLabel = outcome => ({ complete: '完成了', partial: '部分完成', blocked: '没能完成' }[outcome] || '调整意见');
+    const originLabel = origin => typeof origin === 'string' ? origin : text(origin?.label) || (origin?.type === 'legacy-current' ? '首版本机记录迁移' : origin?.type === 'backup' ? '本机备份' : '');
+    const historyView = h('section', { className: 'pf_section', 'aria-label': '我的方案' },
+      h('div', { className: 'pf_section_head' }, h('div', null, h('h2', null, '我的方案'), h('p', { className: 'pf_muted pf_small' }, `本机保存 ${state.historyTotal || 0} 个任务；回看不会重新搜索或调用模型。`)), button('刷新历史', () => controller.showHistory(state.historyOffset), { disabled: busy })),
+      !state.history?.length ? h('p', { className: 'pf_empty' }, '还没有保存的方案。开始一个需求，或导入已有的本机备份。') : h('div', { className: 'pf_history_list' }, ...state.history.map(item => h('article', { className: 'pf_history_card', key: item.taskId },
+        h('h3', null, text(item.title) || text(item.request).slice(0, 100) || '未命名任务'), h('p', { className: 'pf_preline pf_small' }, text(item.request)),
+        h('p', { className: 'pf_small pf_muted' }, `${item.revisionCount ?? 1} 个版本 · 最后更新 ${text(item.updatedAt) || '时间未记录'}`),
+        item.lastFeedback ? h('p', { className: 'pf_small pf_muted' }, `最近反馈：${outcomeLabel(item.lastFeedback.outcome)}${text(item.lastFeedback.note) ? ` · ${item.lastFeedback.note}` : ''}`) : null,
+        originLabel(item.origin) ? h('p', { className: 'pf_small pf_muted' }, `恢复来源：${originLabel(item.origin)}`) : null,
+        button('回看方案', () => controller.openTask(item.taskId, item.latestRevisionId), { disabled: busy })))),
+      h('div', { className: 'pf_actions' }, button('上一页', () => controller.showHistory(Math.max(0, state.historyOffset - 20)), { disabled: busy || !state.historyOffset }), h('span', { className: 'pf_small pf_muted' }, `${Math.min((state.historyOffset || 0) + 1, state.historyTotal || 0)}–${Math.min((state.historyOffset || 0) + (state.history?.length || 0), state.historyTotal || 0)} / ${state.historyTotal || 0}`), button('下一页', () => controller.showHistory((state.historyOffset || 0) + 20), { disabled: busy || (state.historyOffset || 0) + (state.history?.length || 0) >= (state.historyTotal || 0) })),
+      state.unlinkedFeedback?.length ? h('details', { className: 'pf_details' }, h('summary', null, `旧版未关联反馈 · ${state.unlinkedFeedback.length} 条`), h('p', { className: 'pf_small pf_muted' }, '这些记录缺少精确任务关联，未猜配到任何方案。'), ...state.unlinkedFeedback.map((item, index) => h('p', { key: index, className: 'pf_small pf_preline' }, `${text(item.createdAt)} ${outcomeLabel(item.outcome)} ${text(item.note)}`))) : null);
+    const taskHistory = state.taskId ? h('section', { className: 'pf_task_history', 'aria-label': '当前方案与历史版本' },
+      h('div', { className: 'pf_section_head' }, h('div', null, h('strong', null, `当前任务 · 版本 ${state.revisionNumber ?? '未记录'}`), h('p', { className: 'pf_small pf_muted' }, originLabel(state.origin) ? `恢复来源：${originLabel(state.origin)}` : state.restoredFrom ? `恢复来源：${state.restoredFrom}` : '本机任务记录')), button('导出任务备份', downloadTask, { disabled: busy })),
+      state.revisions?.length ? h('label', { className: 'pf_label pf_workspace' }, '历史版本', h('select', { 'aria-label': '历史版本', value: state.revisionId || '', disabled: busy, onChange: event => controller.openTask(state.taskId, event.target.value) }, ...state.revisions.map(item => h('option', { key: item.revisionId, value: item.revisionId }, `版本 ${item.revisionNumber} · ${text(item.title) || (item.stage === 'plan' ? '推荐方案' : '需求理解')} · ${text(item.createdAt)}`)))) : null,
+      state.handoff ? h('div', { className: 'pf_actions' }, button('继续原会话', () => controller.continueSession(), { disabled: busy }), h('span', { className: 'pf_small pf_muted' }, '只打开已保存的同一会话，不重新放入草稿。')) : null,
+      state.feedback?.length ? h('details', { className: 'pf_details', open: true }, h('summary', null, `这个版本的反馈 · ${state.feedback.length} 条`), ...state.feedback.map((item, index) => h('div', { className: 'pf_saved_feedback', key: item.id || index }, h('p', { className: 'pf_small pf_muted' }, `${text(item.createdAt)} · ${outcomeLabel(item.outcome)}`), h('p', { className: 'pf_small pf_preline' }, text(item.note) || '未补充说明')))) : null) : null;
     const field = (label, key, multi = false) => h('label', { className: 'pf_label', key }, label,
       h(multi ? 'textarea' : 'input', {
         'aria-label': label, value: multi ? strings(state.intent?.[key]).join('\n') : text(state.intent?.[key]), maxLength: multi ? { constraints: 2105, capabilities: 905, queries: 725 }[key] : key === 'goal' ? 6000 : 600, disabled: busy,
@@ -452,26 +620,27 @@ export function apply(ctx) {
         h('p', { className: 'pf_muted' }, selectedCandidates.length ? '请先在宿主插件页核对候选是否已安装、兼容及满足前提，再选择工作区接着做。' : '选择任务材料所在的实际工作区。接下来由你在原生会话里确认和发送。'),
         h('label', { className: 'pf_label pf_workspace' }, '任务工作区', h('select', { 'aria-label': '任务工作区', value: state.workspaceId, disabled: busy || state.workspacePhase !== 'ready', onChange: event => controller.selectWorkspace(event.target.value) }, h('option', { value: '' }, state.workspacePhase !== 'ready' ? '正在等待 DSH 工作区列表…' : state.workspaces.length ? '请选择一个工作区' : '尚无工作区，请先在 DSH 添加'), ...state.workspaces.map(item => h('option', { value: item.workspaceId, key: item.workspaceId }, item.title)))),
         h('p', { className: 'pf_muted pf_small', style: { marginTop: 8 } }, '仅准备普通文本草稿；已有草稿和附件由宿主保留。不会自动发送或执行。'),
-        h('div', { className: 'pf_actions' }, primary(state.handoffRequested ? '草稿已准备' : '确认方案，去会话继续 →', () => controller.handoff(), { disabled: busy || !state.workspaceId || state.handoffRequested }), state.preservedTarget ? button('打开已有草稿', () => controller.openPreservedDraft(), { disabled: busy }) : null, selectedCandidates.length ? button('打开 DSH 插件页', () => controller.openPluginManager(), { disabled: busy }) : null),
+        h('div', { className: 'pf_actions' }, primary(state.handoffRequested ? '草稿已准备' : '确认方案，去会话继续 →', () => controller.handoff(), { disabled: busy || !state.workspaceId || state.handoffRequested }), state.pendingHandoff ? button('重试保存会话关联', () => controller.retryHandoffSave(), { disabled: busy }) : null, state.preservedTarget ? button('打开已有草稿', () => controller.openPreservedDraft(), { disabled: busy }) : null, selectedCandidates.length ? button('打开 DSH 插件页', () => controller.openPluginManager(), { disabled: busy }) : null),
         h('details', { className: 'pf_details' }, h('summary', null, '预览将带入的草稿'), h('pre', { className: 'pf_code' }, controller.prompt()), button('复制完整草稿', () => copyText(controller.prompt())))),
       h('section', { className: 'pf_section' }, h('h2', null, '试过之后，记录真实结果'), h('p', { className: 'pf_muted pf_small' }, '请根据实际使用情况填写。本机保存，不自动发送任务或联系作者。'),
         h('div', { className: 'pf_feedback' }, ...[['complete', '完成了'], ['partial', '部分完成'], ['blocked', '没能完成']].map(([value, label]) => button(label, () => { setFeedbackOutcome(value); }, { key: value, 'aria-pressed': feedbackOutcome === value, disabled: busy }))),
         h('label', { className: 'pf_label', style: { marginTop: 14 } }, '补充说明 · 可选', h('textarea', { 'aria-label': '反馈说明', value: feedbackNote, maxLength: 1200, disabled: busy, placeholder: '哪个环节有用，哪里卡住了？请避免填写敏感材料。', onChange: event => setFeedbackNote(event.target.value) })),
-        h('div', { className: 'pf_actions' }, button(state.feedbackSaved ? '反馈已保存在本机' : '保存反馈到本机', () => controller.saveFeedback(feedbackOutcome, feedbackNote), { disabled: busy || !feedbackOutcome || state.feedbackSaved }), h('a', { className: 'pf_btn', href: 'https://github.com/piggy00544/dsh-plugin-finder/issues/new?template=feedback.yml', target: '_blank', rel: 'noopener noreferrer' }, '去项目反馈 ↗')),
-        h('p', { className: 'pf_small pf_muted', style: { marginTop: 10 } }, '公开反馈需自行填写，提交前删除敏感材料；不会自动带入这里的任务或结果。'))) : null;
+        h('div', { className: 'pf_actions' }, button(state.feedbackSaved ? '反馈已保存在本机' : '保存反馈到本机', () => controller.saveFeedback(feedbackOutcome, feedbackNote), { disabled: busy || !feedbackOutcome || state.feedbackSaved }), state.taskId ? button('反馈并优化方案', () => controller.refine(feedbackNote), { disabled: busy || !feedbackNote.trim() }) : null, h('a', { className: 'pf_btn', href: 'https://github.com/piggy00544/dsh-plugin-finder/issues/new?template=feedback.yml', target: '_blank', rel: 'noopener noreferrer' }, '去项目反馈 ↗')),
+        h('p', { className: 'pf_small pf_muted', style: { marginTop: 10 } }, '保存结果只记录反馈；「反馈并优化方案」会调用宿主模型生成新版本，先核对理解再搜索。公开反馈需自行填写，不自动带入任务或结果。'))) : null;
     return h('div', { className: 'pf_root', 'data-plugin-finder': true }, h('div', { className: 'pf_inner' },
-      h('header', { className: 'pf_header' }, h('div', null, h('div', { className: 'pf_eyebrow' }, 'PLUGIN FINDER'), h('h1', null, '发现好插件'), h('p', { className: 'pf_muted' }, '从你要完成的事，找到适合的插件与做法。')), h('div', { className: 'pf_header_actions' }, button('重新读取配置', () => controller.bootstrap(), { disabled: busy }), state.stage !== 'describe' ? button('新需求', () => { setFeedbackOutcome(''); setFeedbackNote(''); void controller.newRequest(); }, { disabled: busy }) : null)),
-      h('ol', { className: 'pf_steps', 'aria-label': '方案步骤' }, ...[['describe', '描述需求'], ['understand', '确认理解'], ['plan', '推荐与接续']].map(([key, label], index) => h('li', { className: `pf_step${state.stage === key ? ' active' : ''}`, key, 'aria-current': state.stage === key ? 'step' : undefined }, h('span', { className: 'pf_number' }, index + 1), label))),
+      h('header', { className: 'pf_header' }, h('div', null, h('div', { className: 'pf_eyebrow' }, 'PLUGIN FINDER'), h('h1', null, '发现好插件'), h('p', { className: 'pf_muted' }, '从你要完成的事，找到适合的插件与做法。')), h('div', { className: 'pf_header_actions' }, button('重新读取配置', () => controller.bootstrap(), { disabled: busy }), button('导入本机备份', () => importInput.current?.click(), { disabled: busy }), h('input', { type: 'file', ref: importInput, accept: '.json,application/json', 'aria-label': '导入本机方案备份', style: { display: 'none' }, onChange: importFile }), state.stage !== 'describe' ? button('新需求', () => controller.newRequest(), { disabled: busy }) : null)),
+      h('nav', { className: 'pf_tabs', 'aria-label': '插件功能' }, button('找方案', () => controller.showFind(), { 'aria-current': state.view !== 'history' ? 'page' : undefined, disabled: busy }), button(`我的方案${state.historyTotal ? ` · ${state.historyTotal}` : ''}`, () => controller.showHistory(), { 'aria-current': state.view === 'history' ? 'page' : undefined, disabled: busy })),
+      state.view !== 'history' ? h('ol', { className: 'pf_steps', 'aria-label': '方案步骤' }, ...[['describe', '描述需求'], ['understand', '确认理解'], ['plan', '推荐与接续']].map(([key, label], index) => h('li', { className: `pf_step${state.stage === key ? ' active' : ''}`, key, 'aria-current': state.stage === key ? 'step' : undefined }, h('span', { className: 'pf_number' }, index + 1), label))) : null,
       state.bootstrap ? h('div', { className: 'pf_search_scope', style: { marginBottom: 20 } }, h('p', { className: 'pf_small pf_muted' }, h('span', { className: 'pf_model' }, `宿主默认模型：${state.modelLabel || '未配置'}`), '　按需求搜索插件来源'),
         state.stage === 'describe' ? h('details', { className: 'pf_details' }, h('summary', null, '查看搜索来源 · 第三方精选源，非官方审核'), Array.isArray(state.bootstrap.discovery?.sources) && state.bootstrap.discovery.sources.length ? h('ul', { className: 'pf_sources' }, ...state.bootstrap.discovery.sources.slice(0, 20).map((source, index) => sourceRow(source, index, true))) : h('p', { className: 'pf_muted pf_small' }, '来源配置尚未返回；搜索时将列出实际读取状态。')) : null) : null,
       state.bootstrapLoaded && !modelReady ? h('div', { className: 'pf_banner' }, '尚未配置可用的宿主默认模型。请前往 DSH 设置完成模型配置，再点击「重新读取配置」。本插件不另收模型 Key。') : null,
       state.error ? h('div', { className: 'pf_banner pf_error', role: 'alert' }, state.error) : null,
       state.notice ? h('div', { className: 'pf_banner', role: 'status' }, state.notice) : null,
       state.storageWarning && !state.notice.includes(state.storageWarning) ? h('div', { className: 'pf_banner pf_small', role: 'status' }, state.storageWarning) : null,
-      state.resetPending && state.busy !== 'reset' ? h('div', { className: 'pf_banner pf_small', role: 'status' }, '本机旧任务记录尚未确认清除，重启后可能恢复。请重试清除。', button('重试清除本机记录', () => controller.retryReset(), { disabled: busy })) : null,
-      busy ? h('div', { className: 'pf_status', role: 'status' }, h('span', { className: 'pf_spinner', 'aria-hidden': true }), { bootstrap: '正在读取连接与配置…', analyze: '正在理解目标、材料与约束…', recommend: '正在搜索来源、读取候选资料并推荐…', handoff: '正在连接选定工作区并准备未发送草稿…', feedback: '正在保存到本机…', reset: '正在清除当前 DSH 本机任务与方案…' }[state.busy], button('取消', () => controller.cancel(), { className: 'pf_btn pf_text' })) : null,
-      state.stage === 'describe' ? describe : state.stage === 'understand' ? understand : plan,
-      h('footer', { className: 'pf_footer' }, h('p', null, '任务与方案仅保存在当前 DSH 本机供重启恢复；「新需求」会清除。本插件不自动发送或安装。'), h('p', { style: { marginTop: 6 } }, '需求与候选资料仍会发送给 DSH 全局默认模型进行推理；支持时采用较低推理档，不修改宿主设置。沿用已有额度，未必等于某个会话的模型选择。第三方服务可能另有费用。'))));
+      state.resetPending && state.busy !== 'reset' ? h('div', { className: 'pf_banner pf_small', role: 'status' }, '开始新需求尚未确认，已有方案仍保留。', button('重试开始新需求', () => controller.retryReset(), { disabled: busy })) : null,
+      busy ? h('div', { className: 'pf_status', role: 'status' }, h('span', { className: 'pf_spinner', 'aria-hidden': true }), { bootstrap: '正在读取连接与配置…', analyze: '正在理解目标、材料与约束…', recommend: '正在搜索来源、读取候选资料并推荐…', handoff: '正在连接选定工作区并准备未发送草稿…', feedback: '正在保存到本机…', reset: '正在保存并开始新需求…', history: '正在读取本机历史方案…', open: '正在打开所选方案与版本…', refine: '正在根据反馈重新理解需求…', import: '正在导入本机备份…', export: '正在导出任务备份…', continue: '正在核对原会话绑定…', 'handoff-save': '正在保存原会话关联…' }[state.busy], button('取消', () => controller.cancel(), { className: 'pf_btn pf_text' })) : null,
+      state.view === 'history' ? historyView : h('div', null, taskHistory, state.stage === 'describe' ? describe : state.stage === 'understand' ? understand : plan),
+      h('footer', { className: 'pf_footer' }, h('p', null, '任务、历史版本与反馈保存在当前 DSH 本机。「新需求」只开始空白需求，已有记录仍在「我的方案」。本插件不自动发送或安装。'), h('p', { style: { marginTop: 6 } }, '需求与候选资料仍会发送给 DSH 全局默认模型进行推理；支持时采用较低推理档，不修改宿主设置。沿用已有额度，未必等于某个会话的模型选择。第三方服务可能另有费用。'))));
   }
   if (typeof ctx.layout?.selectPanel === 'function') {
     ctx.effect(() => { if (typeof document === 'undefined') return; const tag = document.createElement('style'); tag.dataset.pluginCss = 'dsh-plugin-finder'; tag.textContent = finderCss; document.head.appendChild(tag); return () => tag.remove(); });
