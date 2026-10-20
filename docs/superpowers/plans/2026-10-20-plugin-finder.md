@@ -1,47 +1,53 @@
 # Plugin Finder Implementation Plan
 
-> **For agentic workers:** Execute using superpowers:subagent-driven-development. User already approved the prototype and implementation. Root owns integration; separate agent owns catalog only.
+User approved the HTML prototype and real implementation on 2026-10-20. This checklist records the implemented local preview and the release work handed back to root. Evidence boundaries are in `docs/verification.md`.
 
 **Goal:** Deliver an installable DSH plugin with a real catalog, host-model intent/recommendation and safe workspace conversation handoff.
 
-**Architecture:** Host ESM bundle, authenticated connection routes, bounded schema-validated model calls, packaged metadata index, native React main/sidebar slots. No independent model account, no global DOM shell, no automatic installation or message submission.
+**Architecture:** Host ESM bundle, official authenticated connection routes, bounded schema-validated model calls, packaged metadata index, native React main/sidebar slots. No independent model account, no global DOM shell, no automatic installation or message submission.
 
 **Tech Stack:** Node 22, DSH 0.2.x public SDK, native React host surface, Node test runner, npm tgz.
 
 ## Task 1: Real candidate catalog
 
-- [ ] Agent writes failing tests in `test/catalog.test.mjs` for source provenance, compatibility filters, Chinese/English capability matching and empty matches; runs `node --test test/catalog.test.mjs` and records expected failure.
-- [ ] Implement `catalog/index.mjs`, `catalog/plugins.json` and `scripts/refresh-catalog.mjs`; only read fixed HTTPS npm/GitHub sources with bounded timeout/body size; never execute candidate packages.
-- [ ] Run the same tests green and inspect actual candidate count, pinned versions and evidence fields.
+- [x] Cover source provenance, Chinese/English capability retrieval, empty matches, DSH/Node/platform/Key filtering and blocked sources with tests.
+- [x] Implement `catalog/index.mjs`, `catalog/plugins.json` and `scripts/refresh-catalog.mjs` with fixed HTTPS sources and bounded reads; never execute candidate packages.
+- [x] Refresh and inspect 15 pinned real bundles: 11 metadata/entry checks, 2 requiring source-build confirmation and 2 blocked from recommendations. Candidate installation/task/combination states remain untested.
 
 ## Task 2: Intent and plan service
 
-- [ ] Root writes `test/service.test.mjs`: `assert.rejects` for unknown plugin IDs, repeated IDs, more than 2 candidates, invalid intent, unsupported recommendation kinds; verify author metadata cannot become installation authority and gap/native plans cannot contain install IDs. Run red.
-- [ ] Implement `src/contracts.js`, `src/model.js`, `src/service.js`: request text <= 6000 chars; <= 6 capabilities; bounded queries; 2 model calls per full flow; max 8 recalled candidates; model only selects known IDs. Use context-provided llm.prepareCall and global default selection.
-- [ ] Add host-model stream tests for complete response, missing finish, timeout/abort and malformed JSON. Run `node --test test/service.test.mjs test/model.test.mjs` green.
+- [x] Validate intent and plan schemas, known/unique plugin IDs, kind/ID counts, capability coverage and plugin-step source capability IDs.
+- [x] Bound request text to 6000 characters, capabilities and queries to 6, recalled candidates to 8 and selected plugins to 2. A normal completed flow requests analysis and recommendation once each; explicit retries and provider retries may add calls.
+- [x] Apply supported deterministic eligibility filters and label unresolved constraints. Keep exact installation sources and proof state under Host authority.
+- [x] Use the host global provider/model/account with exact-route `prepareCall` configuration for lightweight auxiliary reasoning, without changing global settings. Validate full response termination and map limits, account errors and cancellation to safe messages.
 
 ## Task 3: Real host adapter
 
-- [ ] Write route tests for GET bootstrap, POST analyze/recommend/feedback, invalid method/body, lifecycle close and concurrent-call rejection. Confirm red via `node --test test/routes.test.mjs`.
-- [ ] Implement `index.js`, `src/routes.js`, `src/feedback.js`, `package.json`, `cordis.patch.yml`. Register only plugin-owned authenticated paths and bounded local storage. No mutation of profile or other plugins.
-- [ ] Run route/model/service tests together green. Pack file list must exclude runtime files, credentials, test profiles and private paths.
+- [x] Register bootstrap/analyze/recommend/feedback under official authenticated `connection.fetch`, with method/content/body/query limits and safe errors.
+- [x] Implement bounded plugin-owned local feedback storage with serialized writes, at most 100 records, and no automatic external transmission.
+- [x] Verify route/model/service behavior, lifecycle closure and concurrent-call rejection. Keep runtime profiles, credentials and private diagnostics outside the distribution allowlist.
 
 ## Task 4: Native UI and handoff
 
-- [ ] Verify native contract with a minimal client test: same panel ID for main/sidebar; disposal removes owned CSS; startSession gets explicit workspace and `clearPreviousDraft:false`; submit is never called.
-- [ ] Implement `src/client.js`, scoped CSS and native state: describe → editable understanding → authoritative candidate cards + plan → explicit workspace → startSession → selectPanel(null). Show source links, current evidence and configuration errors.
-- [ ] Check cancellation/stale responses, repeated click, no workspace, missing model and native/gap outcomes. Run `node --test test/client.test.mjs` green.
+- [x] Register one matching main/sidebar panel, scoped disposable CSS and actual workspace choices; preserve the host shell.
+- [x] Implement describe → editable six-field understanding → source-backed candidates and plan → explicit workspace → `connectWorkspace` → retain and validate exact Session binding → `requestDraftInitialization({prompt,clearPreviousDraft:false})`.
+- [x] On `applied`, open the target Session and select the native conversation panel. On `preserved`/`blocked`, keep the plan and show the corresponding recovery message. Never submit a Session message.
+- [x] Test cancellation/stale results, double clicks, deleted workspaces, missing model, retained-binding expiry, reference release and native/gap outcomes.
 
 ## Task 5: Install and real bounded verification
 
-- [ ] Build tgz with `npm pack --pack-destination dist`; record SHA256 and inspected package contents.
-- [ ] Use a dedicated DSH_HOME and synthetic workspace; install the tgz through official CLI, start isolated Web on an unused local port, and inspect bundle enable/load state. Never stop the live host or mount personal workspaces.
-- [ ] In Ego Lite, verify native sidebar entry, real catalog read, actual host-model analyze/recommend, explicit-workspace unsent draft, draft preservation and feedback persistence. Use one TaskSpace for this verification goal.
-- [ ] Uninstall in a second disposable profile and verify owned contributions are gone. Keep missing model/auth evidence separate if actual credentials cannot be safely used.
+- [x] Build a local tgz and install it using the official `0.2.1-rc.2` Desktop-carried CLI into a dedicated `DSH_HOME` Web profile with a synthetic workspace.
+- [x] In one Ego Lite verification TaskSpace, observe the native sidebar/page, real index, host-model analysis and a `single` recommendation for `dsh-data-quality`.
+- [x] Select `sample-workspace` and read back a complete 4366-character unsent draft from the native editor, including the requirement, fixed sources and limitations.
+- [x] Replace the draft with `synthetic-user-draft-marker`, repeat handoff, receive `preserved` and verify that the marker remains unchanged.
+- [x] Save a synthetic partial-completion feedback record through the UI and read back one matching outcome/IDs/note record in isolated `storages/plugin_finder.json`.
+- [x] Stop only the owned test Host and remove temporary credential copies. Leave the user normal profile unchanged. No candidate installation/execution, task submission or author message occurred.
 
 ## Task 6: Review and release
 
-- [ ] Independent spec review then code-quality review; fix material findings with regression tests.
-- [ ] Run `npm test` and package smoke fresh after fixes. Write `docs/verification.md` with actual results and limits, not implied success.
-- [ ] Provide install/first-use/feedback instructions and a shareable release candidate. If publishing a public repository/release is available under the user's launch request, publish only project sources/assets and verify an anonymous package download against SHA256. No outreach messages.
+- [x] Complete independent SDK/code reviews, fix material findings with regression tests, then run the final build followed by `npm test`: 66 passed, 0 failed.
+- [x] Write installation, first-use, fee/privacy, feedback and verification documentation. Source development starts with `npm ci --ignore-scripts --legacy-peer-deps`; DSH SDK peers remain host-provided.
+- [ ] Root: after final documentation changes, rebuild the release tgz, inspect its exact contents and calculate SHA-256.
+- [ ] Root: publish only project sources/assets and the package, verify anonymous download against SHA-256, and validate installation/loading/uninstall in a second disposable clean profile. No outreach messages.
 
+The public-download and second-profile outcomes belong in the corresponding GitHub Release acceptance record after they have been observed. The frozen package documentation links that record without asserting an outcome in advance. External-user feedback, retention and task success remain separate later evidence.

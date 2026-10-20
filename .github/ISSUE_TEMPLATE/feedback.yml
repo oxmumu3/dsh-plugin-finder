@@ -1,0 +1,45 @@
+name: 首版使用反馈
+description: 告诉我们哪里有用、哪里卡住；请删除账号、密钥、客户数据和私人路径。
+title: "[反馈] "
+body:
+  - type: input
+    id: versions
+    attributes:
+      label: DSH 与发现好插件的版本
+      placeholder: DSH 0.2.1-rc.2 / Finder 0.1.0-preview.1
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: 你想完成什么
+      description: 用可公开的材料描述即可，不用上传原始文件。
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: 反馈发生在哪一步
+      options:
+        - 安装或页面加载
+        - 理解需求
+        - 搜索和推荐方案
+        - 安装被推荐的插件
+        - 把方案带入会话
+        - 用方案完成任务
+  - type: textarea
+    id: observed
+    attributes:
+      label: 推荐了什么，实际发生了什么
+      description: 请区分看到推荐、安装完成、实际做成任务；不要包含敏感截图或日志。
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: 结果
+      options:
+        - 完成
+        - 部分完成
+        - 没有完成
+        - 尚未尝试

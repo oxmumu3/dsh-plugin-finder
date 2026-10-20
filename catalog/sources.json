@@ -1,0 +1,588 @@
+{
+  "schemaVersion": 1,
+  "policy": "Explicit GitHub repository allowlist, manually reviewed. HTTPS reads only. Candidate descriptions summarize author documentation and are not execution proof. Updating the allowlist requires a code review.",
+  "discoverySources": [
+    "https://github.com/topics/dsh-plugin",
+    "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin"
+  ],
+  "sources": [
+    {
+      "id": "dsh-data-insight",
+      "repository": "duyanta123/dsh-data-insight",
+      "title": "数据分析报告",
+      "summary": "把 CSV、粘贴表格或 SQL 结果整理成带业务结论、指标和图表的 Markdown 报告；含分析 runbook 与数据画像。",
+      "capabilities": [
+        "data-analysis",
+        "data-quality",
+        "report-writing"
+      ],
+      "keywords": [
+        "投放",
+        "周报",
+        "业务分析",
+        "指标",
+        "图表"
+      ],
+      "inputs": [
+        "CSV / 表格 / SQL 结果",
+        "业务问题与指标口径"
+      ],
+      "outputs": [
+        "数据画像",
+        "Markdown 分析报告"
+      ],
+      "firstUse": "请先确认输入文件与指标口径，按 data-insight 技能完成画像、分析与报告；明确缺失数据和不能成立的推断。",
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "分析仍使用 DSH 中配置的模型；执行环境和可选 DuckDB 路径按作者文档配置。"
+        ]
+      },
+      "limitations": [
+        "业务口径、数据真实性和因果解释需要用户确认。",
+        "与其他数据插件的组合尚未实跑。"
+      ],
+      "expectedName": "dsh-data-insight"
+    },
+    {
+      "id": "dsh-data-quality",
+      "repository": "PerryLink/dsh-data-quality",
+      "title": "数据质量检查",
+      "summary": "提供确定性数据画像、缺失与重复检查、声明式清洗和验证，返回可追溯的数据质量报告。",
+      "capabilities": [
+        "data-quality",
+        "data-analysis"
+      ],
+      "keywords": [
+        "csv",
+        "tsv",
+        "json",
+        "重复",
+        "缺失",
+        "异常",
+        "验证规则"
+      ],
+      "inputs": [
+        "工作区 CSV / TSV / JSON / JSONL",
+        "清洗与校验规则"
+      ],
+      "outputs": [
+        "结构化质量报告",
+        "显式指定输出路径时生成清洗数据"
+      ],
+      "firstUse": "先用 data_profile 检查文件，再提出校验规则；未经确认不要清洗或写出数据。",
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [
+          "darwin",
+          "linux",
+          "win32"
+        ],
+        "notes": [
+          "默认单文件上限与行数上限以作者配置为准。",
+          "Git 安装包含 prepare 构建，宿主可能要求额外构建确认。"
+        ]
+      },
+      "limitations": [
+        "准确性分数需要声明 schema，不能由统计画像证明业务数据准确。",
+        "清洗和报告可能写入工作区或插件存储域。"
+      ],
+      "expectedName": "dsh-data-quality"
+    },
+    {
+      "id": "dsh-research-report",
+      "repository": "PerryLink/dsh-research-report",
+      "title": "可核查研究报告",
+      "summary": "把结论绑定到不可变证据快照并封存版本化研究报告；保留未核实、证据不足和冲突结论。",
+      "capabilities": [
+        "evidence-ledger",
+        "report-writing"
+      ],
+      "keywords": [
+        "研究",
+        "来源",
+        "引用",
+        "核实",
+        "行业报告"
+      ],
+      "inputs": [
+        "来源文件或 URL",
+        "结论与证据引用",
+        "报告结构"
+      ],
+      "outputs": [
+        "证据台账",
+        "带核验状态的封存报告"
+      ],
+      "firstUse": "先用 evidence_add 保存来源，再将结论与证据 ID 绑定；检查未核实条目后再生成 research_report。",
+      "requirements": {
+        "extraApiKey": "optional",
+        "platforms": [],
+        "notes": [
+          "本地证据台账不需要额外 Key；联网采集复用 ctx.web，其提供方可能需要账号或费用。",
+          "dsh-data-quality 是可选的数字核对桥接，不是必装依赖。"
+        ]
+      },
+      "limitations": [
+        "字节或数字核对不能证明来源可信或语义推理正确。",
+        "不是自动深度研究搜索循环；检索和综合仍由会话负责。"
+      ],
+      "expectedName": "dsh-research-report"
+    },
+    {
+      "id": "f1star-dsh-research",
+      "repository": "F1star/dsh-research",
+      "title": "PDF 科研工作区",
+      "summary": "归档本地 PDF、保留页码和原文锚点，管理论文库、阅读笔记、研究证据与报告。",
+      "capabilities": [
+        "pdf-reading",
+        "evidence-ledger",
+        "report-writing"
+      ],
+      "keywords": [
+        "论文",
+        "文献库",
+        "pdf",
+        "引用",
+        "科研"
+      ],
+      "inputs": [
+        "本地 PDF 文件",
+        "研究问题"
+      ],
+      "outputs": [
+        "带页码阅读包",
+        "论文库与证据记录",
+        "Markdown / LaTeX / BibTeX 导出"
+      ],
+      "firstUse": "导入一份 PDF 并生成带物理页码的阅读包，核对原文后再将结论登记到论文库。",
+      "requirements": {
+        "extraApiKey": "optional",
+        "platforms": [],
+        "notes": [
+          "默认 PDF 读取不需要 Python；可选 OCR 需要额外部署。",
+          "0.4 的存储格式不能直接读取 0.3 数据；作者建议独立存储。"
+        ]
+      },
+      "limitations": [
+        "所声明 DSH peer 范围较旧，当前宿主可能不兼容。",
+        "扫描 PDF 的 OCR 属于可选能力，不能默认宣称可用。"
+      ],
+      "expectedName": "@f1star/dsh-research"
+    },
+    {
+      "id": "dsh-lit-search",
+      "repository": "Flan246/dsh-lit-search",
+      "title": "学术文献检索",
+      "summary": "通过 Crossref 和 OpenAlex 检索论文、发现相关工作并生成格式化引用。",
+      "capabilities": [
+        "literature-search"
+      ],
+      "keywords": [
+        "论文",
+        "学术",
+        "文献",
+        "doi",
+        "引用格式",
+        "bibtex"
+      ],
+      "inputs": [
+        "检索词 / DOI",
+        "引用格式"
+      ],
+      "outputs": [
+        "论文元数据",
+        "相关工作候选",
+        "格式化引用"
+      ],
+      "firstUse": "按研究问题检索文献，保留 DOI 与原始元数据，再生成所需格式的引用。",
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "依赖公共 Crossref / OpenAlex 网络服务；免 Key 不等于没有服务限流。"
+        ]
+      },
+      "limitations": [
+        "元数据和相关工作候选不等于全文阅读或证据核验。"
+      ],
+      "expectedName": "dsh-lit-search"
+    },
+    {
+      "id": "dsh-context7",
+      "repository": "PyModel/dsh-research-plugins",
+      "manifestPath": "packages/dsh-mcp-context7/package.json",
+      "title": "Context7 库文档查询",
+      "summary": "接入 Context7 托管 MCP，按库与版本查找开发文档和示例。",
+      "capabilities": [
+        "library-docs"
+      ],
+      "keywords": [
+        "context7",
+        "开发文档",
+        "api文档",
+        "依赖库",
+        "版本"
+      ],
+      "inputs": [
+        "库名与版本",
+        "具体开发问题"
+      ],
+      "outputs": [
+        "相关库文档片段与示例"
+      ],
+      "firstUse": "先解析目标库，再查询与项目版本一致的文档；明确文档版本和来源。",
+      "requirements": {
+        "extraApiKey": "optional",
+        "platforms": [],
+        "notes": [
+          "作者说明默认免 Key，可配置 Key；托管服务可能限流。",
+          "查询内容会发送给 Context7 服务。"
+        ]
+      },
+      "limitations": [
+        "第三方文档检索结果不代替项目中的实际验证。"
+      ],
+      "expectedName": "dsh-mcp-context7"
+    },
+    {
+      "id": "dsh-tavily",
+      "repository": "PyModel/dsh-research-plugins",
+      "manifestPath": "packages/dsh-tavily/package.json",
+      "title": "Tavily 网页搜索",
+      "summary": "将 Tavily 搜索接入 DSH 的网页搜索服务，用于检索网页和研究资料。",
+      "capabilities": [
+        "web-search",
+        "web-fetch"
+      ],
+      "keywords": [
+        "tavily",
+        "网页搜索",
+        "联网",
+        "竞品研究",
+        "research"
+      ],
+      "inputs": [
+        "搜索问题与过滤条件"
+      ],
+      "outputs": [
+        "网页检索结果与来源链接"
+      ],
+      "firstUse": "先用免 Key 的搜索或提取入口检索一个明确问题，保留原始来源链接；只有需要 crawl / map / research 时才配置额外凭据。",
+      "requirements": {
+        "extraApiKey": "optional",
+        "platforms": [],
+        "notes": [
+          "作者声明 search / extract 支持免 Key；crawl / map / research 需要 Tavily API Key，第三方费用不由 DSH 模型额度覆盖。",
+          "搜索问题发送给 Tavily 服务；免 Key 仍可能限流。",
+          "安装会修改 ctx.web 的搜索提供方配置；已有同名 MCP loader row 可能冲突，安装前核对。"
+        ]
+      },
+      "limitations": [
+        "搜索结果只是候选资料，需要继续读取和核对原文。",
+        "本轮没有实测第三方免 Key 端点。"
+      ],
+      "expectedName": "@pymodel/dsh-tavily"
+    },
+    {
+      "id": "dsh-tool-browser",
+      "repository": "yuehancn/dsh-tool-browser",
+      "title": "网页读取与浏览器工具",
+      "summary": "打开网页、等待页面状态、提取可读正文和截图；缺少 Playwright 时降级为静态抓取并声明限制。",
+      "capabilities": [
+        "web-fetch",
+        "browser-automation"
+      ],
+      "keywords": [
+        "网页",
+        "浏览器",
+        "正文",
+        "截图",
+        "动态页面"
+      ],
+      "inputs": [
+        "公开网页 URL",
+        "等待或提取条件"
+      ],
+      "outputs": [
+        "正文与页面状态",
+        "可选截图"
+      ],
+      "firstUse": "先读取一份公开页面并检查结果是否声明静态抓取；只有浏览器依赖可用时再处理动态页面。",
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "动态渲染与截图依赖可选 Playwright 和浏览器安装。",
+          "页面 URL 和内容会经网络读取。"
+        ]
+      },
+      "limitations": [
+        "静态回退没有执行 JavaScript，不能当作动态页面观察。",
+        "首版仅核对文档，没有验证登录态或复杂交互。"
+      ],
+      "expectedName": "@yuehancn/dsh-tool-browser"
+    },
+    {
+      "id": "dsh-command-code-review",
+      "repository": "JasonFreeLab/dsh-command-code-review",
+      "title": "多视角代码审查",
+      "summary": "以 /code-review 发起代码审查，通过多个审查视角与逐项置信度筛选结果，覆盖 PR 和本地改动。",
+      "capabilities": [
+        "code-review"
+      ],
+      "keywords": [
+        "代码",
+        "审查",
+        "git diff",
+        "pull request",
+        "多视角"
+      ],
+      "inputs": [
+        "PR 或本地 Git 改动",
+        "审查要求"
+      ],
+      "outputs": [
+        "分级审查发现与置信度"
+      ],
+      "firstUse": "先限定本地变更或 PR 范围，再执行 /code-review；逐条核对发现是否与本次改动有关。",
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "使用 DSH 会话与子 Agent；远程 PR 可能需要已有 GitHub CLI 认证。",
+          "并行审查会增加宿主模型调用量。"
+        ]
+      },
+      "limitations": [
+        "不能把模型给出的置信度当作缺陷真实性证明。"
+      ],
+      "expectedName": "dsh-command-code-review"
+    },
+    {
+      "id": "dsh-code-review-feng",
+      "repository": "f-e-n-g-0531/dsh-code-review",
+      "title": "Git / SVN 只读审查",
+      "summary": "预览 Git 或 SVN 变更和显式上下文，并通过经审批的当前 DSH Agent 模型请求生成审查意见。",
+      "capabilities": [
+        "code-review"
+      ],
+      "keywords": [
+        "代码审查",
+        "git",
+        "svn",
+        "只读",
+        "变更预览"
+      ],
+      "inputs": [
+        "Git / SVN 工作副本",
+        "审查范围与上下文"
+      ],
+      "outputs": [
+        "变更预览",
+        "代码审查意见"
+      ],
+      "firstUse": "先预览变更范围与将发送给模型的上下文，确认后才请求模型审查。",
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "需要本地 Git 或 SVN。",
+          "审查使用当前 Agent 的模型请求能力和宿主审批。"
+        ]
+      },
+      "limitations": [
+        "只读审查不自动修改代码；模型发现仍需复现和人工判断。"
+      ],
+      "expectedName": "@feng0531/dsh-code-review"
+    },
+    {
+      "id": "dsh-open-code-review",
+      "repository": "ashllll/dsh-open-code-review",
+      "title": "规则驱动代码审查",
+      "summary": "解析审查范围和规则，用 Open Code Review 的审查流程组织当前 DSH 模型完成代码检查。",
+      "capabilities": [
+        "code-review"
+      ],
+      "keywords": [
+        "代码",
+        "规则",
+        "审查",
+        "open code review"
+      ],
+      "inputs": [
+        "代码仓库与审查范围",
+        "审查规则"
+      ],
+      "outputs": [
+        "结构化审查发现"
+      ],
+      "firstUse": "先确认审查范围和适用规则，使用项目已有模型完成审查，保留问题所在文件与行号。",
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "默认通过 DSH 模型判断；不额外要求模型 API Key。"
+        ]
+      },
+      "limitations": [
+        "规则解析和模型审查属于不同环节，实际缺陷需验证。"
+      ],
+      "expectedName": "@ashllll/dsh-open-code-review"
+    },
+    {
+      "id": "dsh-engineering-workflow",
+      "repository": "82c86b8z86-stack/dsh-engineering-workflow",
+      "title": "工程开发工作流",
+      "summary": "提供需求澄清、计划、TDD、并行任务和验证收尾的 Agent 预设及工作流技能。",
+      "capabilities": [
+        "software-development",
+        "workflow-orchestration"
+      ],
+      "keywords": [
+        "工程化",
+        "开发",
+        "superpowers",
+        "tdd",
+        "计划"
+      ],
+      "inputs": [
+        "开发任务与现有项目"
+      ],
+      "outputs": [
+        "阶段计划",
+        "按工作流执行的开发与验证记录"
+      ],
+      "firstUse": "安装并重启后，新建会话时选择工程工作流预设；先澄清需求，不自动切换已有会话。",
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "插件挂载时将预设同步到用户的 DSH Agent 预设目录。",
+          "工作流使用宿主模型与工具；并行执行会消耗现有模型额度。"
+        ]
+      },
+      "limitations": [
+        "需要新会话选择对应预设，不能假定安装即改变所有会话。",
+        "本索引不执行其预设同步脚本。"
+      ],
+      "expectedName": "dsh-engineering-workflow"
+    },
+    {
+      "id": "dsh-workflow-templates",
+      "repository": "988hj7tczd-oss/dsh-workflow-templates",
+      "title": "工作流模板库",
+      "summary": "提供预置编排模板的列表、搜索和格式校验，生成交给官方 workflow 工具执行的参数与脚本起点。",
+      "capabilities": [
+        "workflow-orchestration",
+        "workflow-templates"
+      ],
+      "keywords": [
+        "模板",
+        "workflow",
+        "编排",
+        "复用"
+      ],
+      "inputs": [
+        "模板名",
+        "任务参数"
+      ],
+      "outputs": [
+        "模板定义与校验结果",
+        "官方 workflow 的 meta / script / args 起点"
+      ],
+      "firstUse": "先用 wf_template_list / wf_template_search 选择模板，检查 wf_template_run 生成的参数和脚本，再由宿主官方 workflow 工具执行。",
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "真正运行依赖 DSH 官方工作流能力与相关工具。",
+          "作者仓库的开发依赖使用相邻 dsh-src 检出的 link: 路径；Git 安装可能受影响，需由宿主安装检查。"
+        ]
+      },
+      "limitations": [
+        "模板库只提供引导素材，不是自动执行器。",
+        "模板适配性和模型任务成功需要单独验证。"
+      ],
+      "expectedName": "dsh-workflow-templates"
+    },
+    {
+      "id": "dsh-tool-workflow-plus",
+      "repository": "shuxidemosheng/dsh-tool-workflow-plus",
+      "title": "保存与复跑工作流",
+      "summary": "为官方工作流增加持久化脚本库，可保存、检索并带新参数复跑已确认的编排脚本。",
+      "capabilities": [
+        "workflow-orchestration",
+        "workflow-persistence"
+      ],
+      "keywords": [
+        "工作流",
+        "持久化",
+        "saved workflows",
+        "复跑",
+        "复用"
+      ],
+      "inputs": [
+        "工作流脚本和元数据",
+        "新任务参数"
+      ],
+      "outputs": [
+        "持久化工作流记录",
+        "工作流执行结果"
+      ],
+      "firstUse": "先查看已有工作流；仅保存已经检查并跑通的脚本，复跑前核对新参数和工具权限。",
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "需要宿主 workflow 引擎和 storageDomain 存储栈；声明 Node >=24。",
+          "默认与官方工具共存，不能假定自动替换官方 workflow。"
+        ]
+      },
+      "limitations": [
+        "保存脚本不代表任务已经完成，也不提供独立可视化编排与恢复。",
+        "首版不自动保存或运行任何第三方脚本。"
+      ],
+      "expectedName": "dsh-tool-workflow-plus"
+    },
+    {
+      "id": "dsh-plugin-git-workflow",
+      "repository": "truelove-dreamer/dsh-plugin-git-workflow",
+      "title": "结构化 Git 工具",
+      "summary": "提供 Git 状态、diff、日志、分支和提交工具，以结构化参数通过宿主 shell 执行器运行。",
+      "capabilities": [
+        "git-workflow"
+      ],
+      "keywords": [
+        "git",
+        "diff",
+        "commit",
+        "分支",
+        "版本控制"
+      ],
+      "inputs": [
+        "本地 Git 仓库",
+        "明确的操作参数"
+      ],
+      "outputs": [
+        "结构化 Git 状态与差异",
+        "显式确认后的本地提交"
+      ],
+      "firstUse": "先只读查看 git_status 和 git_diff；提交前确认路径、消息和已暂存内容。",
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "依赖 Git 与宿主 shell 执行器。",
+          "git_commit 是写操作，需要遵循宿主沙箱与审批。"
+        ]
+      },
+      "limitations": [
+        "不含 push / pull / rebase。",
+        "路径校验属于词法级；不能据此保证完整安全性。"
+      ],
+      "expectedName": "dsh-plugin-git-workflow"
+    }
+  ]
+}

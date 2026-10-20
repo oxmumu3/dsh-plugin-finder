@@ -1,7 +1,11 @@
 node_modules/
-dist/
+dist/*
+!dist/client.js
 .runtime/
 .DS_Store
 *.tgz
 *.log
+docs/sdk-contracts-notes.md
+docs/review-notes.md
+docs/catalog-review.md
 

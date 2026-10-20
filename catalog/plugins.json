@@ -1,0 +1,1862 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-20T06:35:56.375Z",
+  "title": "发现好插件 · 首版核对索引",
+  "scope": "A small curated set of native DSH bundles. Inclusion is not an endorsement, security certification, installation test, or task-success proof.",
+  "verificationPolicy": "metadata-only; author capability claims; installation/task/combination untested",
+  "plugins": [
+    {
+      "id": "dsh-data-insight",
+      "name": "dsh-data-insight",
+      "title": "数据分析报告",
+      "summary": "把 CSV、粘贴表格或 SQL 结果整理成带业务结论、指标和图表的 Markdown 报告；含分析 runbook 与数据画像。",
+      "authorDescription": "DSH (DeepSeek Harness) data-insight skill plugin: turn raw data (CSV / pasted table / SQL results / DuckDB) into a structured Markdown report with business conclusions, metrics and charts.",
+      "author": "duyanta123",
+      "repository": "https://github.com/duyanta123/dsh-data-insight",
+      "homepage": "https://github.com/duyanta123/dsh-data-insight#readme",
+      "license": "MIT",
+      "capabilities": [
+        "data-analysis",
+        "data-quality",
+        "report-writing"
+      ],
+      "keywords": [
+        "投放",
+        "周报",
+        "业务分析",
+        "指标",
+        "图表",
+        "dsh",
+        "dsh-plugin",
+        "deepseek-harness",
+        "data-analysis",
+        "data-insight",
+        "analytics",
+        "report",
+        "csv",
+        "duckdb",
+        "skills"
+      ],
+      "inputs": [
+        "CSV / 表格 / SQL 结果",
+        "业务问题与指标口径"
+      ],
+      "outputs": [
+        "数据画像",
+        "Markdown 分析报告"
+      ],
+      "firstUse": "请先确认输入文件与指标口径，按 data-insight 技能完成画像、分析与报告；明确缺失数据和不能成立的推断。",
+      "limitations": [
+        "业务口径、数据真实性和因果解释需要用户确认。",
+        "与其他数据插件的组合尚未实跑。"
+      ],
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "分析仍使用 DSH 中配置的模型；执行环境和可选 DuckDB 路径按作者文档配置。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": null,
+        "basis": "not-declared",
+        "node": null
+      },
+      "dependencies": {},
+      "peerDependencies": {
+        "@deepseek-ai/dsh-skill-filesystem": "*"
+      },
+      "optionalPeerDependencies": [
+        "@deepseek-ai/dsh-skill-filesystem"
+      ],
+      "install": {
+        "type": "git",
+        "version": "0.1.6",
+        "commit": "7331b3d40ac9a3d96af4ea79c94db4a1a8ab9ebb",
+        "repository": "https://github.com/duyanta123/dsh-data-insight",
+        "spec": "git+https://github.com/duyanta123/dsh-data-insight.git#7331b3d40ac9a3d96af4ea79c94db4a1a8ab9ebb",
+        "publishedAt": "2026-10-01T07:23:24Z",
+        "lifecycleScripts": [],
+        "readiness": "metadata-only",
+        "readinessReason": "固定提交中已找到声明的运行入口；仅确认文件存在，未检查依赖加载或运行效果。",
+        "entrypoints": [
+          {
+            "path": "plugin/index.js",
+            "url": "https://raw.githubusercontent.com/duyanta123/dsh-data-insight/7331b3d40ac9a3d96af4ea79c94db4a1a8ab9ebb/plugin/index.js",
+            "status": "present",
+            "checkedAt": "2026-10-20T06:35:53.579Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:53.579Z",
+        "manifestSha256": "3eefd3f0065f8fe3c76a9defa0fdc95fdb587245a6534708b4c6633277983049",
+        "readmeSha256": "dbc5ee2dfb0853f85bf9eecdc7f0a87f2d4e15278b0a8f95e875423ebae08a7e",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/duyanta123/dsh-data-insight/commit/7331b3d40ac9a3d96af4ea79c94db4a1a8ab9ebb"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/duyanta123/dsh-data-insight/blob/7331b3d40ac9a3d96af4ea79c94db4a1a8ab9ebb/package.json",
+            "sha256": "3eefd3f0065f8fe3c76a9defa0fdc95fdb587245a6534708b4c6633277983049"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/duyanta123/dsh-data-insight/blob/7331b3d40ac9a3d96af4ea79c94db4a1a8ab9ebb/README.md",
+            "sha256": "dbc5ee2dfb0853f85bf9eecdc7f0a87f2d4e15278b0a8f95e875423ebae08a7e"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/duyanta123/dsh-data-insight/blob/7331b3d40ac9a3d96af4ea79c94db4a1a8ab9ebb/cordis.patch.yml",
+            "sha256": "9377b304b9a782933cb4b1086413940886f79eb95f38db82ded92c77ffd458f3"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:53.579Z"
+      }
+    },
+    {
+      "id": "dsh-data-quality",
+      "name": "dsh-data-quality",
+      "title": "数据质量检查",
+      "summary": "提供确定性数据画像、缺失与重复检查、声明式清洗和验证，返回可追溯的数据质量报告。（固定 Git 源需构建确认）",
+      "authorDescription": "Deterministic data profiling, cleaning, and verification for DeepSeek Harness: a ctx.dataQuality capability seam (Service Definition / local Provider / tool Consumers) with data_profile, data_clean, and data_verify model tools, a frozen cross-plugin verifyCitations contract, durable reports in a storage domain, and data-quality/* session events on hosts that support them.",
+      "author": "dsh-data-quality contributors",
+      "repository": "https://github.com/PerryLink/dsh-data-quality",
+      "homepage": "https://github.com/PerryLink/dsh-data-quality#readme",
+      "license": "Apache-2.0",
+      "capabilities": [
+        "data-quality",
+        "data-analysis"
+      ],
+      "keywords": [
+        "csv",
+        "tsv",
+        "json",
+        "重复",
+        "缺失",
+        "异常",
+        "验证规则",
+        "dsh",
+        "dsh-plugin",
+        "deepseek-harness",
+        "cordis",
+        "data-quality",
+        "data-cleaning",
+        "data-profiling",
+        "data-verification"
+      ],
+      "inputs": [
+        "工作区 CSV / TSV / JSON / JSONL",
+        "清洗与校验规则"
+      ],
+      "outputs": [
+        "结构化质量报告",
+        "显式指定输出路径时生成清洗数据"
+      ],
+      "firstUse": "先用 data_profile 检查文件，再提出校验规则；未经确认不要清洗或写出数据。",
+      "limitations": [
+        "准确性分数需要声明 schema，不能由统计画像证明业务数据准确。",
+        "清洗和报告可能写入工作区或插件存储域。",
+        "固定源码提交缺少声明的运行入口 lib/index.js；Git 安装依赖 prepare 构建，需要宿主安装授权/构建确认，本项目未执行构建。"
+      ],
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [
+          "darwin",
+          "linux",
+          "win32"
+        ],
+        "notes": [
+          "默认单文件上限与行数上限以作者配置为准。",
+          "Git 安装包含 prepare 构建，宿主可能要求额外构建确认。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": ">=0.2.1-0 <0.3.0",
+        "basis": "engines.dsh",
+        "node": "^22.19.0 || >=24.0.0"
+      },
+      "dependencies": {
+        "zod": "4.4.3"
+      },
+      "peerDependencies": {
+        "@deepseek-ai/cordis": "^4.0.5-alpha.1",
+        "@deepseek-ai/dsh-session": ">=0.1.2-rc.1 <0.2.0 || >=0.1.5-alpha.1 <0.2.0 || >=0.1.6-0 <0.2.0 || >=0.1.7-0 <0.2.0 || >=0.2.0-0 <0.3.0 || >=0.2.1-0 <0.3.0",
+        "@deepseek-ai/dsh-storage": ">=0.1.2-rc.1 <0.2.0 || >=0.1.5-alpha.1 <0.2.0 || >=0.1.6-0 <0.2.0 || >=0.1.7-0 <0.2.0 || >=0.2.0-0 <0.3.0 || >=0.2.1-0 <0.3.0",
+        "@deepseek-ai/dsh-storage-domain": ">=0.1.2-rc.1 <0.2.0 || >=0.1.5-alpha.1 <0.2.0 || >=0.1.6-0 <0.2.0 || >=0.1.7-0 <0.2.0 || >=0.2.0-0 <0.3.0 || >=0.2.1-0 <0.3.0",
+        "@deepseek-ai/dsh-storage-json": ">=0.1.2-rc.1 <0.2.0 || >=0.1.5-alpha.1 <0.2.0 || >=0.1.6-0 <0.2.0 || >=0.1.7-0 <0.2.0 || >=0.2.0-0 <0.3.0 || >=0.2.1-0 <0.3.0",
+        "@deepseek-ai/dsh-tools": ">=0.1.2-rc.1 <0.2.0 || >=0.1.5-alpha.1 <0.2.0 || >=0.1.6-0 <0.2.0 || >=0.1.7-0 <0.2.0 || >=0.2.0-0 <0.3.0 || >=0.2.1-0 <0.3.0",
+        "@deepseek-ai/schemastery": "^3.18.5-alpha.1"
+      },
+      "optionalPeerDependencies": [],
+      "install": {
+        "type": "git",
+        "version": "0.3.23",
+        "commit": "285761a1def97cbbfa6ca5122f7fc17aa05fc375",
+        "repository": "https://github.com/PerryLink/dsh-data-quality",
+        "spec": "git+https://github.com/PerryLink/dsh-data-quality.git#285761a1def97cbbfa6ca5122f7fc17aa05fc375",
+        "publishedAt": "2026-10-20T04:19:06Z",
+        "lifecycleScripts": [
+          "prepare"
+        ],
+        "readiness": "source-build-required",
+        "readinessReason": "固定源码提交缺少声明的运行入口 lib/index.js；Git 安装依赖 prepare 构建，需要宿主安装授权/构建确认，本项目未执行构建。",
+        "entrypoints": [
+          {
+            "path": "lib/index.js",
+            "url": "https://raw.githubusercontent.com/PerryLink/dsh-data-quality/285761a1def97cbbfa6ca5122f7fc17aa05fc375/lib/index.js",
+            "status": "missing",
+            "checkedAt": "2026-10-20T06:35:53.571Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:53.571Z",
+        "manifestSha256": "eb1744425f43171efa2bdecf0acfa87d605c7c7cc035d89a7b2398f18ba40876",
+        "readmeSha256": "931b35d3ac6588a634d99d3e9a1fd8ebef1fedf421e6beadca9381b93ae2bd74",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/PerryLink/dsh-data-quality/commit/285761a1def97cbbfa6ca5122f7fc17aa05fc375"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/PerryLink/dsh-data-quality/blob/285761a1def97cbbfa6ca5122f7fc17aa05fc375/package.json",
+            "sha256": "eb1744425f43171efa2bdecf0acfa87d605c7c7cc035d89a7b2398f18ba40876"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/PerryLink/dsh-data-quality/blob/285761a1def97cbbfa6ca5122f7fc17aa05fc375/README.md",
+            "sha256": "931b35d3ac6588a634d99d3e9a1fd8ebef1fedf421e6beadca9381b93ae2bd74"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/PerryLink/dsh-data-quality/blob/285761a1def97cbbfa6ca5122f7fc17aa05fc375/cordis.patch.yml",
+            "sha256": "2f2af75e81511419cde121c6893e5866e5bd88ee4ff200b354ba94b6aabdaa8a"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:53.571Z"
+      }
+    },
+    {
+      "id": "dsh-research-report",
+      "name": "dsh-research-report",
+      "title": "可核查研究报告",
+      "summary": "把结论绑定到不可变证据快照并封存版本化研究报告；保留未核实、证据不足和冲突结论。（固定 Git 源需构建确认）",
+      "authorDescription": "Verifiable research-report engine for DeepSeek Harness: a content-addressed evidence ledger (claim — snapshot binding, tamper-evident) plus versioned sealed reports where every claim carries a verification verdict and the manifest hash seals the directory. Retrieval orchestration reuses the official ctx.web / ctx.jobs seams — no deep-research loop.",
+      "author": "dsh-research-report contributors",
+      "repository": "https://github.com/PerryLink/dsh-research-report",
+      "homepage": "https://github.com/PerryLink/dsh-research-report#readme",
+      "license": "Apache-2.0",
+      "capabilities": [
+        "evidence-ledger",
+        "report-writing"
+      ],
+      "keywords": [
+        "研究",
+        "来源",
+        "引用",
+        "核实",
+        "行业报告",
+        "dsh",
+        "dsh-plugin",
+        "deepseek-harness",
+        "cordis",
+        "research",
+        "evidence-ledger",
+        "verifiable-report",
+        "audit",
+        "citation-verification"
+      ],
+      "inputs": [
+        "来源文件或 URL",
+        "结论与证据引用",
+        "报告结构"
+      ],
+      "outputs": [
+        "证据台账",
+        "带核验状态的封存报告"
+      ],
+      "firstUse": "先用 evidence_add 保存来源，再将结论与证据 ID 绑定；检查未核实条目后再生成 research_report。",
+      "limitations": [
+        "字节或数字核对不能证明来源可信或语义推理正确。",
+        "不是自动深度研究搜索循环；检索和综合仍由会话负责。",
+        "固定源码提交缺少声明的运行入口 lib/index.js；Git 安装依赖 prepare 构建，需要宿主安装授权/构建确认，本项目未执行构建。"
+      ],
+      "requirements": {
+        "extraApiKey": "optional",
+        "platforms": [],
+        "notes": [
+          "本地证据台账不需要额外 Key；联网采集复用 ctx.web，其提供方可能需要账号或费用。",
+          "dsh-data-quality 是可选的数字核对桥接，不是必装依赖。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": ">=0.1.6-0 <0.2.0 || >=0.2.0-0 <0.3.0 || >=0.2.1-0 <0.3.0",
+        "basis": "engines.dsh",
+        "node": "^22.19.0 || >=24.0.0"
+      },
+      "dependencies": {},
+      "peerDependencies": {
+        "@deepseek-ai/cordis": "^4.0.5-alpha.1",
+        "dsh-data-quality": ">=0.1.0 <0.4.0",
+        "@deepseek-ai/dsh-jobs": ">=0.1.6-0 <0.2.0 || >=0.2.0-0 <0.3.0 || >=0.2.1-0 <0.3.0",
+        "@deepseek-ai/dsh-session": ">=0.1.6-0 <0.2.0 || >=0.2.0-0 <0.3.0 || >=0.2.1-0 <0.3.0",
+        "@deepseek-ai/dsh-system-prompt": ">=0.1.6-0 <0.2.0 || >=0.2.0-0 <0.3.0 || >=0.2.1-0 <0.3.0",
+        "@deepseek-ai/dsh-tools": ">=0.1.6-0 <0.2.0 || >=0.2.0-0 <0.3.0 || >=0.2.1-0 <0.3.0",
+        "@deepseek-ai/dsh-web": ">=0.1.6-0 <0.2.0 || >=0.2.0-0 <0.3.0 || >=0.2.1-0 <0.3.0",
+        "@deepseek-ai/schemastery": "^3.18.5-alpha.1"
+      },
+      "optionalPeerDependencies": [
+        "dsh-data-quality"
+      ],
+      "install": {
+        "type": "git",
+        "version": "0.3.29",
+        "commit": "3d816dd0b14f0f3cc8d83232f1ba6d27268b28ed",
+        "repository": "https://github.com/PerryLink/dsh-research-report",
+        "spec": "git+https://github.com/PerryLink/dsh-research-report.git#3d816dd0b14f0f3cc8d83232f1ba6d27268b28ed",
+        "publishedAt": "2026-10-20T04:19:42Z",
+        "lifecycleScripts": [
+          "prepare"
+        ],
+        "readiness": "source-build-required",
+        "readinessReason": "固定源码提交缺少声明的运行入口 lib/index.js；Git 安装依赖 prepare 构建，需要宿主安装授权/构建确认，本项目未执行构建。",
+        "entrypoints": [
+          {
+            "path": "lib/index.js",
+            "url": "https://raw.githubusercontent.com/PerryLink/dsh-research-report/3d816dd0b14f0f3cc8d83232f1ba6d27268b28ed/lib/index.js",
+            "status": "missing",
+            "checkedAt": "2026-10-20T06:35:53.478Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:53.478Z",
+        "manifestSha256": "90143f4e4dab059db653c20d63340f85b9a3c653b8e330b7069ec46098cc3d73",
+        "readmeSha256": "cd485c7a9e492535dd0c17eb8193885227651e45ff11ea32e1703ec8d5029c8a",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/PerryLink/dsh-research-report/commit/3d816dd0b14f0f3cc8d83232f1ba6d27268b28ed"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/PerryLink/dsh-research-report/blob/3d816dd0b14f0f3cc8d83232f1ba6d27268b28ed/package.json",
+            "sha256": "90143f4e4dab059db653c20d63340f85b9a3c653b8e330b7069ec46098cc3d73"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/PerryLink/dsh-research-report/blob/3d816dd0b14f0f3cc8d83232f1ba6d27268b28ed/README.md",
+            "sha256": "cd485c7a9e492535dd0c17eb8193885227651e45ff11ea32e1703ec8d5029c8a"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/PerryLink/dsh-research-report/blob/3d816dd0b14f0f3cc8d83232f1ba6d27268b28ed/cordis.patch.yml",
+            "sha256": "7cc3f5669d8cba38c60301a3241f2b77ab782aabc3a335ee21b77c6ad22f1316"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:53.478Z"
+      }
+    },
+    {
+      "id": "f1star-dsh-research",
+      "name": "@f1star/dsh-research",
+      "title": "PDF 科研工作区",
+      "summary": "归档本地 PDF、保留页码和原文锚点，管理论文库、阅读笔记、研究证据与报告。",
+      "authorDescription": "A DeepSeek Harness research workspace with archived PDF reading, optional OCR, human review, cited reports, and recoverable research tasks.",
+      "author": "F1star",
+      "repository": "https://github.com/F1star/dsh-research",
+      "homepage": "https://github.com/F1star/dsh-research#readme",
+      "license": "MIT",
+      "capabilities": [
+        "pdf-reading",
+        "evidence-ledger",
+        "report-writing"
+      ],
+      "keywords": [
+        "论文",
+        "文献库",
+        "pdf",
+        "引用",
+        "科研",
+        "dsh-plugin",
+        "deepseek-harness",
+        "research",
+        "paper-reading",
+        "literature-review",
+        "evidence-synthesis"
+      ],
+      "inputs": [
+        "本地 PDF 文件",
+        "研究问题"
+      ],
+      "outputs": [
+        "带页码阅读包",
+        "论文库与证据记录",
+        "Markdown / LaTeX / BibTeX 导出"
+      ],
+      "firstUse": "导入一份 PDF 并生成带物理页码的阅读包，核对原文后再将结论登记到论文库。",
+      "limitations": [
+        "所声明 DSH peer 范围较旧，当前宿主可能不兼容。",
+        "扫描 PDF 的 OCR 属于可选能力，不能默认宣称可用。"
+      ],
+      "requirements": {
+        "extraApiKey": "optional",
+        "platforms": [],
+        "notes": [
+          "默认 PDF 读取不需要 Python；可选 OCR 需要额外部署。",
+          "0.4 的存储格式不能直接读取 0.3 数据；作者建议独立存储。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": [
+          "^0.1.1-rc.2"
+        ],
+        "basis": "dsh-peer-dependencies-intersection",
+        "node": "^22.19.0 || >=24.0.0"
+      },
+      "dependencies": {
+        "@citation-js/core": "^0.8.2",
+        "@citation-js/plugin-bibtex": "^0.8.2",
+        "decimal.js": "^10.6.0",
+        "fast-json-stable-stringify": "^2.1.0",
+        "pdfjs-dist": "^6.3.289",
+        "zod": "^4.4.3"
+      },
+      "peerDependencies": {
+        "@deepseek-ai/cordis": "^4.0.2",
+        "@deepseek-ai/dsh-agent": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-agent-default-model": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-agent-presets": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-api-remotes": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-brand": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-client-runtime": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-client-ui-sidebar": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-fs": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-invariants": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-llm": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-session": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-session-persistence": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-storage-domain": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-subprocess": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-system-prompt": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-tools": "^0.1.1-rc.2",
+        "@deepseek-ai/dsh-typert-protocol": "^0.1.1-rc.2",
+        "@deepseek-ai/schemastery": "^3.18.2"
+      },
+      "optionalPeerDependencies": [],
+      "install": {
+        "type": "git",
+        "version": "0.4.0",
+        "commit": "c27d31a01361f418ec596f39b71b717d9b8e2100",
+        "repository": "https://github.com/F1star/dsh-research",
+        "spec": "git+https://github.com/F1star/dsh-research.git#c27d31a01361f418ec596f39b71b717d9b8e2100",
+        "publishedAt": "2026-09-09T01:49:35Z",
+        "lifecycleScripts": [],
+        "readiness": "metadata-only",
+        "readinessReason": "固定提交中已找到声明的运行入口；仅确认文件存在，未检查依赖加载或运行效果。",
+        "entrypoints": [
+          {
+            "path": "lib/index.js",
+            "url": "https://raw.githubusercontent.com/F1star/dsh-research/c27d31a01361f418ec596f39b71b717d9b8e2100/lib/index.js",
+            "status": "present",
+            "checkedAt": "2026-10-20T06:35:54.095Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:54.095Z",
+        "manifestSha256": "4efd9c418f20c04f473181829c45169c8fa275d1c24f27e41db0ddc50eb03d99",
+        "readmeSha256": "eeefb2fd47430e325699bc06e52f432cddd46a2d97a1fd728534269d30ed06ab",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/F1star/dsh-research/commit/c27d31a01361f418ec596f39b71b717d9b8e2100"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/F1star/dsh-research/blob/c27d31a01361f418ec596f39b71b717d9b8e2100/package.json",
+            "sha256": "4efd9c418f20c04f473181829c45169c8fa275d1c24f27e41db0ddc50eb03d99"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/F1star/dsh-research/blob/c27d31a01361f418ec596f39b71b717d9b8e2100/README.md",
+            "sha256": "eeefb2fd47430e325699bc06e52f432cddd46a2d97a1fd728534269d30ed06ab"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/F1star/dsh-research/blob/c27d31a01361f418ec596f39b71b717d9b8e2100/cordis.patch.yml",
+            "sha256": "1961bb3c015933fea113874fa51bc82d11cf7b89b46837bba18bc2ed60ef4cb1"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:54.095Z"
+      }
+    },
+    {
+      "id": "dsh-lit-search",
+      "name": "dsh-lit-search",
+      "title": "学术文献检索",
+      "summary": "通过 Crossref 和 OpenAlex 检索论文、发现相关工作并生成格式化引用。",
+      "authorDescription": "Academic literature search, citation and BibTeX tools for DeepSeek Harness and any agent (Crossref + OpenAlex + Semantic Scholar).",
+      "author": "Flan246",
+      "repository": "https://github.com/Flan246/dsh-lit-search",
+      "homepage": "https://github.com/Flan246/dsh-lit-search#readme",
+      "license": "MIT",
+      "capabilities": [
+        "literature-search"
+      ],
+      "keywords": [
+        "论文",
+        "学术",
+        "文献",
+        "doi",
+        "引用格式",
+        "bibtex",
+        "deepseek-harness",
+        "dsh-plugin",
+        "literature",
+        "citation",
+        "crossref",
+        "openalex",
+        "semantic-scholar"
+      ],
+      "inputs": [
+        "检索词 / DOI",
+        "引用格式"
+      ],
+      "outputs": [
+        "论文元数据",
+        "相关工作候选",
+        "格式化引用"
+      ],
+      "firstUse": "按研究问题检索文献，保留 DOI 与原始元数据，再生成所需格式的引用。",
+      "limitations": [
+        "元数据和相关工作候选不等于全文阅读或证据核验。"
+      ],
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "依赖公共 Crossref / OpenAlex 网络服务；免 Key 不等于没有服务限流。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": [
+          "^0.1.1-rc.1"
+        ],
+        "basis": "dsh-peer-dependencies-intersection",
+        "node": ">=20"
+      },
+      "dependencies": {
+        "commander": "^14.0.0",
+        "undici": "^7.29.0"
+      },
+      "peerDependencies": {
+        "@deepseek-ai/cordis": "^4.0.1",
+        "@deepseek-ai/dsh-tools": "^0.1.1-rc.1"
+      },
+      "optionalPeerDependencies": [
+        "@deepseek-ai/cordis",
+        "@deepseek-ai/dsh-tools"
+      ],
+      "install": {
+        "type": "git",
+        "version": "0.2.2",
+        "commit": "2a377b1fc0f930362a18b8e0c4851bcfd9807c38",
+        "repository": "https://github.com/Flan246/dsh-lit-search",
+        "spec": "git+https://github.com/Flan246/dsh-lit-search.git#2a377b1fc0f930362a18b8e0c4851bcfd9807c38",
+        "publishedAt": "2026-10-13T08:50:49Z",
+        "lifecycleScripts": [],
+        "readiness": "metadata-only",
+        "readinessReason": "固定提交中已找到声明的运行入口；仅确认文件存在，未检查依赖加载或运行效果。",
+        "entrypoints": [
+          {
+            "path": "dist/plugin.js",
+            "url": "https://raw.githubusercontent.com/Flan246/dsh-lit-search/2a377b1fc0f930362a18b8e0c4851bcfd9807c38/dist/plugin.js",
+            "status": "present",
+            "checkedAt": "2026-10-20T06:35:53.955Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:53.955Z",
+        "manifestSha256": "fcc5ca7773acd2ee1f3da82266396c4112406316e2bb4f40557ac5160ed5c904",
+        "readmeSha256": "5d4767735a2768905f5f3b18f00e9b24e818cd05464a60ccea8b50185422e6eb",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/Flan246/dsh-lit-search/commit/2a377b1fc0f930362a18b8e0c4851bcfd9807c38"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/Flan246/dsh-lit-search/blob/2a377b1fc0f930362a18b8e0c4851bcfd9807c38/package.json",
+            "sha256": "fcc5ca7773acd2ee1f3da82266396c4112406316e2bb4f40557ac5160ed5c904"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/Flan246/dsh-lit-search/blob/2a377b1fc0f930362a18b8e0c4851bcfd9807c38/README.md",
+            "sha256": "5d4767735a2768905f5f3b18f00e9b24e818cd05464a60ccea8b50185422e6eb"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/Flan246/dsh-lit-search/blob/2a377b1fc0f930362a18b8e0c4851bcfd9807c38/cordis.patch.yml",
+            "sha256": "9aee9ab68ff8ebce3f8d4fd9391329d8b9a8d05897f128d3268a3e0eaf2b3e1f"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:53.955Z"
+      }
+    },
+    {
+      "id": "dsh-context7",
+      "name": "dsh-mcp-context7",
+      "title": "Context7 库文档查询",
+      "summary": "接入 Context7 托管 MCP，按库与版本查找开发文档和示例。",
+      "authorDescription": "Context7 MCP for DeepSeek Harness: up-to-date library documentation and code examples",
+      "author": "elkaix",
+      "repository": "https://github.com/PyModel/dsh-research-plugins",
+      "homepage": "https://github.com/PyModel/dsh-research-plugins/tree/main/packages/dsh-mcp-context7#readme",
+      "license": "MIT",
+      "capabilities": [
+        "library-docs"
+      ],
+      "keywords": [
+        "context7",
+        "开发文档",
+        "api文档",
+        "依赖库",
+        "版本",
+        "dsh-plugin",
+        "deepseek-harness",
+        "mcp",
+        "documentation"
+      ],
+      "inputs": [
+        "库名与版本",
+        "具体开发问题"
+      ],
+      "outputs": [
+        "相关库文档片段与示例"
+      ],
+      "firstUse": "先解析目标库，再查询与项目版本一致的文档；明确文档版本和来源。",
+      "limitations": [
+        "第三方文档检索结果不代替项目中的实际验证。"
+      ],
+      "requirements": {
+        "extraApiKey": "optional",
+        "platforms": [],
+        "notes": [
+          "作者说明默认免 Key，可配置 Key；托管服务可能限流。",
+          "查询内容会发送给 Context7 服务。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": ">=0.1.5-rc.2 <0.3.0-0",
+        "basis": "engines.dsh",
+        "node": null
+      },
+      "dependencies": {},
+      "peerDependencies": {},
+      "optionalPeerDependencies": [],
+      "install": {
+        "type": "git",
+        "version": "0.3.0",
+        "commit": "19db055efedef3d87962fda35b7f692eed98c403",
+        "repository": "https://github.com/PyModel/dsh-research-plugins",
+        "path": "packages/dsh-mcp-context7",
+        "spec": "git+https://github.com/PyModel/dsh-research-plugins.git#19db055efedef3d87962fda35b7f692eed98c403&path:/packages/dsh-mcp-context7",
+        "publishedAt": "2026-10-15T23:43:57Z",
+        "lifecycleScripts": [],
+        "readiness": "metadata-only",
+        "readinessReason": "该包没有声明 JavaScript 主入口；已核对 bundle patch，尚未安装或启动。",
+        "entrypoints": []
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:54.146Z",
+        "manifestSha256": "01ccc42ec0d5225d16c21fd6a802a8448b5385361c2442a37ee25cf24c28afec",
+        "readmeSha256": "64a0523dccb0fa1cfb3f341045e7169d090d719bc9f5a3bb7cc2e97fa07e1e16",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/PyModel/dsh-research-plugins/commit/19db055efedef3d87962fda35b7f692eed98c403"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/PyModel/dsh-research-plugins/blob/19db055efedef3d87962fda35b7f692eed98c403/packages/dsh-mcp-context7/package.json",
+            "sha256": "01ccc42ec0d5225d16c21fd6a802a8448b5385361c2442a37ee25cf24c28afec"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/PyModel/dsh-research-plugins/blob/19db055efedef3d87962fda35b7f692eed98c403/README.md",
+            "sha256": "64a0523dccb0fa1cfb3f341045e7169d090d719bc9f5a3bb7cc2e97fa07e1e16"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/PyModel/dsh-research-plugins/blob/19db055efedef3d87962fda35b7f692eed98c403/packages/dsh-mcp-context7/cordis.patch.yml",
+            "sha256": "90ca0b93e25254885a93a0654b1210850326b2118253bba222728a3b7f57c9b0"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:54.146Z"
+      }
+    },
+    {
+      "id": "dsh-tavily",
+      "name": "@pymodel/dsh-tavily",
+      "title": "Tavily 网页搜索",
+      "summary": "将 Tavily 搜索接入 DSH 的网页搜索服务，用于检索网页和研究资料。",
+      "authorDescription": "Tavily web search for DSH (keyless or keyed, official DeepSeek when off) plus the Tavily MCP: search, extract, crawl, map, research",
+      "author": "elkaix",
+      "repository": "https://github.com/PyModel/dsh-research-plugins",
+      "homepage": "https://github.com/PyModel/dsh-research-plugins/tree/main/packages/dsh-tavily#readme",
+      "license": "MIT",
+      "capabilities": [
+        "web-search",
+        "web-fetch"
+      ],
+      "keywords": [
+        "tavily",
+        "网页搜索",
+        "联网",
+        "竞品研究",
+        "research",
+        "dsh-plugin",
+        "deepseek-harness",
+        "web-search",
+        "mcp"
+      ],
+      "inputs": [
+        "搜索问题与过滤条件"
+      ],
+      "outputs": [
+        "网页检索结果与来源链接"
+      ],
+      "firstUse": "先用免 Key 的搜索或提取入口检索一个明确问题，保留原始来源链接；只有需要 crawl / map / research 时才配置额外凭据。",
+      "limitations": [
+        "搜索结果只是候选资料，需要继续读取和核对原文。",
+        "本轮没有实测第三方免 Key 端点。"
+      ],
+      "requirements": {
+        "extraApiKey": "optional",
+        "platforms": [],
+        "notes": [
+          "作者声明 search / extract 支持免 Key；crawl / map / research 需要 Tavily API Key，第三方费用不由 DSH 模型额度覆盖。",
+          "搜索问题发送给 Tavily 服务；免 Key 仍可能限流。",
+          "安装会修改 ctx.web 的搜索提供方配置；已有同名 MCP loader row 可能冲突，安装前核对。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": ">=0.1.5-rc.2 <0.3.0-0",
+        "basis": "engines.dsh",
+        "node": null
+      },
+      "dependencies": {
+        "@deepseek-ai/schemastery": "^3.18.1"
+      },
+      "peerDependencies": {
+        "@deepseek-ai/cordis": ">=4.0.1 <5.0.0-0",
+        "@deepseek-ai/dsh-credentials": ">=0.1.5-rc.2 <0.3.0-0",
+        "@deepseek-ai/dsh-launch-environment": ">=0.1.5-rc.2 <0.3.0-0",
+        "@deepseek-ai/dsh-web": ">=0.1.5-rc.2 <0.3.0-0"
+      },
+      "optionalPeerDependencies": [],
+      "install": {
+        "type": "git",
+        "version": "0.4.0",
+        "commit": "19db055efedef3d87962fda35b7f692eed98c403",
+        "repository": "https://github.com/PyModel/dsh-research-plugins",
+        "path": "packages/dsh-tavily",
+        "spec": "git+https://github.com/PyModel/dsh-research-plugins.git#19db055efedef3d87962fda35b7f692eed98c403&path:/packages/dsh-tavily",
+        "publishedAt": "2026-10-15T23:43:57Z",
+        "lifecycleScripts": [],
+        "readiness": "metadata-only",
+        "readinessReason": "固定提交中已找到声明的运行入口；仅确认文件存在，未检查依赖加载或运行效果。",
+        "entrypoints": [
+          {
+            "path": "lib/index.js",
+            "url": "https://raw.githubusercontent.com/PyModel/dsh-research-plugins/19db055efedef3d87962fda35b7f692eed98c403/packages/dsh-tavily/lib/index.js",
+            "status": "present",
+            "checkedAt": "2026-10-20T06:35:55.239Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:55.239Z",
+        "manifestSha256": "03b86730a48a69f151a3d44ccebc6c30a047584eb45c5018440158a5b1795079",
+        "readmeSha256": "64a0523dccb0fa1cfb3f341045e7169d090d719bc9f5a3bb7cc2e97fa07e1e16",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/PyModel/dsh-research-plugins/commit/19db055efedef3d87962fda35b7f692eed98c403"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/PyModel/dsh-research-plugins/blob/19db055efedef3d87962fda35b7f692eed98c403/packages/dsh-tavily/package.json",
+            "sha256": "03b86730a48a69f151a3d44ccebc6c30a047584eb45c5018440158a5b1795079"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/PyModel/dsh-research-plugins/blob/19db055efedef3d87962fda35b7f692eed98c403/README.md",
+            "sha256": "64a0523dccb0fa1cfb3f341045e7169d090d719bc9f5a3bb7cc2e97fa07e1e16"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/PyModel/dsh-research-plugins/blob/19db055efedef3d87962fda35b7f692eed98c403/packages/dsh-tavily/cordis.patch.yml",
+            "sha256": "8a735a91a29571e978f6fdadd1b553e8dcb3dcdc9345507cd13e78b155c3f719"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:55.239Z"
+      }
+    },
+    {
+      "id": "dsh-tool-browser",
+      "name": "@yuehancn/dsh-tool-browser",
+      "title": "网页读取与浏览器工具",
+      "summary": "打开网页、等待页面状态、提取可读正文和截图；缺少 Playwright 时降级为静态抓取并声明限制。",
+      "authorDescription": "Browser tools for DeepSeek Harness: open a page, wait for it the way it actually needs, pull out the readable article, and take a screenshot. Uses Playwright when it is installed and falls back to a static fetch that says so, so an unrendered page is never mistaken for an empty one.",
+      "author": "yuehancn",
+      "repository": "https://github.com/yuehancn/dsh-tool-browser",
+      "homepage": "https://github.com/yuehancn/dsh-tool-browser#readme",
+      "license": "MIT",
+      "capabilities": [
+        "web-fetch",
+        "browser-automation"
+      ],
+      "keywords": [
+        "网页",
+        "浏览器",
+        "正文",
+        "截图",
+        "动态页面",
+        "dsh-plugin",
+        "deepseek-harness",
+        "browser",
+        "playwright",
+        "scraping",
+        "readability",
+        "extract",
+        "screenshot",
+        "wait-strategy",
+        "mcp",
+        "网页抓取"
+      ],
+      "inputs": [
+        "公开网页 URL",
+        "等待或提取条件"
+      ],
+      "outputs": [
+        "正文与页面状态",
+        "可选截图"
+      ],
+      "firstUse": "先读取一份公开页面并检查结果是否声明静态抓取；只有浏览器依赖可用时再处理动态页面。",
+      "limitations": [
+        "静态回退没有执行 JavaScript，不能当作动态页面观察。",
+        "首版仅核对文档，没有验证登录态或复杂交互。"
+      ],
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "动态渲染与截图依赖可选 Playwright 和浏览器安装。",
+          "页面 URL 和内容会经网络读取。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": ">=0.2.0-rc.2",
+        "basis": "engines.dsh",
+        "node": null
+      },
+      "dependencies": {
+        "@deepseek-ai/schemastery": "~3.18.4"
+      },
+      "peerDependencies": {
+        "@deepseek-ai/cordis": "~4.0.4",
+        "@deepseek-ai/dsh-tools": ">=0.2.0-rc.2"
+      },
+      "optionalPeerDependencies": [
+        "playwright"
+      ],
+      "install": {
+        "type": "git",
+        "version": "1.0.0",
+        "commit": "bfbd511ecc19e51c061eb9664c456f119f89b8a2",
+        "repository": "https://github.com/yuehancn/dsh-tool-browser",
+        "spec": "git+https://github.com/yuehancn/dsh-tool-browser.git#bfbd511ecc19e51c061eb9664c456f119f89b8a2",
+        "publishedAt": "2026-10-20T04:08:10Z",
+        "lifecycleScripts": [],
+        "readiness": "metadata-only",
+        "readinessReason": "固定提交中已找到声明的运行入口；仅确认文件存在，未检查依赖加载或运行效果。",
+        "entrypoints": [
+          {
+            "path": "lib/index.js",
+            "url": "https://raw.githubusercontent.com/yuehancn/dsh-tool-browser/bfbd511ecc19e51c061eb9664c456f119f89b8a2/lib/index.js",
+            "status": "present",
+            "checkedAt": "2026-10-20T06:35:54.471Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:54.471Z",
+        "manifestSha256": "b7884212baec6a10b5eb2766c24d2f15fa34d16519dd344eb93e22d44cbd4ebe",
+        "readmeSha256": "3d1bbc0a6f5a070c6e9ee90f416bba8a267e44d3ef7ff90deec17bd94256a797",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/yuehancn/dsh-tool-browser/commit/bfbd511ecc19e51c061eb9664c456f119f89b8a2"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/yuehancn/dsh-tool-browser/blob/bfbd511ecc19e51c061eb9664c456f119f89b8a2/package.json",
+            "sha256": "b7884212baec6a10b5eb2766c24d2f15fa34d16519dd344eb93e22d44cbd4ebe"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/yuehancn/dsh-tool-browser/blob/bfbd511ecc19e51c061eb9664c456f119f89b8a2/README.md",
+            "sha256": "3d1bbc0a6f5a070c6e9ee90f416bba8a267e44d3ef7ff90deec17bd94256a797"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/yuehancn/dsh-tool-browser/blob/bfbd511ecc19e51c061eb9664c456f119f89b8a2/cordis.patch.yml",
+            "sha256": "d295668e01d3570aab9c523c27eec605bab86eb323ad8625cc27fe11ab9e9748"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:54.471Z"
+      }
+    },
+    {
+      "id": "dsh-command-code-review",
+      "name": "dsh-command-code-review",
+      "title": "多视角代码审查",
+      "summary": "以 /code-review 发起代码审查，通过多个审查视角与逐项置信度筛选结果，覆盖 PR 和本地改动。",
+      "authorDescription": "/code-review slash command for DeepSeek Harness — multi-agent review of pull requests and local code, with configurable confidence scoring",
+      "author": "JasonFreeLab",
+      "repository": "https://github.com/JasonFreeLab/dsh-command-code-review",
+      "homepage": "https://github.com/JasonFreeLab/dsh-command-code-review#readme",
+      "license": "MIT",
+      "capabilities": [
+        "code-review"
+      ],
+      "keywords": [
+        "代码",
+        "审查",
+        "git diff",
+        "pull request",
+        "多视角",
+        "deepseek",
+        "harness",
+        "dsh",
+        "dsh-plugin",
+        "code-review",
+        "pull-request",
+        "slash-command"
+      ],
+      "inputs": [
+        "PR 或本地 Git 改动",
+        "审查要求"
+      ],
+      "outputs": [
+        "分级审查发现与置信度"
+      ],
+      "firstUse": "先限定本地变更或 PR 范围，再执行 /code-review；逐条核对发现是否与本次改动有关。",
+      "limitations": [
+        "不能把模型给出的置信度当作缺陷真实性证明。"
+      ],
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "使用 DSH 会话与子 Agent；远程 PR 可能需要已有 GitHub CLI 认证。",
+          "并行审查会增加宿主模型调用量。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": "^0.2.1-rc.2",
+        "basis": "engines.dsh",
+        "node": ">=20"
+      },
+      "dependencies": {},
+      "peerDependencies": {
+        "@deepseek-ai/cordis": "^4.0.5",
+        "@deepseek-ai/dsh-commands": "^0.2.1-rc.2",
+        "@deepseek-ai/dsh-llm": "^0.2.1-rc.2",
+        "@deepseek-ai/schemastery": "^3.18.5"
+      },
+      "optionalPeerDependencies": [],
+      "install": {
+        "type": "git",
+        "version": "0.5.0",
+        "commit": "e821fbb4c606f06b1d06fe6ef1536688eec3b1fc",
+        "repository": "https://github.com/JasonFreeLab/dsh-command-code-review",
+        "spec": "git+https://github.com/JasonFreeLab/dsh-command-code-review.git#e821fbb4c606f06b1d06fe6ef1536688eec3b1fc",
+        "publishedAt": "2026-10-19T09:59:59Z",
+        "lifecycleScripts": [],
+        "readiness": "metadata-only",
+        "readinessReason": "固定提交中已找到声明的运行入口；仅确认文件存在，未检查依赖加载或运行效果。",
+        "entrypoints": [
+          {
+            "path": "lib/index.js",
+            "url": "https://raw.githubusercontent.com/JasonFreeLab/dsh-command-code-review/e821fbb4c606f06b1d06fe6ef1536688eec3b1fc/lib/index.js",
+            "status": "present",
+            "checkedAt": "2026-10-20T06:35:54.625Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:54.625Z",
+        "manifestSha256": "a1c07d9f2d395547966a5bac004eaae5beb53466ebe581bd70522ccd85840ec5",
+        "readmeSha256": "39e8a59a687a402f2f3dfd605176b1a1ac9c01618dc7a222eb2e40668b5ff853",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/JasonFreeLab/dsh-command-code-review/commit/e821fbb4c606f06b1d06fe6ef1536688eec3b1fc"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/JasonFreeLab/dsh-command-code-review/blob/e821fbb4c606f06b1d06fe6ef1536688eec3b1fc/package.json",
+            "sha256": "a1c07d9f2d395547966a5bac004eaae5beb53466ebe581bd70522ccd85840ec5"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/JasonFreeLab/dsh-command-code-review/blob/e821fbb4c606f06b1d06fe6ef1536688eec3b1fc/README.md",
+            "sha256": "39e8a59a687a402f2f3dfd605176b1a1ac9c01618dc7a222eb2e40668b5ff853"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/JasonFreeLab/dsh-command-code-review/blob/e821fbb4c606f06b1d06fe6ef1536688eec3b1fc/cordis.patch.yml",
+            "sha256": "e387922d322a17d87104ce933127e4a1c510cfb90dcf41666a6e42c60811089a"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:54.625Z"
+      }
+    },
+    {
+      "id": "dsh-code-review-feng",
+      "name": "@feng0531/dsh-code-review",
+      "title": "Git / SVN 只读审查",
+      "summary": "预览 Git 或 SVN 变更和显式上下文，并通过经审批的当前 DSH Agent 模型请求生成审查意见。",
+      "authorDescription": "Read-only Git/SVN code review for DSH",
+      "author": "f-e-n-g-0531",
+      "repository": "https://github.com/f-e-n-g-0531/dsh-code-review",
+      "homepage": "https://github.com/f-e-n-g-0531/dsh-code-review#readme",
+      "license": "SEE LICENSE IN LICENSE",
+      "capabilities": [
+        "code-review"
+      ],
+      "keywords": [
+        "代码审查",
+        "git",
+        "svn",
+        "只读",
+        "变更预览"
+      ],
+      "inputs": [
+        "Git / SVN 工作副本",
+        "审查范围与上下文"
+      ],
+      "outputs": [
+        "变更预览",
+        "代码审查意见"
+      ],
+      "firstUse": "先预览变更范围与将发送给模型的上下文，确认后才请求模型审查。",
+      "limitations": [
+        "只读审查不自动修改代码；模型发现仍需复现和人工判断。"
+      ],
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "需要本地 Git 或 SVN。",
+          "审查使用当前 Agent 的模型请求能力和宿主审批。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": null,
+        "basis": "not-declared",
+        "node": ">=22"
+      },
+      "dependencies": {
+        "fast-xml-parser": "5.11.2"
+      },
+      "peerDependencies": {},
+      "optionalPeerDependencies": [],
+      "install": {
+        "type": "git",
+        "version": "0.85.1",
+        "commit": "36f5870c36665b693382557bd41859a2c591d5b2",
+        "repository": "https://github.com/f-e-n-g-0531/dsh-code-review",
+        "spec": "git+https://github.com/f-e-n-g-0531/dsh-code-review.git#36f5870c36665b693382557bd41859a2c591d5b2",
+        "publishedAt": "2026-10-19T08:30:12Z",
+        "lifecycleScripts": [],
+        "readiness": "metadata-only",
+        "readinessReason": "固定提交中已找到声明的运行入口；仅确认文件存在，未检查依赖加载或运行效果。",
+        "entrypoints": [
+          {
+            "path": "index.mjs",
+            "url": "https://raw.githubusercontent.com/f-e-n-g-0531/dsh-code-review/36f5870c36665b693382557bd41859a2c591d5b2/index.mjs",
+            "status": "present",
+            "checkedAt": "2026-10-20T06:35:55.699Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:55.699Z",
+        "manifestSha256": "cde43004e962b70934a2cf98dc668eb54ef16967f6020c43dcfe89c623cf9f01",
+        "readmeSha256": "d49326994c9cb97d349cd47fcc04bb0a2db54899e317a7777ad4778b5db4258c",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/f-e-n-g-0531/dsh-code-review/commit/36f5870c36665b693382557bd41859a2c591d5b2"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/f-e-n-g-0531/dsh-code-review/blob/36f5870c36665b693382557bd41859a2c591d5b2/package.json",
+            "sha256": "cde43004e962b70934a2cf98dc668eb54ef16967f6020c43dcfe89c623cf9f01"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/f-e-n-g-0531/dsh-code-review/blob/36f5870c36665b693382557bd41859a2c591d5b2/README.md",
+            "sha256": "d49326994c9cb97d349cd47fcc04bb0a2db54899e317a7777ad4778b5db4258c"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/f-e-n-g-0531/dsh-code-review/blob/36f5870c36665b693382557bd41859a2c591d5b2/cordis.patch.yml",
+            "sha256": "0e378ee41ba2cc26b212a2ade0999cfd7c985dc9228c65c68110b29dec8b0b07"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:55.699Z"
+      }
+    },
+    {
+      "id": "dsh-open-code-review",
+      "name": "@ashllll/dsh-open-code-review",
+      "title": "规则驱动代码审查",
+      "summary": "解析审查范围和规则，用 Open Code Review 的审查流程组织当前 DSH 模型完成代码检查。",
+      "authorDescription": "DeepSeek Harness plugin for Open Code Review: deterministic review scope, rule resolution, and line-level findings for DSH agents.",
+      "author": "ashllll",
+      "repository": "https://github.com/ashllll/dsh-open-code-review",
+      "homepage": "https://github.com/ashllll/dsh-open-code-review",
+      "license": "Apache-2.0",
+      "capabilities": [
+        "code-review"
+      ],
+      "keywords": [
+        "代码",
+        "规则",
+        "审查",
+        "open code review",
+        "dsh-plugin",
+        "deepseek-harness",
+        "dsh",
+        "cordis-plugin",
+        "code-review",
+        "open-code-review",
+        "ocr"
+      ],
+      "inputs": [
+        "代码仓库与审查范围",
+        "审查规则"
+      ],
+      "outputs": [
+        "结构化审查发现"
+      ],
+      "firstUse": "先确认审查范围和适用规则，使用项目已有模型完成审查，保留问题所在文件与行号。",
+      "limitations": [
+        "规则解析和模型审查属于不同环节，实际缺陷需验证。"
+      ],
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "默认通过 DSH 模型判断；不额外要求模型 API Key。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": [
+          ">=0.1.5-rc.1"
+        ],
+        "basis": "dsh-peer-dependencies-intersection",
+        "node": ">=20.10.0"
+      },
+      "dependencies": {},
+      "peerDependencies": {
+        "@deepseek-ai/cordis": "~4.0.4",
+        "@deepseek-ai/dsh-skill": ">=0.1.5-rc.1",
+        "@deepseek-ai/dsh-system-prompt": ">=0.1.5-rc.1",
+        "@deepseek-ai/dsh-tools": ">=0.1.5-rc.1",
+        "@deepseek-ai/schemastery": "~3.18.4"
+      },
+      "optionalPeerDependencies": [
+        "@deepseek-ai/cordis",
+        "@deepseek-ai/dsh-skill",
+        "@deepseek-ai/dsh-system-prompt",
+        "@deepseek-ai/dsh-tools",
+        "@deepseek-ai/schemastery"
+      ],
+      "install": {
+        "type": "git",
+        "version": "0.1.0",
+        "commit": "11d9c099a1775b1de703d731cd6c0965c78b9c25",
+        "repository": "https://github.com/ashllll/dsh-open-code-review",
+        "spec": "git+https://github.com/ashllll/dsh-open-code-review.git#11d9c099a1775b1de703d731cd6c0965c78b9c25",
+        "publishedAt": "2026-10-01T19:11:14Z",
+        "lifecycleScripts": [],
+        "readiness": "metadata-only",
+        "readinessReason": "固定提交中已找到声明的运行入口；仅确认文件存在，未检查依赖加载或运行效果。",
+        "entrypoints": [
+          {
+            "path": "lib/index.js",
+            "url": "https://raw.githubusercontent.com/ashllll/dsh-open-code-review/11d9c099a1775b1de703d731cd6c0965c78b9c25/lib/index.js",
+            "status": "present",
+            "checkedAt": "2026-10-20T06:35:55.689Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:55.689Z",
+        "manifestSha256": "9cee949a808213723a68a9aaff1ded662afb5560bde748df62794302b536906e",
+        "readmeSha256": "be275318547f0061f03e671b6f0aa32461a5df507f59babe748c71e02c94e32b",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/ashllll/dsh-open-code-review/commit/11d9c099a1775b1de703d731cd6c0965c78b9c25"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/ashllll/dsh-open-code-review/blob/11d9c099a1775b1de703d731cd6c0965c78b9c25/package.json",
+            "sha256": "9cee949a808213723a68a9aaff1ded662afb5560bde748df62794302b536906e"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/ashllll/dsh-open-code-review/blob/11d9c099a1775b1de703d731cd6c0965c78b9c25/README.md",
+            "sha256": "be275318547f0061f03e671b6f0aa32461a5df507f59babe748c71e02c94e32b"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/ashllll/dsh-open-code-review/blob/11d9c099a1775b1de703d731cd6c0965c78b9c25/cordis.patch.yml",
+            "sha256": "6a7a129bc8cb660ed2e2d2125031c821b680cb22226b1bff6cb9d86a75022dbe"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:55.689Z"
+      }
+    },
+    {
+      "id": "dsh-engineering-workflow",
+      "name": "dsh-engineering-workflow",
+      "title": "工程开发工作流",
+      "summary": "提供需求澄清、计划、TDD、并行任务和验证收尾的 Agent 预设及工作流技能。",
+      "authorDescription": "Engineering workflow layer for DeepSeek Harness (dsh): a disciplined-engineer agent preset with five gated phases — requirements clarification, plan approval, TDD implementation, parallel subagent execution, and verified finishing. Skills adapted from the obra/superpowers workflow methodology.",
+      "author": "82c86b8z86-stack",
+      "repository": "https://github.com/82c86b8z86-stack/dsh-engineering-workflow",
+      "homepage": "https://github.com/82c86b8z86-stack/dsh-engineering-workflow#readme",
+      "license": "MIT",
+      "capabilities": [
+        "software-development",
+        "workflow-orchestration"
+      ],
+      "keywords": [
+        "工程化",
+        "开发",
+        "superpowers",
+        "tdd",
+        "计划",
+        "dsh",
+        "dsh-plugin",
+        "dsh-bundle",
+        "deepseek-harness",
+        "agent-preset",
+        "skills",
+        "workflow",
+        "subagents",
+        "engineering"
+      ],
+      "inputs": [
+        "开发任务与现有项目"
+      ],
+      "outputs": [
+        "阶段计划",
+        "按工作流执行的开发与验证记录"
+      ],
+      "firstUse": "安装并重启后，新建会话时选择工程工作流预设；先澄清需求，不自动切换已有会话。",
+      "limitations": [
+        "需要新会话选择对应预设，不能假定安装即改变所有会话。",
+        "本索引不执行其预设同步脚本。"
+      ],
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "插件挂载时将预设同步到用户的 DSH Agent 预设目录。",
+          "工作流使用宿主模型与工具；并行执行会消耗现有模型额度。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": [
+          "^0.1.0-rc.6"
+        ],
+        "basis": "dsh-peer-dependencies-intersection",
+        "node": "^22.19.0 || >=24.0.0"
+      },
+      "dependencies": {
+        "schemastery": "^3.18.0"
+      },
+      "peerDependencies": {
+        "@deepseek-ai/dsh-system-prompt": "^0.1.0-rc.6"
+      },
+      "optionalPeerDependencies": [
+        "@deepseek-ai/dsh-system-prompt"
+      ],
+      "install": {
+        "type": "git",
+        "version": "0.1.1",
+        "commit": "3e251eb78002625bcc238a42d9926d87c3a38bfe",
+        "repository": "https://github.com/82c86b8z86-stack/dsh-engineering-workflow",
+        "spec": "git+https://github.com/82c86b8z86-stack/dsh-engineering-workflow.git#3e251eb78002625bcc238a42d9926d87c3a38bfe",
+        "publishedAt": "2026-08-17T14:19:05Z",
+        "lifecycleScripts": [],
+        "readiness": "metadata-only",
+        "readinessReason": "固定提交中已找到声明的运行入口；仅确认文件存在，未检查依赖加载或运行效果。",
+        "entrypoints": [
+          {
+            "path": "lib/index.js",
+            "url": "https://raw.githubusercontent.com/82c86b8z86-stack/dsh-engineering-workflow/3e251eb78002625bcc238a42d9926d87c3a38bfe/lib/index.js",
+            "status": "present",
+            "checkedAt": "2026-10-20T06:35:55.688Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:55.688Z",
+        "manifestSha256": "a84fbfcf88d9cc5af8eec3e020580db1e00eb3bea944c94d3870b0f07c3fe34a",
+        "readmeSha256": "9c4c36ef05de342565e8f7cc06f441bdbad264e304ad480cd7dc651f9c0a024a",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/82c86b8z86-stack/dsh-engineering-workflow/commit/3e251eb78002625bcc238a42d9926d87c3a38bfe"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/82c86b8z86-stack/dsh-engineering-workflow/blob/3e251eb78002625bcc238a42d9926d87c3a38bfe/package.json",
+            "sha256": "a84fbfcf88d9cc5af8eec3e020580db1e00eb3bea944c94d3870b0f07c3fe34a"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/82c86b8z86-stack/dsh-engineering-workflow/blob/3e251eb78002625bcc238a42d9926d87c3a38bfe/README.md",
+            "sha256": "9c4c36ef05de342565e8f7cc06f441bdbad264e304ad480cd7dc651f9c0a024a"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/82c86b8z86-stack/dsh-engineering-workflow/blob/3e251eb78002625bcc238a42d9926d87c3a38bfe/cordis.patch.yml",
+            "sha256": "f1b69efd23016174b046bf7b314ea7b213ca0fe8bca38ac056b290899d321bad"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:55.688Z"
+      }
+    },
+    {
+      "id": "dsh-workflow-templates",
+      "name": "dsh-workflow-templates",
+      "title": "工作流模板库",
+      "summary": "提供预置编排模板的列表、搜索和格式校验，生成交给官方 workflow 工具执行的参数与脚本起点。（固定 Git 源暂不可推荐）",
+      "authorDescription": "DSH 预置 Workflow 模板库插件：内置 12 个（目标 50+）可复用 workflow 编排脚本模板，提供 wf_template_list / wf_template_search / wf_template_run / wf_template_validate 工具与模板格式静态校验",
+      "author": "988hj7tczd-oss",
+      "repository": "https://github.com/988hj7tczd-oss/dsh-workflow-templates",
+      "homepage": "https://github.com/988hj7tczd-oss/dsh-workflow-templates#readme",
+      "license": "MIT",
+      "capabilities": [
+        "workflow-orchestration",
+        "workflow-templates"
+      ],
+      "keywords": [
+        "模板",
+        "workflow",
+        "编排",
+        "复用",
+        "dsh",
+        "deepseek-harness",
+        "cordis",
+        "templates",
+        "plugin"
+      ],
+      "inputs": [
+        "模板名",
+        "任务参数"
+      ],
+      "outputs": [
+        "模板定义与校验结果",
+        "官方 workflow 的 meta / script / args 起点"
+      ],
+      "firstUse": "先用 wf_template_list / wf_template_search 选择模板，检查 wf_template_run 生成的参数和脚本，再由宿主官方 workflow 工具执行。",
+      "limitations": [
+        "模板库只提供引导素材，不是自动执行器。",
+        "模板适配性和模型任务成功需要单独验证。",
+        "固定源码提交缺少声明的运行入口 lib/index.js，且未声明 prepare；当前固定 Git 安装来源暂不可推荐。"
+      ],
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "真正运行依赖 DSH 官方工作流能力与相关工具。",
+          "作者仓库的开发依赖使用相邻 dsh-src 检出的 link: 路径；Git 安装可能受影响，需由宿主安装检查。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.yml"
+      ],
+      "compatibility": {
+        "dsh": [
+          "0.1.1-rc.2"
+        ],
+        "basis": "dsh-peer-dependencies-intersection",
+        "node": ">=22.18.0"
+      },
+      "dependencies": {},
+      "peerDependencies": {
+        "@deepseek-ai/cordis": "^4.0.1",
+        "@deepseek-ai/dsh-tools": "0.1.1-rc.2",
+        "@deepseek-ai/schemastery": "^3.18.1"
+      },
+      "optionalPeerDependencies": [],
+      "install": {
+        "type": "git",
+        "version": "0.1.1",
+        "commit": "26755f75a043418eeb3f59fa0a57a60542740abc",
+        "repository": "https://github.com/988hj7tczd-oss/dsh-workflow-templates",
+        "spec": "git+https://github.com/988hj7tczd-oss/dsh-workflow-templates.git#26755f75a043418eeb3f59fa0a57a60542740abc",
+        "publishedAt": "2026-08-24T14:53:50Z",
+        "lifecycleScripts": [],
+        "readiness": "blocked",
+        "readinessReason": "固定源码提交缺少声明的运行入口 lib/index.js，且未声明 prepare；当前固定 Git 安装来源暂不可推荐。",
+        "entrypoints": [
+          {
+            "path": "lib/index.js",
+            "url": "https://raw.githubusercontent.com/988hj7tczd-oss/dsh-workflow-templates/26755f75a043418eeb3f59fa0a57a60542740abc/lib/index.js",
+            "status": "missing",
+            "checkedAt": "2026-10-20T06:35:56.185Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:56.185Z",
+        "manifestSha256": "4f85eee2ab69b25b2810e6fc9823c280ff88e50aabba4f48506f67db7cb8b45d",
+        "readmeSha256": "2eb7380b31159d09b9de2733e36aa92ffc5823e58dcc0403ae8c73c061761909",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/988hj7tczd-oss/dsh-workflow-templates/commit/26755f75a043418eeb3f59fa0a57a60542740abc"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/988hj7tczd-oss/dsh-workflow-templates/blob/26755f75a043418eeb3f59fa0a57a60542740abc/package.json",
+            "sha256": "4f85eee2ab69b25b2810e6fc9823c280ff88e50aabba4f48506f67db7cb8b45d"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/988hj7tczd-oss/dsh-workflow-templates/blob/26755f75a043418eeb3f59fa0a57a60542740abc/README.md",
+            "sha256": "2eb7380b31159d09b9de2733e36aa92ffc5823e58dcc0403ae8c73c061761909"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/988hj7tczd-oss/dsh-workflow-templates/blob/26755f75a043418eeb3f59fa0a57a60542740abc/cordis.yml",
+            "sha256": "12166f78344f1ff3422ffc13854922527af4696a70ee9c7e26fdb1b5a4694d90"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:56.185Z"
+      }
+    },
+    {
+      "id": "dsh-tool-workflow-plus",
+      "name": "dsh-tool-workflow-plus",
+      "title": "保存与复跑工作流",
+      "summary": "为官方工作流增加持久化脚本库，可保存、检索并带新参数复跑已确认的编排脚本。（固定 Git 源暂不可推荐）",
+      "authorDescription": "Drop-in enhanced fork of the official @deepseek-ai/dsh-tool-workflow: adds a persisted saved-workflow library (workflow_save / workflow_list / workflow_get / workflow_delete / workflow_run_saved) over ctx.storageDomain, on top of a verbatim fork of the official workflow tool. 官方 workflow 工具的 drop-in 增强版：补上官方 README 里 deferred 的 saved workflows —— 模型可把编排脚本存库、检索、带新 args 重跑",
+      "author": "shuxidemosheng",
+      "repository": "https://github.com/shuxidemosheng/dsh-tool-workflow-plus",
+      "homepage": "https://github.com/shuxidemosheng/dsh-tool-workflow-plus#readme",
+      "license": "MIT",
+      "capabilities": [
+        "workflow-orchestration",
+        "workflow-persistence"
+      ],
+      "keywords": [
+        "工作流",
+        "持久化",
+        "saved workflows",
+        "复跑",
+        "复用",
+        "deepseek",
+        "deepseek-harness",
+        "dsh",
+        "plugin",
+        "workflow",
+        "workflow-tool",
+        "saved-workflows",
+        "orchestration",
+        "multi-agent",
+        "agent"
+      ],
+      "inputs": [
+        "工作流脚本和元数据",
+        "新任务参数"
+      ],
+      "outputs": [
+        "持久化工作流记录",
+        "工作流执行结果"
+      ],
+      "firstUse": "先查看已有工作流；仅保存已经检查并跑通的脚本，复跑前核对新参数和工具权限。",
+      "limitations": [
+        "保存脚本不代表任务已经完成，也不提供独立可视化编排与恢复。",
+        "首版不自动保存或运行任何第三方脚本。",
+        "固定源码提交缺少声明的运行入口 lib/index.js，且未声明 prepare；当前固定 Git 安装来源暂不可推荐。"
+      ],
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "需要宿主 workflow 引擎和 storageDomain 存储栈；声明 Node >=24。",
+          "默认与官方工具共存，不能假定自动替换官方 workflow。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": ">=0.2.0-rc.2",
+        "basis": "engines.dsh",
+        "node": ">=24"
+      },
+      "dependencies": {
+        "zod": "^4.4.3"
+      },
+      "peerDependencies": {
+        "@deepseek-ai/cordis": "^4.0.4",
+        "@deepseek-ai/dsh-storage-domain": ">=0.2.0-rc.2",
+        "@deepseek-ai/dsh-tools": ">=0.2.0-rc.2",
+        "@deepseek-ai/dsh-workflow": ">=0.2.0-rc.2"
+      },
+      "optionalPeerDependencies": [],
+      "install": {
+        "type": "git",
+        "version": "0.1.0",
+        "commit": "3bfd515fc92c482d43775b79c9feb30711b8f90a",
+        "repository": "https://github.com/shuxidemosheng/dsh-tool-workflow-plus",
+        "spec": "git+https://github.com/shuxidemosheng/dsh-tool-workflow-plus.git#3bfd515fc92c482d43775b79c9feb30711b8f90a",
+        "publishedAt": "2026-10-11T12:16:03Z",
+        "lifecycleScripts": [],
+        "readiness": "blocked",
+        "readinessReason": "固定源码提交缺少声明的运行入口 lib/index.js，且未声明 prepare；当前固定 Git 安装来源暂不可推荐。",
+        "entrypoints": [
+          {
+            "path": "lib/index.js",
+            "url": "https://raw.githubusercontent.com/shuxidemosheng/dsh-tool-workflow-plus/3bfd515fc92c482d43775b79c9feb30711b8f90a/lib/index.js",
+            "status": "missing",
+            "checkedAt": "2026-10-20T06:35:56.375Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:56.375Z",
+        "manifestSha256": "d88d800a0e04c9e31dd1cf5d2e2c58964405e2a73eebc4c9b868ed73e0e9d888",
+        "readmeSha256": "b476f59cd02e2e0a42d4bed94cd8b045ef4546a25d7c5bd192cce118e5e07cc9",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/shuxidemosheng/dsh-tool-workflow-plus/commit/3bfd515fc92c482d43775b79c9feb30711b8f90a"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/shuxidemosheng/dsh-tool-workflow-plus/blob/3bfd515fc92c482d43775b79c9feb30711b8f90a/package.json",
+            "sha256": "d88d800a0e04c9e31dd1cf5d2e2c58964405e2a73eebc4c9b868ed73e0e9d888"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/shuxidemosheng/dsh-tool-workflow-plus/blob/3bfd515fc92c482d43775b79c9feb30711b8f90a/README.md",
+            "sha256": "b476f59cd02e2e0a42d4bed94cd8b045ef4546a25d7c5bd192cce118e5e07cc9"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/shuxidemosheng/dsh-tool-workflow-plus/blob/3bfd515fc92c482d43775b79c9feb30711b8f90a/cordis.patch.yml",
+            "sha256": "f31d228ac33fb1ce4f41b7172692c6dd2df23764d45a923c835320ab73dc14e1"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:56.375Z"
+      }
+    },
+    {
+      "id": "dsh-plugin-git-workflow",
+      "name": "dsh-plugin-git-workflow",
+      "title": "结构化 Git 工具",
+      "summary": "提供 Git 状态、diff、日志、分支和提交工具，以结构化参数通过宿主 shell 执行器运行。",
+      "authorDescription": "DeepSeek Harness plugin: first-class Git workflow tools for the model — repo status, diffs, commit creation with validated messages, recent history, and branches. No bare-shell git calls; every invocation runs through the harness shell executor (sandbox + approval semantics) with quoted args, and path/message validation.",
+      "author": "truelove-dreamer",
+      "repository": "https://github.com/truelove-dreamer/dsh-plugin-git-workflow",
+      "homepage": "https://github.com/truelove-dreamer/dsh-plugin-git-workflow#readme",
+      "license": "MIT",
+      "capabilities": [
+        "git-workflow"
+      ],
+      "keywords": [
+        "git",
+        "diff",
+        "commit",
+        "分支",
+        "版本控制",
+        "dsh",
+        "dsh-plugin",
+        "deepseek-harness",
+        "workflow",
+        "version-control"
+      ],
+      "inputs": [
+        "本地 Git 仓库",
+        "明确的操作参数"
+      ],
+      "outputs": [
+        "结构化 Git 状态与差异",
+        "显式确认后的本地提交"
+      ],
+      "firstUse": "先只读查看 git_status 和 git_diff；提交前确认路径、消息和已暂存内容。",
+      "limitations": [
+        "不含 push / pull / rebase。",
+        "路径校验属于词法级；不能据此保证完整安全性。"
+      ],
+      "requirements": {
+        "extraApiKey": "not-required",
+        "platforms": [],
+        "notes": [
+          "依赖 Git 与宿主 shell 执行器。",
+          "git_commit 是写操作，需要遵循宿主沙箱与审批。"
+        ]
+      },
+      "bundlePatches": [
+        "./cordis.patch.yml"
+      ],
+      "compatibility": {
+        "dsh": null,
+        "basis": "not-declared",
+        "node": ">=18"
+      },
+      "dependencies": {},
+      "peerDependencies": {},
+      "optionalPeerDependencies": [],
+      "install": {
+        "type": "git",
+        "version": "0.1.2",
+        "commit": "cddc8bc530b7f51e6b47d56fa3338412b4f82448",
+        "repository": "https://github.com/truelove-dreamer/dsh-plugin-git-workflow",
+        "spec": "git+https://github.com/truelove-dreamer/dsh-plugin-git-workflow.git#cddc8bc530b7f51e6b47d56fa3338412b4f82448",
+        "publishedAt": "2026-08-17T02:37:03Z",
+        "lifecycleScripts": [],
+        "readiness": "metadata-only",
+        "readinessReason": "固定提交中已找到声明的运行入口；仅确认文件存在，未检查依赖加载或运行效果。",
+        "entrypoints": [
+          {
+            "path": "lib/index.js",
+            "url": "https://raw.githubusercontent.com/truelove-dreamer/dsh-plugin-git-workflow/cddc8bc530b7f51e6b47d56fa3338412b4f82448/lib/index.js",
+            "status": "present",
+            "checkedAt": "2026-10-20T06:35:56.061Z"
+          }
+        ]
+      },
+      "evidence": {
+        "metadata": "verified",
+        "installation": "not-tested",
+        "task": "not-tested",
+        "combination": "not-tested",
+        "capabilityBasis": "curated-summary-of-author-documentation",
+        "fetchedAt": "2026-10-20T06:35:56.061Z",
+        "manifestSha256": "1df087a109004cceedec76433b53ae22fca6ca3ce4f6d1f9a5fbff681d40dfa4",
+        "readmeSha256": "f8f3486c054f92ddb2c709f611518779bb7ac9095e6e72cfba207ae41258dde7",
+        "sources": [
+          {
+            "kind": "repository-commit",
+            "url": "https://github.com/truelove-dreamer/dsh-plugin-git-workflow/commit/cddc8bc530b7f51e6b47d56fa3338412b4f82448"
+          },
+          {
+            "kind": "manifest",
+            "url": "https://github.com/truelove-dreamer/dsh-plugin-git-workflow/blob/cddc8bc530b7f51e6b47d56fa3338412b4f82448/package.json",
+            "sha256": "1df087a109004cceedec76433b53ae22fca6ca3ce4f6d1f9a5fbff681d40dfa4"
+          },
+          {
+            "kind": "author-documentation",
+            "url": "https://github.com/truelove-dreamer/dsh-plugin-git-workflow/blob/cddc8bc530b7f51e6b47d56fa3338412b4f82448/README.md",
+            "sha256": "f8f3486c054f92ddb2c709f611518779bb7ac9095e6e72cfba207ae41258dde7"
+          },
+          {
+            "kind": "bundle-patch",
+            "url": "https://github.com/truelove-dreamer/dsh-plugin-git-workflow/blob/cddc8bc530b7f51e6b47d56fa3338412b4f82448/cordis.patch.yml",
+            "sha256": "54e0e82660c37c99a310b017ae5366d9e1e8a112487623dad9915f05e818bca2"
+          }
+        ],
+        "note": "Read-only package manifest, declared patch existence, and author documentation checked. No third-party code installed or executed; author claims do not establish successful tasks or safety."
+      },
+      "refresh": {
+        "status": "success",
+        "checkedAt": "2026-10-20T06:35:56.061Z"
+      }
+    }
+  ],
+  "refreshErrors": []
+}
