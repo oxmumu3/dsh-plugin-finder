@@ -1,10 +1,10 @@
 # 发现好插件 · DSH Plugin Finder
 
-[安装说明](docs/install.md) · [一次完整实跑](docs/first-use-case.md) · [两天对照实验](docs/experiment.md) · [验证范围](docs/verification.md) · [本版发布与验收记录](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.2.2-preview.1) · [反馈](https://github.com/piggy00544/dsh-plugin-finder/issues/new?template=feedback.yml)
+[安装说明](docs/install.md) · [一次完整实跑](docs/first-use-case.md) · [两天对照实验](docs/experiment.md) · [验证范围](docs/verification.md) · [本版发布与验收记录](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.2.2-preview.2) · [反馈](https://github.com/piggy00544/dsh-plugin-finder/issues/new?template=feedback.yml)
 
 在 DeepSeek Harness 里描述要完成的事，确认理解，动态搜索插件来源、阅读作者资料、拼出最小方案，再带着未发送草稿回到原生会话。
 
-**当前版本为 `0.2.2-preview.1`。** 本版补入完整社区目录的 GitHub-only 与仓库子目录供给，保存并展示来源覆盖和有界核对过程；「我的方案」、历史版本与反馈继续保留。动态来源检索自 `0.2.0-preview.1` 起提供；固定 15 条索引不参与生产推荐，也不会在联网失败时替代搜索。
+**当前版本为 `0.2.2-preview.2`。** 本版补入完整社区目录的 GitHub-only 与仓库子目录供给，保存并展示来源覆盖和有界核对过程；「我的方案」、历史版本与反馈继续保留。动态来源检索自 `0.2.0-preview.1` 起提供；固定 15 条索引不参与生产推荐，也不会在联网失败时替代搜索。
 
 ## 从哪里发现插件
 
@@ -33,14 +33,14 @@
 
 ## 安装与首次使用
 
-包声明支持 **DSH `0.2.0-rc.2` 或 `0.2.1-rc.2`**，Node `>=22.13`。这是兼容声明，不等于所有环境均已验收。新版安装、原生 UI、真实模型、首次使用和公开下载结果，以 [v0.2.2-preview.1 Release 验收记录](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.2.2-preview.1) 为准。
+包声明支持 **DSH `0.2.0-rc.2` 或 `0.2.1-rc.2`**，Node `>=22.13`。这是兼容声明，不等于所有环境均已验收。新版安装、原生 UI、真实模型、首次使用和公开下载结果，以 [v0.2.2-preview.2 Release 验收记录](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.2.2-preview.2) 为准。
 
 下载 `dsh-plugin-finder-0.2.1-preview.2.tgz`，在正在使用的 DSH 原生插件页安装并核对来源；也可使用匹配版本的官方 CLI，详见 [安装说明](docs/install.md)。本项目不要求另开独立模型账户或填写新的模型 Key。
 
 也可以把下面的话交给 DSH。能否直接安装取决于当前会话的工具与宿主权限，这不是已经验证的“一句话自动安装”承诺：
 
 ```text
-请通过当前 DSH 的原生插件管理能力安装并启用“发现好插件”：https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.2.2-preview.1/dsh-plugin-finder-0.2.1-preview.2.tgz 。安装到我正在使用的 DSH，不要另建 profile；需要我确认或重启时请提示我，完成后核对侧栏入口。如果当前会话没有安装工具，请给出在宿主插件页安装的步骤。
+请通过当前 DSH 的原生插件管理能力安装并启用“发现好插件”：https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.2.2-preview.2/dsh-plugin-finder-0.2.1-preview.2.tgz 。安装到我正在使用的 DSH，不要另建 profile；需要我确认或重启时请提示我，完成后核对侧栏入口。如果当前会话没有安装工具，请给出在宿主插件页安装的步骤。
 ```
 
 安装后描述任务，点击「理解这个需求」，核对六个意图字段，再点击「确认需求，搜索并推荐」。先阅读“本次搜索”的来源状态，再看方案与候选资料；需要安装的候选仍由用户在宿主管理页确认。选好工作区后准备草稿，实际任务由用户在原生会话发送。

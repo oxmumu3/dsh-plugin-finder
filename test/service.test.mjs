@@ -71,3 +71,7 @@ test('live discovery receives Key eligibility before candidate slots fill and pe
   const result=await svc.recommend({intent:{...intent,constraints:['不要额外 API Key']}});
   assert.equal(received.requiresNoApiKey,true);assert.deepEqual(result.discovery.coverage,coverage);assert.deepEqual(result.discovery.sourceCoverage,sourceCoverage);assert.deepEqual(modelData.discovery.sourceCoverage,sourceCoverage);
 });
+test('rich recommendation preserves every capability while requesting compact output with reasoning headroom',async()=>{
+ let call;const svc=createFinderService({discovery:discover([]),model:{status:()=>({configured:true}),call:async arg=>{call=arg;return{text:JSON.stringify({...basePlan,kind:'gap',pluginIds:[],steps:[]})};}}});
+ await svc.recommend({intent});assert.equal(call.maxTokens,12000);assert.match(call.system,/简洁输出/);assert.match(call.system,/覆盖intent.capabilities中的每一项/);assert.deepEqual(call.data.intent.capabilities,intent.capabilities);
+});
