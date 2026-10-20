@@ -1,6 +1,8 @@
 # Plugin Finder Implementation Plan
 
-User approved the HTML prototype and real implementation on 2026-10-20. This checklist records the implemented local preview and the release work handed back to root. Evidence boundaries are in `docs/verification.md`.
+> Historical v0.1 implementation plan, superseded by [the live-discovery correction](2026-10-20-live-discovery-correction.md). The fixed bundled candidate scope was an implementation error, not a user-approved product boundary. These completed checks do not establish the requested distribution outcome.
+
+User approved the HTML workflow and real development on 2026-10-20, including discovery across changing ecosystem supply. This checklist records the narrower implementation that was shipped, not approval of that narrowing. Evidence boundaries are in `docs/verification.md`.
 
 **Goal:** Deliver an installable DSH plugin with a real catalog, host-model intent/recommendation and safe workspace conversation handoff.
 

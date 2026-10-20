@@ -44,6 +44,7 @@ var import_react = __toESM(require("react"), 1);
 var finderCss = `
 .pf_root{height:100%;overflow:auto;box-sizing:border-box;color:var(--dsw-alias-label-primary,#22262e);background:var(--dsw-alias-bg-base,#fff);font:14px/1.65 var(--dsw-font-family,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif)}
 .pf_root *{box-sizing:border-box}.pf_inner{max-width:1080px;margin:0 auto;padding:36px 40px 56px}.pf_root h1,.pf_root h2,.pf_root h3,.pf_root p{margin:0}.pf_root h1{font-size:25px;line-height:1.4;font-weight:650;letter-spacing:-.3px}.pf_root h2{font-size:19px;font-weight:600;line-height:1.5}.pf_root h3{font-size:15px;font-weight:600}.pf_header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:28px}.pf_eyebrow{color:var(--dsw-alias-label-tertiary,#737c8b);font-size:11px;letter-spacing:.12em;margin-bottom:6px}.pf_muted{color:var(--dsw-alias-label-secondary,#717681)}.pf_small{font-size:12px}.pf_header p{margin-top:6px}.pf_header_actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.pf_steps{display:flex;gap:24px;list-style:none;padding:0;margin:0 0 32px;flex-wrap:wrap;border-bottom:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_step{padding:0 0 14px;color:var(--dsw-alias-label-tertiary,#87909e);border-bottom:2px solid transparent;margin-bottom:-1px;font-size:13px}.pf_step.active{border-color:var(--dsw-alias-state-business-primary,#4d6bfe);color:var(--dsw-alias-label-primary,#22262e)}.pf_number{display:inline-flex;width:21px;height:21px;align-items:center;justify-content:center;border-radius:50%;background:var(--dsw-alias-bg-layer-2,#eef1f7);font-size:11px;margin-right:7px}.pf_step.active .pf_number{background:var(--dsw-alias-state-business-primary,#4d6bfe);color:white}.pf_section{padding:24px 0;border-bottom:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_section:first-child{padding-top:0}.pf_section:last-child{border-bottom:0}.pf_section>p,.pf_section>h2{margin-bottom:14px}.pf_section_head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px}.pf_stack{display:flex;flex-direction:column;gap:12px}.pf_actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}.pf_btn{display:inline-flex;justify-content:center;align-items:center;min-height:38px;border:1px solid var(--dsw-alias-border-l2,#d8dce5);border-radius:8px;padding:8px 14px;cursor:pointer;background:transparent;color:inherit;font:inherit;font-size:13px;line-height:1.5;text-decoration:none}.pf_btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,#f3f5f9)}.pf_btn:disabled{opacity:.45;cursor:default}.pf_btn.pf_primary{background:var(--dsw-alias-state-business-primary,#4d6bfe);border-color:transparent;color:#fff}.pf_btn.pf_primary:hover:not(:disabled){filter:brightness(.94)}.pf_btn.pf_text{border-color:transparent;padding-left:0;padding-right:0;color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_root :is(button,input,textarea,select,a):focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#4d6bfe);outline-offset:3px}.pf_root textarea,.pf_root input,.pf_root select{display:block;border:1px solid var(--dsw-alias-border-l2,#d8dce5);border-radius:8px;background:var(--dsw-alias-bg-layer-1,#fafbfc);color:inherit;font:inherit;padding:10px 12px;max-width:100%;width:100%;outline:none}.pf_root textarea:focus,.pf_root input:focus,.pf_root select:focus{border-color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_root textarea{resize:vertical;min-height:94px}.pf_request{min-height:150px!important;font-size:15px!important;padding:16px!important}.pf_label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:500;min-width:0}.pf_grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.pf_form_note{display:flex;justify-content:space-between;gap:16px;margin-top:8px;font-size:12px;color:var(--dsw-alias-label-secondary,#717681)}.pf_examples{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.pf_example{border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:7px;background:transparent;color:var(--dsw-alias-label-secondary,#717681);font:inherit;font-size:12px;text-align:left;cursor:pointer;padding:7px 10px;min-height:35px}.pf_example:hover{background:var(--dsw-alias-interactive-bg-hover,#f4f6fa)}.pf_banner{border-left:3px solid var(--dsw-alias-state-business-primary,#4d6bfe);padding:11px 14px;background:var(--dsw-alias-bg-layer-1,#f5f7fb);margin:16px 0;white-space:pre-wrap;overflow-wrap:anywhere}.pf_error{color:var(--dsw-alias-state-error-primary,#c43c3c);border-left-color:currentColor}.pf_status{display:flex;gap:9px;align-items:center;color:var(--dsw-alias-label-secondary,#717681);margin:16px 0}.pf_spinner{width:14px;height:14px;border:2px solid var(--dsw-alias-border-l2,#d8dce5);border-top-color:var(--dsw-alias-state-business-primary,#4d6bfe);border-radius:50%;animation:pf_spin 1s linear infinite;flex:none}.pf_model{display:inline-block;border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--dsw-alias-label-secondary,#717681)}.pf_list{padding-left:21px;margin:10px 0}.pf_list li{margin:5px 0;overflow-wrap:anywhere}.pf_plan{border:1px solid var(--dsw-alias-border-l2,#d8dce5);border-radius:10px;padding:20px}.pf_plan h2{margin:8px 0}.pf_plan_steps{list-style:none;padding:0;margin:20px 0 0}.pf_plan_step{display:grid;grid-template-columns:25px 1fr;gap:10px;padding:14px 0;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_plan_step strong{font-weight:550}.pf_plan_step p{margin-top:4px;overflow-wrap:anywhere}.pf_tag{display:inline-block;border-radius:5px;background:var(--dsw-alias-bg-layer-2,#f0f2f7);padding:2px 7px;font-size:11px;color:var(--dsw-alias-label-secondary,#717681)}.pf_tag.pf_selected{color:var(--dsw-alias-state-business-primary,#4d6bfe);border:1px solid var(--dsw-alias-border-l3,#dbe2ff);background:transparent}.pf_tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.pf_candidates{display:flex;flex-direction:column;gap:14px}.pf_candidate{border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:10px;padding:18px;min-width:0}.pf_candidate.pf_chosen{border-color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_candidate_head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.pf_candidate h3{overflow-wrap:anywhere}.pf_candidate p{margin-top:7px}.pf_candidate code{font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;white-space:pre-wrap}.pf_install{background:var(--dsw-alias-bg-layer-1,#f5f6f9);border:1px solid var(--dsw-alias-border-l4,#ecedf1);border-radius:7px;padding:10px 12px;margin-top:12px}.pf_links{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}.pf_links a{font-size:12px;color:var(--dsw-alias-state-business-primary,#4d6bfe);text-decoration:none;overflow-wrap:anywhere}.pf_links a:hover{text-decoration:underline}.pf_evidence{margin-top:12px;font-size:12px;color:var(--dsw-alias-label-secondary,#717681);display:flex;gap:14px;flex-wrap:wrap}.pf_details{margin-top:12px}.pf_details summary{cursor:pointer;color:var(--dsw-alias-label-secondary,#717681);font-size:12px}.pf_code{white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:8px;padding:14px;background:var(--dsw-alias-bg-layer-1,#f7f8fa);font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;max-height:320px;overflow:auto}.pf_workspace{max-width:560px}.pf_feedback{display:flex;gap:8px;flex-wrap:wrap}.pf_btn[aria-pressed=true]{border-color:var(--dsw-alias-state-business-primary,#4d6bfe);color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_footer{margin-top:24px;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed);padding-top:18px;color:var(--dsw-alias-label-tertiary,#87909e);font-size:11px}.pf_preline{white-space:pre-wrap;overflow-wrap:anywhere}.pf_empty{padding:24px 0;color:var(--dsw-alias-label-secondary,#717681)}
+.pf_sources{list-style:none;padding:0;margin:12px 0}.pf_source_row{padding:11px 0;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_source_head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.pf_source_head a{color:var(--dsw-alias-state-business-primary,#4d6bfe);text-decoration:none;overflow-wrap:anywhere}.pf_source_head a:hover{text-decoration:underline}.pf_source_row p{margin-top:5px;overflow-wrap:anywhere}.pf_source_warn{border:1px solid var(--dsw-alias-border-l2,#d8dce5);background:transparent}.pf_search_scope .pf_sources{margin-top:10px}.pf_search_scope .pf_source_row{font-size:12px}
 @keyframes pf_spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.pf_spinner{animation:none}}@media(max-width:700px){.pf_inner{padding:24px 18px 36px}.pf_header{flex-direction:column;gap:14px}.pf_header_actions{justify-content:flex-start}.pf_steps{gap:14px;margin-bottom:24px}.pf_step{font-size:12px}.pf_grid{grid-template-columns:1fr}.pf_plan,.pf_candidate{padding:15px}.pf_actions .pf_btn{flex-grow:1}.pf_form_note{flex-direction:column;gap:3px}.pf_candidate_head{flex-wrap:wrap}.pf_section_head{align-items:flex-start;flex-direction:column;gap:8px}}
 `;
 
@@ -55,6 +56,17 @@ var text = (value) => typeof value === "string" ? value : "";
 var strings = (value) => Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
 var readable = (value) => typeof value === "string" ? value : value?.label ?? value?.message ?? value?.status ?? "";
 var validIntent = (value) => value && ["goal", "input", "output"].every((key) => typeof value[key] === "string") && ["constraints", "capabilities", "queries"].every((key) => Array.isArray(value[key]) && value[key].every((item) => typeof item === "string"));
+var workflowWarning = (value) => typeof value === "string" && value.length <= 1e3 ? value : "";
+function validSavedWorkflow(value) {
+  if (!value || !["understand", "plan"].includes(value.stage) || typeof value.request !== "string" || !value.request.trim() || value.request.length > 6e3 || !validIntent(value.intent)) return false;
+  if (!Array.isArray(value.candidates) || value.candidates.length > 20 || value.candidates.some((candidate) => !candidate || typeof candidate.id !== "string" || !candidate.id || !Array.isArray(candidate.capabilities) || candidate.capabilities.some((capability) => typeof capability !== "string"))) return false;
+  if (value.stage !== "plan") return true;
+  const plan = value.plan;
+  if (!plan || !["native", "single", "combo", "gap"].includes(plan.kind) || typeof plan.title !== "string" || typeof plan.rationale !== "string" || !Array.isArray(plan.pluginIds) || plan.pluginIds.length > 2 || plan.pluginIds.some((id) => typeof id !== "string" || !value.candidates.some((candidate) => candidate.id === id))) return false;
+  if (new Set(plan.pluginIds).size !== plan.pluginIds.length || !Array.isArray(plan.limits) || plan.limits.some((limit) => typeof limit !== "string") || !Array.isArray(plan.steps) || plan.steps.length > 10) return false;
+  if (["native", "gap"].includes(plan.kind) && plan.pluginIds.length || plan.kind === "single" && plan.pluginIds.length !== 1 || plan.kind === "combo" && plan.pluginIds.length !== 2) return false;
+  return plan.steps.every((step) => step && ["capability", "owner", "action", "input", "output"].every((key) => typeof step[key] === "string") && ["dsh", "human", ...plan.pluginIds].includes(step.owner) && (step.sourceCapability == null || typeof step.sourceCapability === "string"));
+}
 var abortError = () => {
   const error = new Error("cancelled");
   error.name = "AbortError";
@@ -147,6 +159,7 @@ function createFinderController(ctx, options = {}) {
   let closed = false;
   let operation = null;
   let sequence = 0;
+  let draftRevision = 0;
   let state = Object.freeze({
     stage: "describe",
     request: "",
@@ -156,6 +169,8 @@ function createFinderController(ctx, options = {}) {
     plan: null,
     candidates: [],
     catalogUpdatedAt: "",
+    discovery: null,
+    warnings: [],
     busy: null,
     error: "",
     notice: "",
@@ -164,7 +179,10 @@ function createFinderController(ctx, options = {}) {
     workspacePhase: "pending",
     feedbackSaved: false,
     handoffRequested: false,
-    modelLabel: ""
+    preservedTarget: null,
+    modelLabel: "",
+    resetPending: false,
+    storageWarning: ""
   });
   const publish = (patch) => {
     if (closed) return;
@@ -181,7 +199,8 @@ function createFinderController(ctx, options = {}) {
   const syncWorkspaces = () => {
     const value = workspaceSnapshot();
     const items = Array.isArray(value?.items) ? value.items.filter((item) => typeof item?.workspaceId === "string" && typeof item?.title === "string") : [];
-    publish({ workspaces: items, workspacePhase: value?.phase === "ready" ? "ready" : "pending", workspaceId: items.some((item) => item.workspaceId === state.workspaceId) ? state.workspaceId : "" });
+    const workspaceId = items.some((item) => item.workspaceId === state.workspaceId) ? state.workspaceId : "";
+    publish({ workspaces: items, workspacePhase: value?.phase === "ready" ? "ready" : "pending", workspaceId, preservedTarget: state.preservedTarget?.workspaceId === workspaceId ? state.preservedTarget : null });
   };
   syncWorkspaces();
   let stopWorkspaces;
@@ -193,9 +212,9 @@ function createFinderController(ctx, options = {}) {
     if (closed || operation) return false;
     const id = ++sequence;
     const controller = new AbortController();
-    operation = { id, controller };
+    operation = { id, controller, kind };
     publish({ busy: kind, error: "", notice: "" });
-    const timer = setTimeout(() => controller.abort("timeout"), 125e3);
+    const timer = setTimeout(() => controller.abort("timeout"), kind === "recommend" ? 18e4 : 125e3);
     try {
       const response = await fetchRequest(endpoint + path, {
         method: body === void 0 ? "GET" : "POST",
@@ -230,6 +249,10 @@ function createFinderController(ctx, options = {}) {
       }
     }
   };
+  const clearStoredWorkflow = () => run("reset", "reset", {}, (value) => {
+    if (value?.cleared !== true) throw handoffFailure("\u672C\u673A\u65E7\u4EFB\u52A1\u8BB0\u5F55\u672A\u80FD\u786E\u8BA4\u6E05\u9664\uFF0C\u8BF7\u91CD\u8BD5\u3002");
+    publish({ resetPending: false, notice: "\u5DF2\u6E05\u9664\u672C\u673A\u4EFB\u52A1\u4E0E\u65B9\u6848\uFF0C\u53EF\u4EE5\u5F00\u59CB\u65B0\u9700\u6C42\u3002" });
+  });
   const buildPrompt = () => {
     if (!state.intent || !state.plan) return "";
     const intent = state.intent;
@@ -265,13 +288,25 @@ function createFinderController(ctx, options = {}) {
       return () => listeners.delete(listener);
     },
     bootstrap() {
+      const firstRead = !state.bootstrapLoaded;
+      const revision = draftRevision;
       return run("bootstrap", "bootstrap", void 0, (value) => {
-        if (!value?.catalog || typeof value.catalog.count !== "number" || typeof value?.model?.configured !== "boolean") throw new Error("invalid bootstrap");
-        publish({ bootstrap: value, bootstrapLoaded: true, modelLabel: text(value.model.label) });
+        if (typeof value?.model?.configured !== "boolean") throw new Error("invalid bootstrap");
+        const { workflow, workflowWarning: warningValue, ...bootstrap } = value;
+        const warning = workflowWarning(warningValue);
+        publish({ bootstrap, bootstrapLoaded: true, modelLabel: text(value.model.label), storageWarning: warning, ...warning ? { notice: warning } : {} });
+        if (firstRead && revision === 0 && draftRevision === revision && !state.request.trim() && state.stage === "describe" && workflow) {
+          if (validSavedWorkflow(workflow)) {
+            publish({ stage: workflow.stage, request: workflow.request, intent: workflow.intent, plan: workflow.stage === "plan" ? workflow.plan : null, candidates: workflow.candidates, discovery: workflow.discovery && typeof workflow.discovery === "object" ? workflow.discovery : null, warnings: strings(workflow.warnings), workspaceId: "", feedbackSaved: false, handoffRequested: false, preservedTarget: null, notice: warning || "\u5DF2\u6062\u590D\u672C\u673A\u4EFB\u52A1\u4E0E\u65B9\u6848\uFF0C\u53EF\u7EE7\u7EED\u5B89\u88C5\u6216\u63A5\u7EED\u4F1A\u8BDD\u3002" });
+          } else if (!warning) publish({ notice: "\u672C\u673A\u8BB0\u5F55\u683C\u5F0F\u65E0\u6CD5\u6062\u590D\uFF0C\u53EF\u7EE7\u7EED\u586B\u5199\u65B0\u9700\u6C42\u3002" });
+        }
       });
     },
     setRequest(request) {
-      if (!closed && !operation) publish({ request: text(request).slice(0, 6e3), error: "", notice: "" });
+      if (!closed && (!operation || operation.kind === "bootstrap")) {
+        draftRevision += 1;
+        publish({ request: text(request).slice(0, 6e3), error: "", notice: "" });
+      }
     },
     async analyze(request = state.request) {
       if (closed || operation) return false;
@@ -283,10 +318,12 @@ function createFinderController(ctx, options = {}) {
         publish({ error: "\u8BF7\u7528 1\u20146000 \u4E2A\u5B57\u63CF\u8FF0\u8981\u5B8C\u6210\u7684\u4EFB\u52A1\u3002" });
         return false;
       }
-      publish({ request, intent: null, plan: null, candidates: [], feedbackSaved: false, handoffRequested: false });
+      publish({ request, intent: null, plan: null, candidates: [], discovery: null, warnings: [], feedbackSaved: false, handoffRequested: false, preservedTarget: null });
       return run("analyze", "analyze", { request }, (value) => {
         if (!validIntent(value?.intent)) throw new Error("invalid intent");
-        publish({ intent: value.intent, stage: "understand", modelLabel: text(value.model?.label) || state.modelLabel });
+        const warning = workflowWarning(value.workflowWarning);
+        const analysisWarning = workflowWarning(value.analysisWarning);
+        publish({ intent: value.intent, stage: "understand", modelLabel: text(value.model?.label) || state.modelLabel, storageWarning: warning, notice: [...new Set([analysisWarning, warning].filter(Boolean))].join("\n") });
       });
     },
     editIntent(patch) {
@@ -294,7 +331,7 @@ function createFinderController(ctx, options = {}) {
       const intent = { ...state.intent };
       for (const key of ["goal", "input", "output"]) if (typeof patch[key] === "string") intent[key] = patch[key].slice(0, key === "goal" ? 6e3 : 600);
       for (const key of ["constraints", "capabilities", "queries"]) if (Array.isArray(patch[key])) intent[key] = strings(patch[key]).slice(0, 6).map((item) => item.slice(0, { constraints: 350, capabilities: 150, queries: 120 }[key]));
-      publish({ intent, error: "", notice: "", plan: null, candidates: [], stage: "understand", feedbackSaved: false, handoffRequested: false });
+      publish({ intent, error: "", notice: "", plan: null, candidates: [], discovery: null, warnings: [], stage: "understand", feedbackSaved: false, handoffRequested: false, preservedTarget: null });
     },
     recommend() {
       if (!validIntent(state.intent)) {
@@ -310,11 +347,15 @@ function createFinderController(ctx, options = {}) {
       return run("recommend", "recommend", { intent }, (value) => {
         const plan = value?.plan;
         if (!plan || !["native", "single", "combo", "gap"].includes(plan.kind) || !Array.isArray(plan.pluginIds) || !Array.isArray(plan.steps) || !Array.isArray(value.candidates)) throw new Error("invalid recommendation");
-        publish({ stage: "plan", plan, candidates: value.candidates, catalogUpdatedAt: text(value.catalogUpdatedAt), modelLabel: text(value.model?.label) || state.modelLabel, feedbackSaved: false, handoffRequested: false });
+        const warning = workflowWarning(value.workflowWarning);
+        publish({ stage: "plan", plan, candidates: value.candidates, catalogUpdatedAt: text(value.catalogUpdatedAt), discovery: value.discovery && typeof value.discovery === "object" ? value.discovery : null, warnings: strings(value.warnings), modelLabel: text(value.model?.label) || state.modelLabel, feedbackSaved: false, handoffRequested: false, preservedTarget: null, storageWarning: warning, notice: warning });
       });
     },
     selectWorkspace(workspaceId) {
-      if (!closed && !operation) publish({ workspaceId: state.workspaces.some((item) => item.workspaceId === workspaceId) ? workspaceId : "", error: "", notice: "", handoffRequested: false });
+      if (!closed && !operation) {
+        const nextId = state.workspaces.some((item) => item.workspaceId === workspaceId) ? workspaceId : "";
+        publish({ workspaceId: nextId, error: "", notice: "", handoffRequested: false, preservedTarget: nextId === state.workspaceId ? state.preservedTarget : null });
+      }
     },
     async handoff() {
       if (closed || operation || !state.plan || state.handoffRequested) return false;
@@ -327,15 +368,15 @@ function createFinderController(ctx, options = {}) {
       const workspaceId = state.workspaceId;
       const id = ++sequence;
       const controller = new AbortController();
-      operation = { id, controller };
-      publish({ busy: "handoff", error: "", notice: "" });
+      operation = { id, controller, kind: "handoff" };
+      publish({ busy: "handoff", error: "", notice: "", preservedTarget: null });
       const stillCurrent = () => !closed && id === sequence && workspaceSnapshot()?.phase === "ready" && workspaceSnapshot()?.items?.some((item) => item.workspaceId === workspaceId) && state.workspaceId === workspaceId;
       const timer = setTimeout(() => controller.abort("timeout"), 45e3);
       try {
         const result = await prepareSessionDraft(ctx, workspaceId, buildPrompt(), controller.signal, stillCurrent);
         if (!stillCurrent() || controller.signal.aborted) return false;
         if (result.status === "preserved") {
-          publish({ notice: "\u5DF2\u6709\u8349\u7A3F\u6216\u9644\u4EF6\u5DF2\u4FDD\u7559\uFF0C\u672C\u6B21\u65B9\u6848\u6CA1\u6709\u5199\u5165\u3002\u8BF7\u5148\u5904\u7406\u5DF2\u6709\u8349\u7A3F\uFF0C\u6216\u5728\u4E0B\u65B9\u9884\u89C8\u5E76\u590D\u5236\u65B9\u6848\u3002" });
+          publish({ preservedTarget: { sessionId: result.sessionId, workspaceId }, notice: "\u5DF2\u6709\u8349\u7A3F\u6216\u9644\u4EF6\u5DF2\u4FDD\u7559\uFF0C\u672C\u6B21\u65B9\u6848\u6CA1\u6709\u5199\u5165\u3002\u53EF\u6253\u5F00\u5DF2\u6709\u8349\u7A3F\u7EE7\u7EED\u5904\u7406\uFF0C\u6216\u5728\u4E0B\u65B9\u9884\u89C8\u5E76\u590D\u5236\u672C\u6B21\u65B9\u6848\u3002" });
           return false;
         }
         if (result.status === "blocked") {
@@ -356,6 +397,25 @@ function createFinderController(ctx, options = {}) {
           operation = null;
           publish({ busy: null });
         }
+      }
+    },
+    openPreservedDraft() {
+      if (closed || operation || !state.preservedTarget) return false;
+      const target = state.preservedTarget;
+      const actual = workspaceSnapshot();
+      if (target.workspaceId !== state.workspaceId || actual?.phase !== "ready" || !actual.items?.some((item) => item.workspaceId === target.workspaceId)) {
+        publish({ preservedTarget: null, error: "\u539F\u5DE5\u4F5C\u533A\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u786E\u8BA4\u63A5\u7EED\u76EE\u6807\u3002\u6CA1\u6709\u5199\u5165\u6216\u53D1\u9001\u8349\u7A3F\u3002" });
+        return false;
+      }
+      try {
+        if (typeof ctx.uiWorkspace?.openSession !== "function" || typeof ctx.layout?.selectPanel !== "function") throw new Error("missing navigation");
+        ctx.uiWorkspace.openSession(target.sessionId);
+        ctx.layout.selectPanel(null);
+        publish({ notice: "\u5DF2\u8BF7\u6C42\u6253\u5F00\u5DF2\u6709\u8349\u7A3F\u7684\u540C\u4E00\u4F1A\u8BDD\uFF0C\u8BF7\u6838\u5BF9\u540E\u7EE7\u7EED\u3002\u672C\u6B21\u64CD\u4F5C\u6CA1\u6709\u5199\u5165\u6216\u53D1\u9001\u8349\u7A3F\u3002", error: "" });
+        return true;
+      } catch {
+        publish({ error: "\u5DF2\u6709\u8349\u7A3F\u4F1A\u8BDD\u672A\u80FD\u6253\u5F00\uFF0C\u8BF7\u5728 DSH \u6838\u5BF9\u3002\u6CA1\u6709\u65B0\u5EFA\u4F1A\u8BDD\u3001\u5199\u5165\u6216\u53D1\u9001\u8349\u7A3F\u3002" });
+        return false;
       }
     },
     prompt: buildPrompt,
@@ -383,15 +443,24 @@ function createFinderController(ctx, options = {}) {
     showUnderstanding() {
       if (!closed && !operation && state.intent) publish({ stage: "understand", error: "", notice: "" });
     },
+    newRequest() {
+      if (closed || operation) return Promise.resolve(false);
+      draftRevision += 1;
+      publish({ stage: "describe", request: "", intent: null, plan: null, candidates: [], discovery: null, warnings: [], workspaceId: "", error: "", notice: "", feedbackSaved: false, handoffRequested: false, preservedTarget: null, resetPending: true, storageWarning: "", modelLabel: text(state.bootstrap?.model?.label) });
+      return clearStoredWorkflow();
+    },
+    retryReset() {
+      return closed || operation || !state.resetPending ? Promise.resolve(false) : clearStoredWorkflow();
+    },
     reset() {
-      this.cancel();
-      publish({ stage: "describe", request: "", intent: null, plan: null, candidates: [], workspaceId: "", error: "", notice: "", feedbackSaved: false, handoffRequested: false });
+      return this.newRequest();
     },
     cancel() {
+      const cancelledKind = operation?.kind;
       sequence += 1;
       if (operation) operation.controller.abort("cancelled");
       operation = null;
-      publish({ busy: null, notice: "\u5DF2\u53D6\u6D88\u8FD9\u4E00\u6B65\u3002\u5DF2\u586B\u5199\u7684\u5185\u5BB9\u4ECD\u4FDD\u7559\u3002", error: "" });
+      publish({ busy: null, notice: cancelledKind === "reset" ? "\u672C\u673A\u65E7\u8BB0\u5F55\u662F\u5426\u6E05\u9664\u5C1A\u672A\u786E\u8BA4\uFF0C\u53EF\u91CD\u8BD5\u6E05\u9664\u3002" : "\u5DF2\u53D6\u6D88\u8FD9\u4E00\u6B65\u3002\u5DF2\u586B\u5199\u7684\u5185\u5BB9\u4ECD\u4FDD\u7559\u3002", error: "" });
     },
     notify(message) {
       publish({ notice: text(message), error: "" });
@@ -416,18 +485,20 @@ function safeUrl(value) {
   }
 }
 function sourceLinks(candidate) {
-  const values = [candidate.repository, candidate.homepage, ...Array.isArray(candidate.sources) ? candidate.sources : [], ...Array.isArray(candidate.evidence?.sources) ? candidate.evidence.sources : []];
+  const values = [candidate.repository, ...candidate.documentation?.url ? [{ url: candidate.documentation.url, label: "\u4F5C\u8005\u8D44\u6599" }] : [], ...Array.isArray(candidate.evidence?.sources) ? candidate.evidence.sources : [], ...Array.isArray(candidate.sourceTags) ? candidate.sourceTags : [], ...Array.isArray(candidate.sources) ? candidate.sources : [], candidate.homepage];
   const seen = /* @__PURE__ */ new Set();
   return values.flatMap((value) => {
     const url = safeUrl(typeof value === "string" ? value : value?.url);
     if (!url || seen.has(url)) return [];
     seen.add(url);
-    const kinds = { manifest: "\u5305\u6E05\u5355", "author-documentation": "\u4F5C\u8005\u6587\u6863", "bundle-patch": "\u63D2\u4EF6\u58F0\u660E" };
-    return [{ url, label: typeof value === "object" ? text(value.label) || kinds[value.kind] || text(value.type) || "\u6765\u6E90\u6587\u6863" : url.includes("github.com") ? "\u4F5C\u8005\u4ED3\u5E93" : "\u6765\u6E90\u6587\u6863" }];
+    const kinds = { manifest: "\u5305\u6E05\u5355", "registry-manifest": "\u6CE8\u518C\u8868\u6E05\u5355", "author-documentation": "\u4F5C\u8005\u6587\u6863", "bundle-patch": "\u63D2\u4EF6\u58F0\u660E", "market-index": "\u5E02\u573A\u7D22\u5F15", "github-topic": "GitHub \u53D1\u73B0\u6765\u6E90" };
+    return [{ url, label: typeof value === "object" ? text(value.label) || text(value.title) || kinds[value.kind] || text(value.type) || "\u6765\u6E90\u6587\u6863" : url.includes("github.com") ? "\u4F5C\u8005\u4ED3\u5E93" : "\u6765\u6E90\u6587\u6863" }];
   }).slice(0, 5);
 }
 function evidenceText(value, kind) {
   const status = readable(value);
+  if (kind === "metadata" && status === "manifest-checked") return "\u5305\u6E05\u5355\u5DF2\u6838\u5BF9";
+  if (kind === "metadata" && status === "index-only") return "\u4EC5\u7D22\u5F15\u58F0\u660E \xB7 \u4F5C\u8005\u8D44\u6599\u5F85\u6838\u5BF9";
   if (["verified", "checked", "metadata-only", "manifest-verified", "indexed"].includes(status)) return kind === "metadata" ? "\u5305\u4FE1\u606F\u5DF2\u6838\u5BF9" : kind === "installation" ? "\u8BB0\u5F55\u663E\u793A\u5B89\u88C5\u6838\u9A8C" : "\u8BB0\u5F55\u663E\u793A\u4EFB\u52A1\u6838\u9A8C";
   if (["not-tested", "not-verified", "unverified", "unknown", "not-run"].includes(status) || !status) return kind === "metadata" ? "\u5305\u4FE1\u606F\u5F85\u6838\u5BF9" : kind === "installation" ? "\u672A\u5B89\u88C5\u6838\u9A8C" : "\u672A\u505A\u4EFB\u52A1\u6838\u9A8C";
   return status;
@@ -463,9 +534,35 @@ function apply(ctx) {
       };
     }, []);
     const busy = state.busy !== null;
+    const taskInputBusy = busy && state.busy !== "bootstrap";
     const modelReady = state.bootstrap?.model?.configured === true;
     const selectedIds = new Set(state.plan?.pluginIds ?? []);
     const selectedCandidates = state.candidates.filter((item) => selectedIds.has(item.id));
+    const discoverySources = Array.isArray(state.discovery?.sources) ? state.discovery.sources.filter((source) => source && typeof source === "object").slice(0, 20) : [];
+    const sourceFailed = discoverySources.some((source) => source.status === "failed");
+    const usesCache = discoverySources.some((source) => source.status === "cached" || source.status === "stale");
+    const sourceLabels = { ready: "\u6309\u9700\u68C0\u67E5\u4E0E\u641C\u7D22", live: "\u5B9E\u65F6\u8BFB\u53D6", cached: "\u4F7F\u7528\u7F13\u5B58", stale: "\u4F7F\u7528\u8FC7\u671F\u7F13\u5B58", failed: "\u8BFB\u53D6\u5931\u8D25", unconfigured: "\u672A\u914D\u7F6E" };
+    const sourceRow = (source, index, initial = false) => {
+      const url = safeUrl(source.url);
+      const title = text(source.title) || text(source.id) || "\u63D2\u4EF6\u6765\u6E90";
+      return h(
+        "li",
+        { className: "pf_source_row", key: text(source.id) || index },
+        h("div", { className: "pf_source_head" }, url ? h("a", { href: url, target: "_blank", rel: "noopener noreferrer" }, title, " \u2197") : h("strong", null, title), h("span", { className: `pf_tag${source.status === "failed" || source.status === "stale" ? " pf_source_warn" : ""}` }, sourceLabels[source.status] || "\u72B6\u6001\u672A\u8BF4\u660E")),
+        !initial ? h("p", { className: "pf_small pf_muted" }, `${Number.isSafeInteger(source.total) && source.total >= 0 ? `\u6765\u6E90\u8FD4\u56DE ${source.total} \u6761` : "\u6765\u6E90\u8FD4\u56DE\u6570\u91CF\u672A\u786E\u8BA4"}${text(source.fetchedAt) ? ` \xB7 \u8D44\u6599\u8BFB\u53D6 ${source.fetchedAt}` : ""}`) : null,
+        source.status === "failed" ? h("p", { className: "pf_small pf_muted" }, "\u8BE5\u6765\u6E90\u641C\u7D22\u672A\u5B8C\u6210", text(source.error) ? `\uFF1A${source.error.slice(0, 500)}` : "\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002") : null,
+        source.status === "stale" ? h("p", { className: "pf_small pf_muted" }, "\u5B9E\u65F6\u8BFB\u53D6\u672A\u5B8C\u6210\uFF0C\u4EE5\u4E0A\u4F7F\u7528\u8F83\u65E9\u7F13\u5B58\uFF0C\u4E0D\u80FD\u89C6\u4E3A\u5F53\u524D\u5168\u91CF\u7ED3\u679C\u3002") : null
+      );
+    };
+    const searchEvidence = state.discovery ? h(
+      "section",
+      { className: "pf_section", "aria-label": "\u672C\u6B21\u641C\u7D22\u6765\u6E90" },
+      h("div", { className: "pf_section_head" }, h("h2", null, "\u672C\u6B21\u641C\u7D22"), h("span", { className: "pf_small pf_muted" }, `\u53C2\u4E0E\u63A8\u8350\u7684\u5019\u9009\uFF1A${state.candidates.length}`)),
+      h("p", { className: "pf_muted pf_small" }, `\u6309\u786E\u8BA4\u540E\u7684\u9700\u6C42\u68C0\u7D22\u6765\u6E90\uFF0C\u518D\u8BFB\u53D6\u5019\u9009\u8D44\u6599${text(state.discovery.searchedAt) ? ` \xB7 \u641C\u7D22\u65F6\u95F4 ${state.discovery.searchedAt}` : ""}\u3002\u7B2C\u4E09\u65B9\u7CBE\u9009\u6E90\uFF0C\u975E\u5B98\u65B9\u5BA1\u6838\u3002`),
+      sourceFailed ? h("p", { className: "pf_banner pf_small", role: "status" }, "\u641C\u7D22\u672A\u5B8C\u6210\uFF1A\u90E8\u5206\u6765\u6E90\u8BFB\u53D6\u5931\u8D25\u3002\u4EE5\u4E0B\u53EA\u5C55\u793A\u5DF2\u8FD4\u56DE\u7684\u5019\u9009\uFF0C\u4E0D\u80FD\u636E\u6B64\u5224\u65AD\u6CA1\u6709\u76F8\u5173\u63D2\u4EF6\u3002") : usesCache ? h("p", { className: "pf_banner pf_small", role: "status" }, "\u672C\u6B21\u90E8\u5206\u6765\u6E90\u4F7F\u7528\u7F13\u5B58\uFF0C\u5177\u4F53\u72B6\u6001\u548C\u8BFB\u53D6\u65F6\u95F4\u5982\u4E0B\uFF1B\u7F13\u5B58\u7ED3\u679C\u4E0D\u4EE3\u8868\u5DF2\u5B8C\u6210\u5B9E\u65F6\u641C\u7D22\u3002") : null,
+      discoverySources.length ? h("ul", { className: "pf_sources" }, ...discoverySources.map((source, index) => sourceRow(source, index))) : h("p", { className: "pf_muted pf_small" }, "\u672C\u6B21\u6765\u6E90\u72B6\u6001\u672A\u8FD4\u56DE\uFF0C\u641C\u7D22\u8986\u76D6\u8303\u56F4\u5C1A\u672A\u786E\u8BA4\u3002"),
+      state.warnings?.length ? h("ul", { className: "pf_list pf_small pf_muted" }, ...strings(state.warnings).slice(0, 16).map((warning, index) => h("li", { key: index }, warning))) : null
+    ) : null;
     const labelFor = (owner) => owner === "dsh" ? "DSH \u539F\u751F\u80FD\u529B" : owner === "human" ? "\u4F60\u6765\u786E\u8BA4 / \u8865\u5145" : state.candidates.find((item) => item.id === owner)?.name ?? owner;
     const copyText = async (value) => {
       try {
@@ -500,6 +597,8 @@ function apply(ctx) {
         h("p", null, text(candidate.summary) || text(candidate.description)),
         h("div", { className: "pf_tags" }, ...strings(candidate.capabilities).slice(0, 8).map((item) => h("span", { className: "pf_tag", key: item }, item))),
         h("div", { className: "pf_evidence" }, h("span", null, evidenceText(candidate.evidence?.metadata, "metadata")), h("span", null, evidenceText(candidate.evidence?.installation, "installation")), h("span", null, evidenceText(candidate.evidence?.task, "task"))),
+        text(candidate.evidence?.fetchedAt) ? h("p", { className: "pf_small pf_muted" }, `\u6765\u6E90\u8D44\u6599\u8BFB\u53D6\uFF1A${candidate.evidence.fetchedAt}`) : null,
+        text(candidate.evidence?.capabilityBasis) ? h("p", { className: "pf_small pf_muted" }, `\u80FD\u529B\u4F9D\u636E\uFF1A${candidate.evidence.capabilityBasis}`) : null,
         h("div", { className: "pf_links" }, ...links.map((link) => h("a", { key: link.url, href: link.url, target: "_blank", rel: "noopener noreferrer" }, link.label, " \u2197"))),
         h(
           "details",
@@ -510,6 +609,7 @@ function apply(ctx) {
           spec ? h("div", { className: "pf_install" }, h("div", { className: "pf_small pf_muted" }, "\u7CBE\u786E\u5B89\u88C5\u6765\u6E90"), h("code", null, spec), h("div", { className: "pf_actions" }, button("\u590D\u5236\u6765\u6E90", () => copyText(spec)), button("\u53BB DSH \u63D2\u4EF6\u9875\u6838\u5BF9", () => controller.openPluginManager()))) : h("p", { className: "pf_small pf_muted" }, "\u6682\u65E0\u53EF\u5C55\u793A\u7684\u7CBE\u786E\u5B89\u88C5\u6765\u6E90\uFF0C\u8BF7\u5148\u67E5\u770B\u4F5C\u8005\u6587\u6863\u3002"),
           details.lifecycleWarning ? h("p", { className: "pf_banner pf_small" }, details.lifecycleWarning) : null,
           details.buildPrerequisite ? h("p", { className: "pf_banner pf_small" }, details.buildPrerequisite) : null,
+          text(candidate.documentation?.readAt) ? h("p", { className: "pf_small pf_muted" }, `\u4F5C\u8005\u8D44\u6599\u8BFB\u53D6\uFF1A${candidate.documentation.readAt}${candidate.documentation.truncated ? " \xB7 \u6709\u754C\u8282\u9009\uFF0C\u975E\u5168\u6587" : ""}`) : null,
           details.firstUse ? h("p", { className: "pf_small pf_preline" }, h("strong", null, "\u9996\u6B21\u4F7F\u7528\uFF1A"), details.firstUse) : null,
           details.limitations.length ? h("ul", { className: "pf_list pf_small pf_muted" }, ...details.limitations.map((item, index) => h("li", { key: index }, item))) : null,
           h("p", { className: "pf_small pf_muted" }, "\u5B89\u88C5\u4F1A\u5F71\u54CD DSH \u914D\u7F6E\u3002\u8BF7\u7531\u5BBF\u4E3B\u786E\u8BA4\u517C\u5BB9\u6027\u548C\u5B89\u88C5\u7ED3\u679C\uFF1B\u672C\u9875\u4E0D\u4F1A\u81EA\u52A8\u5B89\u88C5\u3002")
@@ -527,7 +627,7 @@ function apply(ctx) {
           event.preventDefault();
           void controller.analyze();
         } },
-        h("label", { className: "pf_label" }, h("span", null, "\u4EFB\u52A1\u63CF\u8FF0"), h("textarea", { className: "pf_request", "aria-label": "\u4EFB\u52A1\u63CF\u8FF0", value: state.request, maxLength: 6e3, disabled: busy, placeholder: "\u4F8B\u5982\uFF1A\u6BCF\u5468\u6536\u5230\u6295\u653E CSV\uFF0C\u60F3\u5148\u68C0\u67E5\u5F02\u5E38\uFF0C\u518D\u751F\u6210\u4E00\u4EFD\u8BF4\u660E\u53D8\u5316\u539F\u56E0\u7684\u5468\u62A5\u3002\u6587\u4EF6\u5728\u672C\u5730\uFF0C\u4E0D\u60F3\u518D\u5F00\u7B2C\u4E09\u65B9\u8D26\u53F7\u3002", onChange: (event) => controller.setRequest(event.target.value) })),
+        h("label", { className: "pf_label" }, h("span", null, "\u4EFB\u52A1\u63CF\u8FF0"), h("textarea", { className: "pf_request", "aria-label": "\u4EFB\u52A1\u63CF\u8FF0", value: state.request, maxLength: 6e3, disabled: taskInputBusy, placeholder: "\u4F8B\u5982\uFF1A\u6BCF\u5468\u6536\u5230\u6295\u653E CSV\uFF0C\u60F3\u5148\u68C0\u67E5\u5F02\u5E38\uFF0C\u518D\u751F\u6210\u4E00\u4EFD\u8BF4\u660E\u53D8\u5316\u539F\u56E0\u7684\u5468\u62A5\u3002\u6587\u4EF6\u5728\u672C\u5730\uFF0C\u4E0D\u60F3\u518D\u5F00\u7B2C\u4E09\u65B9\u8D26\u53F7\u3002", onChange: (event) => controller.setRequest(event.target.value) })),
         h("div", { className: "pf_form_note" }, h("span", null, "\u70B9\u51FB\u540E\u8C03\u7528 DSH \u5DF2\u6709\u6A21\u578B\uFF1B\u652F\u6301\u65F6\u91C7\u7528\u8F7B\u91CF\u63A8\u7406\u6863\uFF0C\u4E0D\u9700\u8981\u53E6\u586B\u6A21\u578B Key\u3002"), h("span", null, `${state.request.length} / 6000`)),
         h("div", { className: "pf_actions" }, h("button", { type: "submit", className: "pf_btn pf_primary", disabled: busy || !modelReady || !state.request.trim() }, "\u7406\u89E3\u8FD9\u4E2A\u9700\u6C42 \u2192"))
       ),
@@ -535,20 +635,21 @@ function apply(ctx) {
         ["\u68C0\u67E5\u6570\u636E\u5E76\u5199\u5468\u62A5", "\u6BCF\u5468\u6536\u5230\u672C\u5730\u6295\u653E CSV\uFF0C\u60F3\u5148\u68C0\u67E5\u6570\u636E\u8D28\u91CF\u548C\u5F02\u5E38\uFF0C\u518D\u751F\u6210\u8BF4\u660E\u53D8\u5316\u7684\u5468\u62A5\u3002\u4E0D\u63A5\u989D\u5916\u7B2C\u4E09\u65B9\u8D26\u53F7\u3002"],
         ["\u7814\u7A76\u4EA7\u54C1\u5E76\u4FDD\u7559\u51FA\u5904", "\u60F3\u7814\u7A76\u4E09\u4E2A\u7ADE\u54C1\u6700\u8FD1\u7684\u4EA7\u54C1\u53D8\u5316\uFF0C\u6574\u7406\u5BF9\u7167\u62A5\u544A\uFF0C\u6BCF\u4E2A\u5173\u952E\u7ED3\u8BBA\u90FD\u4FDD\u7559\u53EF\u67E5\u7684\u539F\u59CB\u51FA\u5904\u3002"],
         ["\u5BA1\u67E5\u5F53\u524D\u9879\u76EE\u4EE3\u7801", "\u60F3\u5BA1\u67E5\u5F53\u524D\u5DE5\u4F5C\u533A\u7684\u4EE3\u7801\u6539\u52A8\uFF0C\u627E\u51FA\u6709\u8BC1\u636E\u7684\u7F3A\u9677\uFF0C\u7ED9\u51FA\u5177\u4F53\u4FEE\u6539\u5EFA\u8BAE\u3002"]
-      ].map(([label, request]) => h("button", { type: "button", className: "pf_example", key: label, disabled: busy, onClick: () => controller.setRequest(request) }, label))),
+      ].map(([label, request]) => h("button", { type: "button", className: "pf_example", key: label, disabled: taskInputBusy, onClick: () => controller.setRequest(request) }, label))),
       !state.bootstrapLoaded && !busy ? button("\u91CD\u65B0\u8BFB\u53D6\u8FDE\u63A5\u4E0E\u914D\u7F6E", () => controller.bootstrap(), { className: "pf_btn pf_text" }) : null
     );
     const understand = state.intent ? h(
       "section",
       { className: "pf_section" },
       h("h2", null, "\u5148\u786E\u8BA4\uFF0C\u6211\u4EEC\u7406\u89E3\u7684\u662F\u540C\u4E00\u4EF6\u4E8B"),
-      h("p", { className: "pf_muted" }, "\u4F60\u53EF\u4EE5\u4FEE\u6539\u4E0B\u9762\u7684\u5185\u5BB9\u3002\u80FD\u529B\u3001\u7EA6\u675F\u548C\u641C\u7D22\u8BCD\u6BCF\u884C\u4E00\u9879\uFF1B\u6309\u786E\u8BA4\u540E\u7684\u5185\u5BB9\u68C0\u7D22\u771F\u5B9E\u7D22\u5F15\u3002"),
+      h("p", { className: "pf_muted" }, "\u4F60\u53EF\u4EE5\u4FEE\u6539\u4E0B\u9762\u7684\u5185\u5BB9\u3002\u80FD\u529B\u3001\u7EA6\u675F\u548C\u641C\u7D22\u8BCD\u6BCF\u884C\u4E00\u9879\uFF1B\u6309\u786E\u8BA4\u540E\u7684\u5185\u5BB9\u641C\u7D22\u63D2\u4EF6\u6765\u6E90\u5E76\u8BFB\u53D6\u5019\u9009\u8D44\u6599\u3002"),
       h("div", { className: "pf_stack" }, field("\u76EE\u6807", "goal"), h("div", { className: "pf_grid" }, field("\u8F93\u5165\u6750\u6599", "input"), field("\u671F\u671B\u4EA7\u51FA", "output")), h("div", { className: "pf_grid" }, field("\u7EA6\u675F \xB7 \u6700\u591A 6 \u9879", "constraints", true), field("\u6240\u9700\u80FD\u529B \xB7 \u6700\u591A 6 \u9879", "capabilities", true)), field("\u641C\u7D22\u8BCD \xB7 \u6700\u591A 6 \u9879", "queries", true)),
-      h("div", { className: "pf_actions" }, primary("\u786E\u8BA4\u9700\u6C42\uFF0C\u641C\u7D22\u5E76\u63A8\u8350 \u2192", () => controller.recommend(), { disabled: busy }), button("\u91CD\u65B0\u63CF\u8FF0", () => controller.reset(), { disabled: busy }))
+      h("div", { className: "pf_actions" }, primary("\u786E\u8BA4\u9700\u6C42\uFF0C\u641C\u7D22\u5E76\u63A8\u8350 \u2192", () => controller.recommend(), { disabled: busy }), button("\u91CD\u65B0\u63CF\u8FF0", () => controller.newRequest(), { disabled: busy }))
     ) : null;
     const plan = state.plan ? h(
       "div",
       null,
+      searchEvidence,
       h(
         "section",
         { className: "pf_section" },
@@ -556,7 +657,7 @@ function apply(ctx) {
         h(
           "div",
           { className: "pf_plan" },
-          h("span", { className: "pf_tag pf_selected" }, { native: "\u539F\u751F\u80FD\u529B\u53EF\u5148\u5B8C\u6210", single: "\u5355\u63D2\u4EF6\u65B9\u6848", combo: "\u63D2\u4EF6\u7EC4\u5408 \xB7 \u4ECD\u9700\u4EFB\u52A1\u56DE\u9A8C", gap: "\u5F53\u524D\u4F9B\u7ED9\u6709\u7F3A\u53E3" }[state.plan.kind]),
+          h("span", { className: "pf_tag pf_selected" }, state.plan.kind === "gap" && sourceFailed ? "\u641C\u7D22\u672A\u5B8C\u6210 \xB7 \u4F9B\u7ED9\u5F85\u5224\u65AD" : { native: "\u539F\u751F\u80FD\u529B\u53EF\u5148\u5B8C\u6210", single: "\u5355\u63D2\u4EF6\u65B9\u6848", combo: "\u63D2\u4EF6\u7EC4\u5408 \xB7 \u4ECD\u9700\u4EFB\u52A1\u56DE\u9A8C", gap: "\u672C\u6B21\u5DF2\u641C\u7D22\u6765\u6E90\u4ECD\u6709\u4F9B\u7ED9\u7F3A\u53E3" }[state.plan.kind]),
           h("h2", null, text(state.plan.title)),
           h("p", { className: "pf_muted" }, text(state.plan.rationale)),
           h("ol", { className: "pf_plan_steps" }, ...state.plan.steps.map((step, index) => h("li", { className: "pf_plan_step", key: index }, h("span", { className: "pf_number" }, index + 1), h("div", null, h("strong", null, text(step.capability), " \xB7 ", labelFor(step.owner)), h("p", null, text(step.action)), text(step.sourceCapability) ? h("p", { className: "pf_small pf_muted" }, `\u7D22\u5F15\u80FD\u529B\uFF1A${step.sourceCapability}`) : null, h("p", { className: "pf_small pf_muted" }, `\u8F93\u5165\uFF1A${text(step.input)} \u2192 \u8F93\u51FA\uFF1A${text(step.output)}`))))),
@@ -567,8 +668,8 @@ function apply(ctx) {
         "section",
         { className: "pf_section" },
         h("h2", null, `\u76F8\u5173\u5019\u9009${state.candidates.length ? ` \xB7 ${state.candidates.length}` : ""}`),
-        h("p", { className: "pf_muted pf_small" }, "\u6765\u6E90\u4E0E\u7248\u672C\u6765\u81EA\u7D22\u5F15\uFF0C\u9002\u7528\u6027\u7531\u6A21\u578B\u5224\u65AD\u3002\u6536\u5F55\u548C\u5143\u6570\u636E\u6838\u5BF9\u4E0D\u4EE3\u8868\u5DF2\u5B89\u88C5\u3001\u53EF\u5B8C\u6210\u4EFB\u52A1\u6216\u7EC4\u5408\u6709\u6548\u3002"),
-        state.candidates.length ? h("div", { className: "pf_candidates" }, ...state.candidates.map(candidateCard)) : h("p", { className: "pf_empty" }, state.plan.kind === "native" ? "\u8FD9\u4E2A\u65B9\u6848\u53EF\u4EE5\u5148\u4F7F\u7528 DSH \u539F\u751F\u80FD\u529B\uFF0C\u4E0D\u5FC5\u4E3A\u4E86\u5B8C\u6210\u4EFB\u52A1\u989D\u5916\u5B89\u88C5\u63D2\u4EF6\u3002" : "\u5F53\u524D\u7D22\u5F15\u6CA1\u6709\u627E\u5230\u8DB3\u591F\u5408\u9002\u7684\u63D2\u4EF6\u3002\u53EF\u4EE5\u628A\u7F3A\u53E3\u5E26\u5230\u4F1A\u8BDD\u7EE7\u7EED\u62C6\u89E3\uFF0C\u6216\u8BB0\u5F55\u53CD\u9988\u3002")
+        h("p", { className: "pf_muted pf_small" }, "\u6765\u6E90\u4E0E\u7248\u672C\u6765\u81EA\u672C\u6B21\u8BFB\u53D6\u6216\u6CE8\u660E\u7684\u7F13\u5B58\uFF0C\u9002\u7528\u6027\u7531\u6A21\u578B\u5224\u65AD\u3002\u4F5C\u8005\u6E05\u5355\u4E0E\u7D22\u5F15\u58F0\u660E\u5206\u5F00\u6807\u6CE8\uFF1B\u5B89\u88C5\u3001\u4EFB\u52A1\u4E0E\u7EC4\u5408\u6548\u679C\u4ECD\u9700\u6838\u9A8C\u3002"),
+        state.candidates.length ? h("div", { className: "pf_candidates" }, ...state.candidates.map(candidateCard)) : h("p", { className: "pf_empty" }, sourceFailed ? "\u641C\u7D22\u672A\u5B8C\u6210\uFF0C\u6682\u4E0D\u80FD\u5224\u65AD\u662F\u5426\u5B58\u5728\u5408\u9002\u63D2\u4EF6\u3002\u8BF7\u5148\u91CD\u8BD5\u5931\u8D25\u7684\u6765\u6E90\uFF0C\u6216\u628A\u5F85\u786E\u8BA4\u4E8B\u9879\u5E26\u5230\u4F1A\u8BDD\u7EE7\u7EED\u3002" : state.plan.kind === "native" ? "\u8FD9\u4E2A\u65B9\u6848\u53EF\u4EE5\u5148\u4F7F\u7528 DSH \u539F\u751F\u80FD\u529B\uFF0C\u4E0D\u5FC5\u4E3A\u4E86\u5B8C\u6210\u4EFB\u52A1\u989D\u5916\u5B89\u88C5\u63D2\u4EF6\u3002" : "\u672C\u6B21\u5DF2\u8FD4\u56DE\u7684\u6765\u6E90\u4E2D\u6CA1\u6709\u627E\u5230\u8DB3\u591F\u5408\u9002\u7684\u5019\u9009\uFF0C\u4E0D\u4EE3\u8868\u6574\u4E2A\u751F\u6001\u6CA1\u6709\u76F8\u5173\u63D2\u4EF6\u3002\u53EF\u4EE5\u8C03\u6574\u9700\u6C42\u540E\u91CD\u8BD5\uFF0C\u6216\u628A\u7F3A\u53E3\u5E26\u5230\u4F1A\u8BDD\u7EE7\u7EED\u3002")
       ),
       h(
         "section",
@@ -577,7 +678,7 @@ function apply(ctx) {
         h("p", { className: "pf_muted" }, selectedCandidates.length ? "\u8BF7\u5148\u5728\u5BBF\u4E3B\u63D2\u4EF6\u9875\u6838\u5BF9\u5019\u9009\u662F\u5426\u5DF2\u5B89\u88C5\u3001\u517C\u5BB9\u53CA\u6EE1\u8DB3\u524D\u63D0\uFF0C\u518D\u9009\u62E9\u5DE5\u4F5C\u533A\u63A5\u7740\u505A\u3002" : "\u9009\u62E9\u4EFB\u52A1\u6750\u6599\u6240\u5728\u7684\u5B9E\u9645\u5DE5\u4F5C\u533A\u3002\u63A5\u4E0B\u6765\u7531\u4F60\u5728\u539F\u751F\u4F1A\u8BDD\u91CC\u786E\u8BA4\u548C\u53D1\u9001\u3002"),
         h("label", { className: "pf_label pf_workspace" }, "\u4EFB\u52A1\u5DE5\u4F5C\u533A", h("select", { "aria-label": "\u4EFB\u52A1\u5DE5\u4F5C\u533A", value: state.workspaceId, disabled: busy || state.workspacePhase !== "ready", onChange: (event) => controller.selectWorkspace(event.target.value) }, h("option", { value: "" }, state.workspacePhase !== "ready" ? "\u6B63\u5728\u7B49\u5F85 DSH \u5DE5\u4F5C\u533A\u5217\u8868\u2026" : state.workspaces.length ? "\u8BF7\u9009\u62E9\u4E00\u4E2A\u5DE5\u4F5C\u533A" : "\u5C1A\u65E0\u5DE5\u4F5C\u533A\uFF0C\u8BF7\u5148\u5728 DSH \u6DFB\u52A0"), ...state.workspaces.map((item) => h("option", { value: item.workspaceId, key: item.workspaceId }, item.title)))),
         h("p", { className: "pf_muted pf_small", style: { marginTop: 8 } }, "\u4EC5\u51C6\u5907\u666E\u901A\u6587\u672C\u8349\u7A3F\uFF1B\u5DF2\u6709\u8349\u7A3F\u548C\u9644\u4EF6\u7531\u5BBF\u4E3B\u4FDD\u7559\u3002\u4E0D\u4F1A\u81EA\u52A8\u53D1\u9001\u6216\u6267\u884C\u3002"),
-        h("div", { className: "pf_actions" }, primary(state.handoffRequested ? "\u8349\u7A3F\u5DF2\u51C6\u5907" : "\u786E\u8BA4\u65B9\u6848\uFF0C\u53BB\u4F1A\u8BDD\u7EE7\u7EED \u2192", () => controller.handoff(), { disabled: busy || !state.workspaceId || state.handoffRequested }), selectedCandidates.length ? button("\u6253\u5F00 DSH \u63D2\u4EF6\u9875", () => controller.openPluginManager(), { disabled: busy }) : null),
+        h("div", { className: "pf_actions" }, primary(state.handoffRequested ? "\u8349\u7A3F\u5DF2\u51C6\u5907" : "\u786E\u8BA4\u65B9\u6848\uFF0C\u53BB\u4F1A\u8BDD\u7EE7\u7EED \u2192", () => controller.handoff(), { disabled: busy || !state.workspaceId || state.handoffRequested }), state.preservedTarget ? button("\u6253\u5F00\u5DF2\u6709\u8349\u7A3F", () => controller.openPreservedDraft(), { disabled: busy }) : null, selectedCandidates.length ? button("\u6253\u5F00 DSH \u63D2\u4EF6\u9875", () => controller.openPluginManager(), { disabled: busy }) : null),
         h("details", { className: "pf_details" }, h("summary", null, "\u9884\u89C8\u5C06\u5E26\u5165\u7684\u8349\u7A3F"), h("pre", { className: "pf_code" }, controller.prompt()), button("\u590D\u5236\u5B8C\u6574\u8349\u7A3F", () => copyText(controller.prompt())))
       ),
       h(
@@ -599,16 +700,23 @@ function apply(ctx) {
       h("header", { className: "pf_header" }, h("div", null, h("div", { className: "pf_eyebrow" }, "PLUGIN FINDER"), h("h1", null, "\u53D1\u73B0\u597D\u63D2\u4EF6"), h("p", { className: "pf_muted" }, "\u4ECE\u4F60\u8981\u5B8C\u6210\u7684\u4E8B\uFF0C\u627E\u5230\u9002\u5408\u7684\u63D2\u4EF6\u4E0E\u505A\u6CD5\u3002")), h("div", { className: "pf_header_actions" }, button("\u91CD\u65B0\u8BFB\u53D6\u914D\u7F6E", () => controller.bootstrap(), { disabled: busy }), state.stage !== "describe" ? button("\u65B0\u9700\u6C42", () => {
         setFeedbackOutcome("");
         setFeedbackNote("");
-        controller.reset();
+        void controller.newRequest();
       }, { disabled: busy }) : null)),
       h("ol", { className: "pf_steps", "aria-label": "\u65B9\u6848\u6B65\u9AA4" }, ...[["describe", "\u63CF\u8FF0\u9700\u6C42"], ["understand", "\u786E\u8BA4\u7406\u89E3"], ["plan", "\u63A8\u8350\u4E0E\u63A5\u7EED"]].map(([key, label], index) => h("li", { className: `pf_step${state.stage === key ? " active" : ""}`, key, "aria-current": state.stage === key ? "step" : void 0 }, h("span", { className: "pf_number" }, index + 1), label))),
-      state.bootstrap ? h("p", { className: "pf_small pf_muted", style: { marginBottom: 20 } }, h("span", { className: "pf_model" }, `\u5BBF\u4E3B\u9ED8\u8BA4\u6A21\u578B\uFF1A${state.modelLabel || "\u672A\u914D\u7F6E"}`), `\u3000\u7D22\u5F15 ${state.bootstrap.catalog.count} \u6761\u63D2\u4EF6\u8BB0\u5F55${state.bootstrap.catalog.updatedAt ? ` \xB7 \u66F4\u65B0 ${state.bootstrap.catalog.updatedAt}` : ""}`) : null,
+      state.bootstrap ? h(
+        "div",
+        { className: "pf_search_scope", style: { marginBottom: 20 } },
+        h("p", { className: "pf_small pf_muted" }, h("span", { className: "pf_model" }, `\u5BBF\u4E3B\u9ED8\u8BA4\u6A21\u578B\uFF1A${state.modelLabel || "\u672A\u914D\u7F6E"}`), "\u3000\u6309\u9700\u6C42\u641C\u7D22\u63D2\u4EF6\u6765\u6E90"),
+        state.stage === "describe" ? h("details", { className: "pf_details" }, h("summary", null, "\u67E5\u770B\u641C\u7D22\u6765\u6E90 \xB7 \u7B2C\u4E09\u65B9\u7CBE\u9009\u6E90\uFF0C\u975E\u5B98\u65B9\u5BA1\u6838"), Array.isArray(state.bootstrap.discovery?.sources) && state.bootstrap.discovery.sources.length ? h("ul", { className: "pf_sources" }, ...state.bootstrap.discovery.sources.slice(0, 20).map((source, index) => sourceRow(source, index, true))) : h("p", { className: "pf_muted pf_small" }, "\u6765\u6E90\u914D\u7F6E\u5C1A\u672A\u8FD4\u56DE\uFF1B\u641C\u7D22\u65F6\u5C06\u5217\u51FA\u5B9E\u9645\u8BFB\u53D6\u72B6\u6001\u3002")) : null
+      ) : null,
       state.bootstrapLoaded && !modelReady ? h("div", { className: "pf_banner" }, "\u5C1A\u672A\u914D\u7F6E\u53EF\u7528\u7684\u5BBF\u4E3B\u9ED8\u8BA4\u6A21\u578B\u3002\u8BF7\u524D\u5F80 DSH \u8BBE\u7F6E\u5B8C\u6210\u6A21\u578B\u914D\u7F6E\uFF0C\u518D\u70B9\u51FB\u300C\u91CD\u65B0\u8BFB\u53D6\u914D\u7F6E\u300D\u3002\u672C\u63D2\u4EF6\u4E0D\u53E6\u6536\u6A21\u578B Key\u3002") : null,
       state.error ? h("div", { className: "pf_banner pf_error", role: "alert" }, state.error) : null,
       state.notice ? h("div", { className: "pf_banner", role: "status" }, state.notice) : null,
-      busy ? h("div", { className: "pf_status", role: "status" }, h("span", { className: "pf_spinner", "aria-hidden": true }), { bootstrap: "\u6B63\u5728\u8BFB\u53D6\u8FDE\u63A5\u4E0E\u914D\u7F6E\u2026", analyze: "\u6B63\u5728\u7406\u89E3\u76EE\u6807\u3001\u6750\u6599\u4E0E\u7EA6\u675F\u2026", recommend: "\u6B63\u5728\u68C0\u7D22\u771F\u5B9E\u6765\u6E90\u5E76\u751F\u6210\u6700\u5C0F\u65B9\u6848\u2026", handoff: "\u6B63\u5728\u8FDE\u63A5\u9009\u5B9A\u5DE5\u4F5C\u533A\u5E76\u51C6\u5907\u672A\u53D1\u9001\u8349\u7A3F\u2026", feedback: "\u6B63\u5728\u4FDD\u5B58\u5230\u672C\u673A\u2026" }[state.busy], button("\u53D6\u6D88", () => controller.cancel(), { className: "pf_btn pf_text" })) : null,
+      state.storageWarning && !state.notice.includes(state.storageWarning) ? h("div", { className: "pf_banner pf_small", role: "status" }, state.storageWarning) : null,
+      state.resetPending && state.busy !== "reset" ? h("div", { className: "pf_banner pf_small", role: "status" }, "\u672C\u673A\u65E7\u4EFB\u52A1\u8BB0\u5F55\u5C1A\u672A\u786E\u8BA4\u6E05\u9664\uFF0C\u91CD\u542F\u540E\u53EF\u80FD\u6062\u590D\u3002\u8BF7\u91CD\u8BD5\u6E05\u9664\u3002", button("\u91CD\u8BD5\u6E05\u9664\u672C\u673A\u8BB0\u5F55", () => controller.retryReset(), { disabled: busy })) : null,
+      busy ? h("div", { className: "pf_status", role: "status" }, h("span", { className: "pf_spinner", "aria-hidden": true }), { bootstrap: "\u6B63\u5728\u8BFB\u53D6\u8FDE\u63A5\u4E0E\u914D\u7F6E\u2026", analyze: "\u6B63\u5728\u7406\u89E3\u76EE\u6807\u3001\u6750\u6599\u4E0E\u7EA6\u675F\u2026", recommend: "\u6B63\u5728\u641C\u7D22\u6765\u6E90\u3001\u8BFB\u53D6\u5019\u9009\u8D44\u6599\u5E76\u63A8\u8350\u2026", handoff: "\u6B63\u5728\u8FDE\u63A5\u9009\u5B9A\u5DE5\u4F5C\u533A\u5E76\u51C6\u5907\u672A\u53D1\u9001\u8349\u7A3F\u2026", feedback: "\u6B63\u5728\u4FDD\u5B58\u5230\u672C\u673A\u2026", reset: "\u6B63\u5728\u6E05\u9664\u5F53\u524D DSH \u672C\u673A\u4EFB\u52A1\u4E0E\u65B9\u6848\u2026" }[state.busy], button("\u53D6\u6D88", () => controller.cancel(), { className: "pf_btn pf_text" })) : null,
       state.stage === "describe" ? describe : state.stage === "understand" ? understand : plan,
-      h("footer", { className: "pf_footer" }, "\u4F7F\u7528 DSH \u5168\u5C40\u9ED8\u8BA4\u6A21\u578B\u4E0E\u8D26\u6237\uFF1B\u6A21\u578B\u652F\u6301\u65F6\uFF0C\u8F85\u52A9\u5206\u6790\u91C7\u7528\u8F83\u4F4E\u63A8\u7406\u6863\uFF0C\u4E0D\u4FEE\u6539\u5BBF\u4E3B\u8BBE\u7F6E\u3002\u6CBF\u7528\u5DF2\u6709\u989D\u5EA6\uFF0C\u672A\u5FC5\u7B49\u4E8E\u67D0\u4E2A\u4F1A\u8BDD\u7684\u6A21\u578B\u9009\u62E9\u3002\u7B2C\u4E09\u65B9\u670D\u52A1\u53EF\u80FD\u53E6\u6709\u8D39\u7528\u3002")
+      h("footer", { className: "pf_footer" }, h("p", null, "\u4EFB\u52A1\u4E0E\u65B9\u6848\u4EC5\u4FDD\u5B58\u5728\u5F53\u524D DSH \u672C\u673A\u4F9B\u91CD\u542F\u6062\u590D\uFF1B\u300C\u65B0\u9700\u6C42\u300D\u4F1A\u6E05\u9664\u3002\u672C\u63D2\u4EF6\u4E0D\u81EA\u52A8\u53D1\u9001\u6216\u5B89\u88C5\u3002"), h("p", { style: { marginTop: 6 } }, "\u9700\u6C42\u4E0E\u5019\u9009\u8D44\u6599\u4ECD\u4F1A\u53D1\u9001\u7ED9 DSH \u5168\u5C40\u9ED8\u8BA4\u6A21\u578B\u8FDB\u884C\u63A8\u7406\uFF1B\u652F\u6301\u65F6\u91C7\u7528\u8F83\u4F4E\u63A8\u7406\u6863\uFF0C\u4E0D\u4FEE\u6539\u5BBF\u4E3B\u8BBE\u7F6E\u3002\u6CBF\u7528\u5DF2\u6709\u989D\u5EA6\uFF0C\u672A\u5FC5\u7B49\u4E8E\u67D0\u4E2A\u4F1A\u8BDD\u7684\u6A21\u578B\u9009\u62E9\u3002\u7B2C\u4E09\u65B9\u670D\u52A1\u53EF\u80FD\u53E6\u6709\u8D39\u7528\u3002"))
     ));
   }
   if (typeof ctx.layout?.selectPanel === "function") {

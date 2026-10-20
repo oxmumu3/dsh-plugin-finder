@@ -1,10 +1,12 @@
-# 首版插件供给索引
+# 历史静态索引（v0.1）
+
+此目录的数据与下列快照用法仅供历史研究和回归测试。v0.2 生产路径使用 `src/discovery.js` 动态读取外部供给，不加载此处 JSON，不受此处白名单限制。当前发布包不含 `plugins.json`、`sources.json` 或刷新脚本；下列 `loadCatalog()` 示例只适用于保留这些历史资料的源码 checkout。`index.mjs` 中的兼容过滤工具仍被生产路径复用，不表示生产候选来自静态名单。
 
 `plugins.json` 是可离线检索的真实元数据快照；`sources.json` 是人工维护的 GitHub 仓库白名单和中文适用性摘要。发现源为 GitHub `dsh-plugin` topic 与 awesome-dsh-plugin；每条记录最终回到作者固定 commit 的 manifest、README 和 bundle patch 核对。
 
 本轮只核对包清单、`dsh.bundle.patch` 声明及文件存在性、作者文档。`metadata: verified` **不等于**安装成功、安全审计、任务完成或组合可用。记录始终保留 `installation/task/combination: not-tested`。作者自述的测试、下载量和徽章不作为本项目的成功证据，也不进入排序。
 
-## 使用
+## 历史快照用法
 
 ```js
 import { loadCatalog, searchCatalog, getPluginDetails } from './catalog/index.mjs';
@@ -26,7 +28,7 @@ const details = getPluginDetails(catalog, matches[0]?.id);
 
 ## 刷新
 
-以下命令在克隆项目源码后运行；安装用 tarball 不包含刷新脚本和测试。普通用户运行插件时只读取随包快照，不会自动刷新或执行候选。
+以下命令只维护克隆项目中的历史资料；安装用 tarball 不包含刷新脚本和测试。旧 v0.1 读取随包快照，当前 v0.2 按需求动态读取外部来源，二者不可混用。
 
 ```sh
 node scripts/refresh-catalog.mjs

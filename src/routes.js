@@ -4,7 +4,7 @@ const reply=(data,status=200)=>Response.json(data,{status,headers});
 export function registerFinderRoutes(ctx,service){
   let closed=false;const disposers=[];
   const connection=ctx.get('connection');
-  for(const [endpoint,method,action] of [['bootstrap','GET',()=>service.bootstrap()],['analyze','POST',body=>service.analyze(body)],['recommend','POST',body=>service.recommend(body)],['feedback','POST',body=>service.feedback(body)]]){
+  for(const [endpoint,method,action] of [['bootstrap','GET',()=>service.bootstrap()],['analyze','POST',body=>service.analyze(body)],['recommend','POST',body=>service.recommend(body)],['feedback','POST',body=>service.feedback(body)],['reset','POST',()=>service.reset()]]){
     const off=connection.fetch.register({path:`/api/plugin_finder/${endpoint}`,methods:[method],requestBody:'buffered',async fetch(request){
       if(closed)return reply({error:{code:'CLOSED',message:'插件已关闭，请重新打开。'}},503);
       if(request.method!==method)return reply({error:{code:'METHOD_NOT_ALLOWED',message:'请求方法不支持。'}},405);
