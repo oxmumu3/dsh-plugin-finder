@@ -1,5 +1,6 @@
 import React from 'react';
 import { finderCss } from './client-style.js';
+import { createCreatorFeedbackDraft, renderCreatorFeedbackDraft } from './creator-feedback.js';
 
 export const inject = ['slots', 'layout', 'uiWorkspace', 'workspaces', 'sessions'];
 const PANEL = 'dsh-plugin-finder';
@@ -501,22 +502,36 @@ export function apply(ctx) {
     const selectedIds = new Set(state.plan?.pluginIds ?? []);
     const selectedCandidates = state.candidates.filter(item => selectedIds.has(item.id));
     const discoverySources = Array.isArray(state.discovery?.sources) ? state.discovery.sources.filter(source => source && typeof source === 'object').slice(0, 20) : [];
-    const sourceFailed = discoverySources.some(source => source.status === 'failed');
-    const usesCache = discoverySources.some(source => source.status === 'cached' || source.status === 'stale');
+    const coverageSources = Array.isArray(state.discovery?.sourceCoverage) ? state.discovery.sourceCoverage.filter(source => source && typeof source === 'object' && typeof source.sourceId === 'string').slice(0, 20) : [];
+    const coverage = state.discovery?.coverage && typeof state.discovery.coverage === 'object' && !Array.isArray(state.discovery.coverage) ? state.discovery.coverage : null;
+    const sourceFailed = [...discoverySources, ...coverageSources].some(source => source.status === 'failed');
+    const usesCache = [...discoverySources, ...coverageSources].some(source => source.status === 'cached' || source.status === 'stale');
+    const count = value => Number.isSafeInteger(value) && value >= 0 ? String(value) : '未记录';
     const sourceLabels = { ready: '按需检查与搜索', live: '实时读取', cached: '使用缓存', stale: '使用过期缓存', failed: '读取失败', unconfigured: '未配置' };
     const sourceRow = (source, index, initial = false) => {
       const url = safeUrl(source.url);
       const title = text(source.title) || text(source.id) || '插件来源';
+      const sourceCoverage = initial ? null : coverageSources.find(item => item.sourceId === source.id);
+      const unavailable = source.status === 'failed' || source.status === 'unconfigured';
       return h('li', { className: 'pf_source_row', key: text(source.id) || index },
         h('div', { className: 'pf_source_head' }, url ? h('a', { href: url, target: '_blank', rel: 'noopener noreferrer' }, title, ' ↗') : h('strong', null, title), h('span', { className: `pf_tag${source.status === 'failed' || source.status === 'stale' ? ' pf_source_warn' : ''}` }, sourceLabels[source.status] || '状态未说明')),
-        !initial ? h('p', { className: 'pf_small pf_muted' }, `${Number.isSafeInteger(source.total) && source.total >= 0 ? `来源返回 ${source.total} 条` : '来源返回数量未确认'}${text(source.fetchedAt) ? ` · 资料读取 ${source.fetchedAt}` : ''}`) : null,
+        !initial ? h('p', { className: 'pf_small pf_muted' }, sourceCoverage ? `供给记录 ${unavailable ? '未确认' : count(sourceCoverage.total)} 条${sourceCoverage.npmTotal != null ? ` · npm ${unavailable ? '未确认' : count(sourceCoverage.npmTotal)}` : ''}${sourceCoverage.githubOnlyTotal != null ? ` · GitHub-only ${unavailable ? '未确认' : count(sourceCoverage.githubOnlyTotal)}` : ''}${text(sourceCoverage.fetchedAt) ? ` · 资料读取 ${sourceCoverage.fetchedAt}` : ''}` : `${Number.isSafeInteger(source.total) && source.total >= 0 ? `来源返回 ${source.total} 条` : '来源返回数量未确认'}${text(source.fetchedAt) ? ` · 资料读取 ${source.fetchedAt}` : ''}`) : null,
+        sourceCoverage && !unavailable ? h('p', { className: 'pf_small pf_muted' }, `本次匹配 ${count(sourceCoverage.matched)} · 作者资料核对尝试 ${count(sourceCoverage.inspected)} · 已解析 ${count(sourceCoverage.resolved)} · 已排除 ${count(sourceCoverage.excluded)} · 未检查 ${count(sourceCoverage.uninspected)}${Number.isSafeInteger(sourceCoverage.rejectedRows) && sourceCoverage.rejectedRows > 0 ? ` · 未通过来源格式检查 ${sourceCoverage.rejectedRows}` : ''}`) : null,
         source.status === 'failed' ? h('p', { className: 'pf_small pf_muted' }, '该来源搜索未完成', text(source.error) ? `：${source.error.slice(0, 500)}` : '，请稍后重试。') : null,
         source.status === 'stale' ? h('p', { className: 'pf_small pf_muted' }, '实时读取未完成，以上使用较早缓存，不能视为当前全量结果。') : null);
     };
+    const coverageView = h('div', { className: 'pf_coverage', 'aria-label': '本次供给覆盖' }, h('h3', null, '本次供给覆盖'),
+      coverage || coverageSources.length ? h('p', { className: 'pf_small pf_muted' }, '统计限于本次已返回来源。供给记录是原始索引条目，不是已兼容、安装或任务验证过的插件；来源之间可能重叠，不直接相加。') : h('p', { className: 'pf_small pf_muted' }, '这份方案未记录供给覆盖统计，保留当时来源与搜索时间，不补记为零。'),
+      coverage ? h('dl', { className: 'pf_coverage_stats' }, ...[['matched', '本次匹配'], ['inspected', '作者资料核对'], ['returned', '最终候选'], ['uninspected', '未检查']].map(([key, label]) => h('div', { key }, h('dt', null, label), h('dd', null, count(coverage[key]))))) : null,
+      coverage ? h('p', { className: 'pf_small pf_muted' }, `作者资料核对计尝试数，不等于逐项读完；本次最多核对 ${count(coverage.inspectionBudget)} 个候选，也可能因时间上限提前停止。未检查条目不能据此判定不适合。`) : null,
+      coverage ? h('details', { className: 'pf_details' }, h('summary', null, '查看解析与前提筛选'), h('p', { className: 'pf_small pf_muted' }, `已解析 ${count(coverage.resolved)} · 已排除 ${count(coverage.excluded)}。已解析指取得清单、声明与固定安装来源，不等于安装成功；解析后仍可能因使用前提排除，两者可能重叠。`),
+        coverage.excludedReasons && typeof coverage.excludedReasons === 'object' ? h('ul', { className: 'pf_list pf_small pf_muted' }, ...Object.entries(coverage.excludedReasons).filter(([, value]) => Number.isSafeInteger(value) && value > 0).slice(0, 12).map(([key, value]) => h('li', { key }, `${{ 'extra-key-required': '需要额外服务 Key', 'extra-key-unknown': '额外 Key 前提未确认', 'author-unresolved': '作者资料未能解析', 'author-read-timeout': '作者资料核对超时' }[key] || '其他前提或解析限制'}：${value}`))) : null) : null);
+    const displayedSources = discoverySources.length ? discoverySources : coverageSources.map(source => ({ ...source, id: source.sourceId }));
     const searchEvidence = state.discovery ? h('section', { className: 'pf_section', 'aria-label': '本次搜索来源' }, h('div', { className: 'pf_section_head' }, h('h2', null, '本次搜索'), h('span', { className: 'pf_small pf_muted' }, `参与推荐的候选：${state.candidates.length}`)),
       h('p', { className: 'pf_muted pf_small' }, `按确认后的需求检索来源，再读取候选资料${text(state.discovery.searchedAt) ? ` · 搜索时间 ${state.discovery.searchedAt}` : ''}。第三方精选源，非官方审核。`),
       sourceFailed ? h('p', { className: 'pf_banner pf_small', role: 'status' }, '搜索未完成：部分来源读取失败。以下只展示已返回的候选，不能据此判断没有相关插件。') : usesCache ? h('p', { className: 'pf_banner pf_small', role: 'status' }, '本次部分来源使用缓存，具体状态和读取时间如下；缓存结果不代表已完成实时搜索。') : null,
-      discoverySources.length ? h('ul', { className: 'pf_sources' }, ...discoverySources.map((source, index) => sourceRow(source, index))) : h('p', { className: 'pf_muted pf_small' }, '本次来源状态未返回，搜索覆盖范围尚未确认。'),
+      coverageView,
+      displayedSources.length ? h('ul', { className: 'pf_sources' }, ...displayedSources.map((source, index) => sourceRow(source, index))) : h('p', { className: 'pf_muted pf_small' }, '本次来源状态未返回，搜索覆盖范围尚未确认。'),
       state.warnings?.length ? h('ul', { className: 'pf_list pf_small pf_muted' }, ...strings(state.warnings).slice(0, 16).map((warning, index) => h('li', { key: index }, warning))) : null) : null;
     const labelFor = owner => owner === 'dsh' ? 'DSH 原生能力' : owner === 'human' ? '你来确认 / 补充' : state.candidates.find(item => item.id === owner)?.name ?? owner;
     const copyText = async value => {
@@ -544,6 +559,18 @@ export function apply(ctx) {
         const link = document.createElement('a'); link.href = url; link.download = `plugin-finder-${text(state.taskId).replace(/[^a-z0-9_-]/gi, '-').slice(0, 100)}.json`; document.body.appendChild(link); link.click(); link.remove();
         controller.notify('已生成本机方案备份，包含该任务的版本、反馈和会话关联。请妥善保存。');
       } catch { controller.reportError('本机备份下载未能开始，请重试。'); }
+      finally { if (url) setTimeout(() => URL.revokeObjectURL(url), 1000); }
+    };
+    const downloadCreatorDraft = async pluginId => {
+      const backup = await controller.exportTask(); if (!backup || !active.current) return;
+      let url;
+      try {
+        const draft = createCreatorFeedbackDraft(backup, pluginId, { revisionId: state.revisionId });
+        const content = renderCreatorFeedbackDraft(draft);
+        url = URL.createObjectURL(new Blob([content], { type: 'text/markdown;charset=utf-8' }));
+        const link = document.createElement('a'); link.href = url; link.download = `plugin-feedback-${text(draft.plugin?.name).replace(/[^a-z0-9_-]/gi, '-').slice(0, 100) || 'draft'}.md`; document.body.appendChild(link); link.click(); link.remove();
+        controller.notify('反馈草稿已下载到本机，尚未分享。请填写可分享场景摘要，核对版本与脱敏后自行分享给作者。');
+      } catch { controller.reportError('作者反馈草稿未能生成，当前方案与记录已保留。'); }
       finally { if (url) setTimeout(() => URL.revokeObjectURL(url), 1000); }
     };
     const outcomeLabel = outcome => ({ complete: '完成了', partial: '部分完成', blocked: '没能完成' }[outcome] || '调整意见');
@@ -590,6 +617,7 @@ export function apply(ctx) {
           text(candidate.documentation?.readAt) ? h('p', { className: 'pf_small pf_muted' }, `作者资料读取：${candidate.documentation.readAt}${candidate.documentation.truncated ? ' · 有界节选，非全文' : ''}`) : null,
           details.firstUse ? h('p', { className: 'pf_small pf_preline' }, h('strong', null, '首次使用：'), details.firstUse) : null,
           details.limitations.length ? h('ul', { className: 'pf_list pf_small pf_muted' }, ...details.limitations.map((item, index) => h('li', { key: index }, item))) : null,
+          state.taskId ? h('div', { className: 'pf_author_draft' }, button('导出给作者的反馈草稿', () => downloadCreatorDraft(candidate.id), { disabled: busy }), h('p', { className: 'pf_small pf_muted' }, '请填写场景摘要并核对后自行分享。只下载本机草稿，不包含完整需求或反馈原文。')) : null,
           h('p', { className: 'pf_small pf_muted' }, '安装会影响 DSH 配置。请由宿主确认兼容性和安装结果；本页不会自动安装。')),
       );
     };

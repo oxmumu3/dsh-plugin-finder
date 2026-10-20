@@ -1,23 +1,16 @@
 import { createHash } from 'node:crypto';
 import { assessCompatibility, inferCapabilities } from '../catalog/index.mjs';
+import {fullCatalog,repositoryOf,safeRepositoryPath as safePath} from './supply.js';
 
 const INDEX_URL = 'https://awesome-dsh-plugin.com/index.json';
+const FULL_URL = 'https://awesome-dsh-plugin.com/plugins.json';
 const TOPIC_URL = 'https://github.com/topics/dsh-plugin';
 const TTL = 5 * 60 * 1000;
 const ALLOWED_HOSTS = new Set(['awesome-dsh-plugin.com', 'api.github.com', 'registry.npmjs.org', 'raw.githubusercontent.com']);
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const localized = value => typeof value === 'string' ? value : value?.zh ?? value?.en ?? Object.values(value ?? {}).find(text => typeof text === 'string') ?? '';
 const unique = values => [...new Set(values.filter(Boolean))];
-const safePath = value => {
-  if (typeof value !== 'string' || !value || /[\\?#:\u0000-\u001f]/u.test(value) || value.startsWith('/') || value.split('/').includes('..')) throw new Error('Unsafe repository path');
-  return value.replace(/^\.\//, '');
-};
-const repositoryOf = value => {
-  const raw = typeof value === 'string' ? value : value?.url;
-  const clean = String(raw ?? '').replace(/^git\+/, '').replace(/^github:/, 'https://github.com/').replace(/\.git(?:#.*)?$/, '').replace(/#.*$/, '');
-  const match = clean.match(/^https:\/\/github\.com\/([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)\/?$/);
-  return match ? { name: match[1], url: `https://github.com/${match[1]}`, directory: typeof value?.directory === 'string' ? safePath(value.directory) : '' } : null;
-};
+const GENERIC_TERMS=new Set(['插件','需要','支持','生成','使用','进行','一个','相关','作者','自述','实际','验证','待核','信息','平台','来源','公开','日期','展示','条目']);
 
 function abortIfNeeded(...signals) {
   if (signals.some(signal => signal?.aborted)) throw new DOMException('Discovery cancelled', 'AbortError');
@@ -29,18 +22,20 @@ function termsFor(intent) {
   for (const phrase of phrases) {
     for (const term of phrase.match(/[a-z0-9][a-z0-9._-]{1,}/g) ?? []) if (!['plugin', 'plugins', 'dsh', 'the', 'and', 'with'].includes(term)) terms.add(term);
     for (const segment of phrase.match(/[\p{Script=Han}]+/gu) ?? []) {
-      if (segment.length <= 8) terms.add(segment);
-      for (let i = 0; i < segment.length - 1; i++) if (!['插件', '需要', '支持', '生成', '使用', '进行', '一个', '相关'].includes(segment.slice(i, i + 2))) terms.add(segment.slice(i, i + 2));
+      if (segment.length>=2&&segment.length <= 8&&!GENERIC_TERMS.has(segment)) terms.add(segment);
+      for (let i = 0; i < segment.length - 1; i++) if (!GENERIC_TERMS.has(segment.slice(i, i + 2))) terms.add(segment.slice(i, i + 2));
     }
   }
   return [...terms].slice(0, 70);
 }
 
-function rankEntry(entry, terms) {
+function rankEntry(entry, terms, secondaryTerms=[]) {
   const name = String(entry.name ?? '').toLowerCase();
   const description = typeof entry.description === 'string' ? entry.description : Object.values(entry.description ?? {}).join(' ');
   const haystack = [name, localized(entry.title), description, ...(entry.metadata?.keywords ?? [])].join(' ').toLowerCase();
-  return terms.reduce((score, term) => score + (name.includes(term) ? 8 : haystack.includes(term) ? 3 : 0), 0);
+  const primary=terms.reduce((score,term)=>score+(name.includes(term)?8:haystack.includes(term)?3:0),0);
+  const secondary=Math.min(6,secondaryTerms.reduce((score,term)=>score+(name.includes(term)?2:haystack.includes(term)?1:0),0));
+  return primary?primary*4+secondary:terms.length?Math.min(secondary,1):secondary;
 }
 
 function versionOf(entry, hostVersion) {
@@ -65,11 +60,18 @@ function keyRequirement(documentation) {
   if (noKeyless) return 'required';
   const free = /no\s+(?:(?:additional|extra|separate)\s+)?api[ -]?keys?\s+(?:is\s+|are\s+)?required|without\s+(?:an?\s+)?(?:extra\s+)?api[ -]?key|无需[^。\n]{0,20}(?:api\s*key|密钥)|免\s*key/i.test(text);
   const optional = /(?:api[ -]?key[^\n。]{0,40}(?:optional|可选)|(?:optional|可选)[^\n。]{0,40}api[ -]?key)/i.test(text);
-  const required = /(?:requires?|需要|必填)[^\n。]{0,25}(?:api[ -]?key|密钥)|api[ -]?key[^\n。]{0,20}(?:is required|必填)/i.test(text);
+  const required = /(?:requires?|需要|必填|必须)[^\n。]{0,25}(?:api[ -]?key|密钥)|api[ -]?key[^\n。]{0,30}(?:is required|必填)/i.test(text);
+  // Only an explicit default local path establishes this narrower capability.
+  // Unknown documentation, a DSH mention, or optional local mode alone do not.
+  const localDefault=/(?:默认|default)[^\n。]{0,55}(?:词法|lexical|本地|local)[^\n。]{0,55}(?:不调模型|零模型调用|no model calls?)[^\n。]{0,30}(?:不联网|no network|offline)/i.test(text);
+  const hostAccount=/(?:existing DSH model channel|复用[^\n。]{0,15}DSH[^\n。]{0,15}(?:模型|账号|账户))/i.test(text)&&/(?:no separate model credentials (?:are )?(?:needed|required)|无需[^\n。]{0,15}(?:额外|独立)[^\n。]{0,10}(?:密钥|key))/i.test(text);
+  const localRetrieval=/(?:retrieval and indexing|检索[、和与]索引)[^\n。]{0,55}(?:100%\s+locally|完全本地|全部本地|本地运行)/i.test(text);
+  const reusedHostRoute=/(?:model channel you already configured in DSH|model calls? reuse[^\n。]{0,30}host[^\n。]{0,15}ctx\.llm|(?:沿用|复用)[^\n。]{0,25}(?:DSH|宿主)[^\n。]{0,25}(?:模型通道|ctx\.llm))/i.test(text);
+  if(localDefault||hostAccount||localRetrieval&&reusedHostRoute)return required?'required':optional?'optional':'not-required';
   return free ? optional || required ? 'optional' : 'not-required' : optional ? 'optional' : required ? 'required' : 'unknown';
 }
 
-export function createDiscovery({ market, fetchImpl = fetch, now = () => new Date(), signal: externalLifetimeSignal } = {}) {
+export function createDiscovery({ market, fetchImpl = fetch, now = () => new Date(), signal: externalLifetimeSignal,searchTimeoutMs=45000,authorTimeoutMs=8000,sourceTimeoutMs=15000 } = {}) {
   const ownLifetime = new AbortController();
   const lifetimeSignal = AbortSignal.any([ownLifetime.signal, externalLifetimeSignal].filter(Boolean));
   const cache = new Map();
@@ -122,11 +124,28 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
     }
   }
 
+  async function resolveRepository(repo,signal,pinnedCommit){
+    let commit=pinnedCommit;
+    if(repo.treeSegments){
+      const refs=repo.treeSegments.slice(0,-1).map((_,index)=>repo.treeSegments.slice(0,index+1).join('/')).reverse().slice(0,6);
+      let resolved=false;
+      for(const ref of refs){
+        try{const sha=(await json(`https://api.github.com/repos/${repo.name}/commits/${encodeURIComponent(ref)}`,{signal})).value.sha;
+          if(!/^[a-f0-9]{40}$/.test(sha??''))throw new Error('Author commit missing');
+          commit??=sha;repo={...repo,directory:repo.treeSegments.slice(ref.split('/').length).join('/')};resolved=true;break;
+        }catch(error){abortIfNeeded(signal,lifetimeSignal);if(!/^HTTP (?:404|422)\b/.test(String(error.message)))throw error;}
+      }
+      if(!resolved)throw new Error('Author ref unresolved');
+    }else if(!/^[a-f0-9]{40}$/.test(commit??''))commit=(await json(`https://api.github.com/repos/${repo.name}/commits/${encodeURIComponent(repo.ref??'HEAD')}`,{signal})).value.sha;
+    if(!/^[a-f0-9]{40}$/.test(commit??''))throw new Error('Author commit missing');
+    return{repo,commit};
+  }
+
   async function authorDetails(row, context) {
     const { signal, hostVersion, nodeVersion, platform, warnings } = context;
     const entry = row.entry; const chosen = versionOf(entry, hostVersion);
     if (entry.versions?.length && !chosen) throw new Error(`${entry.name}: no compatible index version`);
-    let manifest; let manifestUrl; let commit; let repo; let directory = ''; let spec; let sourceType; let registry;
+    let manifest; let manifestUrl; let commit; let repo; let directory = ''; let spec; let sourceType; let registry;let skipDocumentation=false;
     if (chosen?.source.type === 'npm') {
       registry = chosen.source.registry ?? 'https://registry.npmjs.org/';
       if (new URL(registry).origin !== 'https://registry.npmjs.org') throw new Error(`${entry.name}: custom registry requires host confirmation`);
@@ -137,18 +156,22 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
       if (manifest.name !== entry.name || manifest.version !== chosen.version) throw new Error(`${entry.name}: registry package identity mismatch`);
       spec = `${manifest.name}@${manifest.version}`; sourceType = 'npm';
       repo = repositoryOf(manifest.repository) ?? repositoryOf(entry.repository);
+      const catalogRepository=repositoryOf(entry.repository);
+      if(repo&&!repo.directory&&catalogRepository?.url===repo.url&&catalogRepository.directory)repo=catalogRepository;
       commit = /^[a-f0-9]{40}$/.test(manifest.gitHead ?? '') ? manifest.gitHead : undefined;
+      if(repo?.treeSegments){try{({repo,commit}=await resolveRepository(repo,signal,commit));}catch{abortIfNeeded(signal,lifetimeSignal);skipDocumentation=true;warnings.push(`${manifest.name}: README directory unresolved; npm manifest retained without guessed repository documentation`);}}
       directory = repo?.directory ?? '';
     } else {
       repo = repositoryOf(chosen?.source?.url ?? entry.repository);
       if (!repo) throw new Error(`${entry.name}: no supported author repository`);
       commit = chosen?.source?.commit;
-      if (!/^[a-f0-9]{40}$/.test(commit ?? '')) commit = (await json(`https://api.github.com/repos/${repo.name}/commits/HEAD`, { signal })).value.sha;
+      ({repo,commit}=await resolveRepository(repo,signal,commit));
       if (!/^[a-f0-9]{40}$/.test(commit ?? '')) throw new Error(`${entry.name}: author commit missing`);
       directory = chosen?.source?.path ? safePath(chosen.source.path) : repo.directory;
       manifestUrl = `https://raw.githubusercontent.com/${repo.name}/${commit}/${directory ? directory + '/' : ''}package.json`;
       manifest = (await json(manifestUrl, { signal })).value;
       if (chosen && (manifest.name !== entry.name || manifest.version !== chosen.version)) throw new Error(`${entry.name}: author package identity mismatch`);
+      if(entry.expectedPackageName&&manifest.name!==entry.expectedPackageName)throw new Error(`${entry.name}: author package identity mismatch`);
       if (!manifest.name || !/^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/.test(manifest.version ?? '')) throw new Error(`${entry.name}: invalid author manifest`);
       spec = `git+${repo.url}.git#${commit}${directory ? '&path:/' + directory : ''}`; sourceType = 'git';
     }
@@ -178,7 +201,7 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
       }
     } else limitations.push('已核对精确 npm 版本的 bundle 清单，未下载或执行安装包；实际安装仍由宿主确认。');
     let documentation = { url: null, text: '', readAt: null, truncated: false };
-    if (repo) {
+    if (repo&&!skipDocumentation) {
       const ref = commit ?? 'HEAD';
       const paths = unique([directory ? `${directory}/README.md` : 'README.md', 'README.md', 'README.zh.md']);
       for (const path of paths) {
@@ -216,20 +239,34 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
 
   return {
     close() { ownLifetime.abort(); cache.clear(); },
-    async search({ intent, hostVersion, nodeVersion, platform, signal } = {}) {
+    async search({ intent, hostVersion, nodeVersion, platform, requiresNoApiKey=false, signal } = {}) {
       abortIfNeeded(signal, lifetimeSignal);
-      const terms = termsFor(intent); const query = String((intent?.queries ?? []).find(value => /[a-z]/i.test(value)) ?? intent?.queries?.[0] ?? intent?.goal ?? '').slice(0, 80);
-      const rows = []; const sources = []; const warnings = [];
+      const deadline=Date.now()+searchTimeoutMs;
+      const primaryTerms=termsFor({queries:intent?.queries??[]});const secondaryTerms=termsFor({capabilities:intent?.capabilities??[]});const terms=unique([...primaryTerms,...secondaryTerms]); const query = String((intent?.queries ?? []).find(value => /[a-z]/i.test(value)) ?? intent?.queries?.[0] ?? intent?.goal ?? '').slice(0, 80);
+      const rows = []; const sources = []; const warnings = [];const sourceCounts=new Map();
+      const counts=source=>{if(!sourceCounts.has(source))sourceCounts.set(source,{matched:0,inspected:0,resolved:0,excluded:0});return sourceCounts.get(source);};
       const addRows = (entries, origin, forced = false) => {
         for (const entry of entries) {
-          const score = rankEntry(entry, terms);
-          if (score || forced) rows.push({ entry, origin, score: score || 1, query, terms });
+          const score = rankEntry(entry, primaryTerms, secondaryTerms);
+          if (score || forced) {rows.push({ entry, origin, score: score || 1, query, terms });counts(origin).matched++;}
         }
       };
+      const sourceSignal=AbortSignal.any([signal,lifetimeSignal,AbortSignal.timeout(Math.min(sourceTimeoutMs,searchTimeoutMs))].filter(Boolean));
+      const sourceJson=(url,options)=>json(url,{...options,signal:sourceSignal});
       await Promise.all([
+        (async()=>{
+          try{
+            const result=await sourceJson(FULL_URL,{maxBytes:16*1024*1024});
+            const catalog=fullCatalog(result.value);
+            const source={id:'awesome-full',title:'Awesome DSH 完整社区目录',url:FULL_URL,status:result.status,fetchedAt:result.fetchedAt,total:catalog.total,npmTotal:catalog.npmTotal,githubOnlyTotal:catalog.githubOnlyTotal,rejectedRows:catalog.rejectedRows,catalogUpdatedAt:catalog.updated,...(result.error?{error:result.error}:{})};
+            sources.push(source);addRows(catalog.entries,source);
+            if(catalog.rejectedRows)warnings.push(`完整社区目录有 ${catalog.rejectedRows} 条无法安全解析的仓库地址，未纳入检索。`);
+            if(result.error)warnings.push(`完整社区目录使用过期缓存：${result.error}`);
+          }catch(error){abortIfNeeded(signal,lifetimeSignal);sources.push({id:'awesome-full',title:'Awesome DSH 完整社区目录',url:FULL_URL,status:'failed',fetchedAt:null,total:0,error:String(error.message).slice(0,250)});warnings.push('完整社区目录本轮读取失败，GitHub-only 供给覆盖不完整。');}
+        })(),
         (async () => {
           try {
-            const result = await json(INDEX_URL, { signal, maxBytes: 8 * 1024 * 1024 });
+            const result = await sourceJson(INDEX_URL, { maxBytes: 8 * 1024 * 1024 });
             if (result.value.format !== 1 || !Array.isArray(result.value.plugins)) throw new Error('Unsupported format-1 market index');
             const source = { id: 'awesome', title: localized(result.value.title) || 'Awesome DSH Plugin', url: INDEX_URL, status: result.status, fetchedAt: result.fetchedAt, total: result.value.plugins.length, ...(result.error ? { error: result.error } : {}) };
             sources.push(source); addRows(result.value.plugins, source);
@@ -239,7 +276,7 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
         (async () => {
           const searchUrl = `https://api.github.com/search/repositories?${new URLSearchParams({ q: `topic:dsh-plugin ${query}`, per_page: '12' })}`;
           try {
-            const result = await json(searchUrl, { signal, maxBytes: 2 * 1024 * 1024 });
+            const result = await sourceJson(searchUrl, { maxBytes: 2 * 1024 * 1024 });
             if (!Array.isArray(result.value.items)) throw new Error('Invalid GitHub topic search result');
             const source = { id: 'github-topic', title: 'GitHub dsh-plugin topic', url: TOPIC_URL, queryUrl: searchUrl, status: result.status, fetchedAt: result.fetchedAt, total: result.value.total_count ?? result.value.items.length, totalKind: 'matches', ...(result.error ? { error: result.error } : {}) };
             sources.push(source);
@@ -249,11 +286,11 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
         })(),
         (async () => {
           let host;
-          try { host = typeof market === 'function' ? await waitForHost(market(), signal) : market; }
+          try { host = typeof market === 'function' ? await waitForHost(market(), sourceSignal) : market; }
           catch (error) { sources.push({ id: 'host-market', title: 'DSH 已配置市场', url: '', status: 'failed', fetchedAt: null, total: 0, error: String(error.message).slice(0, 250) }); warnings.push('DSH 已配置市场不可读取。'); return; }
           if (!host?.listIndexes || !host?.search) { sources.push({ id: 'host-market', title: 'DSH 已配置市场', url: '', status: 'unconfigured', fetchedAt: null, total: 0 }); return; }
           try {
-            const indexes = await waitForHost(host.listIndexes(), signal);
+            const indexes = await waitForHost(host.listIndexes(), sourceSignal);
             if (!indexes.length) { sources.push({ id: 'host-market', title: 'DSH 已配置市场', url: '', status: 'unconfigured', fetchedAt: null, total: 0 }); return; }
             if (indexes.length > 8) warnings.push('本轮仅读取前 8 个已配置市场，其余来源尚未搜索。');
             for (const index of indexes.slice(0, 8)) {
@@ -261,7 +298,7 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
               const source = { id: `host-market:${sha256(index.url).slice(0, 10)}`, title: localized(index.title) || 'DSH 已配置市场', url: index.url, status: 'live', fetchedAt: null, total: 0, totalKind: 'matches' };
               try {
                 if (index.error) throw new Error(index.error);
-                const result = await waitForHost(host.search(index.url, { text: query, sort: { kind: 'relevance' }, offset: 0, limit: 12 }), signal);
+                const result = await waitForHost(host.search(index.url, { text: query, sort: { kind: 'relevance' }, offset: 0, limit: 12 }), sourceSignal);
                 source.total = result.total ?? result.entries?.length ?? 0; source.fetchedAt = result.fetchedAt ? new Date(result.fetchedAt).toISOString() : iso();
                 if (result.fetchedAt && milliseconds() - result.fetchedAt > 1000) source.status = 'cached';
                 addRows(result.entries ?? [], source, true);
@@ -275,21 +312,30 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
       if (!sources.some(source => ['live', 'cached'].includes(source.status))) {
         const error = new Error('插件来源暂时不可读取，当前无法确认搜索结果，请重试。'); error.code = 'DISCOVERY_UNAVAILABLE'; error.sources = sources; error.warnings = warnings; throw error;
       }
-      const ranked = rows.sort((a, b) => b.score - a.score);
+      const ranked = rows.sort((a, b) => b.score - a.score || Number(b.origin.id==='awesome-full')-Number(a.origin.id==='awesome-full'));
       const distinct = []; const identities = new Map();
       for (const row of ranked) {
         const version = versionOf(row.entry, hostVersion);
-        const key = `${row.entry.name}\n${repositoryOf(row.entry.repository)?.url ?? ''}\n${version?.version ?? ''}\n${JSON.stringify(version?.source ?? {})}`;
+        const repo=repositoryOf(row.entry.repository);
+        const key = `${row.entry.name}\n${repo?.url ?? ''}\n${repo?.directory??''}\n${repo?.ref??''}\n${version?.version ?? ''}\n${JSON.stringify(version?.source ?? {})}`;
         const existing = identities.get(key);
-        if (existing) { existing.origins ??= [existing.origin]; existing.origins.push(row.origin); continue; }
+        if (existing) { existing.origins=unique([...(existing.origins??[existing.origin]),row.origin]); continue; }
         identities.set(key, row); distinct.push(row);
       }
-      const candidates = []; let inspected = 0;
-      for (let index = 0; index < Math.min(distinct.length, 12) && candidates.length < 6; index += 3) {
-        const group = distinct.slice(index, Math.min(index + 3, 12)); inspected += group.length;
+      for(const source of sources)counts(source).matched=0;
+      for(const row of distinct)for(const source of row.origins??[row.origin])counts(source).matched++;
+      const candidates = []; let inspected = 0,resolved=0,excluded=0;const excludedReasons={};const inspectionBudget=24;
+      for (let index = 0; index < Math.min(distinct.length, inspectionBudget) && candidates.length < 6; index += 3) {
+        if(Date.now()>=deadline){warnings.push('本轮作者资料读取达到时间预算，保留已读候选，其余匹配项尚未检查。');break;}
+        const group = distinct.slice(index, Math.min(index + 3, inspectionBudget)); inspected += group.length;
         const results = await Promise.all(group.map(async row => {
-          try { const entry = await authorDetails(row, { signal, hostVersion, nodeVersion, platform, warnings }); entry.sourceTags = unique(row.origins ?? [row.origin]); return entry; }
-          catch (error) { abortIfNeeded(signal, lifetimeSignal); warnings.push(String(error.message).slice(0, 300)); return null; }
+          const origins=row.origins??[row.origin];for(const origin of origins)counts(origin).inspected++;
+          const authorSignal=AbortSignal.any([signal,lifetimeSignal,AbortSignal.timeout(Math.max(1,Math.min(authorTimeoutMs,deadline-Date.now())))].filter(Boolean));
+          try { const entry = await authorDetails(row, { signal:authorSignal, hostVersion, nodeVersion, platform, warnings });resolved++;
+            for(const origin of origins)counts(origin).resolved++;
+            if(requiresNoApiKey&&!['not-required','optional'].includes(entry.requirements.extraApiKey)){excluded++;for(const origin of origins)counts(origin).excluded++;const reason=entry.requirements.extraApiKey==='required'?'extra-key-required':'extra-key-unknown';excludedReasons[reason]=(excludedReasons[reason]??0)+1;return null;}
+            entry.sourceTags = unique(row.origins ?? [row.origin]); return entry; }
+          catch (error) { abortIfNeeded(signal, lifetimeSignal);excluded++;for(const origin of origins)counts(origin).excluded++;const reason=authorSignal.aborted?'author-read-timeout':'author-unresolved';excludedReasons[reason]=(excludedReasons[reason]??0)+1;warnings.push(authorSignal.aborted?`${row.entry.name}: 作者资料读取超时，保留其他已读候选。`:String(error.message).slice(0, 300)); return null; }
         }));
         for (const result of results.filter(Boolean)) {
           const existing = candidates.find(entry => entry.name === result.name && entry.install.version === result.install.version);
@@ -303,7 +349,9 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
         }
       }
       if (distinct.length > inspected) warnings.push(`本轮从来源匹配 ${distinct.length} 条候选，按相关性读取前 ${inspected} 条作者资料；尚未逐条核验全部候选。`);
-      return { candidates: candidates.slice(0, 6), sources, warnings: unique(warnings), searchedAt: iso() };
+      if(requiresNoApiKey&&excludedReasons['extra-key-unknown'])warnings.push(`${excludedReasons['extra-key-unknown']} 个候选的免额外 Key 前提未确认，未直接推荐；不代表这些插件一定需要 Key。`);
+      const sourceCoverage=sources.map(source=>{const own=counts(source);return{sourceId:source.id,url:source.url,status:source.status,fetchedAt:source.fetchedAt,total:source.total,...('npmTotal'in source?{npmTotal:source.npmTotal,githubOnlyTotal:source.githubOnlyTotal,rejectedRows:source.rejectedRows}:{}),...own,uninspected:Math.max(0,own.matched-own.inspected),inspectionBudget};});
+      return { candidates: candidates.slice(0, 6), sources, warnings: unique(warnings), searchedAt: iso(),coverage:{matched:distinct.length,inspected,resolved,excluded,excludedReasons,uninspected:distinct.length-inspected,returned:Math.min(candidates.length,6),inspectionBudget},sourceCoverage };
     },
   };
 }

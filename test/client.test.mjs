@@ -23,9 +23,11 @@ async function loadClient(overrides = {}) {
   const scope = vm.createContext(globals);
   const style = await readFile(styleUrl, 'utf8').catch(() => null);
   const client = await readFile(clientUrl, 'utf8').catch(() => null);
+  const creator = await readFile(new URL('../src/creator-feedback.js', import.meta.url), 'utf8');
   assert.ok(style && client, 'native client source and scoped style are implemented');
   vm.runInContext(style.replace(/export /g, '') + '\nglobalThis.finderCss=finderCss;', scope, { filename: 'client-style.js' });
-  const exports = client.replace(/^import React from 'react';?\s*/m, '').replace(/^import \{ finderCss \} from '\.\/client-style\.js';?\s*/m, '').replace(/export /g, '');
+  vm.runInContext(creator.replace(/export /g, ''), scope, { filename: 'creator-feedback.js' });
+  const exports = client.replace(/^import React from 'react';?\s*/m, '').replace(/^import \{ finderCss \} from '\.\/client-style\.js';?\s*/m, '').replace(/^import \{ createCreatorFeedbackDraft, renderCreatorFeedbackDraft \} from '\.\/creator-feedback\.js';?\s*/m, '').replace(/export /g, '');
   vm.runInContext(exports + '\nglobalThis.clientModule={inject,apply,createFinderController,prepareSessionDraft,candidateDetails:typeof candidateDetails===\'function\'?candidateDetails:undefined};', scope, { filename: 'client.js' });
   return { module: globals.clientModule, globals, tags, React };
 }
@@ -71,13 +73,13 @@ function server(routes = {}) {
   return { fetch, calls };
 }
 
-async function renderWorkbench(snapshot) {
+async function renderWorkbench(snapshot, options = {}) {
   const React = {
     createElement: (type, props, ...children) => ({ type, props: props ?? {}, children }),
     useState: initial => [typeof initial === 'function' ? snapshot : initial, () => {}],
-    useEffect() {}, useRef: value => ({ current: value }),
+    useEffect(effect) { if (options.runEffects) effect(); }, useRef: value => ({ current: value }),
   };
-  const loaded = await loadClient({ React }); const h = host();
+  const loaded = await loadClient({ React, ...options }); const h = host();
   loaded.module.apply(h.ctx);
   const tree = h.registrations.find(item => item.spec.name === 'main').component();
   const nodes = [];
@@ -87,7 +89,7 @@ async function renderWorkbench(snapshot) {
   };
   walk(tree);
   const content = node => typeof node === 'string' || typeof node === 'number' ? String(node) : Array.isArray(node) ? node.map(content).join(' ') : node && typeof node === 'object' ? content(node.children) : '';
-  h.dispose(); return { text: content(tree), nodes };
+  if (!options.keepAlive) h.dispose(); return { text: content(tree), nodes, dispose: h.dispose };
 }
 
 test('native client registers one sidebar entry and the matching main panel and disposes only its CSS', async () => {
@@ -686,4 +688,60 @@ test('saved-session opener refuses a handoff record belonging to another task or
     const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
     assert.equal(await controller.continueSession(), false); assert.equal(h.opened.length, 0); assert.equal(h.retained.length, 0); controller.close();
   }
+});
+
+test('coverage presents real source supply and bounded inspection separately from returned candidates', async () => {
+  const { module } = await loadClient(); const h = host();
+  const discovery = { searchedAt: '2026-10-20T16:00:00Z', sources: [{ id: 'awesome', title: '第三方精选目录', status: 'live', total: 6084 }], sourceCoverage: [{ sourceId: 'awesome', url: 'https://example.com/plugins.json', status: 'live', fetchedAt: '2026-10-20T15:59:00Z', total: 6084, npmTotal: 3112, githubOnlyTotal: 2972, rejectedRows: 0, matched: 80, inspected: 24, resolved: 15, excluded: 9, uninspected: 56, inspectionBudget: 24 }], coverage: { matched: 80, inspected: 24, resolved: 15, excluded: 9, uninspected: 56, returned: 1, inspectionBudget: 24 } };
+  const api = server({ recommend: async () => ({ ok: true, json: async () => ({ intent: fixtureIntent(), plan: fixturePlan(), candidates: [candidate], discovery, warnings: [], model: { label: '默认模型' } }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); await controller.analyze('检查 CSV'); await controller.recommend();
+  assert.deepEqual(copy(controller.getSnapshot().discovery), discovery);
+  const rendered = await renderWorkbench(controller.getSnapshot());
+  for (const phrase of ['本次供给覆盖', '供给记录', '6084', 'npm', '3112', 'GitHub-only', '2972', '本次匹配', '80', '作者资料核对', '24', '最终候选', '1', '未检查', '56']) assert.ok(rendered.text.includes(phrase), phrase);
+  assert.match(rendered.text, /限于本次.*来源/); assert.match(rendered.text, /索引条目/);
+  assert.doesNotMatch(rendered.text, /全网已搜完|已验证全部|所有插件均已核对/);
+  controller.close();
+});
+
+test('old saved plans keep their source evidence without fabricated zero coverage', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const rendered = await renderWorkbench(controller.getSnapshot());
+  assert.match(rendered.text, /未记录.*供给覆盖|供给覆盖.*未记录/); assert.match(rendered.text, /来源曾使用缓存/); assert.match(rendered.text, /2026-10-20T12:00:00Z/);
+  assert.doesNotMatch(rendered.text, /供给记录[：\s]+0|未检查[：\s]+0/);
+  assert.equal(api.calls.length, 1); controller.close();
+});
+
+test('coverage preserves failed and stale source boundaries without summing overlapping supplies', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = { ...identifiedWorkflow(), discovery: { searchedAt: '2026-10-20T16:00:00Z', sources: [], sourceCoverage: [{ sourceId: 'a', status: 'cached', fetchedAt: '2026-10-19T01:00:00Z', total: 6084, matched: 2, inspected: 1, resolved: 1, excluded: 0, uninspected: 1, inspectionBudget: 24 }, { sourceId: 'b', status: 'stale', total: 6084, matched: 2, inspected: 1, resolved: 1, excluded: 0, uninspected: 1, inspectionBudget: 24 }, { sourceId: 'c', status: 'failed', total: null, matched: null, inspected: null, resolved: null, excluded: null, uninspected: null, inspectionBudget: 24 }], coverage: { matched: 3, inspected: 2, resolved: 2, excluded: 0, uninspected: 1, returned: 1, inspectionBudget: 24 } } };
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const rendered = await renderWorkbench(controller.getSnapshot());
+  assert.match(rendered.text, /使用缓存/); assert.match(rendered.text, /使用过期缓存/); assert.match(rendered.text, /读取失败/); assert.match(rendered.text, /2026-10-19T01:00:00Z/);
+  assert.doesNotMatch(rendered.text, /12168|12,168/); assert.match(rendered.text, /未记录|未确认/); controller.close();
+});
+
+test('each recorded candidate offers only an explicit local author-feedback draft download', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const rendered = await renderWorkbench(controller.getSnapshot());
+  assert.ok(rendered.nodes.some(node => node.type === 'button' && node.children.includes('导出给作者的反馈草稿')));
+  assert.match(rendered.text, /请填写场景摘要并核对后自行分享/);
+  assert.doesNotMatch(rendered.text, /自动发送给作者|作者后台已同步/); controller.close();
+});
+
+test('clicking the author-feedback draft button downloads redacted Markdown and never sends it', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow();
+  const backup = { format: 'plugin-finder-task', version: 1, task: { id: workflow.taskId, originalRequest: 'PRIVATE ORIGINAL /Users/private/material.md', revisions: [{ id: workflow.revisionId, number: 1, createdAt: '2026-10-20T12:00:00Z', workflow: { plan: fixturePlan(), candidates: [candidate] } }], feedback: [{ revisionId: workflow.revisionId, outcome: 'blocked', note: 'PRIVATE FEEDBACK' }], handoffs: [{ sessionId: 'private-session-id' }] } };
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }), export: async () => ({ ok: true, json: async () => backup }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const snapshot = controller.getSnapshot(); controller.close();
+  let downloaded; const clicked = [];
+  class LocalURL extends URL { static createObjectURL(blob) { downloaded = blob; return 'blob:local-only'; } static revokeObjectURL() {} }
+  const document = { head: { appendChild() {} }, body: { appendChild() {} }, createElement: tag => tag === 'a' ? { click() { clicked.push({ href: this.href, download: this.download }); }, remove() {} } : { dataset: {}, remove() {} } };
+  const rendered = await renderWorkbench(snapshot, { runEffects: true, keepAlive: true, fetch: api.fetch, URL: LocalURL, Blob, document });
+  await new Promise(resolve => setTimeout(resolve, 0));
+  const action = rendered.nodes.find(node => node.type === 'button' && node.children.includes('导出给作者的反馈草稿')); assert.ok(action);
+  await action.props.onClick(); assert.ok(downloaded); const content = await downloaded.text();
+  assert.equal(downloaded.type, 'text/markdown;charset=utf-8'); assert.ok(clicked[0].download.endsWith('.md')); assert.match(content, /填写可分享/); assert.match(content, /任务自报未完成/);
+  for (const secret of ['PRIVATE ORIGINAL', 'PRIVATE FEEDBACK', '/Users/private', 'private-task-id', 'private-session-id']) assert.equal(content.includes(secret), false, secret);
+  assert.ok(api.calls.every(call => /^\/api\/plugin_finder\/(bootstrap|export)$/.test(call.url))); rendered.dispose();
 });

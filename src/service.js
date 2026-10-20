@@ -29,7 +29,7 @@ function createLegacyFinderService({catalog={plugins:[]},discovery,model,feedbac
     catch{return{workflowWarning:'本机方案保存失败，重启后可能无法恢复，请先复制保留。'};}
   };
   const bootstrap=async()=>{
-    ensure();const result={version:'0.2.1-preview.2',discovery:{mode:'live',sources:[{id:'awesome',title:'Awesome DSH 第三方精选源',url:'https://awesome-dsh-plugin.com/index.json',status:'ready'},{id:'configured',title:'用户已配置的 DSH 市场',status:'ready'},{id:'github',title:'GitHub dsh-plugin topic 补充检索',url:'https://api.github.com/search/repositories',status:'ready'}]},model:model.status(),hostVersion:hostVersion||null};
+    ensure();const result={version:'0.2.2-preview.1',discovery:{mode:'live',sources:[{id:'awesome-full',title:'Awesome DSH 完整第三方目录（npm 与 GitHub）',url:'https://awesome-dsh-plugin.com/plugins.json',status:'ready'},{id:'awesome',title:'Awesome DSH format-1 补充索引',url:'https://awesome-dsh-plugin.com/index.json',status:'ready'},{id:'configured',title:'用户已配置的 DSH 市场',status:'ready'},{id:'github',title:'GitHub dsh-plugin topic 补充检索',url:'https://api.github.com/search/repositories',status:'ready'}]},model:model.status(),hostVersion:hostVersion||null};
     if(workflowStore?.read)try{
       const row=await workflowStore.read();
       if(row){
@@ -63,7 +63,7 @@ function createLegacyFinderService({catalog={plugins:[]},discovery,model,feedbac
       if(!eligibility.nativeOnly){
         if(typeof discovery?.search!=='function')fail('DISCOVERY_UNAVAILABLE');
         const searchSignal=AbortSignal.any([...(signal?[signal]:[]),AbortSignal.timeout(discoveryTimeoutMs)]);
-        try{discovered=await discovery.search({intent,hostVersion,nodeVersion:process.versions.node,platform:process.platform,signal:searchSignal});}
+        try{discovered=await discovery.search({intent,hostVersion,nodeVersion:process.versions.node,platform:process.platform,requiresNoApiKey:eligibility.requiresNoApiKey,signal:searchSignal});}
         catch(error){if(closed)fail('CLOSED');if(signal?.aborted)fail('MODEL_ABORTED');fail('DISCOVERY_UNAVAILABLE');}
         ensure();
         if(!Array.isArray(discovered?.candidates)||!Array.isArray(discovered?.sources)||!discovered.sources.some(source=>['live','cached','stale'].includes(source.status)))fail('DISCOVERY_UNAVAILABLE');
@@ -78,7 +78,7 @@ function createLegacyFinderService({catalog={plugins:[]},discovery,model,feedbac
       const candidates=discovered.candidates.filter(plugin=>eligibleById.has(plugin.id)).slice(0,8).map(plugin=>({...plugin,hostCompatibility:eligibleById.get(plugin.id).hostCompatibility,nodeCompatibility:eligibleById.get(plugin.id).nodeCompatibility}));
       for(const candidate of candidates)knownIds.add(candidate.id);
       const sourceWarnings=Array.isArray(discovered.warnings)?discovered.warnings.filter(value=>typeof value==='string').slice(0,10):[];
-      const discoveryResult={sources:discovered.sources,warnings:sourceWarnings,searchedAt:discovered.searchedAt,...(discovered.skipped?{skipped:discovered.skipped}:{}),retrieved:discovered.candidates.length,eligible:candidates.length};
+      const discoveryResult={sources:discovered.sources,warnings:sourceWarnings,searchedAt:discovered.searchedAt,...(discovered.skipped?{skipped:discovered.skipped}:{}),retrieved:discovered.candidates.length,eligible:candidates.length,...(discovered.coverage?{coverage:discovered.coverage}:{}),...(Array.isArray(discovered.sourceCoverage)?{sourceCoverage:discovered.sourceCoverage}:{})};
       const publicCandidates=candidates.map(p=>({id:p.id,name:p.name,summary:p.summary,capabilities:p.capabilities,requirements:p.requirements,limitations:p.limitations,inputs:p.inputs,outputs:p.outputs,firstUse:p.firstUse,compatibility:{dsh:p.hostCompatibility,node:p.nodeCompatibility},installReadiness:p.install?.readiness,evidence:{metadata:p.evidence?.metadata,capabilityBasis:p.evidence?.capabilityBasis,installation:p.evidence?.installation,task:p.evidence?.task},documentation:p.documentation?{url:p.documentation.url,text:String(p.documentation.text||'').slice(0,6000),readAt:p.documentation.readAt,truncated:p.documentation.truncated}:undefined}));
       const response=await model.call({system:feedbackContext.length?FEEDBACK_RECOMMEND:RECOMMEND,data:{intent,eligibility,discovery:discoveryResult,candidates:publicCandidates,hostVersion:hostVersion||'unknown',userFeedbackContext:feedbackContext},signal,maxTokens:8000});
       const plan=parsePlan(response.text,candidates,intent);

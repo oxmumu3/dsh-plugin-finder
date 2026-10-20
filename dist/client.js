@@ -46,8 +46,63 @@ var finderCss = `
 .pf_root *{box-sizing:border-box}.pf_inner{max-width:1080px;margin:0 auto;padding:36px 40px 56px}.pf_root h1,.pf_root h2,.pf_root h3,.pf_root p{margin:0}.pf_root h1{font-size:25px;line-height:1.4;font-weight:650;letter-spacing:-.3px}.pf_root h2{font-size:19px;font-weight:600;line-height:1.5}.pf_root h3{font-size:15px;font-weight:600}.pf_header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:28px}.pf_eyebrow{color:var(--dsw-alias-label-tertiary,#737c8b);font-size:11px;letter-spacing:.12em;margin-bottom:6px}.pf_muted{color:var(--dsw-alias-label-secondary,#717681)}.pf_small{font-size:12px}.pf_header p{margin-top:6px}.pf_header_actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.pf_steps{display:flex;gap:24px;list-style:none;padding:0;margin:0 0 32px;flex-wrap:wrap;border-bottom:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_step{padding:0 0 14px;color:var(--dsw-alias-label-tertiary,#87909e);border-bottom:2px solid transparent;margin-bottom:-1px;font-size:13px}.pf_step.active{border-color:var(--dsw-alias-state-business-primary,#4d6bfe);color:var(--dsw-alias-label-primary,#22262e)}.pf_number{display:inline-flex;width:21px;height:21px;align-items:center;justify-content:center;border-radius:50%;background:var(--dsw-alias-bg-layer-2,#eef1f7);font-size:11px;margin-right:7px}.pf_step.active .pf_number{background:var(--dsw-alias-state-business-primary,#4d6bfe);color:white}.pf_section{padding:24px 0;border-bottom:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_section:first-child{padding-top:0}.pf_section:last-child{border-bottom:0}.pf_section>p,.pf_section>h2{margin-bottom:14px}.pf_section_head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px}.pf_stack{display:flex;flex-direction:column;gap:12px}.pf_actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}.pf_btn{display:inline-flex;justify-content:center;align-items:center;min-height:38px;border:1px solid var(--dsw-alias-border-l2,#d8dce5);border-radius:8px;padding:8px 14px;cursor:pointer;background:transparent;color:inherit;font:inherit;font-size:13px;line-height:1.5;text-decoration:none}.pf_btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,#f3f5f9)}.pf_btn:disabled{opacity:.45;cursor:default}.pf_btn.pf_primary{background:var(--dsw-alias-state-business-primary,#4d6bfe);border-color:transparent;color:#fff}.pf_btn.pf_primary:hover:not(:disabled){filter:brightness(.94)}.pf_btn.pf_text{border-color:transparent;padding-left:0;padding-right:0;color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_root :is(button,input,textarea,select,a):focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#4d6bfe);outline-offset:3px}.pf_root textarea,.pf_root input,.pf_root select{display:block;border:1px solid var(--dsw-alias-border-l2,#d8dce5);border-radius:8px;background:var(--dsw-alias-bg-layer-1,#fafbfc);color:inherit;font:inherit;padding:10px 12px;max-width:100%;width:100%;outline:none}.pf_root textarea:focus,.pf_root input:focus,.pf_root select:focus{border-color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_root textarea{resize:vertical;min-height:94px}.pf_request{min-height:150px!important;font-size:15px!important;padding:16px!important}.pf_label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:500;min-width:0}.pf_grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.pf_form_note{display:flex;justify-content:space-between;gap:16px;margin-top:8px;font-size:12px;color:var(--dsw-alias-label-secondary,#717681)}.pf_examples{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.pf_example{border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:7px;background:transparent;color:var(--dsw-alias-label-secondary,#717681);font:inherit;font-size:12px;text-align:left;cursor:pointer;padding:7px 10px;min-height:35px}.pf_example:hover{background:var(--dsw-alias-interactive-bg-hover,#f4f6fa)}.pf_banner{border-left:3px solid var(--dsw-alias-state-business-primary,#4d6bfe);padding:11px 14px;background:var(--dsw-alias-bg-layer-1,#f5f7fb);margin:16px 0;white-space:pre-wrap;overflow-wrap:anywhere}.pf_error{color:var(--dsw-alias-state-error-primary,#c43c3c);border-left-color:currentColor}.pf_status{display:flex;gap:9px;align-items:center;color:var(--dsw-alias-label-secondary,#717681);margin:16px 0}.pf_spinner{width:14px;height:14px;border:2px solid var(--dsw-alias-border-l2,#d8dce5);border-top-color:var(--dsw-alias-state-business-primary,#4d6bfe);border-radius:50%;animation:pf_spin 1s linear infinite;flex:none}.pf_model{display:inline-block;border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--dsw-alias-label-secondary,#717681)}.pf_list{padding-left:21px;margin:10px 0}.pf_list li{margin:5px 0;overflow-wrap:anywhere}.pf_plan{border:1px solid var(--dsw-alias-border-l2,#d8dce5);border-radius:10px;padding:20px}.pf_plan h2{margin:8px 0}.pf_plan_steps{list-style:none;padding:0;margin:20px 0 0}.pf_plan_step{display:grid;grid-template-columns:25px 1fr;gap:10px;padding:14px 0;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_plan_step strong{font-weight:550}.pf_plan_step p{margin-top:4px;overflow-wrap:anywhere}.pf_tag{display:inline-block;border-radius:5px;background:var(--dsw-alias-bg-layer-2,#f0f2f7);padding:2px 7px;font-size:11px;color:var(--dsw-alias-label-secondary,#717681)}.pf_tag.pf_selected{color:var(--dsw-alias-state-business-primary,#4d6bfe);border:1px solid var(--dsw-alias-border-l3,#dbe2ff);background:transparent}.pf_tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.pf_candidates{display:flex;flex-direction:column;gap:14px}.pf_candidate{border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:10px;padding:18px;min-width:0}.pf_candidate.pf_chosen{border-color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_candidate_head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.pf_candidate h3{overflow-wrap:anywhere}.pf_candidate p{margin-top:7px}.pf_candidate code{font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;white-space:pre-wrap}.pf_install{background:var(--dsw-alias-bg-layer-1,#f5f6f9);border:1px solid var(--dsw-alias-border-l4,#ecedf1);border-radius:7px;padding:10px 12px;margin-top:12px}.pf_links{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}.pf_links a{font-size:12px;color:var(--dsw-alias-state-business-primary,#4d6bfe);text-decoration:none;overflow-wrap:anywhere}.pf_links a:hover{text-decoration:underline}.pf_evidence{margin-top:12px;font-size:12px;color:var(--dsw-alias-label-secondary,#717681);display:flex;gap:14px;flex-wrap:wrap}.pf_details{margin-top:12px}.pf_details summary{cursor:pointer;color:var(--dsw-alias-label-secondary,#717681);font-size:12px}.pf_code{white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:8px;padding:14px;background:var(--dsw-alias-bg-layer-1,#f7f8fa);font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;max-height:320px;overflow:auto}.pf_workspace{max-width:560px}.pf_feedback{display:flex;gap:8px;flex-wrap:wrap}.pf_btn[aria-pressed=true]{border-color:var(--dsw-alias-state-business-primary,#4d6bfe);color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_footer{margin-top:24px;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed);padding-top:18px;color:var(--dsw-alias-label-tertiary,#87909e);font-size:11px}.pf_preline{white-space:pre-wrap;overflow-wrap:anywhere}.pf_empty{padding:24px 0;color:var(--dsw-alias-label-secondary,#717681)}
 .pf_sources{list-style:none;padding:0;margin:12px 0}.pf_source_row{padding:11px 0;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_source_head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.pf_source_head a{color:var(--dsw-alias-state-business-primary,#4d6bfe);text-decoration:none;overflow-wrap:anywhere}.pf_source_head a:hover{text-decoration:underline}.pf_source_row p{margin-top:5px;overflow-wrap:anywhere}.pf_source_warn{border:1px solid var(--dsw-alias-border-l2,#d8dce5);background:transparent}.pf_search_scope .pf_sources{margin-top:10px}.pf_search_scope .pf_source_row{font-size:12px}
 .pf_tabs{display:flex;gap:8px;border-bottom:1px solid var(--dsw-alias-border-l3,#e4e7ed);padding-bottom:12px;margin-bottom:24px}.pf_tabs .pf_btn{border-color:transparent}.pf_tabs [aria-current=page]{background:var(--dsw-alias-bg-layer-2,#f0f2f7);color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_history_list{display:grid;gap:14px}.pf_history_card{border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:10px;padding:18px}.pf_history_card p{margin-top:8px;overflow-wrap:anywhere}.pf_history_card>.pf_btn{margin-top:14px}.pf_task_history{border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:10px;padding:18px;margin:18px 0 24px}.pf_saved_feedback{border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed);padding:10px 0}.pf_saved_feedback p+p{margin-top:4px}
+.pf_coverage{margin-top:18px;padding:16px;border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:8px}.pf_coverage>p{margin-top:8px}.pf_coverage_stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}.pf_coverage_stats>div{min-width:0}.pf_coverage_stats dt{font-size:12px;color:var(--dsw-alias-label-secondary,#717681)}.pf_coverage_stats dd{margin:3px 0 0;font-size:21px;line-height:1.35;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.pf_coverage .pf_details{margin-top:10px}
+@media(max-width:700px){.pf_coverage_stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pf_author_draft{margin-top:16px;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_author_draft>p{margin-top:7px}
 @keyframes pf_spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.pf_spinner{animation:none}}@media(max-width:700px){.pf_inner{padding:24px 18px 36px}.pf_header{flex-direction:column;gap:14px}.pf_header_actions{justify-content:flex-start}.pf_steps{gap:14px;margin-bottom:24px}.pf_step{font-size:12px}.pf_grid{grid-template-columns:1fr}.pf_plan,.pf_candidate{padding:15px}.pf_actions .pf_btn{flex-grow:1}.pf_form_note{flex-direction:column;gap:3px}.pf_candidate_head{flex-wrap:wrap}.pf_section_head{align-items:flex-start;flex-direction:column;gap:8px}}
 `;
+
+// src/creator-feedback.js
+var bounded = (value) => typeof value === "string" ? value.replace(/[\u0000-\u001f\u007f]/g, " ").slice(0, 200) : "";
+var safeRepository = (value) => {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password) return "";
+    url.search = "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "";
+  }
+};
+function createCreatorFeedbackDraft(backup, pluginId, { revisionId } = {}) {
+  const task = backup?.task;
+  if (!task || !Array.isArray(task.revisions)) throw new TypeError("\u7F3A\u5C11\u672C\u673A\u4EFB\u52A1\u8BB0\u5F55");
+  const selected = revisionId ? task.revisions.filter((row) => row.id === revisionId) : [...task.revisions].reverse();
+  const seed = selected.flatMap((row) => row.workflow?.candidates ?? []).find((row) => row.id === pluginId);
+  if (!seed) throw new TypeError("\u8BE5\u63D2\u4EF6\u672A\u51FA\u73B0\u5728\u6B64\u4EFB\u52A1");
+  const observations = [];
+  for (const revision of task.revisions) {
+    const candidates = revision.workflow?.candidates ?? [];
+    const candidate = candidates.find((row) => row.name === seed.name && safeRepository(row.repository) === safeRepository(seed.repository));
+    if (!candidate) continue;
+    observations.push({ revisionNumber: revision.number, createdAt: bounded(revision.createdAt), version: bounded(candidate.install?.version), commit: /^[a-f0-9]{40}$/i.test(candidate.install?.commit ?? "") ? candidate.install.commit : "", selected: (revision.workflow.plan?.pluginIds ?? []).includes(candidate.id), taskReportedOutcomes: (task.feedback ?? []).filter((row) => row.type !== "refinement" && row.revisionId === revision.id && ["complete", "partial", "blocked"].includes(row.outcome)).map((row) => row.outcome) });
+  }
+  return { format: "plugin-finder-creator-draft", version: 1, shared: false, plugin: { name: bounded(seed.name), repository: safeRepository(seed.repository) }, installationState: "unknown", runtimeState: "unknown", firstUseState: "unknown", observations };
+}
+var md = (value) => bounded(value).replace(/[\\`*_\[\]<>]/g, "\\$&");
+function renderCreatorFeedbackDraft(draft) {
+  const labels = { complete: "\u4EFB\u52A1\u81EA\u62A5\u5B8C\u6210", partial: "\u4EFB\u52A1\u81EA\u62A5\u90E8\u5206\u5B8C\u6210", blocked: "\u4EFB\u52A1\u81EA\u62A5\u672A\u5B8C\u6210" };
+  return `# \u63D2\u4EF6\u5339\u914D\u53CD\u9988\u8349\u7A3F
+
+\u63D2\u4EF6\uFF1A${md(draft.plugin.name)}
+\u6765\u6E90\uFF1A${draft.plugin.repository || "\u5C1A\u672A\u6838\u5BF9"}
+
+- \u9700\u6C42\u573A\u666F\uFF1A\u3010\u586B\u5199\u53EF\u5206\u4EAB\u7684\u573A\u666F\u6458\u8981\u3011
+- \u63A8\u8350\u6216\u653E\u5F03\u7684\u5177\u4F53\u539F\u56E0\uFF1A\u3010\u586B\u5199\u53EF\u5206\u4EAB\u6458\u8981\uFF0C\u6838\u5BF9\u7248\u672C\u540E\u518D\u5224\u65AD\u3011
+- \u5B89\u88C5\u72B6\u6001\uFF1A\u5C1A\u672A\u6838\u5BF9
+- \u8FD0\u884C\u72B6\u6001\uFF1A\u5C1A\u672A\u6838\u5BF9
+- \u63D2\u4EF6\u9996\u6B21\u4F7F\u7528\u7ED3\u679C\uFF1A\u5C1A\u672A\u6838\u5BF9
+
+## \u672C\u4EFB\u52A1\u7684\u672C\u673A\u8BB0\u5F55
+
+${draft.observations.map((row) => `- \u65B9\u6848\u7248\u672C ${row.revisionNumber} \xB7 ${md(row.createdAt)} \xB7 \u63D2\u4EF6 ${md(row.version) || "\u7248\u672C\u672A\u77E5"}${row.commit ? ` \xB7 commit ${row.commit}` : ""}\uFF1A${row.selected ? "\u65B9\u6848\u5DF2\u9009\u4E2D\uFF0C\u672A\u8BC1\u660E\u5B89\u88C5\u6216\u9996\u7528" : "\u5019\u9009\uFF0C\u672A\u88AB\u9009\u4E2D"}\uFF1B${row.taskReportedOutcomes.length ? row.taskReportedOutcomes.map((value) => labels[value]).join(" / ") : "\u65E0\u4EFB\u52A1\u7ED3\u679C\u81EA\u62A5"}\u3002`).join("\n")}
+
+\u4EFB\u52A1\u81EA\u62A5\u7ED3\u679C\u4E0D\u80FD\u5F52\u56E0\u4E8E\u67D0\u4E00\u4E2A\u63D2\u4EF6\u3002\u8BB0\u5F55\u4EC5\u6765\u81EA\u8FD9\u4E00\u4E2A\u4EFB\u52A1\u7684\u65B9\u6848\u7248\u672C\uFF0C\u4E0D\u4EE3\u8868\u72EC\u7ACB\u7528\u6237\u6570\u3001\u5B89\u88C5\u91CF\u6216\u5B9E\u9645\u4F7F\u7528\u6B21\u6570\u3002
+
+\u6B64\u6587\u4EF6\u5C1A\u672A\u5206\u4EAB\u3002\u5B8C\u6574\u9700\u6C42\u3001\u53CD\u9988\u539F\u6587\u3001\u672C\u5730\u8DEF\u5F84\u548C\u4F1A\u8BDD\u6807\u8BC6\u672A\u81EA\u52A8\u5199\u5165\uFF1B\u8BF7\u8865\u5145\u53EF\u5206\u4EAB\u6458\u8981\uFF0C\u6838\u5BF9\u8131\u654F\u540E\u81EA\u884C\u53D1\u9001\u7ED9\u4F5C\u8005\u3002
+`;
+}
 
 // src/client.js
 var inject = ["slots", "layout", "uiWorkspace", "workspaces", "sessions"];
@@ -740,28 +795,51 @@ function apply(ctx) {
     const selectedIds = new Set(state.plan?.pluginIds ?? []);
     const selectedCandidates = state.candidates.filter((item) => selectedIds.has(item.id));
     const discoverySources = Array.isArray(state.discovery?.sources) ? state.discovery.sources.filter((source) => source && typeof source === "object").slice(0, 20) : [];
-    const sourceFailed = discoverySources.some((source) => source.status === "failed");
-    const usesCache = discoverySources.some((source) => source.status === "cached" || source.status === "stale");
+    const coverageSources = Array.isArray(state.discovery?.sourceCoverage) ? state.discovery.sourceCoverage.filter((source) => source && typeof source === "object" && typeof source.sourceId === "string").slice(0, 20) : [];
+    const coverage = state.discovery?.coverage && typeof state.discovery.coverage === "object" && !Array.isArray(state.discovery.coverage) ? state.discovery.coverage : null;
+    const sourceFailed = [...discoverySources, ...coverageSources].some((source) => source.status === "failed");
+    const usesCache = [...discoverySources, ...coverageSources].some((source) => source.status === "cached" || source.status === "stale");
+    const count = (value) => Number.isSafeInteger(value) && value >= 0 ? String(value) : "\u672A\u8BB0\u5F55";
     const sourceLabels = { ready: "\u6309\u9700\u68C0\u67E5\u4E0E\u641C\u7D22", live: "\u5B9E\u65F6\u8BFB\u53D6", cached: "\u4F7F\u7528\u7F13\u5B58", stale: "\u4F7F\u7528\u8FC7\u671F\u7F13\u5B58", failed: "\u8BFB\u53D6\u5931\u8D25", unconfigured: "\u672A\u914D\u7F6E" };
     const sourceRow = (source, index, initial = false) => {
       const url = safeUrl(source.url);
       const title = text(source.title) || text(source.id) || "\u63D2\u4EF6\u6765\u6E90";
+      const sourceCoverage = initial ? null : coverageSources.find((item) => item.sourceId === source.id);
+      const unavailable = source.status === "failed" || source.status === "unconfigured";
       return h(
         "li",
         { className: "pf_source_row", key: text(source.id) || index },
         h("div", { className: "pf_source_head" }, url ? h("a", { href: url, target: "_blank", rel: "noopener noreferrer" }, title, " \u2197") : h("strong", null, title), h("span", { className: `pf_tag${source.status === "failed" || source.status === "stale" ? " pf_source_warn" : ""}` }, sourceLabels[source.status] || "\u72B6\u6001\u672A\u8BF4\u660E")),
-        !initial ? h("p", { className: "pf_small pf_muted" }, `${Number.isSafeInteger(source.total) && source.total >= 0 ? `\u6765\u6E90\u8FD4\u56DE ${source.total} \u6761` : "\u6765\u6E90\u8FD4\u56DE\u6570\u91CF\u672A\u786E\u8BA4"}${text(source.fetchedAt) ? ` \xB7 \u8D44\u6599\u8BFB\u53D6 ${source.fetchedAt}` : ""}`) : null,
+        !initial ? h("p", { className: "pf_small pf_muted" }, sourceCoverage ? `\u4F9B\u7ED9\u8BB0\u5F55 ${unavailable ? "\u672A\u786E\u8BA4" : count(sourceCoverage.total)} \u6761${sourceCoverage.npmTotal != null ? ` \xB7 npm ${unavailable ? "\u672A\u786E\u8BA4" : count(sourceCoverage.npmTotal)}` : ""}${sourceCoverage.githubOnlyTotal != null ? ` \xB7 GitHub-only ${unavailable ? "\u672A\u786E\u8BA4" : count(sourceCoverage.githubOnlyTotal)}` : ""}${text(sourceCoverage.fetchedAt) ? ` \xB7 \u8D44\u6599\u8BFB\u53D6 ${sourceCoverage.fetchedAt}` : ""}` : `${Number.isSafeInteger(source.total) && source.total >= 0 ? `\u6765\u6E90\u8FD4\u56DE ${source.total} \u6761` : "\u6765\u6E90\u8FD4\u56DE\u6570\u91CF\u672A\u786E\u8BA4"}${text(source.fetchedAt) ? ` \xB7 \u8D44\u6599\u8BFB\u53D6 ${source.fetchedAt}` : ""}`) : null,
+        sourceCoverage && !unavailable ? h("p", { className: "pf_small pf_muted" }, `\u672C\u6B21\u5339\u914D ${count(sourceCoverage.matched)} \xB7 \u4F5C\u8005\u8D44\u6599\u6838\u5BF9\u5C1D\u8BD5 ${count(sourceCoverage.inspected)} \xB7 \u5DF2\u89E3\u6790 ${count(sourceCoverage.resolved)} \xB7 \u5DF2\u6392\u9664 ${count(sourceCoverage.excluded)} \xB7 \u672A\u68C0\u67E5 ${count(sourceCoverage.uninspected)}${Number.isSafeInteger(sourceCoverage.rejectedRows) && sourceCoverage.rejectedRows > 0 ? ` \xB7 \u672A\u901A\u8FC7\u6765\u6E90\u683C\u5F0F\u68C0\u67E5 ${sourceCoverage.rejectedRows}` : ""}`) : null,
         source.status === "failed" ? h("p", { className: "pf_small pf_muted" }, "\u8BE5\u6765\u6E90\u641C\u7D22\u672A\u5B8C\u6210", text(source.error) ? `\uFF1A${source.error.slice(0, 500)}` : "\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002") : null,
         source.status === "stale" ? h("p", { className: "pf_small pf_muted" }, "\u5B9E\u65F6\u8BFB\u53D6\u672A\u5B8C\u6210\uFF0C\u4EE5\u4E0A\u4F7F\u7528\u8F83\u65E9\u7F13\u5B58\uFF0C\u4E0D\u80FD\u89C6\u4E3A\u5F53\u524D\u5168\u91CF\u7ED3\u679C\u3002") : null
       );
     };
+    const coverageView = h(
+      "div",
+      { className: "pf_coverage", "aria-label": "\u672C\u6B21\u4F9B\u7ED9\u8986\u76D6" },
+      h("h3", null, "\u672C\u6B21\u4F9B\u7ED9\u8986\u76D6"),
+      coverage || coverageSources.length ? h("p", { className: "pf_small pf_muted" }, "\u7EDF\u8BA1\u9650\u4E8E\u672C\u6B21\u5DF2\u8FD4\u56DE\u6765\u6E90\u3002\u4F9B\u7ED9\u8BB0\u5F55\u662F\u539F\u59CB\u7D22\u5F15\u6761\u76EE\uFF0C\u4E0D\u662F\u5DF2\u517C\u5BB9\u3001\u5B89\u88C5\u6216\u4EFB\u52A1\u9A8C\u8BC1\u8FC7\u7684\u63D2\u4EF6\uFF1B\u6765\u6E90\u4E4B\u95F4\u53EF\u80FD\u91CD\u53E0\uFF0C\u4E0D\u76F4\u63A5\u76F8\u52A0\u3002") : h("p", { className: "pf_small pf_muted" }, "\u8FD9\u4EFD\u65B9\u6848\u672A\u8BB0\u5F55\u4F9B\u7ED9\u8986\u76D6\u7EDF\u8BA1\uFF0C\u4FDD\u7559\u5F53\u65F6\u6765\u6E90\u4E0E\u641C\u7D22\u65F6\u95F4\uFF0C\u4E0D\u8865\u8BB0\u4E3A\u96F6\u3002"),
+      coverage ? h("dl", { className: "pf_coverage_stats" }, ...[["matched", "\u672C\u6B21\u5339\u914D"], ["inspected", "\u4F5C\u8005\u8D44\u6599\u6838\u5BF9"], ["returned", "\u6700\u7EC8\u5019\u9009"], ["uninspected", "\u672A\u68C0\u67E5"]].map(([key, label]) => h("div", { key }, h("dt", null, label), h("dd", null, count(coverage[key]))))) : null,
+      coverage ? h("p", { className: "pf_small pf_muted" }, `\u4F5C\u8005\u8D44\u6599\u6838\u5BF9\u8BA1\u5C1D\u8BD5\u6570\uFF0C\u4E0D\u7B49\u4E8E\u9010\u9879\u8BFB\u5B8C\uFF1B\u672C\u6B21\u6700\u591A\u6838\u5BF9 ${count(coverage.inspectionBudget)} \u4E2A\u5019\u9009\uFF0C\u4E5F\u53EF\u80FD\u56E0\u65F6\u95F4\u4E0A\u9650\u63D0\u524D\u505C\u6B62\u3002\u672A\u68C0\u67E5\u6761\u76EE\u4E0D\u80FD\u636E\u6B64\u5224\u5B9A\u4E0D\u9002\u5408\u3002`) : null,
+      coverage ? h(
+        "details",
+        { className: "pf_details" },
+        h("summary", null, "\u67E5\u770B\u89E3\u6790\u4E0E\u524D\u63D0\u7B5B\u9009"),
+        h("p", { className: "pf_small pf_muted" }, `\u5DF2\u89E3\u6790 ${count(coverage.resolved)} \xB7 \u5DF2\u6392\u9664 ${count(coverage.excluded)}\u3002\u5DF2\u89E3\u6790\u6307\u53D6\u5F97\u6E05\u5355\u3001\u58F0\u660E\u4E0E\u56FA\u5B9A\u5B89\u88C5\u6765\u6E90\uFF0C\u4E0D\u7B49\u4E8E\u5B89\u88C5\u6210\u529F\uFF1B\u89E3\u6790\u540E\u4ECD\u53EF\u80FD\u56E0\u4F7F\u7528\u524D\u63D0\u6392\u9664\uFF0C\u4E24\u8005\u53EF\u80FD\u91CD\u53E0\u3002`),
+        coverage.excludedReasons && typeof coverage.excludedReasons === "object" ? h("ul", { className: "pf_list pf_small pf_muted" }, ...Object.entries(coverage.excludedReasons).filter(([, value]) => Number.isSafeInteger(value) && value > 0).slice(0, 12).map(([key, value]) => h("li", { key }, `${{ "extra-key-required": "\u9700\u8981\u989D\u5916\u670D\u52A1 Key", "extra-key-unknown": "\u989D\u5916 Key \u524D\u63D0\u672A\u786E\u8BA4", "author-unresolved": "\u4F5C\u8005\u8D44\u6599\u672A\u80FD\u89E3\u6790", "author-read-timeout": "\u4F5C\u8005\u8D44\u6599\u6838\u5BF9\u8D85\u65F6" }[key] || "\u5176\u4ED6\u524D\u63D0\u6216\u89E3\u6790\u9650\u5236"}\uFF1A${value}`))) : null
+      ) : null
+    );
+    const displayedSources = discoverySources.length ? discoverySources : coverageSources.map((source) => ({ ...source, id: source.sourceId }));
     const searchEvidence = state.discovery ? h(
       "section",
       { className: "pf_section", "aria-label": "\u672C\u6B21\u641C\u7D22\u6765\u6E90" },
       h("div", { className: "pf_section_head" }, h("h2", null, "\u672C\u6B21\u641C\u7D22"), h("span", { className: "pf_small pf_muted" }, `\u53C2\u4E0E\u63A8\u8350\u7684\u5019\u9009\uFF1A${state.candidates.length}`)),
       h("p", { className: "pf_muted pf_small" }, `\u6309\u786E\u8BA4\u540E\u7684\u9700\u6C42\u68C0\u7D22\u6765\u6E90\uFF0C\u518D\u8BFB\u53D6\u5019\u9009\u8D44\u6599${text(state.discovery.searchedAt) ? ` \xB7 \u641C\u7D22\u65F6\u95F4 ${state.discovery.searchedAt}` : ""}\u3002\u7B2C\u4E09\u65B9\u7CBE\u9009\u6E90\uFF0C\u975E\u5B98\u65B9\u5BA1\u6838\u3002`),
       sourceFailed ? h("p", { className: "pf_banner pf_small", role: "status" }, "\u641C\u7D22\u672A\u5B8C\u6210\uFF1A\u90E8\u5206\u6765\u6E90\u8BFB\u53D6\u5931\u8D25\u3002\u4EE5\u4E0B\u53EA\u5C55\u793A\u5DF2\u8FD4\u56DE\u7684\u5019\u9009\uFF0C\u4E0D\u80FD\u636E\u6B64\u5224\u65AD\u6CA1\u6709\u76F8\u5173\u63D2\u4EF6\u3002") : usesCache ? h("p", { className: "pf_banner pf_small", role: "status" }, "\u672C\u6B21\u90E8\u5206\u6765\u6E90\u4F7F\u7528\u7F13\u5B58\uFF0C\u5177\u4F53\u72B6\u6001\u548C\u8BFB\u53D6\u65F6\u95F4\u5982\u4E0B\uFF1B\u7F13\u5B58\u7ED3\u679C\u4E0D\u4EE3\u8868\u5DF2\u5B8C\u6210\u5B9E\u65F6\u641C\u7D22\u3002") : null,
-      discoverySources.length ? h("ul", { className: "pf_sources" }, ...discoverySources.map((source, index) => sourceRow(source, index))) : h("p", { className: "pf_muted pf_small" }, "\u672C\u6B21\u6765\u6E90\u72B6\u6001\u672A\u8FD4\u56DE\uFF0C\u641C\u7D22\u8986\u76D6\u8303\u56F4\u5C1A\u672A\u786E\u8BA4\u3002"),
+      coverageView,
+      displayedSources.length ? h("ul", { className: "pf_sources" }, ...displayedSources.map((source, index) => sourceRow(source, index))) : h("p", { className: "pf_muted pf_small" }, "\u672C\u6B21\u6765\u6E90\u72B6\u6001\u672A\u8FD4\u56DE\uFF0C\u641C\u7D22\u8986\u76D6\u8303\u56F4\u5C1A\u672A\u786E\u8BA4\u3002"),
       state.warnings?.length ? h("ul", { className: "pf_list pf_small pf_muted" }, ...strings(state.warnings).slice(0, 16).map((warning, index) => h("li", { key: index }, warning))) : null
     ) : null;
     const labelFor = (owner) => owner === "dsh" ? "DSH \u539F\u751F\u80FD\u529B" : owner === "human" ? "\u4F60\u6765\u786E\u8BA4 / \u8865\u5145" : state.candidates.find((item) => item.id === owner)?.name ?? owner;
@@ -805,6 +883,27 @@ function apply(ctx) {
         controller.notify("\u5DF2\u751F\u6210\u672C\u673A\u65B9\u6848\u5907\u4EFD\uFF0C\u5305\u542B\u8BE5\u4EFB\u52A1\u7684\u7248\u672C\u3001\u53CD\u9988\u548C\u4F1A\u8BDD\u5173\u8054\u3002\u8BF7\u59A5\u5584\u4FDD\u5B58\u3002");
       } catch {
         controller.reportError("\u672C\u673A\u5907\u4EFD\u4E0B\u8F7D\u672A\u80FD\u5F00\u59CB\uFF0C\u8BF7\u91CD\u8BD5\u3002");
+      } finally {
+        if (url) setTimeout(() => URL.revokeObjectURL(url), 1e3);
+      }
+    };
+    const downloadCreatorDraft = async (pluginId) => {
+      const backup = await controller.exportTask();
+      if (!backup || !active.current) return;
+      let url;
+      try {
+        const draft = createCreatorFeedbackDraft(backup, pluginId, { revisionId: state.revisionId });
+        const content = renderCreatorFeedbackDraft(draft);
+        url = URL.createObjectURL(new Blob([content], { type: "text/markdown;charset=utf-8" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `plugin-feedback-${text(draft.plugin?.name).replace(/[^a-z0-9_-]/gi, "-").slice(0, 100) || "draft"}.md`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        controller.notify("\u53CD\u9988\u8349\u7A3F\u5DF2\u4E0B\u8F7D\u5230\u672C\u673A\uFF0C\u5C1A\u672A\u5206\u4EAB\u3002\u8BF7\u586B\u5199\u53EF\u5206\u4EAB\u573A\u666F\u6458\u8981\uFF0C\u6838\u5BF9\u7248\u672C\u4E0E\u8131\u654F\u540E\u81EA\u884C\u5206\u4EAB\u7ED9\u4F5C\u8005\u3002");
+      } catch {
+        controller.reportError("\u4F5C\u8005\u53CD\u9988\u8349\u7A3F\u672A\u80FD\u751F\u6210\uFF0C\u5F53\u524D\u65B9\u6848\u4E0E\u8BB0\u5F55\u5DF2\u4FDD\u7559\u3002");
       } finally {
         if (url) setTimeout(() => URL.revokeObjectURL(url), 1e3);
       }
@@ -875,6 +974,7 @@ function apply(ctx) {
           text(candidate.documentation?.readAt) ? h("p", { className: "pf_small pf_muted" }, `\u4F5C\u8005\u8D44\u6599\u8BFB\u53D6\uFF1A${candidate.documentation.readAt}${candidate.documentation.truncated ? " \xB7 \u6709\u754C\u8282\u9009\uFF0C\u975E\u5168\u6587" : ""}`) : null,
           details.firstUse ? h("p", { className: "pf_small pf_preline" }, h("strong", null, "\u9996\u6B21\u4F7F\u7528\uFF1A"), details.firstUse) : null,
           details.limitations.length ? h("ul", { className: "pf_list pf_small pf_muted" }, ...details.limitations.map((item, index) => h("li", { key: index }, item))) : null,
+          state.taskId ? h("div", { className: "pf_author_draft" }, button("\u5BFC\u51FA\u7ED9\u4F5C\u8005\u7684\u53CD\u9988\u8349\u7A3F", () => downloadCreatorDraft(candidate.id), { disabled: busy }), h("p", { className: "pf_small pf_muted" }, "\u8BF7\u586B\u5199\u573A\u666F\u6458\u8981\u5E76\u6838\u5BF9\u540E\u81EA\u884C\u5206\u4EAB\u3002\u53EA\u4E0B\u8F7D\u672C\u673A\u8349\u7A3F\uFF0C\u4E0D\u5305\u542B\u5B8C\u6574\u9700\u6C42\u6216\u53CD\u9988\u539F\u6587\u3002")) : null,
           h("p", { className: "pf_small pf_muted" }, "\u5B89\u88C5\u4F1A\u5F71\u54CD DSH \u914D\u7F6E\u3002\u8BF7\u7531\u5BBF\u4E3B\u786E\u8BA4\u517C\u5BB9\u6027\u548C\u5B89\u88C5\u7ED3\u679C\uFF1B\u672C\u9875\u4E0D\u4F1A\u81EA\u52A8\u5B89\u88C5\u3002")
         )
       );

@@ -64,3 +64,10 @@ test('checking whether a plugin is installed is not an installation attestation'
 test('negative verification statements in rationale remain valid advisory limits',()=>{
   for(const rationale of ['未经实测，不能保证可用','没有已验证的组合','not verified working','尚不能声称完全免费'])assert.equal(parsePlan({...basePlan,rationale},plugins,intent).kind,'combo');
 });
+test('live discovery receives Key eligibility before candidate slots fill and persists source coverage',async()=>{
+  let received,modelData;const sourceCoverage=[{sourceId:'awesome',url:'https://awesome-dsh-plugin.com/plugins.json',status:'live',total:6200,npmTotal:3100,githubOnlyTotal:3100,matched:200,inspected:12,resolved:9,excluded:6,uninspected:188,inspectionBudget:24}];
+  const coverage={matched:200,inspected:12,resolved:9,excluded:6,uninspected:188,returned:0,inspectionBudget:24};
+  const svc=createFinderService({discovery:{search:async input=>{received=input;return {candidates:[],sources:[{id:'awesome',status:'live'}],sourceCoverage,coverage,warnings:[],searchedAt:'2026-10-20T00:00:00Z'};}},model:{status:()=>({configured:true}),call:async input=>{modelData=input.data;return{text:JSON.stringify({...basePlan,kind:'gap',pluginIds:[],steps:[]})};}}});
+  const result=await svc.recommend({intent:{...intent,constraints:['不要额外 API Key']}});
+  assert.equal(received.requiresNoApiKey,true);assert.deepEqual(result.discovery.coverage,coverage);assert.deepEqual(result.discovery.sourceCoverage,sourceCoverage);assert.deepEqual(modelData.discovery.sourceCoverage,sourceCoverage);
+});

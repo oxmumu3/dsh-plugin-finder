@@ -40,7 +40,8 @@ test('live discovery finds a new native bundle with no handwritten capabilities 
   assert.ok(entry.documentation.text.includes('PDF and Word'));
   assert.ok(entry.evidence.sources.some(source => source.kind === 'author-documentation'));
   assert.ok(result.sources.some(source => source.status === 'live' && source.total === 1));
-  assert.ok(!calls.some(call => /plugins\.json|catalog\/sources/.test(call.url)));
+  assert.ok(calls.some(call => call.url==='https://awesome-dsh-plugin.com/plugins.json'), 'full public supply is read dynamically alongside the format-1 supplement');
+  assert.ok(!calls.some(call => /catalog\/sources/.test(call.url)));
 });
 
 test('a malformed or unavailable source is visible while another source still returns useful candidates', async () => {

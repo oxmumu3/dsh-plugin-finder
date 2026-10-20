@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-finder",
-  "version": "0.2.1-preview.2",
+  "version": "0.2.2-preview.1",
   "description": "Discover task-fit plugins from live DeepSeek Harness ecosystem sources, understand author documentation, and continue in a native conversation",
   "author": "牛村木木山",
   "license": "MIT",
