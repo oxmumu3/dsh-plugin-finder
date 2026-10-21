@@ -21,7 +21,7 @@
 | topic 可发现 | 2026-10-21 06:14:43 UTC，用**未发送 Authorization 头**的 GitHub 搜索 API 查询 `repo:piggy00544/dsh-plugin-finder topic:dsh-plugin`，HTTP 200、准确命中 1，`incomplete_results=false`。这不代表 Awesome 已收录。 |
 | 一天门槛 | 仓库创建于 `2026-10-20T06:37:58Z`；仅在 **2026-10-21 06:37:58 UTC（墨西哥城00:37:58）之后**才满一天。准备材料时尚未达到，提交前须重新核对。 |
 | 旧版公开附件 | `v0.3.0-preview.1` tarball 已实际 HTTP 200 下载核对，121646 bytes，SHA-256 与 Release 一致；只能证明旧版附件可达。 |
-| 本次目标附件 | 已发布 `v0.3.0-preview.2`，匿名 GET 实际下载 123979 bytes，SHA-256 `382b912a7e6785e3a10cf076b63377153b7a8b9c2e180efe917ce0a27de08748`；包内 31 个文件、预构建客户端与源码构建一致，无后台或管理员凭据。完整 259 项测试通过，新版原生视觉验收仍未确认，详见本版 Release，不沿用旧版结果冒充。 |
+| 本次目标附件 | 已发布 `v0.3.0-preview.2`，匿名 GET 实际下载 123979 bytes，SHA-256 `382b912a7e6785e3a10cf076b63377153b7a8b9c2e180efe917ce0a27de08748`；包内 31 个文件、预构建客户端与源码构建一致，无后台或管理员凭据。完整 259 项测试通过，当前 DSH 原生管理器已安装启用；安装文件与公开包一致，历史保护、方案优先、安装指引与原会话打开已读回，详见本版 Release。 |
 | 当前收录状态 | 本轮公开 `plugins.json` 与 `index.json` 均未找到本仓库；本材料没有提交、受理、合并或上架回执。提交后也须以上游实际合并和公开池读回为准。 |
 
 匿名搜索证据保存在本机、源码仓库之外：`Agent/output/plugin-finder-launch-review-2026-10-21/github-topic-anonymous-search.json`。只保留公开 URL、请求方法、无认证标记、时间、状态和必要仓库元数据，不含凭据；不把本地 output 一并提交。
