@@ -66,6 +66,7 @@ function server(routes = {}) {
       analyze: { intent: fixtureIntent(), model: { label: '宿主默认模型' } },
       recommend: { intent: fixtureIntent(), plan: fixturePlan(), candidates: [candidate], catalogUpdatedAt: '2026-10-20', discovery: { sources: [{ id: 'github', title: 'GitHub DSH 插件', url: 'https://github.com/topics/dsh-plugin', status: 'live', fetchedAt: '2026-10-20T12:00:00Z', total: 1 }], searchedAt: '2026-10-20T12:00:00Z' }, warnings: [], model: { label: '宿主默认模型' } },
       feedback: { saved: true },
+      'select-plan': { saved: true },
       reset: { cleared: true },
     };
     return { ok: true, json: async () => copy(values[path]) };
@@ -744,4 +745,114 @@ test('clicking the author-feedback draft button downloads redacted Markdown and 
   assert.equal(downloaded.type, 'text/markdown;charset=utf-8'); assert.ok(clicked[0].download.endsWith('.md')); assert.match(content, /填写可分享/); assert.match(content, /任务自报未完成/);
   for (const secret of ['PRIVATE ORIGINAL', 'PRIVATE FEEDBACK', '/Users/private', 'private-task-id', 'private-session-id']) assert.equal(content.includes(secret), false, secret);
   assert.ok(api.calls.every(call => /^\/api\/plugin_finder\/(bootstrap|export)$/.test(call.url))); rendered.dispose();
+});
+
+const telemetryStatus = (patch = {}) => ({ enabled: false, consent: 'unasked', policyVersion: '2026-10-20-v1', endpoint: 'https://feedback.example.com/v1', queued: 0, delivered: 0, lastSyncedAt: null, lastError: null, deletionPending: false, deleteConfirmed: false, lastDeletedAt: null, hasRemoteRegistration: false, ...patch });
+
+test('unasked consent is opt-in and bootstrap does not register, upload, poll or change the workflow', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow(); const status = telemetryStatus();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), telemetry: status }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const rendered = await renderWorkbench(controller.getSnapshot());
+  assert.deepEqual(copy(controller.getSnapshot().telemetry), status); assert.match(rendered.text, /同意并自动回传/); assert.match(rendered.text, /暂不同意/);
+  assert.match(rendered.text, /摘要/); assert.match(rendered.text, /集中/); assert.match(rendered.text, /不倒灌|不补传/); assert.match(rendered.text, /文件|完整会话/);
+  const settings = rendered.nodes.find(node => node.type === 'details' && node.props.className === 'pf_telemetry');
+  assert.ok(settings); assert.equal(settings.props.open, false, 'consent is never automatically expanded on first use');
+  assert.ok(rendered.nodes.some(node => node.type === 'button' && node.children.includes('回传设置')));
+  assert.match(rendered.text, /无法保证识别所有敏感内容/); assert.match(rendered.text, /关联需求.*方案.*摘要/);
+  assert.equal(rendered.nodes.some(node => node.type === 'input' && node.props.type === 'checkbox' && (node.props.checked || node.props.defaultChecked)), false);
+  assert.deepEqual(api.calls.map(call => call.url), ['/api/plugin_finder/bootstrap']); assert.equal(controller.getSnapshot().taskId, workflow.taskId); controller.close();
+});
+
+test('first unasked feedback may show one optional settings entry without collecting the saved record', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow(); const status = telemetryStatus();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), telemetry: status }) }), feedback: async () => ({ ok: true, json: async () => ({ saved: true, ...historyEnvelope(workflow), telemetry: status }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  assert.equal(controller.getSnapshot().telemetrySuggestionVisible, false);
+  assert.equal(await controller.saveFeedback('partial', '真实反馈'), true);
+  assert.equal(controller.getSnapshot().telemetry.enabled, false); assert.equal(controller.getSnapshot().telemetrySuggestionVisible, true);
+  const rendered = await renderWorkbench(controller.getSnapshot());
+  assert.match(rendered.text, /可选：允许自动回传后续反馈摘要/); assert.match(rendered.text, /本次已保存的记录不会追溯上传/);
+  assert.ok(rendered.nodes.some(node => node.type === 'button' && node.children.includes('查看可选回传设置')));
+  assert.equal(rendered.nodes.find(node => node.type === 'details' && node.props.className === 'pf_telemetry').props.open, false);
+  controller.openTelemetrySettings(); assert.equal(controller.getSnapshot().telemetrySettingsOpen, true);
+  assert.equal(controller.getSnapshot().telemetry.enabled, false); assert.equal(controller.getSnapshot().telemetrySuggestionVisible, false);
+  assert.equal((await renderWorkbench(controller.getSnapshot())).nodes.find(node => node.type === 'details' && node.props.className === 'pf_telemetry').props.open, true);
+  controller.setTelemetrySettingsOpen(false); await controller.saveFeedback('partial', '另一条反馈');
+  assert.equal(controller.getSnapshot().telemetrySuggestionVisible, false, 'the lightweight suggestion appears at most once per plugin lifetime');
+  assert.ok(api.calls.every(call => !/telemetry-consent|telemetry-delete|telemetry-status/.test(call.url)));
+  assert.equal(api.calls.filter(call => call.url.endsWith('/feedback')).length, 2); controller.close();
+});
+
+test('declined consent is not re-prompted after feedback', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow(); const status = telemetryStatus({ consent: 'declined' });
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), telemetry: status }) }), feedback: async () => ({ ok: true, json: async () => ({ saved: true, ...historyEnvelope(workflow), telemetry: status }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); await controller.saveFeedback('complete', '完成');
+  assert.equal(controller.getSnapshot().telemetrySuggestionVisible, false); assert.equal(controller.getSnapshot().telemetrySettingsOpen, false);
+  assert.doesNotMatch((await renderWorkbench(controller.getSnapshot())).text, /可选：允许自动回传后续反馈摘要/); controller.close();
+});
+
+test('only explicit consent actions send the displayed policy version and declined feedback stays local', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow(); let status = telemetryStatus();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), telemetry: status }) }), 'telemetry-consent': async options => { const body = JSON.parse(options.body); status = telemetryStatus({ enabled: body.enabled, consent: body.enabled ? 'accepted' : 'declined', hasRemoteRegistration: body.enabled }); return { ok: true, json: async () => status }; } });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  assert.equal(await controller.setTelemetryConsent(true), true); assert.deepEqual(JSON.parse(api.calls.at(-1).options.body), { enabled: true, policyVersion: '2026-10-20-v1' }); assert.equal(controller.getSnapshot().telemetry.enabled, true);
+  assert.equal(await controller.setTelemetryConsent(false), true); assert.equal(controller.getSnapshot().telemetry.consent, 'declined'); await controller.saveFeedback('partial', '实际结果'); assert.match(controller.getSnapshot().notice, /只保存在本机|仅保存在本机/);
+  assert.equal(controller.getSnapshot().taskId, workflow.taskId); controller.close();
+});
+
+test('enabled feedback reports pending automatic sync instead of claiming a network receipt', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow(); const status = telemetryStatus({ enabled: true, consent: 'accepted', hasRemoteRegistration: true, queued: 1, lastError: '网络暂不可用' });
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), telemetry: status }) }), feedback: async () => ({ ok: true, json: async () => ({ saved: true, ...historyEnvelope(workflow), telemetry: status }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); await controller.saveFeedback('partial', '只在模型摘要里清理');
+  assert.match(controller.getSnapshot().notice, /自动同步|等待同步/); assert.doesNotMatch(controller.getSnapshot().notice, /已回传|已送达|同步完成/);
+  const rendered = await renderWorkbench(controller.getSnapshot()); assert.match(rendered.text, /网络暂不可用/); assert.match(rendered.text, /停止回传/); controller.close();
+});
+
+test('status refresh is manual and deletion pending never renders a completed deletion', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow(); let status = telemetryStatus({ enabled: true, consent: 'accepted', hasRemoteRegistration: true, queued: 2, delivered: 4 });
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), telemetry: status }) }), 'telemetry-delete': async () => { status = telemetryStatus({ consent: 'declined', delivered: 4, deletionPending: true, lastError: '离线，删除待处理', hasRemoteRegistration: true }); return { ok: true, json: async () => status }; }, 'telemetry-status': async () => ({ ok: true, json: async () => status }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); assert.equal(await controller.deleteTelemetry(), true);
+  assert.equal(controller.getSnapshot().telemetry.enabled, false); assert.equal(controller.getSnapshot().telemetry.deletionPending, true); assert.match(controller.getSnapshot().notice, /待处理|尚未确认/); assert.doesNotMatch(controller.getSnapshot().notice, /删除完成|已删除全部/);
+  assert.equal(api.calls.some(call => call.url.endsWith('telemetry-status')), false); await controller.refreshTelemetry(); assert.equal(api.calls.at(-1).options.method, 'GET'); assert.equal(api.calls.filter(call => call.url.endsWith('telemetry-status')).length, 1);
+  const rendered = await renderWorkbench(controller.getSnapshot()); assert.match(rendered.text, /删除待处理|删除申请.*待处理/); controller.close();
+});
+
+test('plan selection is durably recorded before a native handoff and selection failure blocks Host side effects', async () => {
+  const { module } = await loadClient();
+  for (const fail of [true, false]) {
+    const events = []; const h = host({ connect: async () => { events.push('connect'); return 'session-a'; } }); const workflow = identifiedWorkflow();
+    const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }), 'select-plan': async options => { events.push('select-plan'); assert.deepEqual(JSON.parse(options.body), { taskId: workflow.taskId, revisionId: workflow.revisionId }); return fail ? { ok: false, json: async () => ({ error: { message: '所选方案尚未保存，请重试。' } }) } : { ok: true, json: async () => ({ saved: true, ...historyEnvelope(workflow) }) }; }, handoff: async () => ({ ok: true, json: async () => historyEnvelope({ ...workflow, handoff: { ...workflow, workspaceId: 'workspace-a', sessionId: 'session-a', status: 'applied' } }) }) });
+    const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.selectWorkspace('workspace-a');
+    assert.equal(await controller.handoff(), !fail); assert.deepEqual(events, fail ? ['select-plan'] : ['select-plan', 'connect']); assert.equal(h.drafts.length, fail ? 0 : 1); assert.equal(controller.getSnapshot().taskId, workflow.taskId); controller.close();
+  }
+});
+
+test('missing or failed consent cannot enable collection or overwrite the current task', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow(); let includeStatus = false;
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), ...(includeStatus ? { telemetry: telemetryStatus() } : {}) }) }), 'telemetry-consent': async () => ({ ok: false, json: async () => ({ error: { message: '同意设置尚未保存，请重试。' } }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); assert.equal(await controller.setTelemetryConsent(true), false);
+  assert.equal(api.calls.some(call => call.url.endsWith('telemetry-consent')), false);
+  includeStatus = true; await controller.bootstrap(); assert.equal(await controller.setTelemetryConsent(true), false);
+  assert.equal(controller.getSnapshot().telemetry.enabled, false); assert.equal(controller.getSnapshot().telemetry.consent, 'unasked'); assert.equal(controller.getSnapshot().taskId, workflow.taskId); assert.match(controller.getSnapshot().error, /尚未保存/); controller.close();
+});
+
+test('deletion is complete only with explicit confirmation and never inferred from no pending work', async () => {
+  const { module } = await loadClient();
+  for (const confirmed of [false, true]) {
+    const h = host(); const workflow = identifiedWorkflow(); const before = telemetryStatus({ enabled: true, consent: 'accepted', hasRemoteRegistration: true, delivered: 2 });
+    const after = telemetryStatus({ consent: 'declined', deleteConfirmed: confirmed, lastDeletedAt: confirmed ? '2026-10-20T18:00:00Z' : null });
+    const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), telemetry: before }) }), 'telemetry-delete': async () => ({ ok: true, json: async () => after }) });
+    const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); await controller.deleteTelemetry();
+    if (confirmed) assert.match(controller.getSnapshot().notice, /服务端已明确确认删除/); else { assert.match(controller.getSnapshot().notice, /尚未确认/); assert.doesNotMatch(controller.getSnapshot().notice, /已明确确认删除/); }
+    assert.deepEqual(JSON.parse(api.calls.at(-1).options.body), {}); assert.equal(controller.getSnapshot().taskId, workflow.taskId); controller.close();
+  }
+});
+
+test('a successful local feedback with queue failure visibly reports unconfirmed enqueue instead of waiting for sync', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow(); const telemetry = telemetryStatus({ enabled: true, consent: 'accepted', queued: 0, delivered: 0 });
+  const warning = '本机功能正常，本次集中记录未能保存，请稍后重试。';
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), telemetry }) }), feedback: async () => ({ ok: true, json: async () => ({ saved: true, ...historyEnvelope(workflow), telemetry, telemetryWarning: warning }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); assert.equal(await controller.saveFeedback('partial', '真实反馈'), true);
+  const state = controller.getSnapshot(); assert.equal(state.feedbackSaved, true); assert.equal(state.taskId, workflow.taskId); assert.match(state.notice, /本机/); assert.match(state.notice, /未能确认入队|未能保存/); assert.doesNotMatch(state.notice, /将按.*自动同步|等待自动同步/);
+  const rendered = await renderWorkbench(state); assert.ok(rendered.text.includes(warning)); assert.match(rendered.text, /集中同步异常|集中记录未能/); controller.close();
 });

@@ -1,16 +1,21 @@
 import {createHash,randomUUID} from 'node:crypto';
 import {fail,FinderError,parseIntent,parsePlan,record,text} from './contracts.js';
 import {publicSourceData,publicSourceText} from './provenance.js';
+import {validateTelemetryEvent} from './telemetry-contract.js';
 
 export const MAX_TASK_BYTES=8_000_000;
 export const MAX_IMPORT_BYTES=8_100_000;
 export const ORIGIN_RESERVE_BYTES=1024;
+export const MAX_TELEMETRY_BYTES=256_000;
+export const MAX_STORED_TASK_BYTES=MAX_TASK_BYTES+MAX_TELEMETRY_BYTES;
+const TELEMETRY_WARNING='本机记录已保留，但本次集中记录未能完整排队；请查看同步状态后重试。';
 const copy=value=>structuredClone(value);
 const stamp=value=>typeof value==='string'&&Number.isFinite(Date.parse(value));
 const hash=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const id=value=>text(value,200,'INVALID_BACKUP');
 function bounded(value,max=MAX_TASK_BYTES){let serialized;try{serialized=JSON.stringify(value);}catch{fail('INVALID_BACKUP');}if(Buffer.byteLength(serialized,'utf8')>max)fail('HISTORY_CAPACITY');return serialized;}
 function array(value,max=10000){if(!Array.isArray(value)||value.length>max)fail('INVALID_BACKUP');return value;}
+const withoutTelemetry=task=>{const{telemetryEvents,...business}=task;return business;};
 
 /** Validate imported snapshots as data, retaining the original user request. */
 export function validateWorkflow(value){
@@ -35,7 +40,7 @@ export function validateWorkflow(value){
 }
 
 function validateTask(value){
-  bounded(value);
+  bounded(value,MAX_STORED_TASK_BYTES);
   if(!record(value)||value.format!==1||!stamp(value.createdAt)||!stamp(value.updatedAt))fail('INVALID_BACKUP');
   const task={format:1,id:id(value.id),originalRequest:text(value.originalRequest,6000,'INVALID_BACKUP'),originalConstraints:array(value.originalConstraints??[],6).map(item=>text(item,350,'INVALID_BACKUP')),createdAt:value.createdAt,updatedAt:value.updatedAt,revisions:[],feedback:[],handoffs:[]};
   const revisionIds=new Set();
@@ -63,9 +68,14 @@ function validateTask(value){
     task.handoffs.push({taskId:task.id,revisionId:entry.revisionId,workspaceId:id(entry.workspaceId),sessionId:id(entry.sessionId),status:entry.status,createdAt:entry.createdAt});
   }
   if(value.origin!==undefined){const origin=value.origin;if(!record(origin)||!['backup','legacy-current'].includes(origin.type)||!stamp(origin.importedAt)||origin.importedAt.length>40||typeof origin.sourceHash!=='string'||!/^[a-f0-9]{64}$/.test(origin.sourceHash)||!['legacy-format-2','plugin-finder-task'].includes(origin.sourceFormat))fail('INVALID_BACKUP');task.origin={type:origin.type,label:text(origin.label,200,'INVALID_BACKUP'),importedAt:origin.importedAt,sourceHash:origin.sourceHash,sourceFormat:origin.sourceFormat};}
+  if(value.telemetryEvents!==undefined){
+    const seen=new Set();task.telemetryEvents=array(value.telemetryEvents,1000).map(event=>{try{validateTelemetryEvent(event);}catch{fail('INVALID_BACKUP');}if(seen.has(event.eventId))fail('INVALID_BACKUP');seen.add(event.eventId);return copy(event);});
+    bounded({telemetryEvents:task.telemetryEvents},MAX_TELEMETRY_BYTES);
+  }
+  bounded(withoutTelemetry(task));
   return task;
 }
-const contentHash=task=>{const {origin,...content}=task;return hash(content);};
+const contentHash=task=>{const {origin,...content}=withoutTelemetry(task);return hash(content);};
 
 export function projectWorkflow(task,revisionId){
   const revision=revisionId?task.revisions.find(item=>item.id===revisionId):task.revisions.at(-1);if(!revision)fail('WORKFLOW_NOT_FOUND');
@@ -76,7 +86,7 @@ export function projectWorkflow(task,revisionId){
 function summary(task){const latest=task.revisions.at(-1);return{taskId:task.id,title:latest.workflow.plan?.title??latest.workflow.intent.goal,request:task.originalRequest,createdAt:task.createdAt,updatedAt:task.updatedAt,revisionCount:task.revisions.length,latestRevisionId:latest.id,latestRevisionNumber:latest.number,stage:latest.workflow.stage,lastFeedback:copy(task.feedback.filter(entry=>entry.type==='result').at(-1)??null),...(task.origin?{origin:copy(task.origin)}:{})};}
 
 /** Storage adapter owns raw rows; immutable snapshots are serialized per task. */
-export function createHistoryRepository({store,clock=()=>new Date()}={}){
+export function createHistoryRepository({store,clock=()=>new Date(),telemetry}={}){
   if(!store?.read||!store?.write||!store?.list||!store?.readPointer||!store?.writePointer)throw new TypeError('historyStore adapter is incomplete');
   const io=async fn=>{try{return await fn();}catch(error){if(error instanceof FinderError)throw error;fail('HISTORY_STORAGE_FAILED');}};
   const read=async taskId=>{const row=await io(()=>store.read(taskId));if(!row)fail('WORKFLOW_NOT_FOUND');try{if(row.id!==taskId||typeof row.serialized!=='string')throw Error();const task=validateTask(JSON.parse(row.serialized));if(task.id!==taskId)throw Error();return task;}catch(error){if(error?.code==='HISTORY_CAPACITY')throw error;fail('INVALID_BACKUP');}};
@@ -85,10 +95,23 @@ export function createHistoryRepository({store,clock=()=>new Date()}={}){
   const write=async task=>{
     // A future restore may add a UTF-8 label. Reserve its bounded envelope now,
     // rather than making a successfully exported task impossible to reimport.
-    const {origin,...content}=task;bounded(content,MAX_TASK_BYTES-ORIGIN_RESERVE_BYTES);
+    const {origin,...content}=withoutTelemetry(task);bounded(content,MAX_TASK_BYTES-ORIGIN_RESERVE_BYTES);
     if(origin&&Buffer.byteLength(JSON.stringify({origin}),'utf8')>ORIGIN_RESERVE_BYTES)fail('HISTORY_CAPACITY');
-    const serialized=bounded(task);await io(()=>store.write({id:task.id,serialized}));return task;
+    if(task.telemetryEvents)bounded({telemetryEvents:task.telemetryEvents},MAX_TELEMETRY_BYTES);
+    const serialized=bounded(task,MAX_STORED_TASK_BYTES);await io(()=>store.write({id:task.id,serialized}));return task;
   };
+  const addTelemetry=async(task,revision,{context,type,feedback,key,draftStatus}={})=>{
+    if(!context||typeof telemetry?.createEvent!=='function')return{added:false};
+    try{
+      const event=await telemetry.createEvent({context,type,task:withoutTelemetry(task),revision,feedback,key,draftStatus});
+      if(event==null)return{added:false};validateTelemetryEvent(event);
+      if(event.epochId!==context.epochId)throw new Error('Telemetry epoch mismatch');
+      const old=task.telemetryEvents??[];if(old.some(item=>item.eventId===event.eventId))return{added:false};
+      const events=[...old,copy(event)];if(events.length>1000||Buffer.byteLength(JSON.stringify(event),'utf8')>16_000)throw new Error('Telemetry queue capacity');
+      bounded({telemetryEvents:events},MAX_TELEMETRY_BYTES);task.telemetryEvents=events;return{added:true};
+    }catch{return{added:false,telemetryWarning:TELEMETRY_WARNING};}
+  };
+  const committed=result=>{if(result.added)try{const pending=telemetry?.committed?.();pending?.catch?.(()=>{});}catch{return{...result,telemetryWarning:TELEMETRY_WARNING};}return result;};
   const active=async()=>{const p=await pointer();if(!p.activeTaskId)return null;const task=await read(p.activeTaskId),revision=task.revisions.find(item=>item.id===p.activeRevisionId);if(!revision)fail('WORKFLOW_NOT_FOUND');return{task,revision};};
   const context=async({taskId,revisionId}={})=>{
     const current=await active();
@@ -109,7 +132,11 @@ export function createHistoryRepository({store,clock=()=>new Date()}={}){
     if(cleaned.request!==task.originalRequest||task.originalConstraints.some(item=>!cleaned.intent.constraints.includes(item)))fail();
     const revision={id:randomUUID(),number:task.revisions.length+1,createdAt:now,parentRevisionId:base?.revision.id??null,workflow:cleaned,...(extra.feedbackText?{feedbackText:extra.feedbackText}:{})};
     if(extra.feedbackText&&base)task.feedback.push({id:randomUUID(),taskId:task.id,revisionId:base.revision.id,createdAt:now,type:'refinement',outcome:null,note:extra.feedbackText,stage:'refine',pluginIds:[...(base.revision.workflow.plan?.pluginIds??[])]});
-    task.revisions.push(revision);task.updatedAt=now;await write(task);await point(task.id,revision.id);return{task,revision};
+    task.revisions.push(revision);task.updatedAt=now;
+    const feedback=extra.feedbackText?task.feedback.at(-1):undefined;
+    const eventRevision=extra.feedbackText&&base?{...revision,workflow:{...revision.workflow,candidates:base.revision.workflow.candidates,plan:base.revision.workflow.plan}}:revision;
+    const report=cleaned.stage==='plan'||extra.feedbackText?await addTelemetry(task,eventRevision,{context:extra.telemetryContext,type:extra.feedbackText?'refinement_submitted':'plan_generated',feedback,key:revision.id}):{added:false};
+    await write(task);const notification=committed(report);await point(task.id,revision.id);return{task,revision,...(notification.telemetryWarning?{telemetryWarning:notification.telemetryWarning}:{})};
   };
   const importBackup=async({workflow,origin='本机 JSON 备份',type='backup'}={})=>{
     bounded(workflow,MAX_IMPORT_BYTES);const label=text(origin,200,'INVALID_BACKUP');let task,sourceFormat,sourceHash;
@@ -117,26 +144,40 @@ export function createHistoryRepository({store,clock=()=>new Date()}={}){
       const cleaned=validateWorkflow(workflow);sourceHash=hash(cleaned);sourceFormat='legacy-format-2';const now=clock().toISOString();
       const sourceTime=stamp(cleaned.discovery?.searchedAt)?cleaned.discovery.searchedAt:stamp(cleaned.catalogUpdatedAt)?cleaned.catalogUpdatedAt:now;
       task={format:1,id:'restored-'+sourceHash.slice(0,40),originalRequest:cleaned.request,originalConstraints:[...cleaned.intent.constraints],createdAt:sourceTime,updatedAt:sourceTime,revisions:[{id:'restored-revision-'+sourceHash.slice(0,32),number:1,createdAt:sourceTime,parentRevisionId:null,workflow:cleaned}],feedback:[],handoffs:[]};
-    }else if(record(workflow)&&workflow.format==='plugin-finder-task'&&workflow.version===1){task=validateTask(workflow.task);sourceHash=contentHash(task);sourceFormat='plugin-finder-task';}
+    }else if(record(workflow)&&workflow.format==='plugin-finder-task'&&workflow.version===1){task=validateTask(record(workflow.task)?withoutTelemetry(workflow.task):workflow.task);sourceHash=contentHash(task);sourceFormat='plugin-finder-task';}
     else fail('INVALID_BACKUP');
     const existing=await io(()=>store.read(task.id));
     if(existing){const old=await read(task.id);if(!(sourceFormat==='legacy-format-2'&&old.origin?.sourceHash===sourceHash)&&contentHash(old)!==contentHash(task))fail('INVALID_BACKUP');return{imported:true,duplicate:true,importedTaskId:task.id};}
     task.origin={type,label,importedAt:clock().toISOString(),sourceHash,sourceFormat};await write(task);return{imported:true,duplicate:false,importedTaskId:task.id};
   };
   return{read,pointer,point,active,context,list,view,append,importBackup,
+    async pendingTelemetry(epochId){
+      if(typeof epochId!=='string'||!epochId)return[];
+      const rows=await io(()=>store.list());if(!Array.isArray(rows))fail('HISTORY_STORAGE_FAILED');const result=[];
+      for(const row of rows){const task=await read(row.id);for(const event of task.telemetryEvents??[])if(event.epochId===epochId)result.push(copy(event));}
+      return result.sort((a,b)=>a.occurredAt.localeCompare(b.occurredAt)||a.eventId.localeCompare(b.eventId));
+    },
+    async recordTelemetry(base,options={}){
+      if(!base)fail('WORKFLOW_NOT_FOUND');const task=copy(base.task),revision=task.revisions.find(item=>item.id===base.revision.id);
+      const report=await addTelemetry(task,options.revision??revision,options);
+      if(report.added)await write(task);
+      const notification=committed(report);return{task,revision,...(notification.telemetryWarning?{telemetryWarning:notification.telemetryWarning}:{})};
+    },
     async open({taskId,revisionId}={}){const task=await read(id(taskId)),revision=revisionId?task.revisions.find(item=>item.id===revisionId):task.revisions.at(-1);if(!revision)fail('WORKFLOW_NOT_FOUND');await point(task.id,revision.id);return{task,revision};},
     async reset(){await point(null,null);},
-    async feedback(base,{outcome,note='',stage='result',pluginIds}={}){
+    async feedback(base,{outcome,note='',stage='result',pluginIds}={},telemetryContext=null){
       if(!base||!base.revision.workflow.plan||!['complete','partial','blocked'].includes(outcome))fail();
       const selected=[...base.revision.workflow.plan.pluginIds];if(pluginIds!==undefined&&(!Array.isArray(pluginIds)||pluginIds.some(item=>!selected.includes(item))))fail();
-      const now=clock().toISOString(),task=copy(base.task);task.feedback.push({id:randomUUID(),taskId:task.id,revisionId:base.revision.id,createdAt:now,type:'result',outcome,pluginIds:selected,note:text(note,1500,'INVALID_INPUT',true),stage:text(stage,80)});task.updatedAt=now;await write(task);return{task,revision:task.revisions.find(item=>item.id===base.revision.id)};
+      const now=clock().toISOString(),task=copy(base.task),feedback={id:randomUUID(),taskId:task.id,revisionId:base.revision.id,createdAt:now,type:'result',outcome,pluginIds:selected,note:text(note,1500,'INVALID_INPUT',true),stage:text(stage,80)};task.feedback.push(feedback);task.updatedAt=now;
+      const revision=task.revisions.find(item=>item.id===base.revision.id),report=await addTelemetry(task,revision,{context:telemetryContext,type:'feedback_submitted',feedback,key:feedback.id});await write(task);const notification=committed(report);return{task,revision,...(notification.telemetryWarning?{telemetryWarning:notification.telemetryWarning}:{})};
     },
-    async handoff(base,{workspaceId,sessionId,status}={}){
+    async handoff(base,{workspaceId,sessionId,status}={},telemetryContext=null){
       if(!base?.revision.workflow.plan||!['applied','preserved'].includes(status))fail();
       text(workspaceId,200);text(sessionId,200);const task=copy(base.task),now=clock().toISOString(),old=task.handoffs.filter(item=>item.revisionId===base.revision.id).at(-1);
-      if(!old||old.workspaceId!==workspaceId||old.sessionId!==sessionId||old.status!==status){task.handoffs.push({taskId:task.id,revisionId:base.revision.id,workspaceId,sessionId,status,createdAt:now});task.updatedAt=now;await write(task);}
-      return{task,revision:task.revisions.find(item=>item.id===base.revision.id)};
+      let report={added:false};const revision=task.revisions.find(item=>item.id===base.revision.id);
+      if(!old||old.workspaceId!==workspaceId||old.sessionId!==sessionId||old.status!==status){task.handoffs.push({taskId:task.id,revisionId:base.revision.id,workspaceId,sessionId,status,createdAt:now});task.updatedAt=now;report=await addTelemetry(task,revision,{context:telemetryContext,type:'handoff_prepared',draftStatus:status,key:revision.id+':'+status});await write(task);}
+      const notification=committed(report);return{task,revision,...(notification.telemetryWarning?{telemetryWarning:notification.telemetryWarning}:{})};
     },
-    async exportTask({taskId}={}){return{format:'plugin-finder-task',version:1,task:await read(id(taskId))};},
+    async exportTask({taskId}={}){return{format:'plugin-finder-task',version:1,task:withoutTelemetry(await read(id(taskId)))};},
   };
 }

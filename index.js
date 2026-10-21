@@ -7,18 +7,23 @@ import {createFinderService} from './src/service.js';
 import {createFeedbackStore} from './src/feedback.js';
 import {registerFinderRoutes} from './src/routes.js';
 import {withOwnedDomains} from './src/lifecycle.js';
+import {createTelemetry} from './src/telemetry.js';
+import {withTelemetryApi} from './src/telemetry-api.js';
+import {COLLECTOR_URL,CLIENT_VERSION} from './src/telemetry-config.js';
 export const name='plugin-finder';
 export const inject=['connection','storageDomain'];
 const feedback=z.object({id:z.string().uuid(),createdAt:z.string().datetime(),outcome:z.enum(['complete','partial','blocked']),pluginIds:z.array(z.string().max(200)).max(2),note:z.string().max(1500),stage:z.string().max(80)}).strict();
 const state=z.object({id:z.literal('entries'),rows:z.array(feedback).max(100)}).strict();
 const workflow=z.object({id:z.literal('current'),serialized:z.string().max(180000)}).strict();
 const domain=defineDomain({name:'plugin_finder',version:1,tables:{feedback:domainTable(state),workflow:domainTable(workflow)}});
-const historyRow=z.object({id:z.string().min(1).max(200),serialized:z.string().max(8000000)}).strict();
+const historyRow=z.object({id:z.string().min(1).max(200),serialized:z.string().max(8256000)}).strict();
 const historyPointer=z.object({activeTaskId:z.string().min(1).max(200).nullable(),activeRevisionId:z.string().min(1).max(200).nullable()}).strict();
 // A separate domain preserves the legacy version-1 medium and its unlinked feedback.
 const historyDomain=defineDomain({name:'plugin_finder_history',version:1,global:{schema:historyPointer,initial:{activeTaskId:null,activeRevisionId:null}},tables:{tasks:domainTable(historyRow)}});
+const telemetryGlobal=z.object({serialized:z.string().max(2000000)}).strict();
+const telemetryDomain=defineDomain({name:'plugin_finder_telemetry',version:1,tables:{},global:{schema:telemetryGlobal,initial:{serialized:'null'}}});
 export async function apply(ctx){
-  return withOwnedDomains(ctx,[domain,historyDomain],async([store,historyStoreHandle])=>{
+  return withOwnedDomains(ctx,[domain,historyDomain,telemetryDomain],async([store,historyStoreHandle,telemetryHandle])=>{
   const table=store.table('feedback');
   const feedbackStore=createFeedbackStore({read:()=>table.get('entries'),write:row=>table.put('entries',state.parse(row))});
   const lifetime=new AbortController();
@@ -27,7 +32,12 @@ export async function apply(ctx){
   const workflowStore={read:()=>workflowTable.get('current'),write:row=>workflowTable.put('current',workflow.parse(row)),clear:()=>workflowTable.delete('current')};
   const tasks=historyStoreHandle.table('tasks');
   const historyStore={read:id=>tasks.get(id),write:row=>tasks.put(row.id,historyRow.parse(row)),list:()=>[...tasks.entries()].map(([,row])=>row),readPointer:()=>historyStoreHandle.global.get(),writePointer:value=>historyStoreHandle.global.set(historyPointer.parse(value))};
-  const service=createFinderService({discovery,model:createHostModel(ctx),feedbackStore,workflowStore,historyStore,hostVersion:getDshRuntimeVersion()});
+  let core;
+  const telemetryStore={read:async()=>JSON.parse((await telemetryHandle.global.get()).serialized),write:value=>telemetryHandle.global.set({serialized:JSON.stringify(value)})};
+  const telemetry=createTelemetry({store:telemetryStore,endpoint:COLLECTOR_URL,listPending:epoch=>core.pendingTelemetry(epoch),clientVersion:CLIENT_VERSION,hostVersion:getDshRuntimeVersion()});
+  core=createFinderService({discovery,model:createHostModel(ctx),feedbackStore,workflowStore,historyStore,telemetry,hostVersion:getDshRuntimeVersion()});
+  const service=withTelemetryApi(core,telemetry);
+  telemetry.committed();
   const stopRoutes=registerFinderRoutes(ctx,service);
   return()=>{stopRoutes();lifetime.abort();service.close();};
   });

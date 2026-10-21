@@ -10,6 +10,12 @@ const strings = value => Array.isArray(value) ? value.filter(item => typeof item
 const readable = value => typeof value === 'string' ? value : value?.label ?? value?.message ?? value?.status ?? '';
 const validIntent = value => value && ['goal', 'input', 'output'].every(key => typeof value[key] === 'string') && ['constraints', 'capabilities', 'queries'].every(key => Array.isArray(value[key]) && value[key].every(item => typeof item === 'string'));
 const workflowWarning = value => typeof value === 'string' && value.length <= 1000 ? value : '';
+function normalizeTelemetryStatus(value) {
+  if (!value || typeof value.enabled !== 'boolean' || !['unasked', 'declined', 'accepted'].includes(value.consent) || typeof value.policyVersion !== 'string' || !value.policyVersion || value.policyVersion.length > 200 || value.enabled && value.consent !== 'accepted') return null;
+  const counter = number => Number.isSafeInteger(number) && number >= 0 ? number : null;
+  return { enabled: value.enabled, consent: value.consent, policyVersion: value.policyVersion, endpoint: text(value.endpoint).slice(0, 2000), queued: counter(value.queued), delivered: counter(value.delivered), lastSyncedAt: typeof value.lastSyncedAt === 'string' ? value.lastSyncedAt.slice(0, 100) : null, lastError: typeof value.lastError === 'string' ? value.lastError.slice(0, 600) : null, deletionPending: value.deletionPending === true, deleteConfirmed: value.deleteConfirmed === true, lastDeletedAt: typeof value.lastDeletedAt === 'string' ? value.lastDeletedAt.slice(0, 100) : null, hasRemoteRegistration: value.hasRemoteRegistration === true };
+}
+
 function validSavedWorkflow(value) {
   if (!value || !['understand', 'plan'].includes(value.stage) || typeof value.request !== 'string' || !value.request.trim() || value.request.length > 6000 || !validIntent(value.intent)) return false;
   if (!Array.isArray(value.candidates) || value.candidates.length > 20 || value.candidates.some(candidate => !candidate || typeof candidate.id !== 'string' || !candidate.id || !Array.isArray(candidate.capabilities) || candidate.capabilities.some(capability => typeof capability !== 'string'))) return false;
@@ -103,14 +109,15 @@ export function createFinderController(ctx, options = {}) {
   let sequence = 0;
   let draftRevision = 0;
   let resetRevision = null;
+  let telemetrySuggestionShown = false;
   let state = Object.freeze({
     stage: 'describe', request: '', bootstrap: null, bootstrapLoaded: false,
     intent: null, plan: null, candidates: [], catalogUpdatedAt: '', discovery: null, warnings: [],
     busy: null, error: '', notice: '', workspaceId: '', workspaces: [],
     workspacePhase: 'pending', feedbackSaved: false, handoffRequested: false, preservedTarget: null,
-    modelLabel: '', resetPending: false, storageWarning: '',
+    modelLabel: '', resetPending: false, storageWarning: '', telemetryWarning: '',
     view: 'find', history: [], historyTotal: 0, historyOffset: 0, unlinkedFeedback: [],
-    taskId: null, revisionId: null, revisionNumber: null, revisions: [], feedback: [], handoff: null, origin: null, restoredFrom: '', pendingHandoff: null,
+    taskId: null, revisionId: null, revisionNumber: null, revisions: [], feedback: [], handoff: null, origin: null, restoredFrom: '', pendingHandoff: null, telemetry: null, telemetrySettingsOpen: false, telemetrySuggestionVisible: false,
   });
   const publish = patch => {
     if (closed) return;
@@ -135,7 +142,7 @@ export function createFinderController(ctx, options = {}) {
     const id = ++sequence;
     const controller = new AbortController();
     operation = { id, controller, kind };
-    publish({ busy: kind, error: '', notice: '' });
+    publish({ busy: kind, error: '', notice: '', telemetryWarning: '' });
     const timer = setTimeout(() => controller.abort('timeout'), kind === 'recommend' ? 180000 : 125000);
     try {
       const response = await fetchRequest(endpoint + path, {
@@ -149,6 +156,10 @@ export function createFinderController(ctx, options = {}) {
         const safe = typeof value?.error?.message === 'string' && value.error.message.length <= 600 ? value.error.message : '操作未完成，请稍后重试。';
         const error = new Error(safe); error.safeForUser = true; throw error;
       }
+      const telemetry = normalizeTelemetryStatus(value?.telemetry);
+      if (telemetry) publish({ telemetry });
+      const reportingWarning = workflowWarning(value?.telemetryWarning);
+      if (reportingWarning) publish({ telemetryWarning: reportingWarning });
       applyValue(value);
       return true;
     } catch (error) {
@@ -163,6 +174,8 @@ export function createFinderController(ctx, options = {}) {
     }
   };
   const historyPatch = value => ({
+    ...(workflowWarning(value?.telemetryWarning) ? { telemetryWarning: workflowWarning(value.telemetryWarning) } : {}),
+    ...(normalizeTelemetryStatus(value?.telemetry) ? { telemetry: normalizeTelemetryStatus(value.telemetry) } : {}),
     ...(Array.isArray(value?.history) ? { history: value.history.filter(item => item && typeof item.taskId === 'string').slice(0, 100), historyOffset: 0 } : {}),
     ...(Number.isSafeInteger(value?.historyTotal) && value.historyTotal >= 0 ? { historyTotal: value.historyTotal } : {}),
     ...(Array.isArray(value?.unlinkedFeedback) ? { unlinkedFeedback: value.unlinkedFeedback } : {}),
@@ -286,7 +299,7 @@ export function createFinderController(ctx, options = {}) {
       const id = ++sequence;
       const controller = new AbortController();
       operation = { id, controller, kind: 'handoff' };
-      publish({ busy: 'handoff', error: '', notice: '', preservedTarget: null });
+      publish({ busy: 'handoff', error: '', notice: '', preservedTarget: null, telemetryWarning: '' });
       const stillCurrent = () => !closed && id === sequence && workspaceSnapshot()?.phase === 'ready' && workspaceSnapshot()?.items?.some(item => item.workspaceId === workspaceId) && state.workspaceId === workspaceId;
       const timer = setTimeout(() => controller.abort('timeout'), 45000);
       try {
@@ -296,6 +309,17 @@ export function createFinderController(ctx, options = {}) {
           if (!stillCurrent() || controller.signal.aborted) return false;
           if (!response.ok) throw handoffFailure('接续前未能确认当前方案，未创建会话或写入草稿。请稍后重试。');
           if (value?.workflow?.taskId !== targetIdentity.taskId || value.workflow.revisionId !== targetIdentity.revisionId) throw handoffFailure('当前活动方案已在另一窗口或标签页变化。请从「我的方案」重新打开所选版本后再接续；尚未创建会话或写入草稿。');
+          const selectionResponse = await waitForHandoff(fetchRequest(endpoint + 'select-plan', { method: 'POST', credentials: 'same-origin', redirect: 'error', cache: 'no-store', signal: controller.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(targetIdentity) }), controller.signal);
+          const selectionValue = await waitForHandoff(selectionResponse.json(), controller.signal);
+          if (!stillCurrent() || controller.signal.aborted) return false;
+          if (!selectionResponse.ok || selectionValue?.saved !== true) throw handoffFailure('所选方案尚未保存，未创建会话或写入草稿。请重新核对方案并重试。');
+          if (selectionValue.workflow) {
+            if (selectionValue.workflow.taskId !== targetIdentity.taskId || selectionValue.workflow.revisionId !== targetIdentity.revisionId) throw handoffFailure('保存的方案与当前任务或版本不一致，未创建会话或写入草稿。请重新打开所选方案后重试。');
+            applyEnvelope(selectionValue);
+          } else {
+            const telemetry = normalizeTelemetryStatus(selectionValue.telemetry); if (telemetry) publish({ telemetry });
+            const reportingWarning = workflowWarning(selectionValue.telemetryWarning); if (reportingWarning) publish({ telemetryWarning: reportingWarning });
+          }
         }
         const result = await prepareSessionDraft(ctx, workspaceId, buildPrompt(), controller.signal, stillCurrent);
         if (!stillCurrent() || controller.signal.aborted) return false;
@@ -354,7 +378,34 @@ export function createFinderController(ctx, options = {}) {
       return run('feedback', 'feedback', { ...identity(), outcome, pluginIds: state.plan.pluginIds, note: text(note).slice(0, 1200), stage: state.handoffRequested ? 'handoff' : state.stage }, value => {
         if (value?.saved !== true) throw new Error('feedback not saved');
         if (value.workflow) { ensureResponseIdentity(value, true); applyEnvelope(value); }
-        publish({ feedbackSaved: true, notice: '反馈已保存在本机，没有向作者或第三方发送。' });
+        const reportingWarning = workflowWarning(value.telemetryWarning);
+        const suggest = !telemetrySuggestionShown && state.telemetry?.consent === 'unasked';
+        if (suggest) telemetrySuggestionShown = true;
+        publish({ feedbackSaved: true, telemetrySuggestionVisible: suggest, notice: reportingWarning ? `反馈已保存在本机，但本次集中记录未能确认入队。集中同步异常：${reportingWarning}` : state.telemetry?.enabled ? '反馈已保存在本机，将按已同意设置自动同步经常见敏感格式清理的摘要。是否收到以同步状态为准。' : '反馈仅保存在本机，未启用自动回传。' });
+      });
+    },
+    openTelemetrySettings() { if (closed) return false; publish({ telemetrySettingsOpen: true, telemetrySuggestionVisible: false }); return true; },
+    setTelemetrySettingsOpen(open) { if (!closed && typeof open === 'boolean') publish({ telemetrySettingsOpen: open }); },
+    dismissTelemetrySuggestion() { if (!closed) publish({ telemetrySuggestionVisible: false }); },
+    refreshTelemetry() {
+      return run('telemetry-status', 'telemetry-status', undefined, value => {
+        const telemetry = normalizeTelemetryStatus(value); if (!telemetry) throw handoffFailure('自动回传状态未能确认，请稍后重试。');
+        publish({ telemetry, notice: '已读取当前同步状态。' });
+      });
+    },
+    setTelemetryConsent(enabled) {
+      if (typeof enabled !== 'boolean' || !state.telemetry?.policyVersion) { publish({ error: '请先读取自动回传设置和说明，再选择是否同意。' }); return Promise.resolve(false); }
+      return run('telemetry-consent', 'telemetry-consent', { enabled, policyVersion: state.telemetry.policyVersion }, value => {
+        const telemetry = normalizeTelemetryStatus(value); if (!telemetry || !enabled && telemetry.enabled) throw handoffFailure('自动回传设置未能确认，请刷新状态后重试。');
+        publish({ telemetry, telemetrySuggestionVisible: false, notice: telemetry.enabled ? '已同意自动回传。开启后新操作会带上所关联需求、方案的摘要，不批量补传历史记录。同步进度以状态为准。' : enabled ? '自动回传尚未启用，请查看同步状态和异常后重试。' : '已停止自动回传，后续新记录只保存在本机。此前已回传记录可单独申请删除。' });
+      });
+    },
+    deleteTelemetry() {
+      const previous = state.telemetry;
+      return run('telemetry-delete', 'telemetry-delete', {}, value => {
+        const telemetry = normalizeTelemetryStatus(value); if (!telemetry || telemetry.enabled) throw handoffFailure('停止回传与删除状态未能确认，请刷新后重试。');
+        const noRecords = previous?.hasRemoteRegistration === false && previous?.delivered === 0;
+        publish({ telemetry, notice: telemetry.deletionPending ? '已停止回传，删除申请待处理；尚未收到服务端删除确认，可稍后刷新状态。' : telemetry.deleteConfirmed ? noRecords ? '已停止回传，没有已回传记录需要删除。' : '服务端已明确确认删除相关同意周期的记录。' : '已停止回传，服务端删除结果尚未确认，请刷新状态核对。' });
       });
     },
     showUnderstanding() { if (!closed && !operation && state.intent) publish({ stage: 'understand', error: '', notice: '' }); },
@@ -494,6 +545,7 @@ export function apply(ctx) {
     const [feedbackNote, setFeedbackNote] = React.useState('');
     const active = React.useRef(true);
     const importInput = React.useRef(null);
+    const telemetrySettings = React.useRef(null);
     React.useEffect(() => { setFeedbackOutcome(''); setFeedbackNote(''); }, [state.taskId, state.revisionId, state.request]);
     React.useEffect(() => { active.current = true; if (!controller.getSnapshot().bootstrapLoaded) void controller.bootstrap(); return () => { active.current = false; }; }, []);
     const busy = state.busy !== null;
@@ -507,6 +559,26 @@ export function apply(ctx) {
     const sourceFailed = [...discoverySources, ...coverageSources].some(source => source.status === 'failed');
     const usesCache = [...discoverySources, ...coverageSources].some(source => source.status === 'cached' || source.status === 'stale');
     const count = value => Number.isSafeInteger(value) && value >= 0 ? String(value) : '未记录';
+    const telemetry = state.telemetry;
+    const openTelemetrySettings = () => {
+      controller.openTelemetrySettings();
+      telemetrySettings.current?.scrollIntoView?.({ block: 'start' });
+      telemetrySettings.current?.querySelector?.('summary')?.focus?.();
+    };
+    const telemetryEndpoint = (() => { try { const url = new URL(telemetry?.endpoint); return ['https:', 'http:'].includes(url.protocol) ? url.origin : ''; } catch { return ''; } })();
+    const telemetryView = h('details', { className: 'pf_telemetry', ref: telemetrySettings, open: state.telemetrySettingsOpen, onToggle: event => controller.setTelemetrySettingsOpen(event.currentTarget.open), 'aria-label': '可选回传设置' },
+      h('summary', { tabIndex: 0 }, `可选设置 · 匹配改进与自动回传 · ${telemetry?.enabled ? '已启用' : telemetry ? '当前关闭' : '状态未读取'}`),
+      h('p', { className: 'pf_small' }, '默认关闭。一次同意后，自动回传需求、方案和反馈摘要，以及候选与选中插件的精确版本，用于集中分析匹配和用户自报效果。我们可向相关作者提供去标识汇总，暂不自动推送给作者。'),
+      h('p', { className: 'pf_small pf_muted' }, '这条回传路径不读取文件、完整会话或模型凭据，不直接回传原始需求字段。摘要会清理常见路径、邮箱和凭据格式，但无法保证识别所有敏感内容；请勿在需求与反馈中留下不宜分享的信息。找方案所需的模型请求另按宿主设置处理。'),
+      h('p', { className: 'pf_small pf_muted' }, '开启后新操作会带上所关联需求、方案的摘要及必要插件版本上下文，不倒灌或批量补传历史记录。停止回传不删除此前服务端记录，删除需等服务端确认。服务端记录保留 90 天。不同意不影响找插件与本机历史。'),
+      telemetryEndpoint ? h('p', { className: 'pf_small pf_muted' }, `接收服务：${telemetryEndpoint} · 告知版本 ${telemetry.policyVersion}`) : null,
+      telemetry ? h('div', { className: 'pf_telemetry_state' },
+        h('p', { className: 'pf_small pf_muted' }, `待同步 ${count(telemetry.queued)} 条 · 服务端确认收到 ${count(telemetry.delivered)} 条${telemetry.lastSyncedAt ? ` · 最近同步确认 ${telemetry.lastSyncedAt}` : ''}`),
+        telemetry.lastError ? h('p', { className: 'pf_small pf_error', role: 'status' }, `同步异常：${telemetry.lastError}`) : null,
+        telemetry.deletionPending ? h('p', { className: 'pf_small', role: 'status' }, '删除申请待处理，尚未确认服务端完成。回传已停止。') : telemetry.deleteConfirmed && telemetry.lastDeletedAt ? h('p', { className: 'pf_small pf_muted' }, `服务端删除确认：${telemetry.lastDeletedAt}`) : null) : h('p', { className: 'pf_small pf_muted' }, '尚未读取有效设置，不会在本页自动开启回传。'),
+      h('div', { className: 'pf_actions' },
+        telemetry?.consent === 'unasked' ? h(React.Fragment, null, primary('同意并自动回传', () => controller.setTelemetryConsent(true), { disabled: busy }), button('暂不同意', () => controller.setTelemetryConsent(false), { disabled: busy })) : telemetry ? h(React.Fragment, null, telemetry.enabled ? button('停止回传', () => controller.setTelemetryConsent(false), { disabled: busy }) : button('重新同意并自动回传', () => controller.setTelemetryConsent(true), { disabled: busy || telemetry.deletionPending }), button(telemetry.deletionPending ? '重试删除已回传记录' : '删除已回传记录', () => controller.deleteTelemetry(), { disabled: busy })) : null,
+        button('刷新同步状态', () => controller.refreshTelemetry(), { disabled: busy })));
     const sourceLabels = { ready: '按需检查与搜索', live: '实时读取', cached: '使用缓存', stale: '使用过期缓存', failed: '读取失败', unconfigured: '未配置' };
     const sourceRow = (source, index, initial = false) => {
       const url = safeUrl(source.url);
@@ -650,13 +722,14 @@ export function apply(ctx) {
         h('p', { className: 'pf_muted pf_small', style: { marginTop: 8 } }, '仅准备普通文本草稿；已有草稿和附件由宿主保留。不会自动发送或执行。'),
         h('div', { className: 'pf_actions' }, primary(state.handoffRequested ? '草稿已准备' : '确认方案，去会话继续 →', () => controller.handoff(), { disabled: busy || !state.workspaceId || state.handoffRequested }), state.pendingHandoff ? button('重试保存会话关联', () => controller.retryHandoffSave(), { disabled: busy }) : null, state.preservedTarget ? button('打开已有草稿', () => controller.openPreservedDraft(), { disabled: busy }) : null, selectedCandidates.length ? button('打开 DSH 插件页', () => controller.openPluginManager(), { disabled: busy }) : null),
         h('details', { className: 'pf_details' }, h('summary', null, '预览将带入的草稿'), h('pre', { className: 'pf_code' }, controller.prompt()), button('复制完整草稿', () => copyText(controller.prompt())))),
-      h('section', { className: 'pf_section' }, h('h2', null, '试过之后，记录真实结果'), h('p', { className: 'pf_muted pf_small' }, '请根据实际使用情况填写。本机保存，不自动发送任务或联系作者。'),
+      h('section', { className: 'pf_section' }, h('h2', null, '试过之后，记录真实结果'), h('p', { className: 'pf_muted pf_small' }, state.telemetry?.enabled ? '请根据实际使用情况填写，避免敏感内容。反馈先保存在本机，再按已同意设置自动同步经常见敏感格式清理的摘要；这是用户自报，不代表插件已通过运行验证。' : '请根据实际使用情况填写。当前未启用自动回传，反馈只保存在本机。'),
         h('div', { className: 'pf_feedback' }, ...[['complete', '完成了'], ['partial', '部分完成'], ['blocked', '没能完成']].map(([value, label]) => button(label, () => { setFeedbackOutcome(value); }, { key: value, 'aria-pressed': feedbackOutcome === value, disabled: busy }))),
         h('label', { className: 'pf_label', style: { marginTop: 14 } }, '补充说明 · 可选', h('textarea', { 'aria-label': '反馈说明', value: feedbackNote, maxLength: 1200, disabled: busy, placeholder: '哪个环节有用，哪里卡住了？请避免填写敏感材料。', onChange: event => setFeedbackNote(event.target.value) })),
+        h('div', { className: 'pf_optional_sharing' }, state.feedbackSaved && state.telemetrySuggestionVisible ? h('p', { className: 'pf_small pf_muted', role: 'status' }, '可选：允许自动回传后续反馈摘要，帮助我们改进推荐；本次已保存的记录不会追溯上传。开启后新操作会带上所关联需求、方案的摘要。') : null, button('查看可选回传设置', openTelemetrySettings, { className: 'pf_btn pf_text' }), state.feedbackSaved && state.telemetrySuggestionVisible ? button('关闭提示', () => controller.dismissTelemetrySuggestion(), { className: 'pf_btn pf_text' }) : null),
         h('div', { className: 'pf_actions' }, button(state.feedbackSaved ? '反馈已保存在本机' : '保存反馈到本机', () => controller.saveFeedback(feedbackOutcome, feedbackNote), { disabled: busy || !feedbackOutcome || state.feedbackSaved }), state.taskId ? button('反馈并优化方案', () => controller.refine(feedbackNote), { disabled: busy || !feedbackNote.trim() }) : null, h('a', { className: 'pf_btn', href: 'https://github.com/piggy00544/dsh-plugin-finder/issues/new?template=feedback.yml', target: '_blank', rel: 'noopener noreferrer' }, '去项目反馈 ↗')),
         h('p', { className: 'pf_small pf_muted', style: { marginTop: 10 } }, '保存结果只记录反馈；「反馈并优化方案」会调用宿主模型生成新版本，先核对理解再搜索。公开反馈需自行填写，不自动带入任务或结果。'))) : null;
     return h('div', { className: 'pf_root', 'data-plugin-finder': true }, h('div', { className: 'pf_inner' },
-      h('header', { className: 'pf_header' }, h('div', null, h('div', { className: 'pf_eyebrow' }, 'PLUGIN FINDER'), h('h1', null, '发现好插件'), h('p', { className: 'pf_muted' }, '从你要完成的事，找到适合的插件与做法。')), h('div', { className: 'pf_header_actions' }, button('重新读取配置', () => controller.bootstrap(), { disabled: busy }), button('导入本机备份', () => importInput.current?.click(), { disabled: busy }), h('input', { type: 'file', ref: importInput, accept: '.json,application/json', 'aria-label': '导入本机方案备份', style: { display: 'none' }, onChange: importFile }), state.stage !== 'describe' ? button('新需求', () => controller.newRequest(), { disabled: busy }) : null)),
+      h('header', { className: 'pf_header' }, h('div', null, h('div', { className: 'pf_eyebrow' }, 'PLUGIN FINDER'), h('h1', null, '发现好插件'), h('p', { className: 'pf_muted' }, '从你要完成的事，找到适合的插件与做法。')), h('div', { className: 'pf_header_actions' }, button('重新读取配置', () => controller.bootstrap(), { disabled: busy }), button('回传设置', openTelemetrySettings), button('导入本机备份', () => importInput.current?.click(), { disabled: busy }), h('input', { type: 'file', ref: importInput, accept: '.json,application/json', 'aria-label': '导入本机方案备份', style: { display: 'none' }, onChange: importFile }), state.stage !== 'describe' ? button('新需求', () => controller.newRequest(), { disabled: busy }) : null)),
       h('nav', { className: 'pf_tabs', 'aria-label': '插件功能' }, button('找方案', () => controller.showFind(), { 'aria-current': state.view !== 'history' ? 'page' : undefined, disabled: busy }), button(`我的方案${state.historyTotal ? ` · ${state.historyTotal}` : ''}`, () => controller.showHistory(), { 'aria-current': state.view === 'history' ? 'page' : undefined, disabled: busy })),
       state.view !== 'history' ? h('ol', { className: 'pf_steps', 'aria-label': '方案步骤' }, ...[['describe', '描述需求'], ['understand', '确认理解'], ['plan', '推荐与接续']].map(([key, label], index) => h('li', { className: `pf_step${state.stage === key ? ' active' : ''}`, key, 'aria-current': state.stage === key ? 'step' : undefined }, h('span', { className: 'pf_number' }, index + 1), label))) : null,
       state.bootstrap ? h('div', { className: 'pf_search_scope', style: { marginBottom: 20 } }, h('p', { className: 'pf_small pf_muted' }, h('span', { className: 'pf_model' }, `宿主默认模型：${state.modelLabel || '未配置'}`), '　按需求搜索插件来源'),
@@ -664,11 +737,13 @@ export function apply(ctx) {
       state.bootstrapLoaded && !modelReady ? h('div', { className: 'pf_banner' }, '尚未配置可用的宿主默认模型。请前往 DSH 设置完成模型配置，再点击「重新读取配置」。本插件不另收模型 Key。') : null,
       state.error ? h('div', { className: 'pf_banner pf_error', role: 'alert' }, state.error) : null,
       state.notice ? h('div', { className: 'pf_banner', role: 'status' }, state.notice) : null,
+      state.telemetryWarning && !state.notice.includes(state.telemetryWarning) ? h('div', { className: 'pf_banner pf_small', role: 'status' }, `集中同步异常：${state.telemetryWarning}`) : null,
       state.storageWarning && !state.notice.includes(state.storageWarning) ? h('div', { className: 'pf_banner pf_small', role: 'status' }, state.storageWarning) : null,
       state.resetPending && state.busy !== 'reset' ? h('div', { className: 'pf_banner pf_small', role: 'status' }, '开始新需求尚未确认，已有方案仍保留。', button('重试开始新需求', () => controller.retryReset(), { disabled: busy })) : null,
-      busy ? h('div', { className: 'pf_status', role: 'status' }, h('span', { className: 'pf_spinner', 'aria-hidden': true }), { bootstrap: '正在读取连接与配置…', analyze: '正在理解目标、材料与约束…', recommend: '正在搜索来源、读取候选资料并推荐…', handoff: '正在连接选定工作区并准备未发送草稿…', feedback: '正在保存到本机…', reset: '正在保存并开始新需求…', history: '正在读取本机历史方案…', open: '正在打开所选方案与版本…', refine: '正在根据反馈重新理解需求…', import: '正在导入本机备份…', export: '正在导出任务备份…', continue: '正在核对原会话绑定…', 'handoff-save': '正在保存原会话关联…' }[state.busy], button('取消', () => controller.cancel(), { className: 'pf_btn pf_text' })) : null,
+      busy ? h('div', { className: 'pf_status', role: 'status' }, h('span', { className: 'pf_spinner', 'aria-hidden': true }), { bootstrap: '正在读取连接与配置…', analyze: '正在理解目标、材料与约束…', recommend: '正在搜索来源、读取候选资料并推荐…', handoff: '正在连接选定工作区并准备未发送草稿…', feedback: '正在保存到本机…', reset: '正在保存并开始新需求…', history: '正在读取本机历史方案…', open: '正在打开所选方案与版本…', refine: '正在根据反馈重新理解需求…', import: '正在导入本机备份…', export: '正在导出任务备份…', continue: '正在核对原会话绑定…', 'handoff-save': '正在保存原会话关联…', 'telemetry-status': '正在读取同步状态…', 'telemetry-consent': '正在保存自动回传选择…', 'telemetry-delete': '正在停止回传并申请删除记录…' }[state.busy], button('取消', () => controller.cancel(), { className: 'pf_btn pf_text' })) : null,
       state.view === 'history' ? historyView : h('div', null, taskHistory, state.stage === 'describe' ? describe : state.stage === 'understand' ? understand : plan),
-      h('footer', { className: 'pf_footer' }, h('p', null, '任务、历史版本与反馈保存在当前 DSH 本机。「新需求」只开始空白需求，已有记录仍在「我的方案」。本插件不自动发送或安装。'), h('p', { style: { marginTop: 6 } }, '需求与候选资料仍会发送给 DSH 全局默认模型进行推理；支持时采用较低推理档，不修改宿主设置。沿用已有额度，未必等于某个会话的模型选择。第三方服务可能另有费用。'))));
+      telemetryView,
+      h('footer', { className: 'pf_footer' }, h('p', null, '任务、历史版本与反馈保存在当前 DSH 本机。「新需求」只开始空白需求，已有记录仍在「我的方案」。自动回传默认关闭，仅在同意后发送摘要。本插件不自动安装插件或发送会话消息。'), h('p', { style: { marginTop: 6 } }, '需求与候选资料仍会发送给 DSH 全局默认模型进行推理；支持时采用较低推理档，不修改宿主设置。沿用已有额度，未必等于某个会话的模型选择。第三方服务可能另有费用。'))));
   }
   if (typeof ctx.layout?.selectPanel === 'function') {
     ctx.effect(() => { if (typeof document === 'undefined') return; const tag = document.createElement('style'); tag.dataset.pluginCss = 'dsh-plugin-finder'; tag.textContent = finderCss; document.head.appendChild(tag); return () => tag.remove(); });

@@ -49,6 +49,7 @@ var finderCss = `
 .pf_coverage{margin-top:18px;padding:16px;border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:8px}.pf_coverage>p{margin-top:8px}.pf_coverage_stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}.pf_coverage_stats>div{min-width:0}.pf_coverage_stats dt{font-size:12px;color:var(--dsw-alias-label-secondary,#717681)}.pf_coverage_stats dd{margin:3px 0 0;font-size:21px;line-height:1.35;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.pf_coverage .pf_details{margin-top:10px}
 @media(max-width:700px){.pf_coverage_stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .pf_author_draft{margin-top:16px;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_author_draft>p{margin-top:7px}
+.pf_telemetry{margin:24px 0 0;padding:14px 16px;border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:8px;background:var(--dsw-alias-bg-layer-1,#fafbfc)}.pf_telemetry>summary{cursor:pointer;font-size:13px;font-weight:550}.pf_telemetry>p{margin-top:10px}.pf_telemetry_state{margin-top:12px;padding-top:10px;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_telemetry_state>p+p{margin-top:6px}.pf_telemetry .pf_actions{margin-top:14px}.pf_optional_sharing{margin-top:12px}.pf_optional_sharing>.pf_btn{font-size:12px;margin-right:12px;min-height:30px;padding-top:3px;padding-bottom:3px}
 @keyframes pf_spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.pf_spinner{animation:none}}@media(max-width:700px){.pf_inner{padding:24px 18px 36px}.pf_header{flex-direction:column;gap:14px}.pf_header_actions{justify-content:flex-start}.pf_steps{gap:14px;margin-bottom:24px}.pf_step{font-size:12px}.pf_grid{grid-template-columns:1fr}.pf_plan,.pf_candidate{padding:15px}.pf_actions .pf_btn{flex-grow:1}.pf_form_note{flex-direction:column;gap:3px}.pf_candidate_head{flex-wrap:wrap}.pf_section_head{align-items:flex-start;flex-direction:column;gap:8px}}
 `;
 
@@ -113,6 +114,11 @@ var strings = (value) => Array.isArray(value) ? value.filter((item) => typeof it
 var readable = (value) => typeof value === "string" ? value : value?.label ?? value?.message ?? value?.status ?? "";
 var validIntent = (value) => value && ["goal", "input", "output"].every((key) => typeof value[key] === "string") && ["constraints", "capabilities", "queries"].every((key) => Array.isArray(value[key]) && value[key].every((item) => typeof item === "string"));
 var workflowWarning = (value) => typeof value === "string" && value.length <= 1e3 ? value : "";
+function normalizeTelemetryStatus(value) {
+  if (!value || typeof value.enabled !== "boolean" || !["unasked", "declined", "accepted"].includes(value.consent) || typeof value.policyVersion !== "string" || !value.policyVersion || value.policyVersion.length > 200 || value.enabled && value.consent !== "accepted") return null;
+  const counter = (number) => Number.isSafeInteger(number) && number >= 0 ? number : null;
+  return { enabled: value.enabled, consent: value.consent, policyVersion: value.policyVersion, endpoint: text(value.endpoint).slice(0, 2e3), queued: counter(value.queued), delivered: counter(value.delivered), lastSyncedAt: typeof value.lastSyncedAt === "string" ? value.lastSyncedAt.slice(0, 100) : null, lastError: typeof value.lastError === "string" ? value.lastError.slice(0, 600) : null, deletionPending: value.deletionPending === true, deleteConfirmed: value.deleteConfirmed === true, lastDeletedAt: typeof value.lastDeletedAt === "string" ? value.lastDeletedAt.slice(0, 100) : null, hasRemoteRegistration: value.hasRemoteRegistration === true };
+}
 function validSavedWorkflow(value) {
   if (!value || !["understand", "plan"].includes(value.stage) || typeof value.request !== "string" || !value.request.trim() || value.request.length > 6e3 || !validIntent(value.intent)) return false;
   if (!Array.isArray(value.candidates) || value.candidates.length > 20 || value.candidates.some((candidate) => !candidate || typeof candidate.id !== "string" || !candidate.id || !Array.isArray(candidate.capabilities) || candidate.capabilities.some((capability) => typeof capability !== "string"))) return false;
@@ -217,6 +223,7 @@ function createFinderController(ctx, options = {}) {
   let sequence = 0;
   let draftRevision = 0;
   let resetRevision = null;
+  let telemetrySuggestionShown = false;
   let state = Object.freeze({
     stage: "describe",
     request: "",
@@ -240,6 +247,7 @@ function createFinderController(ctx, options = {}) {
     modelLabel: "",
     resetPending: false,
     storageWarning: "",
+    telemetryWarning: "",
     view: "find",
     history: [],
     historyTotal: 0,
@@ -253,7 +261,10 @@ function createFinderController(ctx, options = {}) {
     handoff: null,
     origin: null,
     restoredFrom: "",
-    pendingHandoff: null
+    pendingHandoff: null,
+    telemetry: null,
+    telemetrySettingsOpen: false,
+    telemetrySuggestionVisible: false
   });
   const publish = (patch) => {
     if (closed) return;
@@ -284,7 +295,7 @@ function createFinderController(ctx, options = {}) {
     const id = ++sequence;
     const controller = new AbortController();
     operation = { id, controller, kind };
-    publish({ busy: kind, error: "", notice: "" });
+    publish({ busy: kind, error: "", notice: "", telemetryWarning: "" });
     const timer = setTimeout(() => controller.abort("timeout"), kind === "recommend" ? 18e4 : 125e3);
     try {
       const response = await fetchRequest(endpoint + path, {
@@ -304,6 +315,10 @@ function createFinderController(ctx, options = {}) {
         error.safeForUser = true;
         throw error;
       }
+      const telemetry = normalizeTelemetryStatus(value?.telemetry);
+      if (telemetry) publish({ telemetry });
+      const reportingWarning = workflowWarning(value?.telemetryWarning);
+      if (reportingWarning) publish({ telemetryWarning: reportingWarning });
       applyValue(value);
       return true;
     } catch (error) {
@@ -321,6 +336,8 @@ function createFinderController(ctx, options = {}) {
     }
   };
   const historyPatch = (value) => ({
+    ...workflowWarning(value?.telemetryWarning) ? { telemetryWarning: workflowWarning(value.telemetryWarning) } : {},
+    ...normalizeTelemetryStatus(value?.telemetry) ? { telemetry: normalizeTelemetryStatus(value.telemetry) } : {},
     ...Array.isArray(value?.history) ? { history: value.history.filter((item) => item && typeof item.taskId === "string").slice(0, 100), historyOffset: 0 } : {},
     ...Number.isSafeInteger(value?.historyTotal) && value.historyTotal >= 0 ? { historyTotal: value.historyTotal } : {},
     ...Array.isArray(value?.unlinkedFeedback) ? { unlinkedFeedback: value.unlinkedFeedback } : {}
@@ -492,7 +509,7 @@ function createFinderController(ctx, options = {}) {
       const id = ++sequence;
       const controller = new AbortController();
       operation = { id, controller, kind: "handoff" };
-      publish({ busy: "handoff", error: "", notice: "", preservedTarget: null });
+      publish({ busy: "handoff", error: "", notice: "", preservedTarget: null, telemetryWarning: "" });
       const stillCurrent = () => !closed && id === sequence && workspaceSnapshot()?.phase === "ready" && workspaceSnapshot()?.items?.some((item) => item.workspaceId === workspaceId) && state.workspaceId === workspaceId;
       const timer = setTimeout(() => controller.abort("timeout"), 45e3);
       try {
@@ -502,6 +519,19 @@ function createFinderController(ctx, options = {}) {
           if (!stillCurrent() || controller.signal.aborted) return false;
           if (!response.ok) throw handoffFailure("\u63A5\u7EED\u524D\u672A\u80FD\u786E\u8BA4\u5F53\u524D\u65B9\u6848\uFF0C\u672A\u521B\u5EFA\u4F1A\u8BDD\u6216\u5199\u5165\u8349\u7A3F\u3002\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002");
           if (value?.workflow?.taskId !== targetIdentity.taskId || value.workflow.revisionId !== targetIdentity.revisionId) throw handoffFailure("\u5F53\u524D\u6D3B\u52A8\u65B9\u6848\u5DF2\u5728\u53E6\u4E00\u7A97\u53E3\u6216\u6807\u7B7E\u9875\u53D8\u5316\u3002\u8BF7\u4ECE\u300C\u6211\u7684\u65B9\u6848\u300D\u91CD\u65B0\u6253\u5F00\u6240\u9009\u7248\u672C\u540E\u518D\u63A5\u7EED\uFF1B\u5C1A\u672A\u521B\u5EFA\u4F1A\u8BDD\u6216\u5199\u5165\u8349\u7A3F\u3002");
+          const selectionResponse = await waitForHandoff(fetchRequest(endpoint + "select-plan", { method: "POST", credentials: "same-origin", redirect: "error", cache: "no-store", signal: controller.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify(targetIdentity) }), controller.signal);
+          const selectionValue = await waitForHandoff(selectionResponse.json(), controller.signal);
+          if (!stillCurrent() || controller.signal.aborted) return false;
+          if (!selectionResponse.ok || selectionValue?.saved !== true) throw handoffFailure("\u6240\u9009\u65B9\u6848\u5C1A\u672A\u4FDD\u5B58\uFF0C\u672A\u521B\u5EFA\u4F1A\u8BDD\u6216\u5199\u5165\u8349\u7A3F\u3002\u8BF7\u91CD\u65B0\u6838\u5BF9\u65B9\u6848\u5E76\u91CD\u8BD5\u3002");
+          if (selectionValue.workflow) {
+            if (selectionValue.workflow.taskId !== targetIdentity.taskId || selectionValue.workflow.revisionId !== targetIdentity.revisionId) throw handoffFailure("\u4FDD\u5B58\u7684\u65B9\u6848\u4E0E\u5F53\u524D\u4EFB\u52A1\u6216\u7248\u672C\u4E0D\u4E00\u81F4\uFF0C\u672A\u521B\u5EFA\u4F1A\u8BDD\u6216\u5199\u5165\u8349\u7A3F\u3002\u8BF7\u91CD\u65B0\u6253\u5F00\u6240\u9009\u65B9\u6848\u540E\u91CD\u8BD5\u3002");
+            applyEnvelope(selectionValue);
+          } else {
+            const telemetry = normalizeTelemetryStatus(selectionValue.telemetry);
+            if (telemetry) publish({ telemetry });
+            const reportingWarning = workflowWarning(selectionValue.telemetryWarning);
+            if (reportingWarning) publish({ telemetryWarning: reportingWarning });
+          }
         }
         const result = await prepareSessionDraft(ctx, workspaceId, buildPrompt(), controller.signal, stillCurrent);
         if (!stillCurrent() || controller.signal.aborted) return false;
@@ -586,7 +616,48 @@ function createFinderController(ctx, options = {}) {
           ensureResponseIdentity(value, true);
           applyEnvelope(value);
         }
-        publish({ feedbackSaved: true, notice: "\u53CD\u9988\u5DF2\u4FDD\u5B58\u5728\u672C\u673A\uFF0C\u6CA1\u6709\u5411\u4F5C\u8005\u6216\u7B2C\u4E09\u65B9\u53D1\u9001\u3002" });
+        const reportingWarning = workflowWarning(value.telemetryWarning);
+        const suggest = !telemetrySuggestionShown && state.telemetry?.consent === "unasked";
+        if (suggest) telemetrySuggestionShown = true;
+        publish({ feedbackSaved: true, telemetrySuggestionVisible: suggest, notice: reportingWarning ? `\u53CD\u9988\u5DF2\u4FDD\u5B58\u5728\u672C\u673A\uFF0C\u4F46\u672C\u6B21\u96C6\u4E2D\u8BB0\u5F55\u672A\u80FD\u786E\u8BA4\u5165\u961F\u3002\u96C6\u4E2D\u540C\u6B65\u5F02\u5E38\uFF1A${reportingWarning}` : state.telemetry?.enabled ? "\u53CD\u9988\u5DF2\u4FDD\u5B58\u5728\u672C\u673A\uFF0C\u5C06\u6309\u5DF2\u540C\u610F\u8BBE\u7F6E\u81EA\u52A8\u540C\u6B65\u7ECF\u5E38\u89C1\u654F\u611F\u683C\u5F0F\u6E05\u7406\u7684\u6458\u8981\u3002\u662F\u5426\u6536\u5230\u4EE5\u540C\u6B65\u72B6\u6001\u4E3A\u51C6\u3002" : "\u53CD\u9988\u4EC5\u4FDD\u5B58\u5728\u672C\u673A\uFF0C\u672A\u542F\u7528\u81EA\u52A8\u56DE\u4F20\u3002" });
+      });
+    },
+    openTelemetrySettings() {
+      if (closed) return false;
+      publish({ telemetrySettingsOpen: true, telemetrySuggestionVisible: false });
+      return true;
+    },
+    setTelemetrySettingsOpen(open) {
+      if (!closed && typeof open === "boolean") publish({ telemetrySettingsOpen: open });
+    },
+    dismissTelemetrySuggestion() {
+      if (!closed) publish({ telemetrySuggestionVisible: false });
+    },
+    refreshTelemetry() {
+      return run("telemetry-status", "telemetry-status", void 0, (value) => {
+        const telemetry = normalizeTelemetryStatus(value);
+        if (!telemetry) throw handoffFailure("\u81EA\u52A8\u56DE\u4F20\u72B6\u6001\u672A\u80FD\u786E\u8BA4\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002");
+        publish({ telemetry, notice: "\u5DF2\u8BFB\u53D6\u5F53\u524D\u540C\u6B65\u72B6\u6001\u3002" });
+      });
+    },
+    setTelemetryConsent(enabled) {
+      if (typeof enabled !== "boolean" || !state.telemetry?.policyVersion) {
+        publish({ error: "\u8BF7\u5148\u8BFB\u53D6\u81EA\u52A8\u56DE\u4F20\u8BBE\u7F6E\u548C\u8BF4\u660E\uFF0C\u518D\u9009\u62E9\u662F\u5426\u540C\u610F\u3002" });
+        return Promise.resolve(false);
+      }
+      return run("telemetry-consent", "telemetry-consent", { enabled, policyVersion: state.telemetry.policyVersion }, (value) => {
+        const telemetry = normalizeTelemetryStatus(value);
+        if (!telemetry || !enabled && telemetry.enabled) throw handoffFailure("\u81EA\u52A8\u56DE\u4F20\u8BBE\u7F6E\u672A\u80FD\u786E\u8BA4\uFF0C\u8BF7\u5237\u65B0\u72B6\u6001\u540E\u91CD\u8BD5\u3002");
+        publish({ telemetry, telemetrySuggestionVisible: false, notice: telemetry.enabled ? "\u5DF2\u540C\u610F\u81EA\u52A8\u56DE\u4F20\u3002\u5F00\u542F\u540E\u65B0\u64CD\u4F5C\u4F1A\u5E26\u4E0A\u6240\u5173\u8054\u9700\u6C42\u3001\u65B9\u6848\u7684\u6458\u8981\uFF0C\u4E0D\u6279\u91CF\u8865\u4F20\u5386\u53F2\u8BB0\u5F55\u3002\u540C\u6B65\u8FDB\u5EA6\u4EE5\u72B6\u6001\u4E3A\u51C6\u3002" : enabled ? "\u81EA\u52A8\u56DE\u4F20\u5C1A\u672A\u542F\u7528\uFF0C\u8BF7\u67E5\u770B\u540C\u6B65\u72B6\u6001\u548C\u5F02\u5E38\u540E\u91CD\u8BD5\u3002" : "\u5DF2\u505C\u6B62\u81EA\u52A8\u56DE\u4F20\uFF0C\u540E\u7EED\u65B0\u8BB0\u5F55\u53EA\u4FDD\u5B58\u5728\u672C\u673A\u3002\u6B64\u524D\u5DF2\u56DE\u4F20\u8BB0\u5F55\u53EF\u5355\u72EC\u7533\u8BF7\u5220\u9664\u3002" });
+      });
+    },
+    deleteTelemetry() {
+      const previous = state.telemetry;
+      return run("telemetry-delete", "telemetry-delete", {}, (value) => {
+        const telemetry = normalizeTelemetryStatus(value);
+        if (!telemetry || telemetry.enabled) throw handoffFailure("\u505C\u6B62\u56DE\u4F20\u4E0E\u5220\u9664\u72B6\u6001\u672A\u80FD\u786E\u8BA4\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u8BD5\u3002");
+        const noRecords = previous?.hasRemoteRegistration === false && previous?.delivered === 0;
+        publish({ telemetry, notice: telemetry.deletionPending ? "\u5DF2\u505C\u6B62\u56DE\u4F20\uFF0C\u5220\u9664\u7533\u8BF7\u5F85\u5904\u7406\uFF1B\u5C1A\u672A\u6536\u5230\u670D\u52A1\u7AEF\u5220\u9664\u786E\u8BA4\uFF0C\u53EF\u7A0D\u540E\u5237\u65B0\u72B6\u6001\u3002" : telemetry.deleteConfirmed ? noRecords ? "\u5DF2\u505C\u6B62\u56DE\u4F20\uFF0C\u6CA1\u6709\u5DF2\u56DE\u4F20\u8BB0\u5F55\u9700\u8981\u5220\u9664\u3002" : "\u670D\u52A1\u7AEF\u5DF2\u660E\u786E\u786E\u8BA4\u5220\u9664\u76F8\u5173\u540C\u610F\u5468\u671F\u7684\u8BB0\u5F55\u3002" : "\u5DF2\u505C\u6B62\u56DE\u4F20\uFF0C\u670D\u52A1\u7AEF\u5220\u9664\u7ED3\u679C\u5C1A\u672A\u786E\u8BA4\uFF0C\u8BF7\u5237\u65B0\u72B6\u6001\u6838\u5BF9\u3002" });
       });
     },
     showUnderstanding() {
@@ -778,6 +849,7 @@ function apply(ctx) {
     const [feedbackNote, setFeedbackNote] = import_react.default.useState("");
     const active = import_react.default.useRef(true);
     const importInput = import_react.default.useRef(null);
+    const telemetrySettings = import_react.default.useRef(null);
     import_react.default.useEffect(() => {
       setFeedbackOutcome("");
       setFeedbackNote("");
@@ -800,6 +872,42 @@ function apply(ctx) {
     const sourceFailed = [...discoverySources, ...coverageSources].some((source) => source.status === "failed");
     const usesCache = [...discoverySources, ...coverageSources].some((source) => source.status === "cached" || source.status === "stale");
     const count = (value) => Number.isSafeInteger(value) && value >= 0 ? String(value) : "\u672A\u8BB0\u5F55";
+    const telemetry = state.telemetry;
+    const openTelemetrySettings = () => {
+      controller.openTelemetrySettings();
+      telemetrySettings.current?.scrollIntoView?.({ block: "start" });
+      telemetrySettings.current?.querySelector?.("summary")?.focus?.();
+    };
+    const telemetryEndpoint = (() => {
+      try {
+        const url = new URL(telemetry?.endpoint);
+        return ["https:", "http:"].includes(url.protocol) ? url.origin : "";
+      } catch {
+        return "";
+      }
+    })();
+    const telemetryView = h(
+      "details",
+      { className: "pf_telemetry", ref: telemetrySettings, open: state.telemetrySettingsOpen, onToggle: (event) => controller.setTelemetrySettingsOpen(event.currentTarget.open), "aria-label": "\u53EF\u9009\u56DE\u4F20\u8BBE\u7F6E" },
+      h("summary", { tabIndex: 0 }, `\u53EF\u9009\u8BBE\u7F6E \xB7 \u5339\u914D\u6539\u8FDB\u4E0E\u81EA\u52A8\u56DE\u4F20 \xB7 ${telemetry?.enabled ? "\u5DF2\u542F\u7528" : telemetry ? "\u5F53\u524D\u5173\u95ED" : "\u72B6\u6001\u672A\u8BFB\u53D6"}`),
+      h("p", { className: "pf_small" }, "\u9ED8\u8BA4\u5173\u95ED\u3002\u4E00\u6B21\u540C\u610F\u540E\uFF0C\u81EA\u52A8\u56DE\u4F20\u9700\u6C42\u3001\u65B9\u6848\u548C\u53CD\u9988\u6458\u8981\uFF0C\u4EE5\u53CA\u5019\u9009\u4E0E\u9009\u4E2D\u63D2\u4EF6\u7684\u7CBE\u786E\u7248\u672C\uFF0C\u7528\u4E8E\u96C6\u4E2D\u5206\u6790\u5339\u914D\u548C\u7528\u6237\u81EA\u62A5\u6548\u679C\u3002\u6211\u4EEC\u53EF\u5411\u76F8\u5173\u4F5C\u8005\u63D0\u4F9B\u53BB\u6807\u8BC6\u6C47\u603B\uFF0C\u6682\u4E0D\u81EA\u52A8\u63A8\u9001\u7ED9\u4F5C\u8005\u3002"),
+      h("p", { className: "pf_small pf_muted" }, "\u8FD9\u6761\u56DE\u4F20\u8DEF\u5F84\u4E0D\u8BFB\u53D6\u6587\u4EF6\u3001\u5B8C\u6574\u4F1A\u8BDD\u6216\u6A21\u578B\u51ED\u636E\uFF0C\u4E0D\u76F4\u63A5\u56DE\u4F20\u539F\u59CB\u9700\u6C42\u5B57\u6BB5\u3002\u6458\u8981\u4F1A\u6E05\u7406\u5E38\u89C1\u8DEF\u5F84\u3001\u90AE\u7BB1\u548C\u51ED\u636E\u683C\u5F0F\uFF0C\u4F46\u65E0\u6CD5\u4FDD\u8BC1\u8BC6\u522B\u6240\u6709\u654F\u611F\u5185\u5BB9\uFF1B\u8BF7\u52FF\u5728\u9700\u6C42\u4E0E\u53CD\u9988\u4E2D\u7559\u4E0B\u4E0D\u5B9C\u5206\u4EAB\u7684\u4FE1\u606F\u3002\u627E\u65B9\u6848\u6240\u9700\u7684\u6A21\u578B\u8BF7\u6C42\u53E6\u6309\u5BBF\u4E3B\u8BBE\u7F6E\u5904\u7406\u3002"),
+      h("p", { className: "pf_small pf_muted" }, "\u5F00\u542F\u540E\u65B0\u64CD\u4F5C\u4F1A\u5E26\u4E0A\u6240\u5173\u8054\u9700\u6C42\u3001\u65B9\u6848\u7684\u6458\u8981\u53CA\u5FC5\u8981\u63D2\u4EF6\u7248\u672C\u4E0A\u4E0B\u6587\uFF0C\u4E0D\u5012\u704C\u6216\u6279\u91CF\u8865\u4F20\u5386\u53F2\u8BB0\u5F55\u3002\u505C\u6B62\u56DE\u4F20\u4E0D\u5220\u9664\u6B64\u524D\u670D\u52A1\u7AEF\u8BB0\u5F55\uFF0C\u5220\u9664\u9700\u7B49\u670D\u52A1\u7AEF\u786E\u8BA4\u3002\u670D\u52A1\u7AEF\u8BB0\u5F55\u4FDD\u7559 90 \u5929\u3002\u4E0D\u540C\u610F\u4E0D\u5F71\u54CD\u627E\u63D2\u4EF6\u4E0E\u672C\u673A\u5386\u53F2\u3002"),
+      telemetryEndpoint ? h("p", { className: "pf_small pf_muted" }, `\u63A5\u6536\u670D\u52A1\uFF1A${telemetryEndpoint} \xB7 \u544A\u77E5\u7248\u672C ${telemetry.policyVersion}`) : null,
+      telemetry ? h(
+        "div",
+        { className: "pf_telemetry_state" },
+        h("p", { className: "pf_small pf_muted" }, `\u5F85\u540C\u6B65 ${count(telemetry.queued)} \u6761 \xB7 \u670D\u52A1\u7AEF\u786E\u8BA4\u6536\u5230 ${count(telemetry.delivered)} \u6761${telemetry.lastSyncedAt ? ` \xB7 \u6700\u8FD1\u540C\u6B65\u786E\u8BA4 ${telemetry.lastSyncedAt}` : ""}`),
+        telemetry.lastError ? h("p", { className: "pf_small pf_error", role: "status" }, `\u540C\u6B65\u5F02\u5E38\uFF1A${telemetry.lastError}`) : null,
+        telemetry.deletionPending ? h("p", { className: "pf_small", role: "status" }, "\u5220\u9664\u7533\u8BF7\u5F85\u5904\u7406\uFF0C\u5C1A\u672A\u786E\u8BA4\u670D\u52A1\u7AEF\u5B8C\u6210\u3002\u56DE\u4F20\u5DF2\u505C\u6B62\u3002") : telemetry.deleteConfirmed && telemetry.lastDeletedAt ? h("p", { className: "pf_small pf_muted" }, `\u670D\u52A1\u7AEF\u5220\u9664\u786E\u8BA4\uFF1A${telemetry.lastDeletedAt}`) : null
+      ) : h("p", { className: "pf_small pf_muted" }, "\u5C1A\u672A\u8BFB\u53D6\u6709\u6548\u8BBE\u7F6E\uFF0C\u4E0D\u4F1A\u5728\u672C\u9875\u81EA\u52A8\u5F00\u542F\u56DE\u4F20\u3002"),
+      h(
+        "div",
+        { className: "pf_actions" },
+        telemetry?.consent === "unasked" ? h(import_react.default.Fragment, null, primary("\u540C\u610F\u5E76\u81EA\u52A8\u56DE\u4F20", () => controller.setTelemetryConsent(true), { disabled: busy }), button("\u6682\u4E0D\u540C\u610F", () => controller.setTelemetryConsent(false), { disabled: busy })) : telemetry ? h(import_react.default.Fragment, null, telemetry.enabled ? button("\u505C\u6B62\u56DE\u4F20", () => controller.setTelemetryConsent(false), { disabled: busy }) : button("\u91CD\u65B0\u540C\u610F\u5E76\u81EA\u52A8\u56DE\u4F20", () => controller.setTelemetryConsent(true), { disabled: busy || telemetry.deletionPending }), button(telemetry.deletionPending ? "\u91CD\u8BD5\u5220\u9664\u5DF2\u56DE\u4F20\u8BB0\u5F55" : "\u5220\u9664\u5DF2\u56DE\u4F20\u8BB0\u5F55", () => controller.deleteTelemetry(), { disabled: busy })) : null,
+        button("\u5237\u65B0\u540C\u6B65\u72B6\u6001", () => controller.refreshTelemetry(), { disabled: busy })
+      )
+    );
     const sourceLabels = { ready: "\u6309\u9700\u68C0\u67E5\u4E0E\u641C\u7D22", live: "\u5B9E\u65F6\u8BFB\u53D6", cached: "\u4F7F\u7528\u7F13\u5B58", stale: "\u4F7F\u7528\u8FC7\u671F\u7F13\u5B58", failed: "\u8BFB\u53D6\u5931\u8D25", unconfigured: "\u672A\u914D\u7F6E" };
     const sourceRow = (source, index, initial = false) => {
       const url = safeUrl(source.url);
@@ -1048,11 +1156,12 @@ function apply(ctx) {
         "section",
         { className: "pf_section" },
         h("h2", null, "\u8BD5\u8FC7\u4E4B\u540E\uFF0C\u8BB0\u5F55\u771F\u5B9E\u7ED3\u679C"),
-        h("p", { className: "pf_muted pf_small" }, "\u8BF7\u6839\u636E\u5B9E\u9645\u4F7F\u7528\u60C5\u51B5\u586B\u5199\u3002\u672C\u673A\u4FDD\u5B58\uFF0C\u4E0D\u81EA\u52A8\u53D1\u9001\u4EFB\u52A1\u6216\u8054\u7CFB\u4F5C\u8005\u3002"),
+        h("p", { className: "pf_muted pf_small" }, state.telemetry?.enabled ? "\u8BF7\u6839\u636E\u5B9E\u9645\u4F7F\u7528\u60C5\u51B5\u586B\u5199\uFF0C\u907F\u514D\u654F\u611F\u5185\u5BB9\u3002\u53CD\u9988\u5148\u4FDD\u5B58\u5728\u672C\u673A\uFF0C\u518D\u6309\u5DF2\u540C\u610F\u8BBE\u7F6E\u81EA\u52A8\u540C\u6B65\u7ECF\u5E38\u89C1\u654F\u611F\u683C\u5F0F\u6E05\u7406\u7684\u6458\u8981\uFF1B\u8FD9\u662F\u7528\u6237\u81EA\u62A5\uFF0C\u4E0D\u4EE3\u8868\u63D2\u4EF6\u5DF2\u901A\u8FC7\u8FD0\u884C\u9A8C\u8BC1\u3002" : "\u8BF7\u6839\u636E\u5B9E\u9645\u4F7F\u7528\u60C5\u51B5\u586B\u5199\u3002\u5F53\u524D\u672A\u542F\u7528\u81EA\u52A8\u56DE\u4F20\uFF0C\u53CD\u9988\u53EA\u4FDD\u5B58\u5728\u672C\u673A\u3002"),
         h("div", { className: "pf_feedback" }, ...[["complete", "\u5B8C\u6210\u4E86"], ["partial", "\u90E8\u5206\u5B8C\u6210"], ["blocked", "\u6CA1\u80FD\u5B8C\u6210"]].map(([value, label]) => button(label, () => {
           setFeedbackOutcome(value);
         }, { key: value, "aria-pressed": feedbackOutcome === value, disabled: busy }))),
         h("label", { className: "pf_label", style: { marginTop: 14 } }, "\u8865\u5145\u8BF4\u660E \xB7 \u53EF\u9009", h("textarea", { "aria-label": "\u53CD\u9988\u8BF4\u660E", value: feedbackNote, maxLength: 1200, disabled: busy, placeholder: "\u54EA\u4E2A\u73AF\u8282\u6709\u7528\uFF0C\u54EA\u91CC\u5361\u4F4F\u4E86\uFF1F\u8BF7\u907F\u514D\u586B\u5199\u654F\u611F\u6750\u6599\u3002", onChange: (event) => setFeedbackNote(event.target.value) })),
+        h("div", { className: "pf_optional_sharing" }, state.feedbackSaved && state.telemetrySuggestionVisible ? h("p", { className: "pf_small pf_muted", role: "status" }, "\u53EF\u9009\uFF1A\u5141\u8BB8\u81EA\u52A8\u56DE\u4F20\u540E\u7EED\u53CD\u9988\u6458\u8981\uFF0C\u5E2E\u52A9\u6211\u4EEC\u6539\u8FDB\u63A8\u8350\uFF1B\u672C\u6B21\u5DF2\u4FDD\u5B58\u7684\u8BB0\u5F55\u4E0D\u4F1A\u8FFD\u6EAF\u4E0A\u4F20\u3002\u5F00\u542F\u540E\u65B0\u64CD\u4F5C\u4F1A\u5E26\u4E0A\u6240\u5173\u8054\u9700\u6C42\u3001\u65B9\u6848\u7684\u6458\u8981\u3002") : null, button("\u67E5\u770B\u53EF\u9009\u56DE\u4F20\u8BBE\u7F6E", openTelemetrySettings, { className: "pf_btn pf_text" }), state.feedbackSaved && state.telemetrySuggestionVisible ? button("\u5173\u95ED\u63D0\u793A", () => controller.dismissTelemetrySuggestion(), { className: "pf_btn pf_text" }) : null),
         h("div", { className: "pf_actions" }, button(state.feedbackSaved ? "\u53CD\u9988\u5DF2\u4FDD\u5B58\u5728\u672C\u673A" : "\u4FDD\u5B58\u53CD\u9988\u5230\u672C\u673A", () => controller.saveFeedback(feedbackOutcome, feedbackNote), { disabled: busy || !feedbackOutcome || state.feedbackSaved }), state.taskId ? button("\u53CD\u9988\u5E76\u4F18\u5316\u65B9\u6848", () => controller.refine(feedbackNote), { disabled: busy || !feedbackNote.trim() }) : null, h("a", { className: "pf_btn", href: "https://github.com/piggy00544/dsh-plugin-finder/issues/new?template=feedback.yml", target: "_blank", rel: "noopener noreferrer" }, "\u53BB\u9879\u76EE\u53CD\u9988 \u2197")),
         h("p", { className: "pf_small pf_muted", style: { marginTop: 10 } }, "\u4FDD\u5B58\u7ED3\u679C\u53EA\u8BB0\u5F55\u53CD\u9988\uFF1B\u300C\u53CD\u9988\u5E76\u4F18\u5316\u65B9\u6848\u300D\u4F1A\u8C03\u7528\u5BBF\u4E3B\u6A21\u578B\u751F\u6210\u65B0\u7248\u672C\uFF0C\u5148\u6838\u5BF9\u7406\u89E3\u518D\u641C\u7D22\u3002\u516C\u5F00\u53CD\u9988\u9700\u81EA\u884C\u586B\u5199\uFF0C\u4E0D\u81EA\u52A8\u5E26\u5165\u4EFB\u52A1\u6216\u7ED3\u679C\u3002")
       )
@@ -1060,7 +1169,7 @@ function apply(ctx) {
     return h("div", { className: "pf_root", "data-plugin-finder": true }, h(
       "div",
       { className: "pf_inner" },
-      h("header", { className: "pf_header" }, h("div", null, h("div", { className: "pf_eyebrow" }, "PLUGIN FINDER"), h("h1", null, "\u53D1\u73B0\u597D\u63D2\u4EF6"), h("p", { className: "pf_muted" }, "\u4ECE\u4F60\u8981\u5B8C\u6210\u7684\u4E8B\uFF0C\u627E\u5230\u9002\u5408\u7684\u63D2\u4EF6\u4E0E\u505A\u6CD5\u3002")), h("div", { className: "pf_header_actions" }, button("\u91CD\u65B0\u8BFB\u53D6\u914D\u7F6E", () => controller.bootstrap(), { disabled: busy }), button("\u5BFC\u5165\u672C\u673A\u5907\u4EFD", () => importInput.current?.click(), { disabled: busy }), h("input", { type: "file", ref: importInput, accept: ".json,application/json", "aria-label": "\u5BFC\u5165\u672C\u673A\u65B9\u6848\u5907\u4EFD", style: { display: "none" }, onChange: importFile }), state.stage !== "describe" ? button("\u65B0\u9700\u6C42", () => controller.newRequest(), { disabled: busy }) : null)),
+      h("header", { className: "pf_header" }, h("div", null, h("div", { className: "pf_eyebrow" }, "PLUGIN FINDER"), h("h1", null, "\u53D1\u73B0\u597D\u63D2\u4EF6"), h("p", { className: "pf_muted" }, "\u4ECE\u4F60\u8981\u5B8C\u6210\u7684\u4E8B\uFF0C\u627E\u5230\u9002\u5408\u7684\u63D2\u4EF6\u4E0E\u505A\u6CD5\u3002")), h("div", { className: "pf_header_actions" }, button("\u91CD\u65B0\u8BFB\u53D6\u914D\u7F6E", () => controller.bootstrap(), { disabled: busy }), button("\u56DE\u4F20\u8BBE\u7F6E", openTelemetrySettings), button("\u5BFC\u5165\u672C\u673A\u5907\u4EFD", () => importInput.current?.click(), { disabled: busy }), h("input", { type: "file", ref: importInput, accept: ".json,application/json", "aria-label": "\u5BFC\u5165\u672C\u673A\u65B9\u6848\u5907\u4EFD", style: { display: "none" }, onChange: importFile }), state.stage !== "describe" ? button("\u65B0\u9700\u6C42", () => controller.newRequest(), { disabled: busy }) : null)),
       h("nav", { className: "pf_tabs", "aria-label": "\u63D2\u4EF6\u529F\u80FD" }, button("\u627E\u65B9\u6848", () => controller.showFind(), { "aria-current": state.view !== "history" ? "page" : void 0, disabled: busy }), button(`\u6211\u7684\u65B9\u6848${state.historyTotal ? ` \xB7 ${state.historyTotal}` : ""}`, () => controller.showHistory(), { "aria-current": state.view === "history" ? "page" : void 0, disabled: busy })),
       state.view !== "history" ? h("ol", { className: "pf_steps", "aria-label": "\u65B9\u6848\u6B65\u9AA4" }, ...[["describe", "\u63CF\u8FF0\u9700\u6C42"], ["understand", "\u786E\u8BA4\u7406\u89E3"], ["plan", "\u63A8\u8350\u4E0E\u63A5\u7EED"]].map(([key, label], index) => h("li", { className: `pf_step${state.stage === key ? " active" : ""}`, key, "aria-current": state.stage === key ? "step" : void 0 }, h("span", { className: "pf_number" }, index + 1), label))) : null,
       state.bootstrap ? h(
@@ -1072,11 +1181,13 @@ function apply(ctx) {
       state.bootstrapLoaded && !modelReady ? h("div", { className: "pf_banner" }, "\u5C1A\u672A\u914D\u7F6E\u53EF\u7528\u7684\u5BBF\u4E3B\u9ED8\u8BA4\u6A21\u578B\u3002\u8BF7\u524D\u5F80 DSH \u8BBE\u7F6E\u5B8C\u6210\u6A21\u578B\u914D\u7F6E\uFF0C\u518D\u70B9\u51FB\u300C\u91CD\u65B0\u8BFB\u53D6\u914D\u7F6E\u300D\u3002\u672C\u63D2\u4EF6\u4E0D\u53E6\u6536\u6A21\u578B Key\u3002") : null,
       state.error ? h("div", { className: "pf_banner pf_error", role: "alert" }, state.error) : null,
       state.notice ? h("div", { className: "pf_banner", role: "status" }, state.notice) : null,
+      state.telemetryWarning && !state.notice.includes(state.telemetryWarning) ? h("div", { className: "pf_banner pf_small", role: "status" }, `\u96C6\u4E2D\u540C\u6B65\u5F02\u5E38\uFF1A${state.telemetryWarning}`) : null,
       state.storageWarning && !state.notice.includes(state.storageWarning) ? h("div", { className: "pf_banner pf_small", role: "status" }, state.storageWarning) : null,
       state.resetPending && state.busy !== "reset" ? h("div", { className: "pf_banner pf_small", role: "status" }, "\u5F00\u59CB\u65B0\u9700\u6C42\u5C1A\u672A\u786E\u8BA4\uFF0C\u5DF2\u6709\u65B9\u6848\u4ECD\u4FDD\u7559\u3002", button("\u91CD\u8BD5\u5F00\u59CB\u65B0\u9700\u6C42", () => controller.retryReset(), { disabled: busy })) : null,
-      busy ? h("div", { className: "pf_status", role: "status" }, h("span", { className: "pf_spinner", "aria-hidden": true }), { bootstrap: "\u6B63\u5728\u8BFB\u53D6\u8FDE\u63A5\u4E0E\u914D\u7F6E\u2026", analyze: "\u6B63\u5728\u7406\u89E3\u76EE\u6807\u3001\u6750\u6599\u4E0E\u7EA6\u675F\u2026", recommend: "\u6B63\u5728\u641C\u7D22\u6765\u6E90\u3001\u8BFB\u53D6\u5019\u9009\u8D44\u6599\u5E76\u63A8\u8350\u2026", handoff: "\u6B63\u5728\u8FDE\u63A5\u9009\u5B9A\u5DE5\u4F5C\u533A\u5E76\u51C6\u5907\u672A\u53D1\u9001\u8349\u7A3F\u2026", feedback: "\u6B63\u5728\u4FDD\u5B58\u5230\u672C\u673A\u2026", reset: "\u6B63\u5728\u4FDD\u5B58\u5E76\u5F00\u59CB\u65B0\u9700\u6C42\u2026", history: "\u6B63\u5728\u8BFB\u53D6\u672C\u673A\u5386\u53F2\u65B9\u6848\u2026", open: "\u6B63\u5728\u6253\u5F00\u6240\u9009\u65B9\u6848\u4E0E\u7248\u672C\u2026", refine: "\u6B63\u5728\u6839\u636E\u53CD\u9988\u91CD\u65B0\u7406\u89E3\u9700\u6C42\u2026", import: "\u6B63\u5728\u5BFC\u5165\u672C\u673A\u5907\u4EFD\u2026", export: "\u6B63\u5728\u5BFC\u51FA\u4EFB\u52A1\u5907\u4EFD\u2026", continue: "\u6B63\u5728\u6838\u5BF9\u539F\u4F1A\u8BDD\u7ED1\u5B9A\u2026", "handoff-save": "\u6B63\u5728\u4FDD\u5B58\u539F\u4F1A\u8BDD\u5173\u8054\u2026" }[state.busy], button("\u53D6\u6D88", () => controller.cancel(), { className: "pf_btn pf_text" })) : null,
+      busy ? h("div", { className: "pf_status", role: "status" }, h("span", { className: "pf_spinner", "aria-hidden": true }), { bootstrap: "\u6B63\u5728\u8BFB\u53D6\u8FDE\u63A5\u4E0E\u914D\u7F6E\u2026", analyze: "\u6B63\u5728\u7406\u89E3\u76EE\u6807\u3001\u6750\u6599\u4E0E\u7EA6\u675F\u2026", recommend: "\u6B63\u5728\u641C\u7D22\u6765\u6E90\u3001\u8BFB\u53D6\u5019\u9009\u8D44\u6599\u5E76\u63A8\u8350\u2026", handoff: "\u6B63\u5728\u8FDE\u63A5\u9009\u5B9A\u5DE5\u4F5C\u533A\u5E76\u51C6\u5907\u672A\u53D1\u9001\u8349\u7A3F\u2026", feedback: "\u6B63\u5728\u4FDD\u5B58\u5230\u672C\u673A\u2026", reset: "\u6B63\u5728\u4FDD\u5B58\u5E76\u5F00\u59CB\u65B0\u9700\u6C42\u2026", history: "\u6B63\u5728\u8BFB\u53D6\u672C\u673A\u5386\u53F2\u65B9\u6848\u2026", open: "\u6B63\u5728\u6253\u5F00\u6240\u9009\u65B9\u6848\u4E0E\u7248\u672C\u2026", refine: "\u6B63\u5728\u6839\u636E\u53CD\u9988\u91CD\u65B0\u7406\u89E3\u9700\u6C42\u2026", import: "\u6B63\u5728\u5BFC\u5165\u672C\u673A\u5907\u4EFD\u2026", export: "\u6B63\u5728\u5BFC\u51FA\u4EFB\u52A1\u5907\u4EFD\u2026", continue: "\u6B63\u5728\u6838\u5BF9\u539F\u4F1A\u8BDD\u7ED1\u5B9A\u2026", "handoff-save": "\u6B63\u5728\u4FDD\u5B58\u539F\u4F1A\u8BDD\u5173\u8054\u2026", "telemetry-status": "\u6B63\u5728\u8BFB\u53D6\u540C\u6B65\u72B6\u6001\u2026", "telemetry-consent": "\u6B63\u5728\u4FDD\u5B58\u81EA\u52A8\u56DE\u4F20\u9009\u62E9\u2026", "telemetry-delete": "\u6B63\u5728\u505C\u6B62\u56DE\u4F20\u5E76\u7533\u8BF7\u5220\u9664\u8BB0\u5F55\u2026" }[state.busy], button("\u53D6\u6D88", () => controller.cancel(), { className: "pf_btn pf_text" })) : null,
       state.view === "history" ? historyView : h("div", null, taskHistory, state.stage === "describe" ? describe : state.stage === "understand" ? understand : plan),
-      h("footer", { className: "pf_footer" }, h("p", null, "\u4EFB\u52A1\u3001\u5386\u53F2\u7248\u672C\u4E0E\u53CD\u9988\u4FDD\u5B58\u5728\u5F53\u524D DSH \u672C\u673A\u3002\u300C\u65B0\u9700\u6C42\u300D\u53EA\u5F00\u59CB\u7A7A\u767D\u9700\u6C42\uFF0C\u5DF2\u6709\u8BB0\u5F55\u4ECD\u5728\u300C\u6211\u7684\u65B9\u6848\u300D\u3002\u672C\u63D2\u4EF6\u4E0D\u81EA\u52A8\u53D1\u9001\u6216\u5B89\u88C5\u3002"), h("p", { style: { marginTop: 6 } }, "\u9700\u6C42\u4E0E\u5019\u9009\u8D44\u6599\u4ECD\u4F1A\u53D1\u9001\u7ED9 DSH \u5168\u5C40\u9ED8\u8BA4\u6A21\u578B\u8FDB\u884C\u63A8\u7406\uFF1B\u652F\u6301\u65F6\u91C7\u7528\u8F83\u4F4E\u63A8\u7406\u6863\uFF0C\u4E0D\u4FEE\u6539\u5BBF\u4E3B\u8BBE\u7F6E\u3002\u6CBF\u7528\u5DF2\u6709\u989D\u5EA6\uFF0C\u672A\u5FC5\u7B49\u4E8E\u67D0\u4E2A\u4F1A\u8BDD\u7684\u6A21\u578B\u9009\u62E9\u3002\u7B2C\u4E09\u65B9\u670D\u52A1\u53EF\u80FD\u53E6\u6709\u8D39\u7528\u3002"))
+      telemetryView,
+      h("footer", { className: "pf_footer" }, h("p", null, "\u4EFB\u52A1\u3001\u5386\u53F2\u7248\u672C\u4E0E\u53CD\u9988\u4FDD\u5B58\u5728\u5F53\u524D DSH \u672C\u673A\u3002\u300C\u65B0\u9700\u6C42\u300D\u53EA\u5F00\u59CB\u7A7A\u767D\u9700\u6C42\uFF0C\u5DF2\u6709\u8BB0\u5F55\u4ECD\u5728\u300C\u6211\u7684\u65B9\u6848\u300D\u3002\u81EA\u52A8\u56DE\u4F20\u9ED8\u8BA4\u5173\u95ED\uFF0C\u4EC5\u5728\u540C\u610F\u540E\u53D1\u9001\u6458\u8981\u3002\u672C\u63D2\u4EF6\u4E0D\u81EA\u52A8\u5B89\u88C5\u63D2\u4EF6\u6216\u53D1\u9001\u4F1A\u8BDD\u6D88\u606F\u3002"), h("p", { style: { marginTop: 6 } }, "\u9700\u6C42\u4E0E\u5019\u9009\u8D44\u6599\u4ECD\u4F1A\u53D1\u9001\u7ED9 DSH \u5168\u5C40\u9ED8\u8BA4\u6A21\u578B\u8FDB\u884C\u63A8\u7406\uFF1B\u652F\u6301\u65F6\u91C7\u7528\u8F83\u4F4E\u63A8\u7406\u6863\uFF0C\u4E0D\u4FEE\u6539\u5BBF\u4E3B\u8BBE\u7F6E\u3002\u6CBF\u7528\u5DF2\u6709\u989D\u5EA6\uFF0C\u672A\u5FC5\u7B49\u4E8E\u67D0\u4E2A\u4F1A\u8BDD\u7684\u6A21\u578B\u9009\u62E9\u3002\u7B2C\u4E09\u65B9\u670D\u52A1\u53EF\u80FD\u53E6\u6709\u8D39\u7528\u3002"))
     ));
   }
   if (typeof ctx.layout?.selectPanel === "function") {

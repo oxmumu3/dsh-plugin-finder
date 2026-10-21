@@ -1,0 +1,14 @@
+{
+  "name": "dsh-plugin-finder-feedback-v1",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-20",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": false },
+  "triggers": { "crons": ["17 * * * *"] },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "dsh-plugin-finder-feedback-v1",
+    "database_id": "f499f107-292e-4f81-8855-6b6f087431c2"
+  }]
+}
