@@ -2,7 +2,7 @@
 
 仅准备材料，**未提交 PR、未联系维护者，也不表示已经收录**。候选文件为同目录 `awesome-dsh-plugin.yml`；提交时复制并改名为上游仓库的 `data/plugins/piggy00544__dsh-plugin-finder.yml`，只新增这一条，不改上游生成的 README。
 
-条目使用 `market` 分类，说明实际的需求确认、动态发现、作者资料理解、方案版本和原生草稿接续；不宣称自动安装、全网穷尽或任务成功。安装来源钉住待发布的 **`v0.3.0-preview.2` Release tarball**，没有 `npm:` 字段，也不使用 `latest/download`。
+条目使用 `market` 分类，说明实际的需求确认、动态发现、作者资料理解、方案版本和原生草稿接续；不宣称自动安装、全网穷尽或任务成功。安装来源钉住已发布的 **`v0.3.0-preview.2` Release tarball**，没有 `npm:` 字段，也不使用 `latest/download`。
 
 ## 上游依据
 
@@ -21,7 +21,7 @@
 | topic 可发现 | 2026-10-21 06:14:43 UTC，用**未发送 Authorization 头**的 GitHub 搜索 API 查询 `repo:piggy00544/dsh-plugin-finder topic:dsh-plugin`，HTTP 200、准确命中 1，`incomplete_results=false`。这不代表 Awesome 已收录。 |
 | 一天门槛 | 仓库创建于 `2026-10-20T06:37:58Z`；仅在 **2026-10-21 06:37:58 UTC（墨西哥城00:37:58）之后**才满一天。准备材料时尚未达到，提交前须重新核对。 |
 | 旧版公开附件 | `v0.3.0-preview.1` tarball 已实际 HTTP 200 下载核对，121646 bytes，SHA-256 与 Release 一致；只能证明旧版附件可达。 |
-| 本次目标附件 | **待核对**：`v0.3.0-preview.2` 公开 Release 与同名 tgz 发布后，重新 GET 下载、核对大小和 SHA-256，并检查包清单、预构建客户端及该版验证记录。候选 URL 格式合规不等于附件已发布。不得用旧版验收替代。 |
+| 本次目标附件 | 已发布 `v0.3.0-preview.2`，匿名 GET 实际下载 123979 bytes，SHA-256 `382b912a7e6785e3a10cf076b63377153b7a8b9c2e180efe917ce0a27de08748`；包内 31 个文件、预构建客户端与源码构建一致，无后台或管理员凭据。完整 259 项测试通过，新版原生视觉验收仍未确认，详见本版 Release，不沿用旧版结果冒充。 |
 | 当前收录状态 | 本轮公开 `plugins.json` 与 `index.json` 均未找到本仓库；本材料没有提交、受理、合并或上架回执。提交后也须以上游实际合并和公开池读回为准。 |
 
 匿名搜索证据保存在本机、源码仓库之外：`Agent/output/plugin-finder-launch-review-2026-10-21/github-topic-anonymous-search.json`。只保留公开 URL、请求方法、无认证标记、时间、状态和必要仓库元数据，不含凭据；不把本地 output 一并提交。
