@@ -22,4 +22,4 @@
 
 2026-10-21 原生验收完成：用户将 DSH 切到前台后，AX 与截图一致。通过原生管理器替换并启用 0.3.0-preview.2，显示 1 个组件运行中；实际安装的 31 个文件与公开包逐字节一致。打开「我的方案」恢复资料库 V5，核对方案、精确安装来源、原生插件管理入口及返回原方案；历史反馈默认折叠，完整搜索覆盖仍可展开。「继续原会话」打开已有未发送草稿，没有发送消息。历史表内两个任务及所有版本、反馈、会话关联行与操作前完全一致，legacy 存储逐字节一致；自动回传仍关闭，未创建回传存储或收集真实数据。主进程 65392、Host 65438 保持原启动时间，未重启或绕过 profile 管理限制。
 
-本轮是 UI 与安装更新验收，没有重新调用模型搜索、安装推荐候选或把资料库任务判为完成。资料库 V5 的先前部分完成反馈原样保留。证据保存在源码仓库之外的 `Agent/output/plugin-finder-launch-review-2026-10-21/`（`02-installed-native`、`03-history-plan-native`、`05-install-and-handoff-native`、`06-existing-conversation-native` 的截图与 AX，以及 `native-update-readback.json`）；早先不一致的诊断截图不作通过证据。精选库收录材料仍未提交，不等于已收录。
+本轮是 UI 与安装更新验收，没有重新调用模型搜索、安装推荐候选或把资料库任务判为完成。资料库 V5 的先前部分完成反馈原样保留。证据保存在源码仓库之外的 `Agent/output/plugin-finder-launch-review-2026-10-21/`（`02-installed-native`、`03-history-plan-native`、`05-install-and-handoff-native`、`06-existing-conversation-native` 的截图与 AX，以及 `native-update-readback.json`）；早先不一致的诊断截图不作通过证据。用户随后明确授权收录提交，现已提交 [Awesome DSH PR #8439](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/8439)，只新增一条 YAML；等待维护者审核，尚未合并或收录，详见 `docs/market-submission/README.md`。
