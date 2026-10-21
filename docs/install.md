@@ -1,17 +1,17 @@
 # 安装、首次使用与卸载
 
-本说明对应 `dsh-plugin-finder@0.3.0-preview.1`。包声明支持 DSH `0.2.0-rc.2` 与 `0.2.1-rc.2`、Node `>=22.13`；兼容声明不等于所有环境已经验收。本文说明安装流程，不代表本版原生安装或公网生产链路已经验收；请到 [v0.3.0-preview.1 Release](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.3.0-preview.1) 核对实际附件、校验值与验证记录。
+本说明对应 `dsh-plugin-finder@0.3.0-preview.2`。包声明支持 DSH `0.2.0-rc.2` 与 `0.2.1-rc.2`、Node `>=22.13`；兼容声明不等于所有环境已经验收。本文说明安装流程，不代表本版原生安装或公网生产链路已经验收；请到 [v0.3.0-preview.2 Release](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.3.0-preview.2) 核对实际附件、校验值与验证记录。
 
-旧 `0.1.0-preview.1` 把候选局限于固定 15 条索引，不符合动态发现要求，已由后续动态发现版本修正。升级时请核对实际启用的是 `0.3.0-preview.1`；旧版本的安装与草稿测试不能替代本版验收。
+旧 `0.1.0-preview.1` 把候选局限于固定 15 条索引，不符合动态发现要求，已由后续动态发现版本修正。升级时请核对实际启用的是 `0.3.0-preview.2`；旧版本的安装与草稿测试不能替代本版验收。
 
 ## 在正在使用的 DSH 中安装
 
 1. 确认 DSH 版本。Desktop 应用和终端里的同名 `dsh` 可能来自不同安装；优先使用该应用自己的原生「插件」页。
-2. 从对应 Release 下载 `dsh-plugin-finder-0.3.0-preview.1.tgz`，按发布页 SHA-256 核对文件。
+2. 从对应 Release 下载 `dsh-plugin-finder-0.3.0-preview.2.tgz`，按发布页 SHA-256 核对文件。
 3. 打开 DSH「插件」→「添加插件」，在安装来源中填写：
 
    ```text
-   https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.3.0-preview.1/dsh-plugin-finder-0.3.0-preview.1.tgz
+   https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz
    ```
 
    也可填写压缩包在 **DSH 宿主机器**上的完整路径；这不会把浏览器本地文件自动上传到远端。
@@ -23,7 +23,7 @@
 ## 交给 DSH 的自然语言指令
 
 ```text
-请通过当前 DSH 的原生插件管理能力安装并启用“发现好插件”：https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.3.0-preview.1/dsh-plugin-finder-0.3.0-preview.1.tgz 。安装到我正在使用的 DSH，不要另建 profile；需要我确认或重启时请提示我，完成后核对侧栏入口。如果当前会话没有安装工具，请给出在宿主插件页安装的步骤。
+请通过当前 DSH 的原生插件管理能力安装并启用“发现好插件”：https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz 。安装到我正在使用的 DSH，不要另建 profile；需要我确认或重启时请提示我，完成后核对侧栏入口。如果当前会话没有安装工具，请给出在宿主插件页安装的步骤。
 ```
 
 这段话表达安装意图。是否能直接完成取决于当前会话是否开放安装工具以及宿主确认；不承诺所有会话都能“一句话自动安装”。
@@ -33,7 +33,7 @@
 确认 CLI 与目标宿主匹配后，把示例 `your-profile` 替换为实际正在使用的 profile，不要为了安装另建一个与当前应用无关的 profile：
 
 ```sh
-dsh plugin --profile your-profile add "/absolute/path/dsh-plugin-finder-0.3.0-preview.1.tgz"
+dsh plugin --profile your-profile add "/absolute/path/dsh-plugin-finder-0.3.0-preview.2.tgz"
 ```
 
 `--profile` 位于转发给 pnpm 的 `add` 之前。安装进另一个 profile 不会自动出现在当前应用。Desktop 使用受应用管理的保留 profile；普通 CLI 可能拒绝管理它。Desktop 用户优先用原生插件页；命令行操作请依照该 Desktop 随附的官方 CLI 说明，不要绕过保留 profile 或版本检查。
@@ -70,7 +70,7 @@ dsh plugin --profile your-profile add "/absolute/path/dsh-plugin-finder-0.3.0-pr
 
 | 现象 | 下一步 |
 |---|---|
-| 仍显示固定 15 个候选 | 核对启用版本，升级到 `0.3.0-preview.1`；旧包不符合动态发现要求。 |
+| 仍显示固定 15 个候选 | 核对启用版本，升级到 `0.3.0-preview.2`；旧包不符合动态发现要求。 |
 | 未出现侧栏入口 | 在当前宿主插件页核对安装、启用及激活诊断；装入其他 profile 不会出现在当前应用。 |
 | 未找到默认模型 | 配置宿主全局默认模型后重新读取；已有某个会话可运行不等于全局默认已配置。 |
 | 全部来源读取失败 | 保留当前意图，检查网络并手动重试。不要将该错误当作“生态没有插件”。 |

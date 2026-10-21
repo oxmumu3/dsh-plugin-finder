@@ -599,12 +599,12 @@ export function apply(ctx) {
       coverage ? h('details', { className: 'pf_details' }, h('summary', null, '查看解析与前提筛选'), h('p', { className: 'pf_small pf_muted' }, `已解析 ${count(coverage.resolved)} · 已排除 ${count(coverage.excluded)}。已解析指取得清单、声明与固定安装来源，不等于安装成功；解析后仍可能因使用前提排除，两者可能重叠。`),
         coverage.excludedReasons && typeof coverage.excludedReasons === 'object' ? h('ul', { className: 'pf_list pf_small pf_muted' }, ...Object.entries(coverage.excludedReasons).filter(([, value]) => Number.isSafeInteger(value) && value > 0).slice(0, 12).map(([key, value]) => h('li', { key }, `${{ 'extra-key-required': '需要额外服务 Key', 'extra-key-unknown': '额外 Key 前提未确认', 'author-unresolved': '作者资料未能解析', 'author-read-timeout': '作者资料核对超时' }[key] || '其他前提或解析限制'}：${value}`))) : null) : null);
     const displayedSources = discoverySources.length ? discoverySources : coverageSources.map(source => ({ ...source, id: source.sourceId }));
-    const searchEvidence = state.discovery ? h('section', { className: 'pf_section', 'aria-label': '本次搜索来源' }, h('div', { className: 'pf_section_head' }, h('h2', null, '本次搜索'), h('span', { className: 'pf_small pf_muted' }, `参与推荐的候选：${state.candidates.length}`)),
+    const sourceHealth = sourceFailed ? h('p', { className: 'pf_banner pf_small pf_search_health', role: 'status' }, '搜索未完成：部分来源读取失败。当前方案仅基于已返回来源，不能据此判断没有相关插件。') : usesCache ? h('p', { className: 'pf_small pf_muted pf_search_health', role: 'status' }, '本次部分来源使用缓存；具体来源和读取时间可展开下方搜索详情核对。') : null;
+    const searchEvidence = state.discovery ? h('details', { className: 'pf_details pf_search_details', 'aria-label': '本次搜索来源', open: false }, h('summary', null, '查看本次搜索与供给覆盖'), h('div', { className: 'pf_section_head' }, h('h2', null, '本次搜索'), h('span', { className: 'pf_small pf_muted' }, `参与推荐的候选：${state.candidates.length}`)),
       h('p', { className: 'pf_muted pf_small' }, `按确认后的需求检索来源，再读取候选资料${text(state.discovery.searchedAt) ? ` · 搜索时间 ${state.discovery.searchedAt}` : ''}。第三方精选源，非官方审核。`),
-      sourceFailed ? h('p', { className: 'pf_banner pf_small', role: 'status' }, '搜索未完成：部分来源读取失败。以下只展示已返回的候选，不能据此判断没有相关插件。') : usesCache ? h('p', { className: 'pf_banner pf_small', role: 'status' }, '本次部分来源使用缓存，具体状态和读取时间如下；缓存结果不代表已完成实时搜索。') : null,
       coverageView,
       displayedSources.length ? h('ul', { className: 'pf_sources' }, ...displayedSources.map((source, index) => sourceRow(source, index))) : h('p', { className: 'pf_muted pf_small' }, '本次来源状态未返回，搜索覆盖范围尚未确认。'),
-      state.warnings?.length ? h('ul', { className: 'pf_list pf_small pf_muted' }, ...strings(state.warnings).slice(0, 16).map((warning, index) => h('li', { key: index }, warning))) : null) : null;
+      state.warnings?.length ? h('ul', { className: 'pf_list pf_small pf_muted' }, ...strings(state.warnings).map((warning, index) => h('li', { key: index }, warning))) : null) : null;
     const labelFor = owner => owner === 'dsh' ? 'DSH 原生能力' : owner === 'human' ? '你来确认 / 补充' : state.candidates.find(item => item.id === owner)?.name ?? owner;
     const copyText = async value => {
       try {
@@ -661,7 +661,7 @@ export function apply(ctx) {
       h('div', { className: 'pf_section_head' }, h('div', null, h('strong', null, `当前任务 · 版本 ${state.revisionNumber ?? '未记录'}`), h('p', { className: 'pf_small pf_muted' }, originLabel(state.origin) ? `恢复来源：${originLabel(state.origin)}` : state.restoredFrom ? `恢复来源：${state.restoredFrom}` : '本机任务记录')), button('导出任务备份', downloadTask, { disabled: busy })),
       state.revisions?.length ? h('label', { className: 'pf_label pf_workspace' }, '历史版本', h('select', { 'aria-label': '历史版本', value: state.revisionId || '', disabled: busy, onChange: event => controller.openTask(state.taskId, event.target.value) }, ...state.revisions.map(item => h('option', { key: item.revisionId, value: item.revisionId }, `版本 ${item.revisionNumber} · ${text(item.title) || (item.stage === 'plan' ? '推荐方案' : '需求理解')} · ${text(item.createdAt)}`)))) : null,
       state.handoff ? h('div', { className: 'pf_actions' }, button('继续原会话', () => controller.continueSession(), { disabled: busy }), h('span', { className: 'pf_small pf_muted' }, '只打开已保存的同一会话，不重新放入草稿。')) : null,
-      state.feedback?.length ? h('details', { className: 'pf_details', open: true }, h('summary', null, `这个版本的反馈 · ${state.feedback.length} 条`), ...state.feedback.map((item, index) => h('div', { className: 'pf_saved_feedback', key: item.id || index }, h('p', { className: 'pf_small pf_muted' }, `${text(item.createdAt)} · ${outcomeLabel(item.outcome)}`), h('p', { className: 'pf_small pf_preline' }, text(item.note) || '未补充说明')))) : null) : null;
+      state.feedback?.length ? h('details', { className: 'pf_details', open: false }, h('summary', null, `这个版本的反馈 · ${state.feedback.length} 条`), ...state.feedback.map((item, index) => h('div', { className: 'pf_saved_feedback', key: item.id || index }, h('p', { className: 'pf_small pf_muted' }, `${text(item.createdAt)} · ${outcomeLabel(item.outcome)}`), h('p', { className: 'pf_small pf_preline' }, text(item.note) || '未补充说明')))) : null) : null;
     const field = (label, key, multi = false) => h('label', { className: 'pf_label', key }, label,
       h(multi ? 'textarea' : 'input', {
         'aria-label': label, value: multi ? strings(state.intent?.[key]).join('\n') : text(state.intent?.[key]), maxLength: multi ? { constraints: 2105, capabilities: 905, queries: 725 }[key] : key === 'goal' ? 6000 : 600, disabled: busy,
@@ -675,12 +675,12 @@ export function apply(ctx) {
       return h('article', { className: `pf_candidate${chosen ? ' pf_chosen' : ''}`, key: candidate.id },
         h('div', { className: 'pf_candidate_head' }, h('div', null, h('h3', null, text(candidate.title) || text(candidate.name) || text(candidate.id)), h('p', { className: 'pf_muted pf_small' }, text(candidate.name))), h('span', { className: `pf_tag${chosen ? ' pf_selected' : ''}` }, chosen ? '方案中' : '检索候选')),
         h('p', null, text(candidate.summary) || text(candidate.description)),
-        h('div', { className: 'pf_tags' }, ...strings(candidate.capabilities).slice(0, 8).map(item => h('span', { className: 'pf_tag', key: item }, item))),
         h('div', { className: 'pf_evidence' }, h('span', null, evidenceText(candidate.evidence?.metadata, 'metadata')), h('span', null, evidenceText(candidate.evidence?.installation, 'installation')), h('span', null, evidenceText(candidate.evidence?.task, 'task'))),
         text(candidate.evidence?.fetchedAt) ? h('p', { className: 'pf_small pf_muted' }, `来源资料读取：${candidate.evidence.fetchedAt}`) : null,
         text(candidate.evidence?.capabilityBasis) ? h('p', { className: 'pf_small pf_muted' }, `能力依据：${candidate.evidence.capabilityBasis}`) : null,
         h('div', { className: 'pf_links' }, ...links.map(link => h('a', { key: link.url, href: link.url, target: '_blank', rel: 'noopener noreferrer' }, link.label, ' ↗'))),
         h('details', { className: 'pf_details' }, h('summary', null, '查看版本、前提与安装来源'),
+          strings(candidate.capabilities).length ? h('div', { className: 'pf_tags' }, ...strings(candidate.capabilities).map((item, index) => h('span', { className: 'pf_tag', key: index }, item))) : null,
           h('p', { className: 'pf_small pf_muted' }, `版本 ${version || '未声明'}${commit ? ` · 提交 ${commit.slice(0, 12)}` : ''}${details.compatibility ? ` · DSH ${details.compatibility}` : ''}${details.node ? ` · Node ${details.node}` : ''}`),
           requirements.length ? h('ul', { className: 'pf_list pf_small' }, ...requirements.map((item, index) => h('li', { key: index }, item))) : h('p', { className: 'pf_small pf_muted' }, '文档未列出完整使用前提，安装前请回来源核对。'),
           spec ? h('div', { className: 'pf_install' }, h('div', { className: 'pf_small pf_muted' }, '精确安装来源'), h('code', null, spec), h('div', { className: 'pf_actions' }, button('复制来源', () => copyText(spec)), button('去 DSH 插件页核对', () => controller.openPluginManager()))) : h('p', { className: 'pf_small pf_muted' }, '暂无可展示的精确安装来源，请先查看作者文档。'),
@@ -693,6 +693,21 @@ export function apply(ctx) {
           h('p', { className: 'pf_small pf_muted' }, '安装会影响 DSH 配置。请由宿主确认兼容性和安装结果；本页不会自动安装。')),
       );
     };
+    const selectedInstallGuide = selectedCandidates.length ? h('section', { className: 'pf_section pf_selected_install', 'aria-label': '所选插件安装指引' },
+      h('h2', null, '所选插件安装指引'),
+      h('p', { className: 'pf_muted pf_small' }, '本页不检测已安装状态。已有插件先核对版本和使用前提；需要安装时，由 DSH 原生管理器确认。'),
+      h('ol', { className: 'pf_install_steps' },
+        h('li', null, h('h3', null, '复制所选插件的精确来源'), ...selectedCandidates.map(candidate => {
+          const details = candidateDetails(candidate);
+          return h('div', { className: 'pf_selected_plugin', key: candidate.id }, h('strong', null, text(candidate.name) || text(candidate.title) || candidate.id), h('p', { className: 'pf_small pf_muted' }, `版本 ${details.version || '未声明'}${details.commit ? ` · 提交 ${details.commit}` : ''}`),
+            details.spec ? h('div', { className: 'pf_install' }, h('code', null, details.spec), button('复制安装来源', () => copyText(details.spec), { disabled: busy })) : h('p', { className: 'pf_small pf_error' }, '暂无精确安装来源，请先展开候选资料并核对作者说明，不能据此确认可安装。'),
+            details.lifecycleWarning ? h('p', { className: 'pf_banner pf_small' }, details.lifecycleWarning) : null,
+            details.buildPrerequisite ? h('p', { className: 'pf_banner pf_small' }, details.buildPrerequisite) : null);
+        })),
+        h('li', null, h('h3', null, '在原生插件页安装并启用'), h('p', { className: 'pf_small pf_muted' }, '打开后选择「添加插件」→ 粘贴安装来源 → 按宿主提示安装 → 核对启用结果。已有插件无需重复安装；组合中的插件需逐个核对。'), button('打开原生插件管理', () => controller.openPluginManager(), { disabled: busy })),
+        h('li', null, h('h3', null, '回到这份方案继续'), h('p', { className: 'pf_small pf_muted' }, '回到侧栏「发现好插件」，本机方案会保留。若重启后找不到，打开「我的方案」回看原任务版本，再在下方选择工作区继续。')))) : null;
+    const candidateView = state.plan ? h('section', { className: 'pf_section' }, h('h2', null, `相关候选${state.candidates.length ? ` · ${state.candidates.length}` : ''}`), h('p', { className: 'pf_muted pf_small' }, '来源与版本来自本次读取或注明的缓存，适用性由模型判断。作者清单与索引声明分开标注；安装、任务与组合效果仍需核验。'),
+      state.candidates.length ? h('div', { className: 'pf_candidates' }, ...state.candidates.map(candidateCard)) : h('p', { className: 'pf_empty' }, sourceFailed ? '搜索未完成，暂不能判断是否存在合适插件。请先重试失败的来源，或把待确认事项带到会话继续。' : state.plan.kind === 'native' ? '这个方案可以先使用 DSH 原生能力，不必为了完成任务额外安装插件。' : '本次已返回的来源中没有找到足够合适的候选，不代表整个生态没有相关插件。可以调整需求后重试，或把缺口带到会话继续。')) : null;
     const describe = h('section', { className: 'pf_section' }, h('h2', null, '你想完成什么？'),
       h('p', { className: 'pf_muted' }, '描述任务、手头材料和期望结果。先确认需求，再找最小可用方案。'),
       h('form', { onSubmit: event => { event.preventDefault(); void controller.analyze(); } },
@@ -709,19 +724,20 @@ export function apply(ctx) {
       h('p', { className: 'pf_muted' }, '你可以修改下面的内容。能力、约束和搜索词每行一项；按确认后的内容搜索插件来源并读取候选资料。'),
       h('div', { className: 'pf_stack' }, field('目标', 'goal'), h('div', { className: 'pf_grid' }, field('输入材料', 'input'), field('期望产出', 'output')), h('div', { className: 'pf_grid' }, field('约束 · 最多 6 项', 'constraints', true), field('所需能力 · 最多 6 项', 'capabilities', true)), field('搜索词 · 最多 6 项', 'queries', true)),
       h('div', { className: 'pf_actions' }, primary('确认需求，搜索并推荐 →', () => controller.recommend(), { disabled: busy }), button('重新描述', () => controller.newRequest(), { disabled: busy }))) : null;
-    const plan = state.plan ? h('div', null, searchEvidence,
+    const plan = state.plan ? h('div', null, sourceHealth,
       h('section', { className: 'pf_section' }, h('div', { className: 'pf_section_head' }, h('h2', null, '建议这样完成'), button('修改需求', () => controller.showUnderstanding(), { disabled: busy })),
         h('div', { className: 'pf_plan' }, h('span', { className: 'pf_tag pf_selected' }, state.plan.kind === 'gap' && sourceFailed ? '搜索未完成 · 供给待判断' : { native: '原生能力可先完成', single: '单插件方案', combo: '插件组合 · 仍需任务回验', gap: '本次已搜索来源仍有供给缺口' }[state.plan.kind]), h('h2', null, text(state.plan.title)), h('p', { className: 'pf_muted' }, text(state.plan.rationale)),
           h('ol', { className: 'pf_plan_steps' }, ...state.plan.steps.map((step, index) => h('li', { className: 'pf_plan_step', key: index }, h('span', { className: 'pf_number' }, index + 1), h('div', null, h('strong', null, text(step.capability), ' · ', labelFor(step.owner)), h('p', null, text(step.action)), text(step.sourceCapability) ? h('p', { className: 'pf_small pf_muted' }, `索引能力：${step.sourceCapability}`) : null, h('p', { className: 'pf_small pf_muted' }, `输入：${text(step.input)} → 输出：${text(step.output)}`))))),
-          strings(state.plan.limits).length ? h('div', { className: 'pf_banner pf_small' }, h('strong', null, '先了解限制'), h('ul', { className: 'pf_list' }, ...strings(state.plan.limits).map((item, index) => h('li', { key: index }, item)))) : null)),
-      h('section', { className: 'pf_section' }, h('h2', null, `相关候选${state.candidates.length ? ` · ${state.candidates.length}` : ''}`), h('p', { className: 'pf_muted pf_small' }, '来源与版本来自本次读取或注明的缓存，适用性由模型判断。作者清单与索引声明分开标注；安装、任务与组合效果仍需核验。'),
-        state.candidates.length ? h('div', { className: 'pf_candidates' }, ...state.candidates.map(candidateCard)) : h('p', { className: 'pf_empty' }, sourceFailed ? '搜索未完成，暂不能判断是否存在合适插件。请先重试失败的来源，或把待确认事项带到会话继续。' : state.plan.kind === 'native' ? '这个方案可以先使用 DSH 原生能力，不必为了完成任务额外安装插件。' : '本次已返回的来源中没有找到足够合适的候选，不代表整个生态没有相关插件。可以调整需求后重试，或把缺口带到会话继续。')),
+          strings(state.plan.limits).length ? h('div', { className: 'pf_banner pf_small' }, h('strong', null, '先了解限制'), h('ul', { className: 'pf_list' }, ...strings(state.plan.limits).slice(0, 3).map((item, index) => h('li', { key: index }, item))), strings(state.plan.limits).length > 3 ? h('details', { className: 'pf_details' }, h('summary', null, `更多限制 · ${strings(state.plan.limits).length - 3} 条`), h('ul', { className: 'pf_list' }, ...strings(state.plan.limits).slice(3).map((item, index) => h('li', { key: index }, item)))) : null) : null)),
+      selectedInstallGuide,
       h('section', { className: 'pf_section' }, h('h2', null, '把方案带到 DSH 会话'),
         h('p', { className: 'pf_muted' }, selectedCandidates.length ? '请先在宿主插件页核对候选是否已安装、兼容及满足前提，再选择工作区接着做。' : '选择任务材料所在的实际工作区。接下来由你在原生会话里确认和发送。'),
         h('label', { className: 'pf_label pf_workspace' }, '任务工作区', h('select', { 'aria-label': '任务工作区', value: state.workspaceId, disabled: busy || state.workspacePhase !== 'ready', onChange: event => controller.selectWorkspace(event.target.value) }, h('option', { value: '' }, state.workspacePhase !== 'ready' ? '正在等待 DSH 工作区列表…' : state.workspaces.length ? '请选择一个工作区' : '尚无工作区，请先在 DSH 添加'), ...state.workspaces.map(item => h('option', { value: item.workspaceId, key: item.workspaceId }, item.title)))),
         h('p', { className: 'pf_muted pf_small', style: { marginTop: 8 } }, '仅准备普通文本草稿；已有草稿和附件由宿主保留。不会自动发送或执行。'),
         h('div', { className: 'pf_actions' }, primary(state.handoffRequested ? '草稿已准备' : '确认方案，去会话继续 →', () => controller.handoff(), { disabled: busy || !state.workspaceId || state.handoffRequested }), state.pendingHandoff ? button('重试保存会话关联', () => controller.retryHandoffSave(), { disabled: busy }) : null, state.preservedTarget ? button('打开已有草稿', () => controller.openPreservedDraft(), { disabled: busy }) : null, selectedCandidates.length ? button('打开 DSH 插件页', () => controller.openPluginManager(), { disabled: busy }) : null),
         h('details', { className: 'pf_details' }, h('summary', null, '预览将带入的草稿'), h('pre', { className: 'pf_code' }, controller.prompt()), button('复制完整草稿', () => copyText(controller.prompt())))),
+      candidateView,
+      searchEvidence,
       h('section', { className: 'pf_section' }, h('h2', null, '试过之后，记录真实结果'), h('p', { className: 'pf_muted pf_small' }, state.telemetry?.enabled ? '请根据实际使用情况填写，避免敏感内容。反馈先保存在本机，再按已同意设置自动同步经常见敏感格式清理的摘要；这是用户自报，不代表插件已通过运行验证。' : '请根据实际使用情况填写。当前未启用自动回传，反馈只保存在本机。'),
         h('div', { className: 'pf_feedback' }, ...[['complete', '完成了'], ['partial', '部分完成'], ['blocked', '没能完成']].map(([value, label]) => button(label, () => { setFeedbackOutcome(value); }, { key: value, 'aria-pressed': feedbackOutcome === value, disabled: busy }))),
         h('label', { className: 'pf_label', style: { marginTop: 14 } }, '补充说明 · 可选', h('textarea', { 'aria-label': '反馈说明', value: feedbackNote, maxLength: 1200, disabled: busy, placeholder: '哪个环节有用，哪里卡住了？请避免填写敏感材料。', onChange: event => setFeedbackNote(event.target.value) })),

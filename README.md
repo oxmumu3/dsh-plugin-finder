@@ -1,10 +1,26 @@
 # 发现好插件 · DSH Plugin Finder
 
-[安装说明](docs/install.md) · [数据回传说明](docs/data-sharing.md) · [一次完整实跑](docs/first-use-case.md) · [两天对照实验](docs/experiment.md) · [验证范围](docs/verification.md) · [本版发布记录](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.3.0-preview.1) · [反馈](https://github.com/piggy00544/dsh-plugin-finder/issues/new?template=feedback.yml)
+[安装说明](docs/install.md) · [数据回传说明](docs/data-sharing.md) · [一次完整实跑](docs/first-use-case.md) · [两天对照实验](docs/experiment.md) · [验证范围](docs/verification.md) · [本版发布记录](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.3.0-preview.2) · [反馈](https://github.com/piggy00544/dsh-plugin-finder/issues/new?template=feedback.yml)
 
-在 DeepSeek Harness 里描述要完成的事，确认理解，动态搜索插件来源、阅读作者资料、拼出最小方案，再带着未发送草稿回到原生会话。
+用一句话描述要完成的事，找到有来源可查的插件方案，再接着在 DeepSeek Harness 里做。
 
-**当前版本为 `0.3.0-preview.1`。** 动态检索、「我的方案」、历史版本、来源覆盖与反馈继续保留；另提供可选的集中摘要自动回传，默认关闭，不作为使用前提。动态来源检索自 `0.2.0-preview.1` 起提供；固定 15 条索引不参与生产推荐，也不会在联网失败时替代搜索。本页说明功能与安装流程，不代表本版原生安装或公网生产链路已经验收；实际验证范围以对应发布记录为准。
+适合已经在用 DSH、遇到具体任务却不知道该装什么插件的人。你不必先记住插件名字：Finder 会理解需求、动态检索社区来源、阅读作者资料，给出原生能力、单插件或插件组合的最小方案，并保留历史和反馈。
+
+**当前版本：`0.3.0-preview.2`。** 不需要额外填写模型 Key，沿用 DSH 已配置模型的正常额度。推荐插件仍由 DSH 原生管理器确认安装；会话只准备草稿，由你检查后发送。可选反馈回传默认关闭。
+
+## 三步试用
+
+1. **描述需求**，核对目标、材料与约束。
+2. **查看推荐方案**，按所选插件的安装指引，在 DSH 安装并启用需要的插件；已经装过的先核对，无需重复安装。
+3. **选择工作区继续**，检查原生会话草稿后发送；有卡点可以反馈、调整方案，旧版本仍在「我的方案」。
+
+在 DSH「插件 → 添加插件」中粘贴下面的地址，安装后点「立即启用」，侧栏会出现「发现好插件」：
+
+```text
+https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz
+```
+
+[完整安装步骤与一句话安装指令](docs/install.md) · [真实实跑与验证范围](docs/verification.md)
 
 ## 从哪里发现插件
 
@@ -33,14 +49,14 @@
 
 ## 安装与首次使用
 
-包声明支持 **DSH `0.2.0-rc.2` 或 `0.2.1-rc.2`**，Node `>=22.13`。这是兼容声明，不等于所有环境均已验收。安装前请到 [v0.3.0-preview.1 Release](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.3.0-preview.1) 核对实际附件、校验值和验证记录。
+包声明支持 **DSH `0.2.0-rc.2` 或 `0.2.1-rc.2`**，Node `>=22.13`。这是兼容声明，不等于所有环境均已验收。安装前请到 [v0.3.0-preview.2 Release](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.3.0-preview.2) 核对实际附件、校验值和验证记录。
 
-下载 `dsh-plugin-finder-0.3.0-preview.1.tgz`，在正在使用的 DSH 原生插件页安装并核对来源；也可使用匹配版本的官方 CLI，详见 [安装说明](docs/install.md)。本项目不要求另开独立模型账户或填写新的模型 Key。
+下载 `dsh-plugin-finder-0.3.0-preview.2.tgz`，在正在使用的 DSH 原生插件页安装并核对来源；也可使用匹配版本的官方 CLI，详见 [安装说明](docs/install.md)。本项目不要求另开独立模型账户或填写新的模型 Key。
 
 也可以把下面的话交给 DSH。能否直接安装取决于当前会话的工具与宿主权限，这不是已经验证的“一句话自动安装”承诺：
 
 ```text
-请通过当前 DSH 的原生插件管理能力安装并启用“发现好插件”：https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.3.0-preview.1/dsh-plugin-finder-0.3.0-preview.1.tgz 。安装到我正在使用的 DSH，不要另建 profile；需要我确认或重启时请提示我，完成后核对侧栏入口。如果当前会话没有安装工具，请给出在宿主插件页安装的步骤。
+请通过当前 DSH 的原生插件管理能力安装并启用“发现好插件”：https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz 。安装到我正在使用的 DSH，不要另建 profile；需要我确认或重启时请提示我，完成后核对侧栏入口。如果当前会话没有安装工具，请给出在宿主插件页安装的步骤。
 ```
 
 安装后描述任务，点击「理解这个需求」，核对六个意图字段，再点击「确认需求，搜索并推荐」。先阅读“本次搜索”的来源状态，再看方案与候选资料；需要安装的候选仍由用户在宿主管理页确认。选好工作区后准备草稿，实际任务由用户在原生会话发送。

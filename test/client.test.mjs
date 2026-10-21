@@ -90,7 +90,16 @@ async function renderWorkbench(snapshot, options = {}) {
   };
   walk(tree);
   const content = node => typeof node === 'string' || typeof node === 'number' ? String(node) : Array.isArray(node) ? node.map(content).join(' ') : node && typeof node === 'object' ? content(node.children) : '';
-  if (!options.keepAlive) h.dispose(); return { text: content(tree), nodes, dispose: h.dispose };
+  const visibleNodes = [];
+  const visibleContent = node => {
+    if (typeof node === 'string' || typeof node === 'number') return String(node);
+    if (Array.isArray(node)) return node.map(visibleContent).join(' ');
+    if (!node || typeof node !== 'object' || node.props?.style?.display === 'none') return '';
+    visibleNodes.push(node);
+    return visibleContent(node.type === 'details' && !node.props.open ? node.children.find(child => child?.type === 'summary') : node.children);
+  };
+  const visibleText = visibleContent(tree);
+  if (!options.keepAlive) h.dispose(); return { text: content(tree), nodes, visibleText, visibleNodes, host: h, dispose: h.dispose };
 }
 
 test('native client registers one sidebar entry and the matching main panel and disposes only its CSS', async () => {
@@ -350,6 +359,59 @@ test('source failures do not render an empty result as proof that no plugin exis
   assert.match(rendered.text, /搜索未完成/);
   assert.doesNotMatch(rendered.text, /当前索引没有找到足够合适|当前供给有缺口/);
   controller.close();
+});
+
+test('recommendation prioritizes plan, selected installation and handoff while retaining folded evidence and history', async () => {
+  const { module } = await loadClient(); const h = host();
+  const workflow = { ...identifiedWorkflow(), plan: { ...fixturePlan(), limits: ['关键限制一', '关键限制二', '关键限制三', '补充限制四'] }, candidates: [{ ...candidate, capabilities: ['原始能力长字段完整保留'], limitations: ['作者限制完整保留'] }], feedback: [{ id: 'older', outcome: 'partial', note: '旧反馈详细说明完整保留' }], warnings: ['检索内部详细核对提示完整保留'] };
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  const rendered = await renderWorkbench(controller.getSnapshot());
+  const positions = ['建议这样完成', '所选插件安装指引', '把方案带到 DSH 会话', '查看本次搜索与供给覆盖'].map(label => rendered.visibleText.indexOf(label));
+  assert.ok(positions.every(index => index >= 0), positions.join(',')); assert.deepEqual([...positions].sort((a, b) => a - b), positions);
+  assert.ok(rendered.visibleNodes.some(node => node.type === 'select' && node.props['aria-label'] === '历史版本'));
+  for (const phrase of ['关键限制一', '关键限制二', '关键限制三']) assert.ok(rendered.visibleText.includes(phrase), phrase);
+  for (const phrase of ['原始能力长字段完整保留', '作者限制完整保留', '旧反馈详细说明完整保留', '检索内部详细核对提示完整保留', '补充限制四']) {
+    assert.ok(rendered.text.includes(phrase), phrase); assert.ok(!rendered.visibleText.includes(phrase), phrase);
+  }
+  const search = rendered.nodes.find(node => node.type === 'details' && node.props['aria-label'] === '本次搜索来源');
+  assert.ok(search); assert.equal(search.props.open, false); controller.close();
+});
+
+test('selected installation guide exposes exact copy and native-manager steps without installing anything', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = { ...identifiedWorkflow(), candidates: [{ ...candidate, install: { ...candidate.install, lifecycleScripts: ['prepare'] } }] };
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  const copied = []; const rendered = await renderWorkbench(controller.getSnapshot(), { keepAlive: true, navigator: { clipboard: { writeText: async value => copied.push(value) } } });
+  for (const phrase of ['所选插件安装指引', candidate.install.spec, '添加插件', '粘贴', '安装', '启用', '回到侧栏', '发现好插件', '我的方案', '本机方案会保留', 'prepare']) assert.ok(rendered.visibleText.includes(phrase), phrase);
+  const copyAction = rendered.visibleNodes.find(node => node.type === 'button' && node.children.includes('复制安装来源'));
+  const managerAction = rendered.visibleNodes.find(node => node.type === 'button' && node.children.includes('打开原生插件管理'));
+  assert.ok(copyAction); assert.ok(managerAction); assert.deepEqual(rendered.host.panels, []); await copyAction.props.onClick();
+  assert.deepEqual(copied, [candidate.install.spec]); assert.deepEqual(rendered.host.panels, []); managerAction.props.onClick(); assert.deepEqual(rendered.host.panels, ['plugins']);
+  assert.equal(api.calls.length, 1); assert.doesNotMatch(rendered.visibleText, /已安装成功|自动安装完成|已验证兼容/); rendered.dispose(); controller.close();
+});
+
+test('folding search evidence keeps failure and cache boundaries visible before handoff', async () => {
+  const { module } = await loadClient();
+  for (const [status, expected] of [['failed', /搜索未完成.*部分来源读取失败/], ['stale', /缓存/]]) {
+    const h = host(); const workflow = { ...identifiedWorkflow(), discovery: { searchedAt: '2026-10-21T10:00:00Z', sources: [{ id: 'community', title: '社区目录', status, error: '来源详细失败说明', fetchedAt: '2026-10-20T10:00:00Z' }] } };
+    const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
+    const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const rendered = await renderWorkbench(controller.getSnapshot());
+    assert.match(rendered.visibleText, expected); assert.ok(rendered.visibleText.indexOf(status === 'failed' ? '搜索未完成' : '缓存') < rendered.visibleText.indexOf('把方案带到 DSH 会话'));
+    assert.ok(!rendered.visibleText.includes('来源详细失败说明')); assert.ok(rendered.nodes.some(node => node.type === 'details' && node.props['aria-label'] === '本次搜索来源' && node.props.open === false)); controller.close();
+  }
+});
+
+test('native plans skip installation guidance and missing selected sources never fabricate an install action', async () => {
+  const { module } = await loadClient();
+  for (const native of [true, false]) {
+    const h = host(); const workflow = { ...identifiedWorkflow(), ...(native ? { plan: { ...fixturePlan(), kind: 'native', pluginIds: [], steps: fixturePlan().steps.map(step => ({ ...step, owner: 'dsh' })) }, candidates: [] } : { candidates: [{ ...candidate, install: {} }] }) };
+    const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
+    const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const rendered = await renderWorkbench(controller.getSnapshot());
+    assert.ok(rendered.visibleText.includes('把方案带到 DSH 会话'));
+    if (native) assert.ok(!rendered.visibleText.includes('所选插件安装指引')); else { assert.match(rendered.visibleText, /精确安装来源.*未确认|暂无.*精确安装来源/); assert.ok(!rendered.visibleNodes.some(node => node.type === 'button' && node.children.includes('复制安装来源'))); }
+    controller.close();
+  }
 });
 
 test('discovery unavailability keeps the safe server explanation and permits retry from the confirmed intent', async () => {
