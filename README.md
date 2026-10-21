@@ -1,6 +1,6 @@
 # 发现好插件 · DSH Plugin Finder
 
-[安装说明](docs/install.md) · [数据回传说明](docs/data-sharing.md) · [一次完整实跑](docs/first-use-case.md) · [两天对照实验](docs/experiment.md) · [验证范围](docs/verification.md) · [本版发布记录](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.3.0-preview.2) · [反馈](https://github.com/piggy00544/dsh-plugin-finder/issues/new?template=feedback.yml)
+[安装说明](docs/install.md) · [数据回传说明](docs/data-sharing.md) · [一次完整实跑](docs/first-use-case.md) · [两天对照实验](docs/experiment.md) · [验证范围](docs/verification.md) · [本版发布记录](https://github.com/oxmumu3/dsh-plugin-finder/releases/tag/v0.3.0-preview.2) · [反馈](https://github.com/oxmumu3/dsh-plugin-finder/issues/new?template=feedback.yml)
 
 用一句话描述要完成的事，找到有来源可查的插件方案，再接着在 DeepSeek Harness 里做。
 
@@ -17,7 +17,7 @@
 在 DSH「插件 → 添加插件」中粘贴下面的地址，安装后点「立即启用」，侧栏会出现「发现好插件」：
 
 ```text
-https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz
+https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz
 ```
 
 [完整安装步骤与一句话安装指令](docs/install.md) · [真实实跑与验证范围](docs/verification.md)
@@ -49,14 +49,14 @@ https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.3.0-preview
 
 ## 安装与首次使用
 
-包声明支持 **DSH `0.2.0-rc.2` 或 `0.2.1-rc.2`**，Node `>=22.13`。这是兼容声明，不等于所有环境均已验收。安装前请到 [v0.3.0-preview.2 Release](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.3.0-preview.2) 核对实际附件、校验值和验证记录。
+包声明支持 **DSH `0.2.0-rc.2` 或 `0.2.1-rc.2`**，Node `>=22.13`。这是兼容声明，不等于所有环境均已验收。安装前请到 [v0.3.0-preview.2 Release](https://github.com/oxmumu3/dsh-plugin-finder/releases/tag/v0.3.0-preview.2) 核对实际附件、校验值和验证记录。
 
 下载 `dsh-plugin-finder-0.3.0-preview.2.tgz`，在正在使用的 DSH 原生插件页安装并核对来源；也可使用匹配版本的官方 CLI，详见 [安装说明](docs/install.md)。本项目不要求另开独立模型账户或填写新的模型 Key。
 
 也可以把下面的话交给 DSH。能否直接安装取决于当前会话的工具与宿主权限，这不是已经验证的“一句话自动安装”承诺：
 
 ```text
-请通过当前 DSH 的原生插件管理能力安装并启用“发现好插件”：https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz 。安装到我正在使用的 DSH，不要另建 profile；需要我确认或重启时请提示我，完成后核对侧栏入口。如果当前会话没有安装工具，请给出在宿主插件页安装的步骤。
+请通过当前 DSH 的原生插件管理能力安装并启用“发现好插件”：https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz 。安装到我正在使用的 DSH，不要另建 profile；需要我确认或重启时请提示我，完成后核对侧栏入口。如果当前会话没有安装工具，请给出在宿主插件页安装的步骤。
 ```
 
 安装后描述任务，点击「理解这个需求」，核对六个意图字段，再点击「确认需求，搜索并推荐」。先看方案、重要前提与所选插件安装指引；完整搜索统计和候选资料可按需展开，来源异常会单独提示。需要安装的候选仍由用户在宿主管理页确认。选好工作区后准备草稿，实际任务由用户在原生会话发送。
@@ -97,7 +97,7 @@ https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.3.0-preview
 
 提供可安装的 DSH bundle、精确版本及运行产物，在 README 写明输入、输出、账号／Key／系统前提和第一次使用步骤，有助于让推荐有据可查。自定义市场由用户自行配置，第三方精选库的收录由其维护者管理。本项目按任务进行有界检索与资料读取，不保证每次召回所有相关插件或固定排名。
 
-如果资料被误读、来源不可读或漏掉了适合的插件，可通过[公开反馈](https://github.com/piggy00544/dsh-plugin-finder/issues)提供可公开的任务、仓库、精确版本及预期行为；不需要提交私人会话或业务文件。
+如果资料被误读、来源不可读或漏掉了适合的插件，可通过[公开反馈](https://github.com/oxmumu3/dsh-plugin-finder/issues)提供可公开的任务、仓库、精确版本及预期行为；不需要提交私人会话或业务文件。
 
 ## 模型、数据与边界
 

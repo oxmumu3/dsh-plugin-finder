@@ -64,11 +64,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/piggy00544/dsh-plugin-finder.git"
+    "url": "https://github.com/oxmumu3/dsh-plugin-finder.git"
   },
-  "homepage": "https://github.com/piggy00544/dsh-plugin-finder",
+  "homepage": "https://github.com/oxmumu3/dsh-plugin-finder",
   "bugs": {
-    "url": "https://github.com/piggy00544/dsh-plugin-finder/issues"
+    "url": "https://github.com/oxmumu3/dsh-plugin-finder/issues"
   },
   "keywords": [
     "dsh-plugin",

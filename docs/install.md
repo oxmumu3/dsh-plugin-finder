@@ -1,6 +1,6 @@
 # 安装、首次使用与卸载
 
-本说明对应 `dsh-plugin-finder@0.3.0-preview.2`。包声明支持 DSH `0.2.0-rc.2` 与 `0.2.1-rc.2`、Node `>=22.13`；兼容声明不等于所有环境已经验收。本文说明安装流程，不代表本版原生安装或公网生产链路已经验收；请到 [v0.3.0-preview.2 Release](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.3.0-preview.2) 核对实际附件、校验值与验证记录。
+本说明对应 `dsh-plugin-finder@0.3.0-preview.2`。包声明支持 DSH `0.2.0-rc.2` 与 `0.2.1-rc.2`、Node `>=22.13`；兼容声明不等于所有环境已经验收。本文说明安装流程，不代表本版原生安装或公网生产链路已经验收；请到 [v0.3.0-preview.2 Release](https://github.com/oxmumu3/dsh-plugin-finder/releases/tag/v0.3.0-preview.2) 核对实际附件、校验值与验证记录。
 
 旧 `0.1.0-preview.1` 把候选局限于固定 15 条索引，不符合动态发现要求，已由后续动态发现版本修正。升级时请核对实际启用的是 `0.3.0-preview.2`；旧版本的安装与草稿测试不能替代本版验收。
 
@@ -11,7 +11,7 @@
 3. 打开 DSH「插件」→「添加插件」，在安装来源中填写：
 
    ```text
-   https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz
+   https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz
    ```
 
    也可填写压缩包在 **DSH 宿主机器**上的完整路径；这不会把浏览器本地文件自动上传到远端。
@@ -23,7 +23,7 @@
 ## 交给 DSH 的自然语言指令
 
 ```text
-请通过当前 DSH 的原生插件管理能力安装并启用“发现好插件”：https://github.com/piggy00544/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz 。安装到我正在使用的 DSH，不要另建 profile；需要我确认或重启时请提示我，完成后核对侧栏入口。如果当前会话没有安装工具，请给出在宿主插件页安装的步骤。
+请通过当前 DSH 的原生插件管理能力安装并启用“发现好插件”：https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz 。安装到我正在使用的 DSH，不要另建 profile；需要我确认或重启时请提示我，完成后核对侧栏入口。如果当前会话没有安装工具，请给出在宿主插件页安装的步骤。
 ```
 
 这段话表达安装意图。是否能直接完成取决于当前会话是否开放安装工具以及宿主确认；不承诺所有会话都能“一句话自动安装”。
@@ -99,4 +99,4 @@ dsh plugin --profile your-profile remove dsh-plugin-finder
 
 升级时核对旧包已被替换；需要重启或先卸载再安装时遵从宿主提示。升级前建议从「我的方案」导出重要任务。插件的本机领域数据独立于安装包；停用／卸载不代表它们已被删除。本版提供单任务导出／导入，不提供历史永久删除入口。卸载也不代替服务端删除；如需删除已回传记录，请先在插件内申请并等待服务端确认。离线待删除时应保留插件与本机状态，以便重试完成。
 
-集中摘要不会自动成为公开 Issue，也不自动推送给作者。作者侧暂由我们汇总、核对后分享去标识结果。「导出给作者的反馈草稿」只作本机辅助；用户可自行补写、核对并分享。另需公开报告问题时，可到 [GitHub Issues](https://github.com/piggy00544/dsh-plugin-finder/issues) 自行填写版本、步骤及预期／实际结果，分享前检查日志和截图中的敏感内容。
+集中摘要不会自动成为公开 Issue，也不自动推送给作者。作者侧暂由我们汇总、核对后分享去标识结果。「导出给作者的反馈草稿」只作本机辅助；用户可自行补写、核对并分享。另需公开报告问题时，可到 [GitHub Issues](https://github.com/oxmumu3/dsh-plugin-finder/issues) 自行填写版本、步骤及预期／实际结果，分享前检查日志和截图中的敏感内容。

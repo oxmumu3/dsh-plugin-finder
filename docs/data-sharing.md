@@ -1,6 +1,6 @@
 # 集中摘要自动回传说明
 
-适用于 `dsh-plugin-finder@0.3.0-preview.2`，当前告知版本为 `2026-10-20-v1`。本文说明数据处理与控制方式，不代表本版原生安装或公网生产链路已经验收；实际验证范围见对应 [Release 记录](https://github.com/piggy00544/dsh-plugin-finder/releases/tag/v0.3.0-preview.2)。
+适用于 `dsh-plugin-finder@0.3.0-preview.2`，当前告知版本为 `2026-10-20-v1`。本文说明数据处理与控制方式，不代表本版原生安装或公网生产链路已经验收；实际验证范围见对应 [Release 记录](https://github.com/oxmumu3/dsh-plugin-finder/releases/tag/v0.3.0-preview.2)。
 
 ## 由你明确开启，默认关闭
 
