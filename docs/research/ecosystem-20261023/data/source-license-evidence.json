@@ -1,0 +1,712 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-10-23T12:55:15.869981+00:00",
+  "scope": "Public unauthenticated GET and static source inspection only. No plugin code executed, no browser, no private user data.",
+  "repository": {
+    "url": "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin",
+    "canonicalFullName": "awesome-dsh-plugin/awesome-dsh-plugin",
+    "defaultBranch": "main",
+    "inspectedCommit": "a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff",
+    "treeTruncated": false,
+    "licenseDeclaration": "CC0-1.0"
+  },
+  "npmCatalogMetadata": {
+    "name": "dsh-plugin-catalog",
+    "version": "2026.1023.9552",
+    "description": "The DeepSeek Harness plugin catalog (6565 entries) · DeepSeek Harness 插件目录",
+    "license": "CC0-1.0",
+    "repository": {
+      "url": "git+https://github.com/awesome-dsh-plugin/awesome-dsh-plugin.git",
+      "type": "git"
+    },
+    "catalogSha": "627b43388fd7f1bc69e7048152f27980a73f6a6c516968ef15f988ed708fc563"
+  },
+  "snapshotComparison": {
+    "catalogEntries": 6565,
+    "marketIndexEntries": 3382,
+    "categoryCount": 23,
+    "catalogWithNpm": 3383,
+    "catalogWithoutNpm": 3182,
+    "catalogNpmWithoutVersion": 0,
+    "catalogNpmMissingFromIndex": [
+      {
+        "url": "https://github.com/qinyre/dsh-plugin-archive-manager",
+        "page": "https://awesome-dsh-plugin.com/p/qinyre/dsh-plugin-archive-manager/",
+        "npm": "dsh-plugin-archive-manager",
+        "version": "0.3.0"
+      }
+    ],
+    "indexVersionSourceTypes": [
+      "npm"
+    ],
+    "catalogUpdatedField": "2026-10-22",
+    "catalogUpdatedSemantics": "Maximum entry added date in build-site.mjs; not fetch time or latest probe time",
+    "yamlEntriesInInspectedTree": 6565
+  },
+  "claims": [
+    {
+      "id": "license-repository",
+      "status": "verified-declaration",
+      "finding": "Root LICENSE is CC0 1.0 Universal; root package.json and GitHub repository metadata declare CC0-1.0.",
+      "sources": [
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/LICENSE",
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/package.json",
+        "https://api.github.com/repos/awesome-dsh-plugin/awesome-dsh-plugin"
+      ]
+    },
+    {
+      "id": "license-catalog",
+      "status": "verified-declaration",
+      "finding": "The catalog publication script copies root LICENSE and declares CC0-1.0 for a package containing plugins.json and index.json; the live npm latest metadata also declares CC0-1.0.",
+      "sources": [
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/publish-catalog.mjs#L98-L161",
+        "https://registry.npmjs.org/dsh-plugin-catalog/latest"
+      ]
+    },
+    {
+      "id": "license-boundary",
+      "status": "text-supported-scope-boundary",
+      "finding": "CC0 applies only to rights held by the affirmer. Section 4 excludes trademark/patent rights, gives no warranty, and does not clear third-party rights. Directory licensing does not automatically relicense linked plugin code, third-party READMEs, screenshots, avatars, icons, fonts or brands.",
+      "sources": [
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/LICENSE#L32-L38",
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/LICENSE#L102-L121"
+      ]
+    },
+    {
+      "id": "directory-source",
+      "status": "source-inspected",
+      "finding": "data/plugins/*.yml is the declared source of truth; generated READMEs feed the website catalog, with language/category parity checks; readEntries() feeds the market index.",
+      "sources": [
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/lib/entries.mjs#L1-L27",
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/build-site.mjs#L104-L171",
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/build-site.mjs#L1117-L1177",
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/build-index.mjs#L22-L31"
+      ]
+    },
+    {
+      "id": "index-coverage",
+      "status": "source-inspected-and-snapshot-counted",
+      "finding": "index.json includes only entries with npm package, exact version, integer publication time and successful format parsing. This producer excludes Git-only entries because it lacks per-version commit SHAs; this does not mean format 1 cannot express Git sources.",
+      "sources": [
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/lib/market-index.mjs#L1-L15",
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/lib/market-index.mjs#L112-L156",
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/build-index.mjs#L9-L13"
+      ]
+    },
+    {
+      "id": "one-extra-missing",
+      "status": "unresolved",
+      "finding": "One npm-mapped entry qinyre/dsh-plugin-archive-manager v0.3.0 is absent from this index snapshot. The published catalog omits publication-time cache fields, and the build cache/refusal log was not acquired; the exact reason is unconfirmed.",
+      "sources": [
+        "https://awesome-dsh-plugin.com/plugins.json",
+        "https://awesome-dsh-plugin.com/index.json",
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/lib/market-index.mjs#L115-L150"
+      ]
+    },
+    {
+      "id": "no-quality-endorsement",
+      "status": "maintainer-stated-policy",
+      "finding": "README calls the directory community-maintained and unaffiliated with DeepSeek; listing is not a quality ranking, security audit or endorsement. Submission checks and review policy were inspected, but this audit did not verify execution for each plugin.",
+      "sources": [
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/README.zh.md#L33-L45",
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/README.zh.md#L6748-L6754",
+        "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/contributing.md#L79-L107"
+      ]
+    }
+  ],
+  "fetchedEvidence": [
+    {
+      "name": "plugins.json",
+      "url": "https://awesome-dsh-plugin.com/plugins.json",
+      "finalUrl": "https://awesome-dsh-plugin.com/plugins.json",
+      "startedAt": "2026-10-23T12:49:11.808Z",
+      "fetchedAt": "2026-10-23T12:49:13.350Z",
+      "status": 200,
+      "bytes": 8280801,
+      "sha256": "d53b17dcb090a8bf4ee807e7bd2c8926116d221fac7dad516dccef59d3f2edd0",
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "etag": "W/\"6adae0d2-7e5ae1\"",
+        "last-modified": "Fri, 23 Oct 2026 04:21:38 GMT",
+        "cache-control": "max-age=600",
+        "date": "Fri, 23 Oct 2026 12:49:12 GMT",
+        "content-encoding": "gzip"
+      },
+      "access": "Public unauthenticated HTTPS GET; no plugin code executed",
+      "licenseStatus": "Pending source license audit; public access is not redistribution permission",
+      "localPath": "plugins.json"
+    },
+    {
+      "name": "index.json",
+      "url": "https://awesome-dsh-plugin.com/index.json",
+      "finalUrl": "https://awesome-dsh-plugin.com/index.json",
+      "startedAt": "2026-10-23T12:49:13.420Z",
+      "fetchedAt": "2026-10-23T12:49:14.342Z",
+      "status": 200,
+      "bytes": 2674042,
+      "sha256": "8be09abf82913f247b618658d84cf4d44bd7feb6163cc9a713969957b32f8f52",
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "etag": "W/\"6adae0d0-28cd7a\"",
+        "last-modified": "Fri, 23 Oct 2026 04:21:36 GMT",
+        "cache-control": "max-age=600",
+        "date": "Fri, 23 Oct 2026 12:49:13 GMT",
+        "content-encoding": "gzip"
+      },
+      "access": "Public unauthenticated HTTPS GET; no plugin code executed",
+      "licenseStatus": "Pending source license audit; public access is not redistribution permission",
+      "localPath": "index.json"
+    },
+    {
+      "name": "homepage.html",
+      "url": "https://awesome-dsh-plugin.com/",
+      "finalUrl": "https://awesome-dsh-plugin.com/",
+      "startedAt": "2026-10-23T12:49:14.375Z",
+      "fetchedAt": "2026-10-23T12:49:14.695Z",
+      "status": 200,
+      "bytes": 959547,
+      "sha256": "280fd591a7f14a1bc2c9408997d2e5e8cbb495655af49f3e8d3be96b4c5a4258",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "etag": "W/\"6adae0d1-ea43b\"",
+        "last-modified": "Fri, 23 Oct 2026 04:21:37 GMT",
+        "cache-control": "max-age=600",
+        "date": "Fri, 23 Oct 2026 12:49:14 GMT",
+        "content-encoding": "gzip"
+      },
+      "access": "Public unauthenticated HTTPS GET; no plugin code executed",
+      "licenseStatus": "Pending source license audit; public access is not redistribution permission",
+      "localPath": "homepage.html"
+    },
+    {
+      "file": "repository.json",
+      "url": "https://api.github.com/repos/awesome-dsh-plugin/awesome-dsh-plugin",
+      "finalUrl": "https://api.github.com/repos/awesome-dsh-plugin/awesome-dsh-plugin",
+      "startedAt": "2026-10-23T12:50:44.026Z",
+      "fetchedAt": "2026-10-23T12:50:44.680Z",
+      "status": 200,
+      "bytes": 7424,
+      "sha256": "dc50363726c8e458113f913b13642336bce7a7b0dee0454ce0e186eec0473542",
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "etag": "\"76284f24928f702eea145fda5effb0e1f45e6c45bc6e8aa19f5ec888790db971\"",
+        "last-modified": "Fri, 23 Oct 2026 12:42:53 GMT",
+        "date": "Fri, 23 Oct 2026 12:50:44 GMT"
+      },
+      "localPath": "upstream/repository.json"
+    },
+    {
+      "file": "root-contents.json",
+      "url": "https://api.github.com/repos/awesome-dsh-plugin/awesome-dsh-plugin/contents/",
+      "finalUrl": "https://api.github.com/repos/awesome-dsh-plugin/awesome-dsh-plugin/contents/",
+      "startedAt": "2026-10-23T12:50:44.116Z",
+      "fetchedAt": "2026-10-23T12:50:44.766Z",
+      "status": 200,
+      "bytes": 12517,
+      "sha256": "3c94716be1328db88e15b9c76e311c78b7eb5fa56eb40e19d939e5a324cb66a4",
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "etag": "\"dcc3bdb8804516a516f0698f3579fa292311263e\"",
+        "last-modified": "Fri, 23 Oct 2026 12:42:53 GMT",
+        "date": "Fri, 23 Oct 2026 12:50:44 GMT"
+      },
+      "localPath": "upstream/root-contents.json"
+    },
+    {
+      "file": "head-commit.json",
+      "url": "https://api.github.com/repos/awesome-dsh-plugin/awesome-dsh-plugin/commits/main",
+      "finalUrl": "https://api.github.com/repos/awesome-dsh-plugin/awesome-dsh-plugin/commits/main",
+      "startedAt": "2026-10-23T12:50:58.132Z",
+      "fetchedAt": "2026-10-23T12:50:58.854Z",
+      "status": 200,
+      "bytes": 17771,
+      "sha256": "3134af71a7828737ca249d19695b9efcb95633619ca4f976a8fa43df38166512",
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "etag": "W/\"5920090d298bae4a020f58554bbb40e8e2c9f89596872edcc413caa5d16968ce\"",
+        "last-modified": "Fri, 23 Oct 2026 00:02:04 GMT",
+        "date": "Fri, 23 Oct 2026 12:50:58 GMT"
+      },
+      "localPath": "upstream/head-commit.json"
+    },
+    {
+      "file": "tree.json",
+      "url": "https://api.github.com/repos/awesome-dsh-plugin/awesome-dsh-plugin/git/trees/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff?recursive=1",
+      "finalUrl": "https://api.github.com/repos/awesome-dsh-plugin/awesome-dsh-plugin/git/trees/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff?recursive=1",
+      "startedAt": "2026-10-23T12:50:58.855Z",
+      "fetchedAt": "2026-10-23T12:50:59.518Z",
+      "status": 200,
+      "bytes": 1854531,
+      "sha256": "ded24b6a6edf2ae4fe96aa6ff66b96a7398b24869007056088f68560641b7bae",
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "etag": "W/\"331a9e62eca40a9dd7083282995d27f78bb843f9ef538fd0030202351f06b33b\"",
+        "last-modified": "Fri, 23 Oct 2026 12:50:47 GMT",
+        "date": "Fri, 23 Oct 2026 12:50:59 GMT"
+      },
+      "localPath": "upstream/tree.json"
+    },
+    {
+      "file": "package.json",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/package.json",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/package.json",
+      "startedAt": "2026-10-23T12:50:59.535Z",
+      "fetchedAt": "2026-10-23T12:50:59.712Z",
+      "status": 200,
+      "bytes": 731,
+      "sha256": "9fb19e1afeec85a948d6ad762d0662af7e64b51680ac2fb10eaa886906adefb9",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"2ac965b5b6ad6cb5159ce205012873b430221ca917f1f9c97aa76e830c0f4613\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:50:59 GMT"
+      },
+      "localPath": "upstream/package.json"
+    },
+    {
+      "file": "LICENSE",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/LICENSE",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/LICENSE",
+      "startedAt": "2026-10-23T12:50:59.526Z",
+      "fetchedAt": "2026-10-23T12:50:59.725Z",
+      "status": 200,
+      "bytes": 7048,
+      "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"1981163a2b19ba65607eb2e6c555295266dd4cac5e4fd83be71689ffaeb28bb9\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:50:59 GMT"
+      },
+      "localPath": "upstream/LICENSE"
+    },
+    {
+      "file": "contributing.md",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/contributing.md",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/contributing.md",
+      "startedAt": "2026-10-23T12:50:59.533Z",
+      "fetchedAt": "2026-10-23T12:50:59.886Z",
+      "status": 200,
+      "bytes": 30906,
+      "sha256": "e0fb326c54dc6d88440de9d69017257644a9dea553fca35173789c345ae0134b",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"c02591240989af9cba8d8745163effc0f31cb90098e4f62be00746dbfc2d8997\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:50:59 GMT"
+      },
+      "localPath": "upstream/contributing.md"
+    },
+    {
+      "file": "README.zh.md",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/README.zh.md",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/README.zh.md",
+      "startedAt": "2026-10-23T12:50:59.531Z",
+      "fetchedAt": "2026-10-23T12:51:00.091Z",
+      "status": 200,
+      "bytes": 2032368,
+      "sha256": "3888b1686fbbf2372701b5a99c0953772aa464237460c9ec50c697ce90e873bb",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"5b33fd5baf96c9fb2ef986dd4681d13455231affd09720a328b76384d5cb3a02\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:50:59 GMT"
+      },
+      "localPath": "upstream/README.zh.md"
+    },
+    {
+      "file": "README.md",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/README.md",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/README.md",
+      "startedAt": "2026-10-23T12:50:59.530Z",
+      "fetchedAt": "2026-10-23T12:51:00.487Z",
+      "status": 200,
+      "bytes": 2162230,
+      "sha256": "7ef20f116217179a3bd523322dfcdc9334ead2b8be0e4476a5e3254da4015f47",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"d7b358d0313865239d28a744274d9f8f844268f1e5b1e4e6619402005c955334\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:51:00 GMT"
+      },
+      "localPath": "upstream/README.md"
+    },
+    {
+      "file": "data/categories.yml",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/data/categories.yml",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/data/categories.yml",
+      "startedAt": "2026-10-23T12:51:22.363Z",
+      "fetchedAt": "2026-10-23T12:51:22.645Z",
+      "status": 404,
+      "bytes": 14,
+      "sha256": "d5558cd419c8d46bdc958064cb97f963d1ea793866414c025906ec15033512ed",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": null,
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:51:22 GMT"
+      },
+      "localPath": "upstream/data/categories.yml"
+    },
+    {
+      "file": "scripts/build-index.mjs",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/build-index.mjs",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/build-index.mjs",
+      "startedAt": "2026-10-23T12:51:22.292Z",
+      "fetchedAt": "2026-10-23T12:51:22.649Z",
+      "status": 200,
+      "bytes": 2766,
+      "sha256": "49068d76c21593a5e4dbb59b961463733542e9a6557d84afd6fa12e1a3daa516",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"2a4758f48ef0b56d3e3f87de6007e3b581b497e0474693e609606e19ae61a1a1\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:51:22 GMT"
+      },
+      "localPath": "upstream/scripts/build-index.mjs"
+    },
+    {
+      "file": "scripts/lib/market-index.mjs",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/lib/market-index.mjs",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/lib/market-index.mjs",
+      "startedAt": "2026-10-23T12:51:22.353Z",
+      "fetchedAt": "2026-10-23T12:51:22.651Z",
+      "status": 200,
+      "bytes": 6810,
+      "sha256": "65e70f85f1ba63de7b1e9caa872fda727358141b480aa76515edd2947df3f1c9",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"39202c5eb96dcbc75d2dc20d51f87883a81e6446d024791c93f71cd4ab963cce\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:51:22 GMT"
+      },
+      "localPath": "upstream/scripts/lib/market-index.mjs"
+    },
+    {
+      "file": "scripts/generate-readme.mjs",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/generate-readme.mjs",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/generate-readme.mjs",
+      "startedAt": "2026-10-23T12:51:22.360Z",
+      "fetchedAt": "2026-10-23T12:51:22.652Z",
+      "status": 200,
+      "bytes": 8786,
+      "sha256": "639081cc8bf12dab24c5f17b94951624917cc0c5df75b3d1f2ac3b26edd688a1",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"19a104fdc21df22daa73aa81dfee44ea4b7c6efb27d11245cadf32fc82588806\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:51:22 GMT"
+      },
+      "localPath": "upstream/scripts/generate-readme.mjs"
+    },
+    {
+      "file": "scripts/publish-catalog.mjs",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/publish-catalog.mjs",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/publish-catalog.mjs",
+      "startedAt": "2026-10-23T12:51:22.358Z",
+      "fetchedAt": "2026-10-23T12:51:22.652Z",
+      "status": 200,
+      "bytes": 7355,
+      "sha256": "25997ee4748ebc3979dd47644520e961e970f2af2aa65045edcf526914ee310a",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"c7d1b0c98a1990500b4c3bfecf3b309234390728b2d7f8f0a3074423a3634708\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:51:22 GMT"
+      },
+      "localPath": "upstream/scripts/publish-catalog.mjs"
+    },
+    {
+      "file": "scripts/probe-npm.mjs",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/probe-npm.mjs",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/probe-npm.mjs",
+      "startedAt": "2026-10-23T12:51:22.355Z",
+      "fetchedAt": "2026-10-23T12:51:22.653Z",
+      "status": 200,
+      "bytes": 8987,
+      "sha256": "6e5bec6a58d0b14760e2b84c551d4053abe6b0ab34e228f3ea86ba40f3615355",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"12d542ae4cfc61318ecd5b2e738bb63538ad1603bb5717703180eb07be63f976\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:51:22 GMT"
+      },
+      "localPath": "upstream/scripts/probe-npm.mjs"
+    },
+    {
+      "file": "scripts/lib/entries.mjs",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/lib/entries.mjs",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/lib/entries.mjs",
+      "startedAt": "2026-10-23T12:51:22.354Z",
+      "fetchedAt": "2026-10-23T12:51:22.653Z",
+      "status": 200,
+      "bytes": 13326,
+      "sha256": "875d78ec0d9aee6716b1209704c40c94b05db95bf0c6518688dc8168609a7df8",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"72263bb404918ca6c9a2627dd81ac9478f05af4a4afabd0533881c70915427c6\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:51:22 GMT"
+      },
+      "localPath": "upstream/scripts/lib/entries.mjs"
+    },
+    {
+      "file": "scripts/probe-screenshots.mjs",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/probe-screenshots.mjs",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/probe-screenshots.mjs",
+      "startedAt": "2026-10-23T12:51:22.357Z",
+      "fetchedAt": "2026-10-23T12:51:22.653Z",
+      "status": 200,
+      "bytes": 10795,
+      "sha256": "fd4ef10bf36a0d81810f3a5069d919149780894711ad279f24b9938983b03bac",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"5fe91ef3f344494eb626e76c159dfe968682d0e9f760934ffe4c6d8338ccac9f\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:51:22 GMT"
+      },
+      "localPath": "upstream/scripts/probe-screenshots.mjs"
+    },
+    {
+      "file": "scripts/probe-readmes.mjs",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/probe-readmes.mjs",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/probe-readmes.mjs",
+      "startedAt": "2026-10-23T12:51:22.356Z",
+      "fetchedAt": "2026-10-23T12:51:22.654Z",
+      "status": 200,
+      "bytes": 14409,
+      "sha256": "d49be987f22b084cd9d312d5990d6f375849ef8722bdf733ba590e9f76f14bbf",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"4b686cb517db4ed6db2a329d2573d587da8ea8165d7960564f6cd69ae604fa15\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:51:22 GMT"
+      },
+      "localPath": "upstream/scripts/probe-readmes.mjs"
+    },
+    {
+      "file": ".github/workflows/build-site.yml",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/.github/workflows/build-site.yml",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/.github/workflows/build-site.yml",
+      "startedAt": "2026-10-23T12:51:22.362Z",
+      "fetchedAt": "2026-10-23T12:51:22.655Z",
+      "status": 200,
+      "bytes": 16815,
+      "sha256": "ad81ea804438c3c44246d4e95f071d3c9056ba5de29866d94aaa5a2a89a3d307",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"f7ebb613857da74a2367c17b30c728f5faa5ae3a5b58e106d600a0f6b6cba9f0\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:51:22 GMT"
+      },
+      "localPath": "upstream/.github/workflows/build-site.yml"
+    },
+    {
+      "file": "scripts/build-site.mjs",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/build-site.mjs",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/scripts/build-site.mjs",
+      "startedAt": "2026-10-23T12:51:22.352Z",
+      "fetchedAt": "2026-10-23T12:51:22.660Z",
+      "status": 200,
+      "bytes": 68507,
+      "sha256": "ea9629720a33d913b1a363109742105b59c7b34750404a700f3452b26f37c5fb",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"aa88dddc09b4bcc279956c46813358e263e9f51136ef8afb8db73eb51333fe65\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:51:22 GMT"
+      },
+      "localPath": "upstream/scripts/build-site.mjs"
+    },
+    {
+      "file": "npm-catalog-latest.json",
+      "url": "https://registry.npmjs.org/dsh-plugin-catalog/latest",
+      "finalUrl": "https://registry.npmjs.org/dsh-plugin-catalog/latest",
+      "startedAt": "2026-10-23T12:52:54.351Z",
+      "fetchedAt": "2026-10-23T12:52:54.552Z",
+      "status": 200,
+      "bytes": 1984,
+      "sha256": "0c03dca70cf9d9ff8adaa4429e7b7376668e153b90798e3cfe2cf48813d5d5dc",
+      "headers": {
+        "content-type": "application/json",
+        "etag": null,
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:52:54 GMT"
+      },
+      "localPath": "upstream/npm-catalog-latest.json"
+    },
+    {
+      "file": "site/locales.mjs",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/site/locales.mjs",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/site/locales.mjs",
+      "startedAt": "2026-10-23T12:52:54.313Z",
+      "fetchedAt": "2026-10-23T12:52:54.572Z",
+      "status": 200,
+      "bytes": 15796,
+      "sha256": "b92c606e4cd525108465d2a876647e40206130f8f4ab3255ac58759a95e9eb79",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"95b4cd867c6639ab914238e438a2086e0d5320b7727ec56b568910e2187a8ce0\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:52:54 GMT"
+      },
+      "localPath": "upstream/site/locales.mjs"
+    },
+    {
+      "file": "site/template.html",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/site/template.html",
+      "finalUrl": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/a5284f29fddb836f4afb87893fa9ea6c8b4cb9ff/site/template.html",
+      "startedAt": "2026-10-23T12:52:54.351Z",
+      "fetchedAt": "2026-10-23T12:52:54.696Z",
+      "status": 200,
+      "bytes": 45605,
+      "sha256": "9a3641ce9e1c90781c9d39d1b3caeab4dba4a123079e6b0e07ed67bf72102be2",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "etag": "W/\"af54720133113614665cf54c48b01506b710f6baccfca57ca5b1d790293c2624\"",
+        "last-modified": null,
+        "date": "Fri, 23 Oct 2026 12:52:54 GMT"
+      },
+      "localPath": "upstream/site/template.html"
+    }
+  ],
+  "integrityChecks": [
+    {
+      "path": "plugins.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "index.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "homepage.html",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/repository.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/root-contents.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/head-commit.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/tree.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/package.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/LICENSE",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/contributing.md",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/README.zh.md",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/README.md",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/data/categories.yml",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/scripts/build-index.mjs",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/scripts/lib/market-index.mjs",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/scripts/generate-readme.mjs",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/scripts/publish-catalog.mjs",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/scripts/probe-npm.mjs",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/scripts/lib/entries.mjs",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/scripts/probe-screenshots.mjs",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/scripts/probe-readmes.mjs",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/.github/workflows/build-site.yml",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/scripts/build-site.mjs",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/npm-catalog-latest.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/site/locales.mjs",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "path": "upstream/site/template.html",
+      "hashMatches": true,
+      "bytesMatch": true
+    }
+  ],
+  "limitations": [
+    "A root license and SPDX declarations are evidence of maintainer licensing intent, not a legal clearance of third-party content.",
+    "The specific deployed build SHA was not read from a deployment log; source commit and live artifacts were fetched separately. Equal entry counts do not prove byte-for-byte build provenance.",
+    "The missing npm entry has no confirmed skip reason; no build cache was acquired.",
+    "No live installability, compatibility, safety, quality or maintenance status was verified for individual entries.",
+    "The 404 response for data/categories.yml is retained in fetch evidence only; category findings use entries.mjs, locales.mjs and the actual JSON metadata."
+  ]
+}

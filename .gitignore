@@ -9,3 +9,11 @@ docs/sdk-contracts-notes.md
 docs/review-notes.md
 docs/catalog-review.md
 
+
+# Local project memory and unpublished author drafts remain private.
+.agent/
+docs/research/ecosystem-20261023/product-thesis.md
+docs/design/claude-design-brief-20261023.md
+
+# Also ignore a local dependency symlink used during release verification.
+node_modules

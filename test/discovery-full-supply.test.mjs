@@ -135,18 +135,22 @@ test('GitHub 422 for a nonexistent longer ref falls back to the valid branch',as
  assert.equal(result.candidates[0]?.install.spec,`git+https://github.com/author/suite.git#${SHA}&path:/packages/library`);
 });
 
-test('a timed-out author does not discard already parsed candidates or wait for the service hard deadline',async()=>{
+test('a timed-out author does not discard already parsed candidates or wait for the service hard deadline',async(t)=>{
+ // Keep the author timeout real while preventing scheduler pauses from exhausting the search budget first.
+ t.mock.timers.enable({apis:['Date'],now:Date.now()});
  const names=Array.from({length:4},(_,i)=>`dsh-library-${i}`);
  const f=fixture(names.map(name=>entry(name)),{manifestFor:url=>manifest(url.match(/dsh-library-\d+/)?.[0]??'wrong')});
  const fetchImpl=(url,options)=>String(url).includes('/dsh-library-3/')&&String(url).endsWith('/package.json')?new Promise(()=>{}):f.fetchImpl(url,options);
- const keepAlive=setTimeout(()=>{},500);
+ const keepAlive=setInterval(()=>{},500);
  try{
   const result=await createDiscovery({fetchImpl,authorTimeoutMs:20,searchTimeoutMs:1000}).search({intent});
   assert.equal(result.candidates.length,3);assert.equal(result.coverage.excludedReasons['author-read-timeout'],1);
- }finally{clearTimeout(keepAlive);}
+ }finally{clearInterval(keepAlive);}
 });
 
-test('a stalled configured market cannot suppress the responsive full catalog',async()=>{
+test('a stalled configured market cannot suppress the responsive full catalog',async(t)=>{
+ // Exercise source timeout independently of CPU scheduling consuming the search wall-clock budget.
+ t.mock.timers.enable({apis:['Date'],now:Date.now()});
  const f=fixture([entry('dsh-library')]);
  const market={listIndexes:()=>[{url:'https://team.example/index.json'}],search:()=>new Promise(()=>{})};
  const keepAlive=setTimeout(()=>{},500);

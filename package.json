@@ -1,8 +1,8 @@
 {
   "name": "dsh-plugin-finder",
-  "version": "0.3.0-preview.2",
-  "description": "Discover task-fit plugins from live DeepSeek Harness ecosystem sources, understand author documentation, and continue in a native conversation",
-  "author": "牛村木木山",
+  "version": "0.9.0-preview.10",
+  "description": "Describe a need, find a usable plan, and run or create in the same DeepSeek Harness workspace",
+  "author": "奥克斯木木山",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -26,12 +26,20 @@
     "docs/verification.md",
     "docs/first-use-case.md",
     "docs/experiment.md",
-    "docs/data-sharing.md"
+    "docs/data-sharing.md",
+    "docs/creator-preview.md",
+    "docs/featured-preview.md",
+    "CHANGELOG.md",
+    "docs/single-flow-preview.md",
+    "docs/experience-v2-preview.md",
+    "docs/workspace-flow-preview.md",
+    "docs/community-browse-preview.md"
   ],
   "scripts": {
     "test": "node --test --test-concurrency=1 test/*.test.mjs",
     "build": "node scripts/build.mjs",
-    "catalog:refresh": "node scripts/refresh-catalog.mjs"
+    "catalog:refresh": "node scripts/refresh-catalog.mjs",
+    "community:build": "node scripts/build-community-catalog.mjs"
   },
   "devDependencies": {
     "esbuild": "0.25.12",
@@ -44,14 +52,22 @@
     },
     "client": {
       "platform": "web",
+      "external": [
+        "react",
+        "@deepseek-ai/dsh-client-ui-primitives"
+      ],
       "inject": [
         "@deepseek-ai/dsh-client-ui-layout",
         "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-sidebar-right",
+        "@deepseek-ai/dsh-client-ui-sidebar-documentpreview",
         "@deepseek-ai/dsh-client-ui-workspace",
         "@deepseek-ai/dsh-client-ui-theme",
         "@deepseek-ai/dsh-client-ui-renderer",
         "@deepseek-ai/dsh-api-session-controller",
-        "@deepseek-ai/dsh-client-ui-conversation"
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-session",
+        "@deepseek-ai/dsh-client-ui-approval"
       ]
     }
   },
@@ -59,8 +75,8 @@
     "zod": "4.6.5"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-storage-domain": "0.2.0-rc.2 || 0.2.1-rc.2",
-    "@deepseek-ai/dsh-app-boot": "0.2.0-rc.2 || 0.2.1-rc.2"
+    "@deepseek-ai/dsh-app-boot": "0.2.0-rc.2 || 0.2.1-rc.2",
+    "@deepseek-ai/dsh-storage-domain": "0.2.0-rc.2 || 0.2.1-rc.2"
   },
   "repository": {
     "type": "git",

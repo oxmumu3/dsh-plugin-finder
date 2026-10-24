@@ -1,0 +1,498 @@
+{
+  "schemaVersion": 1,
+  "notice": "Read-only author documentation checks; no plugin code, installation, login or functional testing. README snapshots remain research evidence and are not included in the production catalog.",
+  "entries": [
+    {
+      "categoryId": "work",
+      "repositoryUrl": "https://github.com/cloader/dsh-taskboard",
+      "useCase": "把待办放进项目看板，手动或定时推进",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/cloader/dsh-taskboard/main/README.md",
+        "fetchedAt": "2026-10-23T12:54:53.885Z",
+        "status": 200,
+        "bytes": 41601,
+        "sha256": "48ea911835238d58f1eaebfdabbc79c5967a6db6bef8ae280521a6400c2c6386",
+        "localPath": "data/author-readmes/cloader--dsh-taskboard.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035345+00:00",
+        "conclusion": "作者README明确任务看板、按项目绑定、手动与定时执行；人工验收与任务执行分开。未安装此插件。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/cloader/dsh-taskboard/main/README.md",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "categoryId": "work",
+      "repositoryUrl": "https://github.com/Vncntvx/dsh-zotero",
+      "useCase": "从 Zotero 找论文、笔记和可引用的证据",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/Vncntvx/dsh-zotero/main/README.md",
+        "fetchedAt": "2026-10-23T12:54:53.634Z",
+        "status": 200,
+        "bytes": 9543,
+        "sha256": "f5b30b1c89573e278841b06f1dfa3d5e6cbf6c124042c2db30bee5aded24014b",
+        "localPath": "data/author-readmes/Vncntvx--dsh-zotero.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035513+00:00",
+        "conclusion": "作者README明确通过本机Zotero API检索文献、PDF、笔记与引用；需Zotero桌面端，写入另有确认，可选学术联网组件默认关闭。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/Vncntvx/dsh-zotero/main/README.md",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "categoryId": "work",
+      "repositoryUrl": "https://github.com/EthanYoQ/Invoice-Downloader/tree/main/plugins/dsh-invoice-downloader",
+      "useCase": "下载邮箱发票并整理报销汇总",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/EthanYoQ/Invoice-Downloader/main/plugins/dsh-invoice-downloader/README.md",
+        "fetchedAt": "2026-10-23T12:54:53.629Z",
+        "status": 200,
+        "bytes": 3863,
+        "sha256": "6a58aa53b0c0a54fb3e12d0e2c5c720c2026fb98bd77646b43d6d320ef7cbfe1",
+        "localPath": "data/author-readmes/EthanYoQ--Invoice-Downloader--plugins_dsh-invoice-downloader_.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035515+00:00",
+        "conclusion": "子目录README支持本地IMAP发票下载、OCR与Excel汇总；需Python 3.10+和首次联网安装引擎，OCR文本默认交给已选模型提取，不能说全链离线。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/EthanYoQ/Invoice-Downloader/main/plugins/dsh-invoice-downloader/README.md",
+          "status": 200
+        }
+      ],
+      "summaryOverride": "从 IMAP 邮箱下载发票，在本地 OCR、归档并生成 Excel 汇总。需 Python 3.10+ 及首次联网安装引擎；OCR 文本会交给当前模型提取字段。"
+    },
+    {
+      "categoryId": "content",
+      "repositoryUrl": "https://github.com/BioAIEvolu/dsh-md-studio",
+      "useCase": "直接看 Markdown 图表、公式和表格",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/BioAIEvolu/dsh-md-studio/main/README.md",
+        "fetchedAt": "2026-10-23T12:54:54.030Z",
+        "status": 200,
+        "bytes": 7741,
+        "sha256": "a0d182aa905866d63605ed3d2b33df7a5309b215cc48b278feef1cfdf1fda12d",
+        "localPath": "data/author-readmes/BioAIEvolu--dsh-md-studio.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035516+00:00",
+        "conclusion": "作者README明确Mermaid/KaTeX/GFM原生文件预览，渲染库随包；文档远程图片仍可能联网。此处仅核用途，不把其他阶段实跑移作全版本保证。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/BioAIEvolu/dsh-md-studio/main/README.md",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "categoryId": "content",
+      "repositoryUrl": "https://github.com/kw78/dsh-office-tools",
+      "useCase": "读取和生成 Word、Excel、PowerPoint",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/kw78/dsh-office-tools/main/README.md",
+        "fetchedAt": "2026-10-23T12:54:54.065Z",
+        "status": 200,
+        "bytes": 4002,
+        "sha256": "27f0bad088b29510836d8671a1c4db907749bd427ed04d3b2dd51a658808a444",
+        "localPath": "data/author-readmes/kw78--dsh-office-tools.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035517+00:00",
+        "conclusion": "作者README列出Word/Excel/PowerPoint读写工具；限会话工作区，PPT图片是链接而非嵌入，更新对含二进制部件的文档有限制。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/kw78/dsh-office-tools/main/README.md",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "categoryId": "content",
+      "repositoryUrl": "https://github.com/PensiveFei/dsh-voice-scribe",
+      "useCase": "用语音听写输入需求",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/PensiveFei/dsh-voice-scribe/main/README.md",
+        "fetchedAt": "2026-10-23T12:54:54.110Z",
+        "status": 200,
+        "bytes": 15976,
+        "sha256": "1ee2bd3c766b72417577cbf0d2fd92e42e99795ff731e70d6c29c1456f0ca728",
+        "localPath": "data/author-readmes/PensiveFei--dsh-voice-scribe.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035518+00:00",
+        "conclusion": "作者README明确语音输入与草稿追加；浏览器Web Speech或外部ASR选择各有环境/数据前提，未核验识别质量。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/PensiveFei/dsh-voice-scribe/main/README.md",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "categoryId": "knowledge",
+      "repositoryUrl": "https://github.com/ECNU/EduWork/tree/main/packages/dsh-memory",
+      "useCase": "检索过去对话，并保留来源的本地记忆",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/ECNU/EduWork/main/packages/dsh-memory/README.md",
+        "fetchedAt": "2026-10-23T12:54:54.246Z",
+        "status": 200,
+        "bytes": 5291,
+        "sha256": "8fb18d5ba469f5863bac70913b2ff9272f19fd52f8512d71c5ed503426b52d73",
+        "localPath": "data/author-readmes/ECNU--EduWork--packages_dsh-memory_.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035519+00:00",
+        "conclusion": "子目录README明确本地记忆与跨会话检索、管理、导入导出；0.2.0声明Node 24.18+及DSH 0.2.1-rc.2，不是所有宿主即装即用。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/ECNU/EduWork/main/packages/dsh-memory/README.md",
+          "status": 200
+        }
+      ],
+      "summaryOverride": "在本机保存、管理记忆并检索过往对话，保留来源引用，支持导入导出。目录 0.2.0 声明需 Node 24.18+ 和 DSH 0.2.1-rc.2。"
+    },
+    {
+      "categoryId": "knowledge",
+      "repositoryUrl": "https://github.com/benrong2048-boop/dsh-prompt-polish",
+      "useCase": "把一句话补成目标明确的任务描述",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/benrong2048-boop/dsh-prompt-polish/main/README.md",
+        "fetchedAt": "2026-10-23T12:54:54.248Z",
+        "status": 200,
+        "bytes": 11258,
+        "sha256": "b41f006d7a37f0bcd9853ac6acd335730fc0bdb42250da673c9dc5872e9a7687",
+        "localPath": "data/author-readmes/benrong2048-boop--dsh-prompt-polish.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035520+00:00",
+        "conclusion": "作者README明确提示词润色、替换/发送/复制由用户选择，显示模型及token用量；这不是免费或无模型调用工具。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/benrong2048-boop/dsh-prompt-polish/main/README.md",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "categoryId": "knowledge",
+      "repositoryUrl": "https://github.com/lifangjin/dsh-maoying",
+      "useCase": "围绕大纲、角色和审校推进长篇小说",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/lifangjin/dsh-maoying/main/README.md",
+        "fetchedAt": "2026-10-23T12:54:54.437Z",
+        "status": 200,
+        "bytes": 15098,
+        "sha256": "a5b041e132571e8d1fd86823424496bee85660a643c7ca430c42ad285867b578",
+        "localPath": "data/author-readmes/lifangjin--dsh-maoying.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035521+00:00",
+        "conclusion": "作者README明确网文创作工作流、主编与五帮手、novel目录及面板；需要选择创作preset，不代表作品质量或全自动成书已验证。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/lifangjin/dsh-maoying/main/README.md",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "categoryId": "experience",
+      "repositoryUrl": "https://github.com/boogoo619/dsh-focus-overlay",
+      "useCase": "用简洁的全屏视图专注阅读回复",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/boogoo619/dsh-focus-overlay/master/README.md",
+        "fetchedAt": "2026-10-23T12:54:55.784Z",
+        "status": 200,
+        "bytes": 13813,
+        "sha256": "308512c762b656cee8307aa9c72c9213576dce2b35471c663e32d5dcfcb0f8df",
+        "localPath": "data/author-readmes/boogoo619--dsh-focus-overlay.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035522+00:00",
+        "conclusion": "作者README明确全屏阅读遮罩、工具过程折叠及共享输入草稿；属于阅读界面增强，不改模型能力。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/boogoo619/dsh-focus-overlay/main/README.md",
+          "status": 404
+        },
+        {
+          "url": "https://raw.githubusercontent.com/boogoo619/dsh-focus-overlay/main/README.zh-CN.md",
+          "status": 404
+        },
+        {
+          "url": "https://raw.githubusercontent.com/boogoo619/dsh-focus-overlay/main/README.zh.md",
+          "status": 404
+        },
+        {
+          "url": "https://raw.githubusercontent.com/boogoo619/dsh-focus-overlay/master/README.md",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "categoryId": "experience",
+      "repositoryUrl": "https://github.com/yongfanbeta/dsh-pomodoro",
+      "useCase": "为任务安排专注和休息时间",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/yongfanbeta/dsh-pomodoro/main/README.md",
+        "fetchedAt": "2026-10-23T12:54:54.430Z",
+        "status": 200,
+        "bytes": 4923,
+        "sha256": "bc0d80256fead0b518b345ff10f15e16c6af99b7f3d03312e0c711e58969821f",
+        "localPath": "data/author-readmes/yongfanbeta--dsh-pomodoro.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035523+00:00",
+        "conclusion": "作者README明确25/5/15可调专注/休息、任务关联、本地CSV；计时/统计并非任务实际完成的证明。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/yongfanbeta/dsh-pomodoro/main/README.md",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "categoryId": "experience",
+      "repositoryUrl": "https://github.com/Nwflower/dsh-claude-style",
+      "useCase": "切换舒适的明暗界面外观",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/Nwflower/dsh-claude-style/master/README.md",
+        "fetchedAt": "2026-10-23T12:54:55.311Z",
+        "status": 200,
+        "bytes": 5997,
+        "sha256": "25bd2b5ac55d981cb4bce9ad0e1375693ccca246e8392bc93d4701cf4bebe529",
+        "localPath": "data/author-readmes/Nwflower--dsh-claude-style.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035524+00:00",
+        "conclusion": "作者README明确Claude/DeepSeek视觉主题及明暗切换；许可标示MIT+PolyForm Shield，不将可见源码等同无条件开源。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/Nwflower/dsh-claude-style/main/README.md",
+          "status": 404
+        },
+        {
+          "url": "https://raw.githubusercontent.com/Nwflower/dsh-claude-style/main/README.zh-CN.md",
+          "status": 404
+        },
+        {
+          "url": "https://raw.githubusercontent.com/Nwflower/dsh-claude-style/main/README.zh.md",
+          "status": 404
+        },
+        {
+          "url": "https://raw.githubusercontent.com/Nwflower/dsh-claude-style/master/README.md",
+          "status": 200
+        }
+      ],
+      "summaryOverride": "为 DSH 切换 Claude Code Desktop 风格的明暗主题与界面。作者许可证包含 MIT 与 PolyForm Shield，使用或再分发前应查看作者条款。"
+    },
+    {
+      "categoryId": "develop",
+      "repositoryUrl": "https://github.com/saya-ch/dsh-mobile",
+      "useCase": "从手机接着使用 Harness",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/saya-ch/dsh-mobile/main/README.md",
+        "fetchedAt": "2026-10-23T12:54:55.266Z",
+        "status": 200,
+        "bytes": 53997,
+        "sha256": "debdc34dccde650a68fc182e66574b0b6baddb4ac118fb917a56082420fff3d6",
+        "localPath": "data/author-readmes/saya-ch--dsh-mobile.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035525+00:00",
+        "conclusion": "作者README明确手机连接电脑Harness；原生App仅Android，浏览器路径另行支持，需设备/网络配置。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/saya-ch/dsh-mobile/main/README.md",
+          "status": 200
+        }
+      ],
+      "summaryOverride": "从手机浏览器或 Android App 接着使用电脑中的 Harness，支持设备配对、局域网和远程连接；需要相应网络与设备配置，原生 App 仅 Android。"
+    },
+    {
+      "categoryId": "develop",
+      "repositoryUrl": "https://github.com/f-e-n-g-0531/dsh-vcs",
+      "useCase": "只读查看 Git 或 SVN 的文件差异",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/f-e-n-g-0531/dsh-vcs/main/README.md",
+        "fetchedAt": "2026-10-23T12:54:55.563Z",
+        "status": 200,
+        "bytes": 7822,
+        "sha256": "c36c11f9dca6c74375d0966ecd908c68626557bcf4e0d0bfaa912e1a1d08efc0",
+        "localPath": "data/author-readmes/f-e-n-g-0531--dsh-vcs.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035526+00:00",
+        "conclusion": "作者README明确Git/SVN只读变更与历史；非商业许可，商业用途需另行书面授权。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/f-e-n-g-0531/dsh-vcs/main/README.md",
+          "status": 200
+        }
+      ],
+      "summaryOverride": "在 DSH 内只读查看 Git / SVN 文件变更和历史，支持并排差异；不提供提交或推送。作者声明仅非商业使用，商业用途需另行授权。"
+    },
+    {
+      "categoryId": "develop",
+      "repositoryUrl": "https://github.com/Tencent/BrowserSkill/tree/main/packages/dsh-plugin-browserskill",
+      "useCase": "让 Agent 在可见浏览器中完成网页操作",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/Tencent/BrowserSkill/main/packages/dsh-plugin-browserskill/README.md",
+        "fetchedAt": "2026-10-23T12:54:55.568Z",
+        "status": 200,
+        "bytes": 17288,
+        "sha256": "74272dc9fbdc545d341f54484dec3dd05e08356942c84958b3fb132d7158f885",
+        "localPath": "data/author-readmes/Tencent--BrowserSkill--packages_dsh-plugin-browserskill_.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035527+00:00",
+        "conclusion": "子目录README明确bsk工具、Agent Window与实时页面；需bsk CLI和Chrome/Edge扩展连接，不是安装DSH插件就完成全部前提。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/Tencent/BrowserSkill/main/packages/dsh-plugin-browserskill/README.md",
+          "status": 200
+        }
+      ],
+      "summaryOverride": "通过 bsk 工具在可见 Agent Window 中浏览网页、填表和截图，并在 DSH 显示实时页面；另需 bsk CLI 和已连接的 Chrome / Edge 扩展。"
+    },
+    {
+      "categoryId": "manage",
+      "repositoryUrl": "https://github.com/Han-1413141/dsh-cost-meter",
+      "useCase": "查看模型花费与预算",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/Han-1413141/dsh-cost-meter/master/README.md",
+        "fetchedAt": "2026-10-23T12:54:57.246Z",
+        "status": 200,
+        "bytes": 60419,
+        "sha256": "ba3c8aa9c95365d0afc889a74f9e7ed76b39ad9ac54bd972aec413ceadbfc324",
+        "localPath": "data/author-readmes/Han-1413141--dsh-cost-meter.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035527+00:00",
+        "conclusion": "作者README明确会话花费、当日总量、预算及价格同步；当前README标1.9.30而目录版本1.9.26，记录此版本时间差，不把说明当该精确版本实测。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/Han-1413141/dsh-cost-meter/main/README.md",
+          "status": 404
+        },
+        {
+          "url": "https://raw.githubusercontent.com/Han-1413141/dsh-cost-meter/main/README.zh-CN.md",
+          "status": 404
+        },
+        {
+          "url": "https://raw.githubusercontent.com/Han-1413141/dsh-cost-meter/main/README.zh.md",
+          "status": 404
+        },
+        {
+          "url": "https://raw.githubusercontent.com/Han-1413141/dsh-cost-meter/master/README.md",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "categoryId": "manage",
+      "repositoryUrl": "https://github.com/Nwflower/dsh-chat-import",
+      "useCase": "把其他工具的对话历史迁入 Harness",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/Nwflower/dsh-chat-import/main/README.md",
+        "fetchedAt": "2026-10-23T12:54:55.776Z",
+        "status": 200,
+        "bytes": 14476,
+        "sha256": "728bd38d0ef495325ff3e231be7fd7e578e4ee685a94818f6d8bf1e6b4c6b78b",
+        "localPath": "data/author-readmes/Nwflower--dsh-chat-import.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035528+00:00",
+        "conclusion": "作者README明确从其他Agent导入会话后在DSH续聊；未读取任何用户会话，未验证各格式兼容性。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/Nwflower/dsh-chat-import/main/README.md",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "categoryId": "manage",
+      "repositoryUrl": "https://github.com/HOWILLMAKEIT/dsh-model-context-catalog",
+      "useCase": "核对并配置已有模型的上下文窗口",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/HOWILLMAKEIT/dsh-model-context-catalog/main/README.md",
+        "fetchedAt": "2026-10-23T12:54:56.184Z",
+        "status": 200,
+        "bytes": 13051,
+        "sha256": "05010a3e4a7d8bb589e23ee9b540136f542a576f0c4fbc5ec96f4f681cea322d",
+        "localPath": "data/author-readmes/HOWILLMAKEIT--dsh-model-context-catalog.md",
+        "review": "purpose-matched",
+        "executionVerified": false,
+        "reviewScope": "人工阅读已抓取作者README的用途/前提段落；非源码审计、非精确版本功能验收",
+        "reviewedAt": "2026-10-23T13:01:00.035529+00:00",
+        "conclusion": "作者README明确从models.dev或CLIProxyAPI核对已配置模型上下文、选择后保存；默认保留已有容量，外部容量资料可能随时间变化。",
+        "versionScope": "README所在分支在fetchedAt时的内容；目录版本独立保留，未声称README锁定该版本"
+      },
+      "attempts": [
+        {
+          "url": "https://raw.githubusercontent.com/HOWILLMAKEIT/dsh-model-context-catalog/main/README.md",
+          "status": 200
+        }
+      ]
+    }
+  ]
+}

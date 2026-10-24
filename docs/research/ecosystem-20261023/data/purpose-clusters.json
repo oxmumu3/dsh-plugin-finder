@@ -1,0 +1,1885 @@
+{
+  "schemaVersion": 1,
+  "source": "plugins.json",
+  "sourceUpdated": "2026-10-22",
+  "denominator": 6565,
+  "method": "Each regular expression is tested independently on the named fields; category is an additional filter. Groups may overlap. No code, installed behavior, dependency compatibility or intellectual provenance was compared.",
+  "interpretation": "Keyword-selected purpose neighborhoods, not exact functional duplicates or a functional duplication rate. Missing keywords do not imply unique purpose; matched descriptions can refer to one feature inside a larger product.",
+  "clusters": [
+    {
+      "id": "pomodoro",
+      "label": "番茄钟",
+      "category": null,
+      "fields": [
+        "name",
+        "description.zh",
+        "description.en"
+      ],
+      "pattern": "番茄(?:钟|工作|闹钟)|pomodoro|pomo(?:doro)?[-_ ]?timer",
+      "examples": [
+        {
+          "id": "https://github.com/causebefore/dsh-pomodoro",
+          "name": "dsh-pomodoro",
+          "owner": "causebefore",
+          "category": "ui",
+          "description": "DSH Web 番茄钟：提供可配置专注/休息循环、可拖动迷你面板，以及站内提醒、提示音和浏览器通知。"
+        },
+        {
+          "id": "https://github.com/yongfanbeta/dsh-pomodoro",
+          "name": "dsh-pomodoro",
+          "owner": "yongfanbeta",
+          "category": "ui",
+          "description": "DSH 番茄钟：经典 25/5/15 计时，可将每次专注关联当前会话任务或手动输入项目名，内置统计面板与全年热力图，配可拖动悬浮计时卡与角落迷你药丸，数据本地持久化并支持导出 CSV。"
+        },
+        {
+          "id": "https://github.com/slow-stack/dsh-study-desk",
+          "name": "dsh-study-desk",
+          "owner": "slow-stack",
+          "category": "workflow",
+          "description": "备考与科研学习工作台：三列待办墙（标签与过滤）、间隔重复复习队列（简化 SM-2，已完成的卡照样会到期）、按实际专注分钟点亮的热力图、周报、每日复盘、跨面板存活的番茄钟，支持 Markdown 导出与读回（Obsidian 友好）。可 `dsh plugin add` 安装（npm 包 dsh-study-desk）。"
+        }
+      ],
+      "flags": "iu",
+      "count": 6,
+      "members": [
+        {
+          "url": "https://github.com/causebefore/dsh-pomodoro",
+          "name": "dsh-pomodoro",
+          "owner": "causebefore"
+        },
+        {
+          "url": "https://github.com/cshengyi023-collab/dsh-pet-companion",
+          "name": "dsh-pet-companion",
+          "owner": "cshengyi023-collab"
+        },
+        {
+          "url": "https://github.com/yongfanbeta/dsh-pomodoro",
+          "name": "dsh-pomodoro",
+          "owner": "yongfanbeta"
+        },
+        {
+          "url": "https://github.com/zealot00/dsh-pet",
+          "name": "dsh-pet",
+          "owner": "zealot00"
+        },
+        {
+          "url": "https://github.com/slow-stack/dsh-study-desk",
+          "name": "dsh-study-desk",
+          "owner": "slow-stack"
+        },
+        {
+          "url": "https://github.com/ZutoMayoo/totoTheCat",
+          "name": "totoTheCat",
+          "owner": "ZutoMayoo"
+        }
+      ]
+    },
+    {
+      "id": "usage-measurement",
+      "label": "用量与费用统计",
+      "category": "usage",
+      "fields": [
+        "name",
+        "description.zh",
+        "description.en"
+      ],
+      "pattern": "(?:token|令牌|用量|费用|成本).{0,8}(?:统计|计量|追踪|监控|聚合)|(?:统计|计量|追踪|监控|聚合).{0,8}(?:token|令牌|用量|费用|成本)|cost[-_ ]?meter|usage[-_ ]?(?:dashboard|monitor|tracker)|token[-_ ]?(?:counter|monitor)",
+      "examples": [
+        {
+          "id": "https://github.com/0x7A7A6572/dsh-forge-studio/tree/main/packages/plugin-usage-billing",
+          "name": "dsh-forge-studio#plugin-usage-billing",
+          "owner": "0x7A7A6572",
+          "category": "usage",
+          "description": "dsh 用量与费用视图：从既有会话日志聚合真实 token 用量，按事件发生时刻的价格写时锁定费用；侧栏卡片或输入框胶囊展示本月/今日花费与预算进度，设置页另有概览、趋势、明细三页。"
+        },
+        {
+          "id": "https://github.com/1569126506-sudo/dsh-team-cost",
+          "name": "dsh-team-cost",
+          "owner": "1569126506-sudo",
+          "category": "usage",
+          "description": "团队成本管家：按成员/工作空间计量每次模型调用的 token 与费用（含子代理），内置 DeepSeek 2026-09 价目表与自定义价格覆盖，成员预算热更新、阈值 Webhook 告警、可选超支拦截，提供成本报表工具与 CSV 导出，并在设置页提供团队成本看板。"
+        },
+        {
+          "id": "https://github.com/Han-1413141/dsh-cost-meter",
+          "name": "dsh-cost-meter",
+          "owner": "Han-1413141",
+          "category": "usage",
+          "description": "会话与当日 API 费用统计、预算图框（已用%）、官方余额、历史看板，支持峰谷计价与官方价格一键同步。"
+        }
+      ],
+      "flags": "iu",
+      "count": 89,
+      "members": [
+        {
+          "url": "https://github.com/0x7A7A6572/dsh-forge-studio/tree/main/packages/plugin-usage-billing",
+          "name": "dsh-forge-studio#plugin-usage-billing",
+          "owner": "0x7A7A6572"
+        },
+        {
+          "url": "https://github.com/133563825as-ai/dsh-api-dashboard",
+          "name": "dsh-api-dashboard",
+          "owner": "133563825as-ai"
+        },
+        {
+          "url": "https://github.com/1569126506-sudo/dsh-team-cost",
+          "name": "dsh-team-cost",
+          "owner": "1569126506-sudo"
+        },
+        {
+          "url": "https://github.com/1HelloMan1/dsh-usage-dashboard-plus",
+          "name": "dsh-usage-dashboard-plus",
+          "owner": "1HelloMan1"
+        },
+        {
+          "url": "https://github.com/283Gawin/dsh-heatmap",
+          "name": "dsh-heatmap",
+          "owner": "283Gawin"
+        },
+        {
+          "url": "https://github.com/534119219/chicheng-stats",
+          "name": "chicheng-stats",
+          "owner": "534119219"
+        },
+        {
+          "url": "https://github.com/940842546/dsh-usage-billing",
+          "name": "dsh-usage-billing",
+          "owner": "940842546"
+        },
+        {
+          "url": "https://github.com/AKS1st/model-usage-plugin",
+          "name": "model-usage-plugin",
+          "owner": "AKS1st"
+        },
+        {
+          "url": "https://github.com/Amer-CN/zcode-usage-stats",
+          "name": "zcode-usage-stats",
+          "owner": "Amer-CN"
+        },
+        {
+          "url": "https://github.com/Andrew111888/dsh-plugin-balance",
+          "name": "dsh-plugin-balance",
+          "owner": "Andrew111888"
+        },
+        {
+          "url": "https://github.com/Arun1016/dsh-cost",
+          "name": "dsh-cost",
+          "owner": "Arun1016"
+        },
+        {
+          "url": "https://github.com/bjzkhy/dsh-token-ledger-pro",
+          "name": "dsh-token-ledger-pro",
+          "owner": "bjzkhy"
+        },
+        {
+          "url": "https://github.com/Cassius0924/dsh-usage-dashboard",
+          "name": "dsh-usage-dashboard",
+          "owner": "Cassius0924"
+        },
+        {
+          "url": "https://github.com/chenyinrusi/dsh-llm-cost",
+          "name": "dsh-llm-cost",
+          "owner": "chenyinrusi"
+        },
+        {
+          "url": "https://github.com/ChrisZhangWG/dsh-codex-meter",
+          "name": "dsh-codex-meter",
+          "owner": "ChrisZhangWG"
+        },
+        {
+          "url": "https://github.com/DamonKoy/dsh-plugins/tree/main/packages/dsh-usage-cost",
+          "name": "dsh-plugins#dsh-usage-cost",
+          "owner": "DamonKoy"
+        },
+        {
+          "url": "https://github.com/deepseek-dsh/dsh-workspace",
+          "name": "dsh-workspace",
+          "owner": "deepseek-dsh"
+        },
+        {
+          "url": "https://github.com/faith1688/dsh-usage-meter-harness",
+          "name": "dsh-usage-meter-harness",
+          "owner": "faith1688"
+        },
+        {
+          "url": "https://github.com/fakeNihilist/dsh-plugin-usage-stats",
+          "name": "dsh-plugin-usage-stats",
+          "owner": "fakeNihilist"
+        },
+        {
+          "url": "https://github.com/fancr-code/dsh-plugin-usage-meter",
+          "name": "dsh-plugin-usage-meter",
+          "owner": "fancr-code"
+        },
+        {
+          "url": "https://github.com/Francesco502/dsh-quota",
+          "name": "dsh-quota",
+          "owner": "Francesco502"
+        },
+        {
+          "url": "https://github.com/fufuf-c/dsh-token",
+          "name": "dsh-token",
+          "owner": "fufuf-c"
+        },
+        {
+          "url": "https://github.com/GIN0076/dsh-token-usage",
+          "name": "dsh-token-usage",
+          "owner": "GIN0076"
+        },
+        {
+          "url": "https://github.com/GooDAnDReaDY/dsh-cost-meter",
+          "name": "dsh-cost-meter",
+          "owner": "GooDAnDReaDY"
+        },
+        {
+          "url": "https://github.com/guojinpeng/dsh-cost-meter",
+          "name": "dsh-cost-meter",
+          "owner": "guojinpeng"
+        },
+        {
+          "url": "https://github.com/Han-1413141/dsh-cost-meter",
+          "name": "dsh-cost-meter",
+          "owner": "Han-1413141"
+        },
+        {
+          "url": "https://github.com/Hann428/dsh-hann-usage-dashboard",
+          "name": "dsh-hann-usage-dashboard",
+          "owner": "Hann428"
+        },
+        {
+          "url": "https://github.com/HaoyueQin/dsh-usage-statistics-panel",
+          "name": "dsh-usage-statistics-panel",
+          "owner": "HaoyueQin"
+        },
+        {
+          "url": "https://github.com/hb-degithub/dsh-usage-guard",
+          "name": "dsh-usage-guard",
+          "owner": "hb-degithub"
+        },
+        {
+          "url": "https://github.com/izz-BLUE/dsh-deepseek-usage-dashboard",
+          "name": "dsh-deepseek-usage-dashboard",
+          "owner": "izz-BLUE"
+        },
+        {
+          "url": "https://github.com/Jannchie/dsh-bill",
+          "name": "dsh-bill",
+          "owner": "Jannchie"
+        },
+        {
+          "url": "https://github.com/jkStars/dsh-token-usage-stats",
+          "name": "dsh-token-usage-stats",
+          "owner": "jkStars"
+        },
+        {
+          "url": "https://github.com/Jockjrop/dsh-usage-stats",
+          "name": "dsh-usage-stats",
+          "owner": "Jockjrop"
+        },
+        {
+          "url": "https://github.com/kenz1117/dsh-ui-usage-billing",
+          "name": "dsh-ui-usage-billing",
+          "owner": "kenz1117"
+        },
+        {
+          "url": "https://github.com/kikomaotu/ccs-balance",
+          "name": "ccs-balance",
+          "owner": "kikomaotu"
+        },
+        {
+          "url": "https://github.com/kirigayakazima/dsh-usage-vendor-stats",
+          "name": "dsh-usage-vendor-stats",
+          "owner": "kirigayakazima"
+        },
+        {
+          "url": "https://github.com/LanFeng97/dsh-bottom-cost",
+          "name": "dsh-bottom-cost",
+          "owner": "LanFeng97"
+        },
+        {
+          "url": "https://github.com/LaoYueHanNi/dsh-token-usage",
+          "name": "dsh-token-usage",
+          "owner": "LaoYueHanNi"
+        },
+        {
+          "url": "https://github.com/LAwLi3tCoding/dsh-api-ledger",
+          "name": "dsh-api-ledger",
+          "owner": "LAwLi3tCoding"
+        },
+        {
+          "url": "https://github.com/lcthe/dsh-usage-monitor",
+          "name": "dsh-usage-monitor",
+          "owner": "lcthe"
+        },
+        {
+          "url": "https://github.com/licyer/dsh-token-monitor",
+          "name": "dsh-token-monitor",
+          "owner": "licyer"
+        },
+        {
+          "url": "https://github.com/ljr282341583/dsh-convo-cost",
+          "name": "dsh-convo-cost",
+          "owner": "ljr282341583"
+        },
+        {
+          "url": "https://github.com/Make0209/dsh-usage-stats",
+          "name": "dsh-usage-stats",
+          "owner": "Make0209"
+        },
+        {
+          "url": "https://github.com/Max-Samson/dsh-usage-chart",
+          "name": "dsh-usage-chart",
+          "owner": "Max-Samson"
+        },
+        {
+          "url": "https://github.com/MoonlitDropOfBlood/dsh-token-stats",
+          "name": "dsh-token-stats",
+          "owner": "MoonlitDropOfBlood"
+        },
+        {
+          "url": "https://github.com/mov-eax-eax/dsh-token-anxiety",
+          "name": "dsh-token-anxiety",
+          "owner": "mov-eax-eax"
+        },
+        {
+          "url": "https://github.com/Mu-scorpio/token-usage-counter",
+          "name": "token-usage-counter",
+          "owner": "Mu-scorpio"
+        },
+        {
+          "url": "https://github.com/mzzsfy/dsh-plugin/tree/main/packages/dsh-usage-dash",
+          "name": "dsh-plugin#dsh-usage-dash",
+          "owner": "mzzsfy"
+        },
+        {
+          "url": "https://github.com/NOirBRight/dsh-usage-monitor",
+          "name": "dsh-usage-monitor",
+          "owner": "NOirBRight"
+        },
+        {
+          "url": "https://github.com/nonewind/dsh-spend",
+          "name": "dsh-spend",
+          "owner": "nonewind"
+        },
+        {
+          "url": "https://github.com/OK-wx/dsh-ocgo-lite",
+          "name": "dsh-ocgo-lite",
+          "owner": "OK-wx"
+        },
+        {
+          "url": "https://github.com/OwlNjust/deepseek-balance-dsh",
+          "name": "deepseek-balance-dsh",
+          "owner": "OwlNjust"
+        },
+        {
+          "url": "https://github.com/phungthien269/dsh-token-stats",
+          "name": "dsh-token-stats",
+          "owner": "phungthien269"
+        },
+        {
+          "url": "https://github.com/PolinniZhong/dsh-personal-center",
+          "name": "dsh-personal-center",
+          "owner": "PolinniZhong"
+        },
+        {
+          "url": "https://github.com/qwert702/dsh-token-viewer",
+          "name": "dsh-token-viewer",
+          "owner": "qwert702"
+        },
+        {
+          "url": "https://github.com/RevxZxCx/dsh-where-did-my-tokens-go",
+          "name": "dsh-where-did-my-tokens-go",
+          "owner": "RevxZxCx"
+        },
+        {
+          "url": "https://github.com/sakanamaru/dsh-minato",
+          "name": "dsh-minato",
+          "owner": "sakanamaru"
+        },
+        {
+          "url": "https://github.com/Sev7een/ds-api-usage",
+          "name": "ds-api-usage",
+          "owner": "Sev7een"
+        },
+        {
+          "url": "https://github.com/ShallBay/dsh-token-stats",
+          "name": "dsh-token-stats",
+          "owner": "ShallBay"
+        },
+        {
+          "url": "https://github.com/Six6stRINgs/dsh-thinking-token-stat",
+          "name": "dsh-thinking-token-stat",
+          "owner": "Six6stRINgs"
+        },
+        {
+          "url": "https://github.com/skyzhao1223/dsh-agent-token-stats",
+          "name": "dsh-agent-token-stats",
+          "owner": "skyzhao1223"
+        },
+        {
+          "url": "https://github.com/SoDaZilla-zzz/dsh-liquid-glass-balance-card",
+          "name": "dsh-liquid-glass-balance-card",
+          "owner": "SoDaZilla-zzz"
+        },
+        {
+          "url": "https://github.com/stevenx65/dsh-balance-plugin",
+          "name": "dsh-balance-plugin",
+          "owner": "stevenx65"
+        },
+        {
+          "url": "https://github.com/storyOuO/dsh-plugin-ds-balance",
+          "name": "dsh-plugin-ds-balance",
+          "owner": "storyOuO"
+        },
+        {
+          "url": "https://github.com/Sttrevens/dsh-cost-meter",
+          "name": "dsh-cost-meter",
+          "owner": "Sttrevens"
+        },
+        {
+          "url": "https://github.com/takboo/dsh-usage-state",
+          "name": "dsh-usage-state",
+          "owner": "takboo"
+        },
+        {
+          "url": "https://github.com/teethyachi/dsh-usage-mini",
+          "name": "dsh-usage-mini",
+          "owner": "teethyachi"
+        },
+        {
+          "url": "https://github.com/V-dev-388/dsh-usage-meter",
+          "name": "dsh-usage-meter",
+          "owner": "V-dev-388"
+        },
+        {
+          "url": "https://github.com/vrvtvy/dsh-cache-hit-precision",
+          "name": "dsh-cache-hit-precision",
+          "owner": "vrvtvy"
+        },
+        {
+          "url": "https://github.com/wawo77/dsh-opencode-go-usage",
+          "name": "dsh-opencode-go-usage",
+          "owner": "wawo77"
+        },
+        {
+          "url": "https://github.com/wfengq/dsh/tree/main/packages/tally-ui",
+          "name": "dsh#tally-ui",
+          "owner": "wfengq"
+        },
+        {
+          "url": "https://github.com/wingsky-1/dsh-plugin-hub/tree/main/packages/dsh-provider-usage",
+          "name": "dsh-plugin-hub#packages/dsh-provider-usage",
+          "owner": "wingsky-1"
+        },
+        {
+          "url": "https://github.com/woosh2010/dsh-usage-dashboard",
+          "name": "dsh-usage-dashboard",
+          "owner": "woosh2010"
+        },
+        {
+          "url": "https://github.com/xchannel1987/dsh-token-usage-xc",
+          "name": "dsh-token-usage-xc",
+          "owner": "xchannel1987"
+        },
+        {
+          "url": "https://github.com/xfqz86/dsh-usage-stats",
+          "name": "dsh-usage-stats",
+          "owner": "xfqz86"
+        },
+        {
+          "url": "https://github.com/xgxx666/dsh-clear-usage",
+          "name": "dsh-clear-usage",
+          "owner": "xgxx666"
+        },
+        {
+          "url": "https://github.com/xie-tj/dsh-token-usage-ledger",
+          "name": "dsh-token-usage-ledger",
+          "owner": "xie-tj"
+        },
+        {
+          "url": "https://github.com/y2zyyr/dsh-token-usage-sidebar",
+          "name": "dsh-token-usage-sidebar",
+          "owner": "y2zyyr"
+        },
+        {
+          "url": "https://github.com/Ychris12138/dsh-usage-stats",
+          "name": "dsh-usage-stats",
+          "owner": "Ychris12138"
+        },
+        {
+          "url": "https://github.com/yflmq001/dsh-cost-tracker",
+          "name": "dsh-cost-tracker",
+          "owner": "yflmq001"
+        },
+        {
+          "url": "https://github.com/Yinxe/deepseek-harness-plugins/tree/main/plugins/token-meter",
+          "name": "deepseek-harness-plugins#token-meter",
+          "owner": "Yinxe"
+        },
+        {
+          "url": "https://github.com/yoiizesdev-crypto/DSH-Balance-display",
+          "name": "DSH-Balance-display",
+          "owner": "yoiizesdev-crypto"
+        },
+        {
+          "url": "https://github.com/yokesky/dsh-usage-lens",
+          "name": "dsh-usage-lens",
+          "owner": "yokesky"
+        },
+        {
+          "url": "https://github.com/yyb16yyb-hub/dsh-deepseek-usage",
+          "name": "dsh-deepseek-usage",
+          "owner": "yyb16yyb-hub"
+        },
+        {
+          "url": "https://github.com/YZz-S/dsh-token-cost-meter",
+          "name": "dsh-token-cost-meter",
+          "owner": "YZz-S"
+        },
+        {
+          "url": "https://github.com/zeng6125-rgb/dsh-usage-heatmap",
+          "name": "dsh-usage-heatmap",
+          "owner": "zeng6125-rgb"
+        },
+        {
+          "url": "https://github.com/zhang-jiazhi/dsh-stats-panel",
+          "name": "dsh-stats-panel",
+          "owner": "zhang-jiazhi"
+        },
+        {
+          "url": "https://github.com/zhifeiNi/dsh-usage-orb",
+          "name": "dsh-usage-orb",
+          "owner": "zhifeiNi"
+        },
+        {
+          "url": "https://github.com/zhujiuyi/dsh-tokenDashBoard",
+          "name": "dsh-tokenDashBoard",
+          "owner": "zhujiuyi"
+        }
+      ]
+    },
+    {
+      "id": "theme",
+      "label": "主题与皮肤",
+      "category": "theme",
+      "fields": [
+        "name",
+        "description.zh",
+        "description.en"
+      ],
+      "pattern": "主题|配色|皮肤|theme|skin",
+      "examples": [
+        {
+          "id": "https://github.com/AaronKate/dsh-codex-appearance",
+          "name": "dsh-codex-appearance",
+          "owner": "AaronKate",
+          "category": "theme",
+          "description": "为 DeepSeek Harness 增加外观设置页：五套护眼浅色主题，每套主题自带匹配的强调色与链接色；另可调整强调色与背景色、界面与代码的字体和字号、字体样式、内容宽度、对比度与减少动态效果。"
+        },
+        {
+          "id": "https://github.com/acdsh4869/dsh-aqua-theme",
+          "name": "dsh-aqua-theme",
+          "owner": "acdsh4869",
+          "category": "theme",
+          "description": "Aqua 玻璃质感主题（适配 DSH v0.2.x 与桌面端 v0.22.3+）：顶栏、侧边栏、输入框、统计行与轨迹视图悬浮在 WebGL 流体板或图片/视频壁纸上的磨砂玻璃片，云母/兼容双布局，模糊、磨砂、色调、亮度可调，海洋装饰（粒子鲸鱼、小鱼、网状交互、鼠标辉光），一键恢复默认，总开关关闭即完全还原原生界面；承 WYH66666666 原作（0.1.x）与 du-u-uck 的 0.1.1-rc.2 适配。"
+        },
+        {
+          "id": "https://github.com/Aliww2468/dsh-client-ui-aqua-patched",
+          "name": "dsh-client-ui-aqua-patched",
+          "owner": "Aliww2468",
+          "category": "theme",
+          "description": "Aqua 玻璃质感主题（上游分支，修复以适配 DSH 0.1.2-rc.1）：云母/兼容双模式、可调模糊与磨砂、流体/壁纸背景、背景亮度，以及一键还原原生界面的总开关。"
+        }
+      ],
+      "flags": "iu",
+      "count": 216,
+      "members": [
+        {
+          "url": "https://github.com/0nt-one/dsh-neo-skin",
+          "name": "dsh-neo-skin",
+          "owner": "0nt-one"
+        },
+        {
+          "url": "https://github.com/4444Hao/dsh-codefall",
+          "name": "dsh-codefall",
+          "owner": "4444Hao"
+        },
+        {
+          "url": "https://github.com/AaronKate/dsh-codex-appearance",
+          "name": "dsh-codex-appearance",
+          "owner": "AaronKate"
+        },
+        {
+          "url": "https://github.com/acdsh4869/dsh-aqua-theme",
+          "name": "dsh-aqua-theme",
+          "owner": "acdsh4869"
+        },
+        {
+          "url": "https://github.com/ahian-lee/dsh-bliss-glass",
+          "name": "dsh-bliss-glass",
+          "owner": "ahian-lee"
+        },
+        {
+          "url": "https://github.com/AIR-pixel/air-pixel-liquid-glass",
+          "name": "air-pixel-liquid-glass",
+          "owner": "AIR-pixel"
+        },
+        {
+          "url": "https://github.com/AKS1st/ikun-theme-skin",
+          "name": "ikun-theme-skin",
+          "owner": "AKS1st"
+        },
+        {
+          "url": "https://github.com/alexfengrui/dsh-client-ui-skin-real-madrid",
+          "name": "dsh-client-ui-skin-real-madrid",
+          "owner": "alexfengrui"
+        },
+        {
+          "url": "https://github.com/Aliww2468/dsh-client-ui-aqua-patched",
+          "name": "dsh-client-ui-aqua-patched",
+          "owner": "Aliww2468"
+        },
+        {
+          "url": "https://github.com/AlyceStocking/dsh-yukimi-theme",
+          "name": "dsh-yukimi-theme",
+          "owner": "AlyceStocking"
+        },
+        {
+          "url": "https://github.com/Angel2518975237/deepseek-harness-hello-kitty-suite",
+          "name": "deepseek-harness-hello-kitty-suite",
+          "owner": "Angel2518975237"
+        },
+        {
+          "url": "https://github.com/ArimaKana-Akane/dsh-wallpaper-position",
+          "name": "dsh-wallpaper-position",
+          "owner": "ArimaKana-Akane"
+        },
+        {
+          "url": "https://github.com/ash-qw/dsh-theme-prts",
+          "name": "dsh-theme-prts",
+          "owner": "ash-qw"
+        },
+        {
+          "url": "https://github.com/Au1314/dsh-style-hub",
+          "name": "dsh-style-hub",
+          "owner": "Au1314"
+        },
+        {
+          "url": "https://github.com/AvalonskyAfar/MahoutsukaiNoYoru-DSH-Skin/tree/master/skin",
+          "name": "MahoutsukaiNoYoru-DSH-Skin#skin",
+          "owner": "AvalonskyAfar"
+        },
+        {
+          "url": "https://github.com/badai147/dsh-leafy-skin",
+          "name": "dsh-leafy-skin",
+          "owner": "badai147"
+        },
+        {
+          "url": "https://github.com/Bainianzzz/dsh-bg-switcher",
+          "name": "dsh-bg-switcher",
+          "owner": "Bainianzzz"
+        },
+        {
+          "url": "https://github.com/Bancott/dsh-yexueqing-skin",
+          "name": "dsh-yexueqing-skin",
+          "owner": "Bancott"
+        },
+        {
+          "url": "https://github.com/BarneyZhaoooo/dsh-theme-native/tree/main/plugin",
+          "name": "dsh-theme-native#plugin",
+          "owner": "BarneyZhaoooo"
+        },
+        {
+          "url": "https://github.com/BeiZi6/dsh-theme-plugin",
+          "name": "dsh-theme-plugin",
+          "owner": "BeiZi6"
+        },
+        {
+          "url": "https://github.com/berhbro/dsh-cyrene-theme",
+          "name": "dsh-cyrene-theme",
+          "owner": "berhbro"
+        },
+        {
+          "url": "https://github.com/caoyiwei850/dsh-client-ui-skins",
+          "name": "dsh-client-ui-skins",
+          "owner": "caoyiwei850"
+        },
+        {
+          "url": "https://github.com/cherrchen/dsh-theme-studio",
+          "name": "dsh-theme-studio",
+          "owner": "cherrchen"
+        },
+        {
+          "url": "https://github.com/chouxiaohuai/dsh-uiskin-theme",
+          "name": "dsh-uiskin-theme",
+          "owner": "chouxiaohuai"
+        },
+        {
+          "url": "https://github.com/Cicero010/dsh-whale-atelier",
+          "name": "dsh-whale-atelier",
+          "owner": "Cicero010"
+        },
+        {
+          "url": "https://github.com/codeMonkey-Pine/dsh-wallpaper",
+          "name": "dsh-wallpaper",
+          "owner": "codeMonkey-Pine"
+        },
+        {
+          "url": "https://github.com/CoolTea001/dsh-cool-theme",
+          "name": "dsh-cool-theme",
+          "owner": "CoolTea001"
+        },
+        {
+          "url": "https://github.com/CosmerHomura/dsh-yoimiya-theme",
+          "name": "dsh-yoimiya-theme",
+          "owner": "CosmerHomura"
+        },
+        {
+          "url": "https://github.com/CosmoSail/dsh-bloomglass",
+          "name": "dsh-bloomglass",
+          "owner": "CosmoSail"
+        },
+        {
+          "url": "https://github.com/CynicismBoyJYD/dsh-protect-eyes-skin",
+          "name": "dsh-protect-eyes-skin",
+          "owner": "CynicismBoyJYD"
+        },
+        {
+          "url": "https://github.com/d-dev0101/open-sea-skin",
+          "name": "open-sea-skin",
+          "owner": "d-dev0101"
+        },
+        {
+          "url": "https://github.com/d0ublecl1ck/dsh-csdn-theme",
+          "name": "dsh-csdn-theme",
+          "owner": "d0ublecl1ck"
+        },
+        {
+          "url": "https://github.com/dataizu/dsh-whale-aqua-theme",
+          "name": "dsh-whale-aqua-theme",
+          "owner": "dataizu"
+        },
+        {
+          "url": "https://github.com/Ddamage/dsh-shunshun-wallpaper",
+          "name": "dsh-shunshun-wallpaper",
+          "owner": "Ddamage"
+        },
+        {
+          "url": "https://github.com/ddbj-hub/dsh-wallpaper-skin",
+          "name": "dsh-wallpaper-skin",
+          "owner": "ddbj-hub"
+        },
+        {
+          "url": "https://github.com/dennisrongo/dsh-plugins/tree/main/plugins/dsh-theme",
+          "name": "dsh-plugins#dsh-theme",
+          "owner": "dennisrongo"
+        },
+        {
+          "url": "https://github.com/dhicoc/dsh-theme-mineradio",
+          "name": "dsh-theme-mineradio",
+          "owner": "dhicoc"
+        },
+        {
+          "url": "https://github.com/dingyi580/dsh-plugin-gemini-theme",
+          "name": "dsh-plugin-gemini-theme",
+          "owner": "dingyi580"
+        },
+        {
+          "url": "https://github.com/dirtywork22/dsh-client-ui-skin-bayern",
+          "name": "dsh-client-ui-skin-bayern",
+          "owner": "dirtywork22"
+        },
+        {
+          "url": "https://github.com/DocJlm/dsh-arknights/tree/main/skins/pramanix-eyjafjalla",
+          "name": "dsh-arknights#pramanix-eyjafjalla",
+          "owner": "DocJlm"
+        },
+        {
+          "url": "https://github.com/dreamtao2199/dsh-colors",
+          "name": "dsh-colors",
+          "owner": "dreamtao2199"
+        },
+        {
+          "url": "https://github.com/du-u-uck/DSH-Transparent-UI-Plugin",
+          "name": "DSH-Transparent-UI-Plugin",
+          "owner": "du-u-uck"
+        },
+        {
+          "url": "https://github.com/DucLong06/dsh-vietnam",
+          "name": "dsh-vietnam",
+          "owner": "DucLong06"
+        },
+        {
+          "url": "https://github.com/dyx003/dsh-client-ui-aqua-patched",
+          "name": "dsh-client-ui-aqua-patched",
+          "owner": "dyx003"
+        },
+        {
+          "url": "https://github.com/EIGHTfs/dsh-theme-mediascape",
+          "name": "dsh-theme-mediascape",
+          "owner": "EIGHTfs"
+        },
+        {
+          "url": "https://github.com/elong16/dsh-skin-xuyuanwu",
+          "name": "dsh-skin-xuyuanwu",
+          "owner": "elong16"
+        },
+        {
+          "url": "https://github.com/Erbsen16/dsh-client-ui-dracula",
+          "name": "dsh-client-ui-dracula",
+          "owner": "Erbsen16"
+        },
+        {
+          "url": "https://github.com/ethanchen669/dsh-plugin-fly-skins",
+          "name": "dsh-plugin-fly-skins",
+          "owner": "ethanchen669"
+        },
+        {
+          "url": "https://github.com/exoticknight/dsh-theme-eink-retro",
+          "name": "dsh-theme-eink-retro",
+          "owner": "exoticknight"
+        },
+        {
+          "url": "https://github.com/FAVKTOXIC/dsh-theme-liquid-glass",
+          "name": "dsh-theme-liquid-glass",
+          "owner": "FAVKTOXIC"
+        },
+        {
+          "url": "https://github.com/FeatherHunter/dsh-opencode-palette",
+          "name": "dsh-opencode-palette",
+          "owner": "FeatherHunter"
+        },
+        {
+          "url": "https://github.com/fengb3/dsh-theme-macintosh",
+          "name": "dsh-theme-macintosh",
+          "owner": "fengb3"
+        },
+        {
+          "url": "https://github.com/FormalistBlue/dsh-everforest",
+          "name": "dsh-everforest",
+          "owner": "FormalistBlue"
+        },
+        {
+          "url": "https://github.com/frank-fan-818/dsh-f1-skin",
+          "name": "dsh-f1-skin",
+          "owner": "frank-fan-818"
+        },
+        {
+          "url": "https://github.com/fuguang12123/dsh-theme-inkstone",
+          "name": "dsh-theme-inkstone",
+          "owner": "fuguang12123"
+        },
+        {
+          "url": "https://github.com/Fwkkk666/dsh-za-warudo",
+          "name": "dsh-za-warudo",
+          "owner": "Fwkkk666"
+        },
+        {
+          "url": "https://github.com/Galaxy-2001/Rhine-Lab-Codex-Theme/tree/main/dsh",
+          "name": "Rhine-Lab-Codex-Theme#dsh",
+          "owner": "Galaxy-2001"
+        },
+        {
+          "url": "https://github.com/gaopengpian/dsh-custom-ui-theme",
+          "name": "dsh-custom-ui-theme",
+          "owner": "gaopengpian"
+        },
+        {
+          "url": "https://github.com/GGBond2424648901/deep-whale-day-night-theme",
+          "name": "deep-whale-day-night-theme",
+          "owner": "GGBond2424648901"
+        },
+        {
+          "url": "https://github.com/GptsApp/dsh-stylevault",
+          "name": "dsh-stylevault",
+          "owner": "GptsApp"
+        },
+        {
+          "url": "https://github.com/H2CO3w/dsh-theme-frost",
+          "name": "dsh-theme-frost",
+          "owner": "H2CO3w"
+        },
+        {
+          "url": "https://github.com/hanyi7867069-create/dsh-moonrise",
+          "name": "dsh-moonrise",
+          "owner": "hanyi7867069-create"
+        },
+        {
+          "url": "https://github.com/HaoyueQin/deepseek-harness-background",
+          "name": "deepseek-harness-background",
+          "owner": "HaoyueQin"
+        },
+        {
+          "url": "https://github.com/HarmlessFunny/dsh-background-by-model",
+          "name": "dsh-background-by-model",
+          "owner": "HarmlessFunny"
+        },
+        {
+          "url": "https://github.com/hbgdjb/dsh-entry-transition",
+          "name": "dsh-entry-transition",
+          "owner": "hbgdjb"
+        },
+        {
+          "url": "https://github.com/HCGuo2000/hcguo-public/tree/main/plugins/amber-forge",
+          "name": "hcguo-public#amber-forge",
+          "owner": "HCGuo2000"
+        },
+        {
+          "url": "https://github.com/HerTa-st/dsh-theme-herta",
+          "name": "dsh-theme-herta",
+          "owner": "HerTa-st"
+        },
+        {
+          "url": "https://github.com/HeShen-1/deepseek-whale-wallpaper",
+          "name": "deepseek-whale-wallpaper",
+          "owner": "HeShen-1"
+        },
+        {
+          "url": "https://github.com/huzhengbang2007/dsh-orca-glass",
+          "name": "dsh-orca-glass",
+          "owner": "huzhengbang2007"
+        },
+        {
+          "url": "https://github.com/HwFee/HwFee-dsh/tree/master/plugins/cds-theme",
+          "name": "HwFee-dsh#cds-theme",
+          "owner": "HwFee"
+        },
+        {
+          "url": "https://github.com/iasiv5/dsh-skins",
+          "name": "dsh-skins",
+          "owner": "iasiv5"
+        },
+        {
+          "url": "https://github.com/iStarryDust/dsh-ui-liquid-glass",
+          "name": "dsh-ui-liquid-glass",
+          "owner": "iStarryDust"
+        },
+        {
+          "url": "https://github.com/jiangwangyang/dsh-theme-blackhole",
+          "name": "dsh-theme-blackhole",
+          "owner": "jiangwangyang"
+        },
+        {
+          "url": "https://github.com/Jimmyzwang-cloud/dsh-inkscreen-theme",
+          "name": "dsh-inkscreen-theme",
+          "owner": "Jimmyzwang-cloud"
+        },
+        {
+          "url": "https://github.com/jinxlux/xiao-theme-dsh-ui-plugin",
+          "name": "xiao-theme-dsh-ui-plugin",
+          "owner": "jinxlux"
+        },
+        {
+          "url": "https://github.com/jizenghui81/dsh-huashu-pixel",
+          "name": "dsh-huashu-pixel",
+          "owner": "jizenghui81"
+        },
+        {
+          "url": "https://github.com/JohnnyTing/dsh-official-homepage-theme",
+          "name": "dsh-official-homepage-theme",
+          "owner": "JohnnyTing"
+        },
+        {
+          "url": "https://github.com/johnsonspirit/ocean-wave-theme",
+          "name": "ocean-wave-theme",
+          "owner": "johnsonspirit"
+        },
+        {
+          "url": "https://github.com/Juryorca/dsh-custom-theme-import",
+          "name": "dsh-custom-theme-import",
+          "owner": "Juryorca"
+        },
+        {
+          "url": "https://github.com/JYT-copy/dsh-minecraft-ui",
+          "name": "dsh-minecraft-ui",
+          "owner": "JYT-copy"
+        },
+        {
+          "url": "https://github.com/kang200862/dsh-firefly-spring-skin",
+          "name": "dsh-firefly-spring-skin",
+          "owner": "kang200862"
+        },
+        {
+          "url": "https://github.com/keke050/dsh-wallpaper",
+          "name": "dsh-wallpaper",
+          "owner": "keke050"
+        },
+        {
+          "url": "https://github.com/kiive357q/dsh-nekojishi-vn",
+          "name": "dsh-nekojishi-vn",
+          "owner": "kiive357q"
+        },
+        {
+          "url": "https://github.com/kiligzzz/dsh-ui-appearance",
+          "name": "dsh-ui-appearance",
+          "owner": "kiligzzz"
+        },
+        {
+          "url": "https://github.com/KinGao294/dsh-skin",
+          "name": "dsh-skin",
+          "owner": "KinGao294"
+        },
+        {
+          "url": "https://github.com/kingOfSoySauce/dsh-liang-skin",
+          "name": "dsh-liang-skin",
+          "owner": "kingOfSoySauce"
+        },
+        {
+          "url": "https://github.com/kviiinh/dsh-whale-particles-bg",
+          "name": "dsh-whale-particles-bg",
+          "owner": "kviiinh"
+        },
+        {
+          "url": "https://github.com/LeemanCheung/dsh-qq2007-skin",
+          "name": "dsh-qq2007-skin",
+          "owner": "LeemanCheung"
+        },
+        {
+          "url": "https://github.com/LeemanCheung/dsh-skin-studio",
+          "name": "dsh-skin-studio",
+          "owner": "LeemanCheung"
+        },
+        {
+          "url": "https://github.com/lengzhanbao/dsh-raiden-theme",
+          "name": "dsh-raiden-theme",
+          "owner": "lengzhanbao"
+        },
+        {
+          "url": "https://github.com/lengzhanbao/dsh-taffy-theme",
+          "name": "dsh-taffy-theme",
+          "owner": "lengzhanbao"
+        },
+        {
+          "url": "https://github.com/Lhy723/dsh-neu-theme",
+          "name": "dsh-neu-theme",
+          "owner": "Lhy723"
+        },
+        {
+          "url": "https://github.com/Lichtspur/deepseek-style-theme",
+          "name": "deepseek-style-theme",
+          "owner": "Lichtspur"
+        },
+        {
+          "url": "https://github.com/lildanger/dsh-skin-win2000",
+          "name": "dsh-skin-win2000",
+          "owner": "lildanger"
+        },
+        {
+          "url": "https://github.com/linhut/dsh-stock-terminal",
+          "name": "dsh-stock-terminal",
+          "owner": "linhut"
+        },
+        {
+          "url": "https://github.com/lisongxuan/ds-hentai",
+          "name": "ds-hentai",
+          "owner": "lisongxuan"
+        },
+        {
+          "url": "https://github.com/lispking/dsh-qq-skin",
+          "name": "dsh-qq-skin",
+          "owner": "lispking"
+        },
+        {
+          "url": "https://github.com/Liu-ZA-81/dsh-theme-firefly",
+          "name": "dsh-theme-firefly",
+          "owner": "Liu-ZA-81"
+        },
+        {
+          "url": "https://github.com/liushuchang-2012/dsh-skin-liquid-glass",
+          "name": "dsh-skin-liquid-glass",
+          "owner": "liushuchang-2012"
+        },
+        {
+          "url": "https://github.com/liuyaguang8023/dsh-jcc-theme",
+          "name": "dsh-jcc-theme",
+          "owner": "liuyaguang8023"
+        },
+        {
+          "url": "https://github.com/liyy996/dsh-theme-windowsxp",
+          "name": "dsh-theme-windowsxp",
+          "owner": "liyy996"
+        },
+        {
+          "url": "https://github.com/longgege-cd/dsh-skin-pixel-anime",
+          "name": "dsh-skin-pixel-anime",
+          "owner": "longgege-cd"
+        },
+        {
+          "url": "https://github.com/Longxiangjunlin/dsh-endfield-theme",
+          "name": "dsh-endfield-theme",
+          "owner": "Longxiangjunlin"
+        },
+        {
+          "url": "https://github.com/LoveIrishCoffee/dsh-effort-ultra-skin",
+          "name": "dsh-effort-ultra-skin",
+          "owner": "LoveIrishCoffee"
+        },
+        {
+          "url": "https://github.com/lucky01222/dsh-workbench-theme",
+          "name": "dsh-workbench-theme",
+          "owner": "lucky01222"
+        },
+        {
+          "url": "https://github.com/luo0712yan0219-blip/dsh-whale-decor",
+          "name": "dsh-whale-decor",
+          "owner": "luo0712yan0219-blip"
+        },
+        {
+          "url": "https://github.com/luongthimydieu/dsh-client-ui-skin-kitty",
+          "name": "dsh-client-ui-skin-kitty",
+          "owner": "luongthimydieu"
+        },
+        {
+          "url": "https://github.com/luoyuejun9/dsh-skin-rotation",
+          "name": "dsh-skin-rotation",
+          "owner": "luoyuejun9"
+        },
+        {
+          "url": "https://github.com/LX-HMKK/DSH-appearance",
+          "name": "DSH-appearance",
+          "owner": "LX-HMKK"
+        },
+        {
+          "url": "https://github.com/lxxz1918/dsh-theme-customizer",
+          "name": "dsh-theme-customizer",
+          "owner": "lxxz1918"
+        },
+        {
+          "url": "https://github.com/lyingice/dsh-client-ui-mc-skin",
+          "name": "dsh-client-ui-mc-skin",
+          "owner": "lyingice"
+        },
+        {
+          "url": "https://github.com/lyq3/dsh-skin-nebula",
+          "name": "dsh-skin-nebula",
+          "owner": "lyq3"
+        },
+        {
+          "url": "https://github.com/MangMax/dsh-themes",
+          "name": "dsh-themes",
+          "owner": "MangMax"
+        },
+        {
+          "url": "https://github.com/megatronyy/dsh-skin-background",
+          "name": "dsh-skin-background",
+          "owner": "megatronyy"
+        },
+        {
+          "url": "https://github.com/mengnanxyyyy/dsh-markdown-xyy",
+          "name": "dsh-markdown-xyy",
+          "owner": "mengnanxyyyy"
+        },
+        {
+          "url": "https://github.com/MicroSharpAnt/dsh-theme-presets",
+          "name": "dsh-theme-presets",
+          "owner": "MicroSharpAnt"
+        },
+        {
+          "url": "https://github.com/MilkySnowWay123/dsh-client-ui-skin-tianlight",
+          "name": "dsh-client-ui-skin-tianlight",
+          "owner": "MilkySnowWay123"
+        },
+        {
+          "url": "https://github.com/MistyRain-field/dsh-hu-tao-skin",
+          "name": "dsh-hu-tao-skin",
+          "owner": "MistyRain-field"
+        },
+        {
+          "url": "https://github.com/MitterMeierGithub/dsh-darksoft-theme",
+          "name": "dsh-darksoft-theme",
+          "owner": "MitterMeierGithub"
+        },
+        {
+          "url": "https://github.com/more-nico/dsh-nico-theme",
+          "name": "dsh-nico-theme",
+          "owner": "more-nico"
+        },
+        {
+          "url": "https://github.com/MrmoLabs/dsh-yorha-ui",
+          "name": "dsh-yorha-ui",
+          "owner": "MrmoLabs"
+        },
+        {
+          "url": "https://github.com/mumuer1024/dsh-ui-liteglass",
+          "name": "dsh-ui-liteglass",
+          "owner": "mumuer1024"
+        },
+        {
+          "url": "https://github.com/mux9056-bot/dsh-theme",
+          "name": "dsh-theme",
+          "owner": "mux9056-bot"
+        },
+        {
+          "url": "https://github.com/Nefelibater/dsh-theme-prts-originium",
+          "name": "PRTS · 源石协议",
+          "owner": "Nefelibater"
+        },
+        {
+          "url": "https://github.com/Nektropy/dsh-starry-sky-theme",
+          "name": "dsh-starry-sky-theme",
+          "owner": "Nektropy"
+        },
+        {
+          "url": "https://github.com/nickfast2025/dsh-sky-window/tree/main/dsh-sky-window",
+          "name": "dsh-sky-window#dsh-sky-window",
+          "owner": "nickfast2025"
+        },
+        {
+          "url": "https://github.com/nightosong/gord-dsh-saber-theme",
+          "name": "gord-dsh-saber-theme",
+          "owner": "nightosong"
+        },
+        {
+          "url": "https://github.com/niiang/dsh-kimino-theme",
+          "name": "dsh-kimino-theme",
+          "owner": "niiang"
+        },
+        {
+          "url": "https://github.com/NoNameLeGo/dsh-catppuccin-theme",
+          "name": "dsh-catppuccin-theme",
+          "owner": "NoNameLeGo"
+        },
+        {
+          "url": "https://github.com/ossFrankFrank/dsh-dracula-theme",
+          "name": "dsh-dracula-theme",
+          "owner": "ossFrankFrank"
+        },
+        {
+          "url": "https://github.com/PAKIKNOWLEDGE/dsh-client-ui-skin-claude",
+          "name": "dsh-client-ui-skin-claude",
+          "owner": "PAKIKNOWLEDGE"
+        },
+        {
+          "url": "https://github.com/ph4310822/dsh-edex-xry-ui/tree/main/packages/bundle",
+          "name": "dsh-edex-xry-ui#bundle",
+          "owner": "ph4310822"
+        },
+        {
+          "url": "https://github.com/pure-serendipity-five/dsh-liquid-glass-studio",
+          "name": "dsh-liquid-glass-studio",
+          "owner": "pure-serendipity-five"
+        },
+        {
+          "url": "https://github.com/qaz040619/dsh-bluefatfish",
+          "name": "dsh-bluefatfish",
+          "owner": "qaz040619"
+        },
+        {
+          "url": "https://github.com/qiaoshi-dot/dsh-wechat-classic-theme",
+          "name": "dsh-wechat-classic-theme",
+          "owner": "qiaoshi-dot"
+        },
+        {
+          "url": "https://github.com/QinpanWan/dsh-sky-skin",
+          "name": "dsh-sky-skin",
+          "owner": "QinpanWan"
+        },
+        {
+          "url": "https://github.com/quaner1234-cmd/DSH-THEME-KAMI",
+          "name": "DSH-THEME-KAMI",
+          "owner": "quaner1234-cmd"
+        },
+        {
+          "url": "https://github.com/raven3005672/dsh-plugin-shell-skin",
+          "name": "dsh-plugin-shell-skin",
+          "owner": "raven3005672"
+        },
+        {
+          "url": "https://github.com/readfish/dsh-client-theme-cyber",
+          "name": "dsh-client-theme-cyber",
+          "owner": "readfish"
+        },
+        {
+          "url": "https://github.com/RevolutionLA/dsh-dream-skin",
+          "name": "dsh-dream-skin",
+          "owner": "RevolutionLA"
+        },
+        {
+          "url": "https://github.com/RexCue/dsh-wallpaper",
+          "name": "dsh-wallpaper",
+          "owner": "RexCue"
+        },
+        {
+          "url": "https://github.com/rinDBeans/codex-ui",
+          "name": "codex-ui",
+          "owner": "rinDBeans"
+        },
+        {
+          "url": "https://github.com/RizenHNT/dsh-skin-digital-arcade",
+          "name": "dsh-skin-digital-arcade",
+          "owner": "RizenHNT"
+        },
+        {
+          "url": "https://github.com/ruegg114514/dsh-colorlab",
+          "name": "dsh-colorlab",
+          "owner": "ruegg114514"
+        },
+        {
+          "url": "https://github.com/runcat-tommy/dsh-theme-manager",
+          "name": "dsh-theme-manager",
+          "owner": "runcat-tommy"
+        },
+        {
+          "url": "https://github.com/S-anZZz/dsh-pink-bow-kitty",
+          "name": "dsh-pink-bow-kitty",
+          "owner": "S-anZZz"
+        },
+        {
+          "url": "https://github.com/SamizuHM/dsh-client-ui-theme-xp",
+          "name": "dsh-client-ui-theme-xp",
+          "owner": "SamizuHM"
+        },
+        {
+          "url": "https://github.com/sayzwx/dsh-xingkong-theme",
+          "name": "dsh-xingkong-theme",
+          "owner": "sayzwx"
+        },
+        {
+          "url": "https://github.com/Sddft97/dsh-client-ui-skin-verdandi",
+          "name": "dsh-client-ui-skin-verdandi",
+          "owner": "Sddft97"
+        },
+        {
+          "url": "https://github.com/SenryLee/dsh-frosted-window",
+          "name": "dsh-frosted-window",
+          "owner": "SenryLee"
+        },
+        {
+          "url": "https://github.com/shawnlone/dsh-theme-tuner",
+          "name": "dsh-theme-tuner",
+          "owner": "shawnlone"
+        },
+        {
+          "url": "https://github.com/ShokouP/dsh-theme-liuguang/tree/main/liuguang",
+          "name": "dsh-theme-liuguang#liuguang",
+          "owner": "ShokouP"
+        },
+        {
+          "url": "https://github.com/Sim-xia/dsh-vscode-theme",
+          "name": "dsh-vscode-theme",
+          "owner": "Sim-xia"
+        },
+        {
+          "url": "https://github.com/Simon-yyy/dsh-theme-escook",
+          "name": "dsh-theme-escook",
+          "owner": "Simon-yyy"
+        },
+        {
+          "url": "https://github.com/skymecode/dsh-deep-diving",
+          "name": "dsh-deep-diving",
+          "owner": "skymecode"
+        },
+        {
+          "url": "https://github.com/SLin-code/dsh-custom-skin",
+          "name": "dsh-custom-skin",
+          "owner": "SLin-code"
+        },
+        {
+          "url": "https://github.com/Small-tailqwq/dsh-deep-whale/tree/main/maid-atelier",
+          "name": "dsh-deep-whale#maid-atelier",
+          "owner": "Small-tailqwq"
+        },
+        {
+          "url": "https://github.com/Smith-yue/harness-plugin",
+          "name": "harness-plugin",
+          "owner": "Smith-yue"
+        },
+        {
+          "url": "https://github.com/soarGuo/dsh-skin-lab",
+          "name": "dsh-skin-lab",
+          "owner": "soarGuo"
+        },
+        {
+          "url": "https://github.com/Soviet-Dreadnaught/dsh-theme-longmarch",
+          "name": "dsh-theme-longmarch",
+          "owner": "Soviet-Dreadnaught"
+        },
+        {
+          "url": "https://github.com/starslittle/dsh-blue-whale",
+          "name": "dsh-blue-whale",
+          "owner": "starslittle"
+        },
+        {
+          "url": "https://github.com/starsstreaming/beautiCode/tree/main/integrations/deepseek-harness",
+          "name": "beautiCode#deepseek-harness",
+          "owner": "starsstreaming"
+        },
+        {
+          "url": "https://github.com/StevenZha0/dsh-vae-theme",
+          "name": "dsh-vae-theme",
+          "owner": "StevenZha0"
+        },
+        {
+          "url": "https://github.com/student-jia/dsh-plugin-genshin-paimon-theme",
+          "name": "dsh-plugin-genshin-paimon-theme",
+          "owner": "student-jia"
+        },
+        {
+          "url": "https://github.com/suuuuunamei/dsh-kaze-tachinu-theme",
+          "name": "dsh-kaze-tachinu-theme",
+          "owner": "suuuuunamei"
+        },
+        {
+          "url": "https://github.com/TaiyakiOffical/claude-style-skin",
+          "name": "claude-style-skin",
+          "owner": "TaiyakiOffical"
+        },
+        {
+          "url": "https://github.com/taoser258/dsh-client-ui-skin-qingxiao",
+          "name": "dsh-client-ui-skin-qingxiao",
+          "owner": "taoser258"
+        },
+        {
+          "url": "https://github.com/TFboy1/dsh-minecraft-ui",
+          "name": "dsh-minecraft-ui",
+          "owner": "TFboy1"
+        },
+        {
+          "url": "https://github.com/Theflowyears/dsh-arknights-theme",
+          "name": "dsh-arknights-theme",
+          "owner": "Theflowyears"
+        },
+        {
+          "url": "https://github.com/tiantyu/dsh-skin-toggle",
+          "name": "dsh-skin-toggle",
+          "owner": "tiantyu"
+        },
+        {
+          "url": "https://github.com/TinyNian/dsh-harness-os/tree/main/packages/dsh-harness-os",
+          "name": "dsh-harness-os#dsh-harness-os",
+          "owner": "TinyNian"
+        },
+        {
+          "url": "https://github.com/Tkingxiao/dsh-any-background",
+          "name": "dsh-any-background",
+          "owner": "Tkingxiao"
+        },
+        {
+          "url": "https://github.com/Tommy00748/dsh-theme-cyberpunk2077",
+          "name": "dsh-theme-cyberpunk2077",
+          "owner": "Tommy00748"
+        },
+        {
+          "url": "https://github.com/tpmoonchefryan/dsh-joi-channel-theme",
+          "name": "dsh-joi-channel-theme",
+          "owner": "tpmoonchefryan"
+        },
+        {
+          "url": "https://github.com/TQSY114514/dsh-ui-appearance",
+          "name": "dsh-ui-appearance",
+          "owner": "TQSY114514"
+        },
+        {
+          "url": "https://github.com/tsdfy/dsh-skin-switcher",
+          "name": "dsh-skin-switcher",
+          "owner": "tsdfy"
+        },
+        {
+          "url": "https://github.com/tszmzz1026/dsh-epindel-boot-animation/tree/main/packages/dsh-glass-theme",
+          "name": "dsh-epindel-boot-animation#dsh-glass-theme",
+          "owner": "tszmzz1026"
+        },
+        {
+          "url": "https://github.com/tuibe/dsh-deepseek-theme-studio",
+          "name": "dsh-deepseek-theme-studio",
+          "owner": "tuibe"
+        },
+        {
+          "url": "https://github.com/w4xxx/dsh-xia-plugins/tree/main/packages/client-game-assistant",
+          "name": "dsh-xia-plugins#packages/client-game-assistant",
+          "owner": "w4xxx"
+        },
+        {
+          "url": "https://github.com/Waldsatte/dsh-theme-taojian",
+          "name": "dsh-theme-taojian",
+          "owner": "Waldsatte"
+        },
+        {
+          "url": "https://github.com/webkubor/dsh-bloom-theme",
+          "name": "dsh-bloom-theme",
+          "owner": "webkubor"
+        },
+        {
+          "url": "https://github.com/Wedomizing/Dsh_genshin_nicole_skin",
+          "name": "Dsh_genshin_nicole_skin",
+          "owner": "Wedomizing"
+        },
+        {
+          "url": "https://github.com/WhatCannotBeSaid/EVA-Inspired-Theme",
+          "name": "EVA-Inspired-Theme",
+          "owner": "WhatCannotBeSaid"
+        },
+        {
+          "url": "https://github.com/Witherwithwinter/dsh-ccx",
+          "name": "dsh-ccx",
+          "owner": "Witherwithwinter"
+        },
+        {
+          "url": "https://github.com/wsxwj123/dsh-plugins/tree/main/packages/dsh-appearance-gallery",
+          "name": "dsh-plugins#dsh-appearance-gallery",
+          "owner": "wsxwj123"
+        },
+        {
+          "url": "https://github.com/wxj783428795/dsh-plugins/tree/main/dsh-theme-black-hole",
+          "name": "dsh-plugins#dsh-theme-black-hole",
+          "owner": "wxj783428795"
+        },
+        {
+          "url": "https://github.com/Xian-JL/dsh-Kinich-theme",
+          "name": "dsh-Kinich-theme",
+          "owner": "Xian-JL"
+        },
+        {
+          "url": "https://github.com/Xian-JL/dsh-Xiao-theme",
+          "name": "dsh-Xiao-theme",
+          "owner": "Xian-JL"
+        },
+        {
+          "url": "https://github.com/xiaotuchu/dsh-theme-eye-care",
+          "name": "dsh-theme-eye-care",
+          "owner": "xiaotuchu"
+        },
+        {
+          "url": "https://github.com/xikan0/dsh-outerwilds-theme",
+          "name": "dsh-outerwilds-theme",
+          "owner": "xikan0"
+        },
+        {
+          "url": "https://github.com/xingyingyuzhui/dsh-liquid-glass",
+          "name": "dsh-liquid-glass",
+          "owner": "xingyingyuzhui"
+        },
+        {
+          "url": "https://github.com/xiyunyunyun/dsh-client-ui-seaglass",
+          "name": "dsh-client-ui-seaglass",
+          "owner": "xiyunyunyun"
+        },
+        {
+          "url": "https://github.com/yaanlaan/deepseek-colorful",
+          "name": "deepseek-colorful",
+          "owner": "yaanlaan"
+        },
+        {
+          "url": "https://github.com/YE-ZINAN/dsh-skin-im2005",
+          "name": "dsh-skin-im2005",
+          "owner": "YE-ZINAN"
+        },
+        {
+          "url": "https://github.com/yefengliu1/dsh-theme-songgrid",
+          "name": "dsh-theme-songgrid",
+          "owner": "yefengliu1"
+        },
+        {
+          "url": "https://github.com/Yinxe/deepseek-harness-plugins/tree/main/plugins/web-style",
+          "name": "deepseek-harness-plugins#web-style",
+          "owner": "Yinxe"
+        },
+        {
+          "url": "https://github.com/ymh0000123/dsh-theme-endfield",
+          "name": "dsh-theme-endfield",
+          "owner": "ymh0000123"
+        },
+        {
+          "url": "https://github.com/yq1930/dsh-skin-asuka-p01",
+          "name": "dsh-skin-asuka-p01",
+          "owner": "yq1930"
+        },
+        {
+          "url": "https://github.com/yryd/dafy-whale-theme",
+          "name": "dafy-whale-theme",
+          "owner": "yryd"
+        },
+        {
+          "url": "https://github.com/yunxiiQwQ/dsh-maid-whale-UI/tree/main/maid-whale-webui",
+          "name": "dsh-maid-whale-UI#maid-whale-webui",
+          "owner": "yunxiiQwQ"
+        },
+        {
+          "url": "https://github.com/yzke/dsh-icon-theme",
+          "name": "dsh-icon-theme",
+          "owner": "yzke"
+        },
+        {
+          "url": "https://github.com/zampie/sakura-afternoon-skin",
+          "name": "sakura-afternoon-skin",
+          "owner": "zampie"
+        },
+        {
+          "url": "https://github.com/ZaVang/dsh-diorama",
+          "name": "dsh-diorama",
+          "owner": "ZaVang"
+        },
+        {
+          "url": "https://github.com/zhang66633/dsh-pixel-ui",
+          "name": "dsh-pixel-ui",
+          "owner": "zhang66633"
+        },
+        {
+          "url": "https://github.com/zhijun-dai/Catppuccin-dsh-theme",
+          "name": "Catppuccin-dsh-theme",
+          "owner": "zhijun-dai"
+        },
+        {
+          "url": "https://github.com/zhijun-dai/Solarized-dsh-theme",
+          "name": "Solarized-dsh-theme",
+          "owner": "zhijun-dai"
+        },
+        {
+          "url": "https://github.com/zhongyichang1998/dsh-open-meadow",
+          "name": "dsh-open-meadow",
+          "owner": "zhongyichang1998"
+        },
+        {
+          "url": "https://github.com/ZHOUcourier/dsh-theme-whalegirl",
+          "name": "dsh-theme-whalegirl",
+          "owner": "ZHOUcourier"
+        },
+        {
+          "url": "https://github.com/zhuifengqug/pixel-skin",
+          "name": "pixel-skin",
+          "owner": "zhuifengqug"
+        },
+        {
+          "url": "https://github.com/zhxqc/dsh-oh-my-theme",
+          "name": "dsh-oh-my-theme",
+          "owner": "zhxqc"
+        },
+        {
+          "url": "https://github.com/ZJUZhiyuCai/dsh-ivory",
+          "name": "dsh-ivory",
+          "owner": "ZJUZhiyuCai"
+        },
+        {
+          "url": "https://github.com/zkforge/dsh-claude-desktop-theme",
+          "name": "dsh-claude-desktop-theme",
+          "owner": "zkforge"
+        },
+        {
+          "url": "https://github.com/zmm863-commits/dsh-client-ui-paopaocat",
+          "name": "dsh-client-ui-paopaocat",
+          "owner": "zmm863-commits"
+        },
+        {
+          "url": "https://github.com/zuoyunlai/dsh-theme-palette",
+          "name": "dsh-theme-palette",
+          "owner": "zuoyunlai"
+        },
+        {
+          "url": "https://github.com/zxbc/dsh-vscode-themes2",
+          "name": "dsh-vscode-themes2",
+          "owner": "zxbc"
+        },
+        {
+          "url": "https://github.com/zys2026/dsh-theme-tide",
+          "name": "dsh-theme-tide",
+          "owner": "zys2026"
+        }
+      ]
+    },
+    {
+      "id": "sidebar-named",
+      "label": "名称指向侧栏的 UI 插件",
+      "category": "ui",
+      "fields": [
+        "name"
+      ],
+      "pattern": "sidebar|side-bar|侧栏|侧边栏",
+      "examples": [
+        {
+          "id": "https://github.com/ACGsu/dsh-sidebar-panel-fold",
+          "name": "dsh-sidebar-panel-fold",
+          "owner": "ACGsu",
+          "category": "ui",
+          "description": "把 DeepSeek Harness 侧边栏的全局面板列表收进一行，点击弹出浮层切换面板。"
+        },
+        {
+          "id": "https://github.com/All3nCN/dsh-better-sidebar-N23",
+          "name": "dsh-better-sidebar-N23",
+          "owner": "All3nCN",
+          "category": "ui",
+          "description": "dsh-better-sidebar 完整工作台 fork：资源管理器、编辑器、终端、Git、浏览器与分屏，外加仿 VSCode 外壳重构（全宽紧凑顶栏与活动栏）；npm 包名 @all3cn/dsh-better-sidebar-n23。"
+        },
+        {
+          "id": "https://github.com/e2mcc/dsh-popout-sidebar",
+          "name": "dsh-popout-sidebar",
+          "owner": "e2mcc",
+          "category": "ui",
+          "description": "可弹出式侧边栏：侧边栏展示产物与文件树，支持多种文件预览形式；并可弹出为独立浏览器标签页（可拖至另一显示器）；兼容其他sidebar插件，可以同时显示。"
+        }
+      ],
+      "flags": "iu",
+      "count": 34,
+      "members": [
+        {
+          "url": "https://github.com/ACGsu/dsh-sidebar-panel-fold",
+          "name": "dsh-sidebar-panel-fold",
+          "owner": "ACGsu"
+        },
+        {
+          "url": "https://github.com/All3nCN/dsh-better-sidebar-N23",
+          "name": "dsh-better-sidebar-N23",
+          "owner": "All3nCN"
+        },
+        {
+          "url": "https://github.com/Cjrrrrrrrr/dsh-plugins/tree/main/packages/dsh-sidebar-tidy",
+          "name": "dsh-plugins#dsh-sidebar-tidy",
+          "owner": "Cjrrrrrrrr"
+        },
+        {
+          "url": "https://github.com/dingchenhui0618-arch/dsh-market-sidebar",
+          "name": "dsh-market-sidebar",
+          "owner": "dingchenhui0618-arch"
+        },
+        {
+          "url": "https://github.com/DONGBIN007/dsh-sidebar-restart",
+          "name": "dsh-sidebar-restart",
+          "owner": "DONGBIN007"
+        },
+        {
+          "url": "https://github.com/drscrewdriver/dsh-brief-sidebar",
+          "name": "dsh-brief-sidebar",
+          "owner": "drscrewdriver"
+        },
+        {
+          "url": "https://github.com/drscrewdriver/dsh-canvas-tsx-sidebar",
+          "name": "dsh-canvas-tsx-sidebar",
+          "owner": "drscrewdriver"
+        },
+        {
+          "url": "https://github.com/e2mcc/dsh-popout-sidebar",
+          "name": "dsh-popout-sidebar",
+          "owner": "e2mcc"
+        },
+        {
+          "url": "https://github.com/garrisonz/dsh-sidebar-width",
+          "name": "dsh-sidebar-width",
+          "owner": "garrisonz"
+        },
+        {
+          "url": "https://github.com/hufeide/dsh-sidebar-assistant",
+          "name": "dsh-sidebar-assistant",
+          "owner": "hufeide"
+        },
+        {
+          "url": "https://github.com/ingeb0rga/dsh-sidebar-hover",
+          "name": "dsh-sidebar-hover",
+          "owner": "ingeb0rga"
+        },
+        {
+          "url": "https://github.com/kuanfu0430/dsh-sidebar-branch-chat",
+          "name": "dsh-sidebar-branch-chat",
+          "owner": "kuanfu0430"
+        },
+        {
+          "url": "https://github.com/Limitinfinitude/DSH-Right-Sidebar",
+          "name": "DSH-Right-Sidebar",
+          "owner": "Limitinfinitude"
+        },
+        {
+          "url": "https://github.com/mhxy13867806343/dsh-sidebar-account",
+          "name": "dsh-sidebar-account",
+          "owner": "mhxy13867806343"
+        },
+        {
+          "url": "https://github.com/moophone/dsh-sidebar-fold",
+          "name": "dsh-sidebar-fold",
+          "owner": "moophone"
+        },
+        {
+          "url": "https://github.com/NattoCB/dsh-plugin-sidebar-views",
+          "name": "dsh-plugin-sidebar-views",
+          "owner": "NattoCB"
+        },
+        {
+          "url": "https://github.com/Nishikinov/dsh-sidebar-settings-button",
+          "name": "dsh-sidebar-settings-button",
+          "owner": "Nishikinov"
+        },
+        {
+          "url": "https://github.com/NOirBRight/dsh-codex-sidebar",
+          "name": "dsh-codex-sidebar",
+          "owner": "NOirBRight"
+        },
+        {
+          "url": "https://github.com/omdsh-dev/DSH-better-sidebar",
+          "name": "DSH-better-sidebar",
+          "owner": "omdsh-dev"
+        },
+        {
+          "url": "https://github.com/oxlyn/dsh-flyout-sidebar",
+          "name": "dsh-flyout-sidebar",
+          "owner": "oxlyn"
+        },
+        {
+          "url": "https://github.com/Oxygen-Wang/dsh-cursorlike-sidebar",
+          "name": "dsh-cursorlike-sidebar",
+          "owner": "Oxygen-Wang"
+        },
+        {
+          "url": "https://github.com/prgrmrwy/dsh-sidebar-session-provider-icon",
+          "name": "dsh-sidebar-session-provider-icon",
+          "owner": "prgrmrwy"
+        },
+        {
+          "url": "https://github.com/ruanimal/dsh-sidebar-panel-buttons",
+          "name": "dsh-sidebar-panel-buttons",
+          "owner": "ruanimal"
+        },
+        {
+          "url": "https://github.com/Ruiming-cn/dsh-ask-in-sidebar",
+          "name": "dsh-ask-in-sidebar",
+          "owner": "Ruiming-cn"
+        },
+        {
+          "url": "https://github.com/sailoumili/dsh-sidebar-plus",
+          "name": "dsh-sidebar-plus",
+          "owner": "sailoumili"
+        },
+        {
+          "url": "https://github.com/VanlxyG/dsh-hover-sidebar",
+          "name": "dsh-hover-sidebar",
+          "owner": "VanlxyG"
+        },
+        {
+          "url": "https://github.com/watershow666/dsh-sidebar-icon-row",
+          "name": "dsh-sidebar-icon-row",
+          "owner": "watershow666"
+        },
+        {
+          "url": "https://github.com/wilsonchengassistant/dsh-mobile-sidebar",
+          "name": "dsh-mobile-sidebar",
+          "owner": "wilsonchengassistant"
+        },
+        {
+          "url": "https://github.com/wjingshan/dsh-sidebar-focus",
+          "name": "dsh-sidebar-focus",
+          "owner": "wjingshan"
+        },
+        {
+          "url": "https://github.com/xintingcui/dsh-sidebar-panels-fold",
+          "name": "dsh-sidebar-panels-fold",
+          "owner": "xintingcui"
+        },
+        {
+          "url": "https://github.com/xmwengxing/dsh-client-ui-sidebar-perfmon",
+          "name": "dsh-client-ui-sidebar-perfmon",
+          "owner": "xmwengxing"
+        },
+        {
+          "url": "https://github.com/xmwengxing/dsh-sidebar-enhancement",
+          "name": "dsh-sidebar-enhancement",
+          "owner": "xmwengxing"
+        },
+        {
+          "url": "https://github.com/zhxnix/dsh-sidebar-annotations",
+          "name": "dsh-sidebar-annotations",
+          "owner": "zhxnix"
+        },
+        {
+          "url": "https://github.com/zuojinxin/dsh-sidebar-manager",
+          "name": "dsh-sidebar-manager",
+          "owner": "zuojinxin"
+        }
+      ]
+    }
+  ]
+}

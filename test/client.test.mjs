@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
+import { build } from 'esbuild';
+import { fileURLToPath } from 'node:url';
+import { getCommunityOverview } from '../src/community-catalog.js';
 
 const clientUrl = new URL('../src/client.js', import.meta.url);
 const styleUrl = new URL('../src/client-style.js', import.meta.url);
@@ -10,6 +13,7 @@ const fixturePlan = () => ({ kind: 'single', title: '检查数据后生成报告
 const candidate = { id: 'data', name: 'dsh-data-insight', title: '数据洞察', summary: '本地表格分析', capabilities: ['csv', 'report'], requirements: ['读取本地文件'], install: { spec: 'https://example.com/data.git#abcd', commit: 'abcd', version: '0.1.0' }, evidence: { metadata: 'verified', installation: 'not-tested', task: 'not-tested', sources: ['https://example.com/data'] }, repository: 'https://example.com/data' };
 const copy = value => JSON.parse(JSON.stringify(value));
 
+let compiledClient;
 async function loadClient(overrides = {}) {
   const tags = [];
   const React = { createElement: (type, props, ...children) => ({ type, props: props ?? {}, children }), useState() {}, useEffect() {}, useRef() {} };
@@ -21,22 +25,21 @@ async function loadClient(overrides = {}) {
     ...overrides,
   };
   const scope = vm.createContext(globals);
-  const style = await readFile(styleUrl, 'utf8').catch(() => null);
-  const client = await readFile(clientUrl, 'utf8').catch(() => null);
-  const creator = await readFile(new URL('../src/creator-feedback.js', import.meta.url), 'utf8');
-  assert.ok(style && client, 'native client source and scoped style are implemented');
-  vm.runInContext(style.replace(/export /g, '') + '\nglobalThis.finderCss=finderCss;', scope, { filename: 'client-style.js' });
-  vm.runInContext(creator.replace(/export /g, ''), scope, { filename: 'creator-feedback.js' });
-  const exports = client.replace(/^import React from 'react';?\s*/m, '').replace(/^import \{ finderCss \} from '\.\/client-style\.js';?\s*/m, '').replace(/^import \{ createCreatorFeedbackDraft, renderCreatorFeedbackDraft \} from '\.\/creator-feedback\.js';?\s*/m, '').replace(/export /g, '');
-  vm.runInContext(exports + '\nglobalThis.clientModule={inject,apply,createFinderController,prepareSessionDraft,candidateDetails:typeof candidateDetails===\'function\'?candidateDetails:undefined};', scope, { filename: 'client.js' });
+  compiledClient ??= build({ entryPoints: [fileURLToPath(clientUrl)], bundle: true, format: 'iife', globalName: 'clientModule', platform: 'browser', external: ['react', '@deepseek-ai/dsh-client-ui-primitives'], write: false });
+  globals.require = name => {
+    if (name === '@deepseek-ai/dsh-client-ui-primitives') return { MarkdownText: props => globals.React.createElement('div', { 'data-official-markdown': true }, props.text), MarkdownDelegateProvider: props => props.children };
+    assert.equal(name, 'react'); return globals.React;
+  };
+  vm.runInContext((await compiledClient).outputFiles[0].text, scope, { filename: 'client.js' });
   return { module: globals.clientModule, globals, tags, React };
 }
 
 function host(options = {}) {
+  const created = [];
   const registrations = [], effects = [], starts = [], panels = [], connected = [], retained = [], drafts = [], opened = [], released = [];
   let snapshot = { phase: 'ready', items: [{ workspaceId: 'workspace-a', title: '合成测试项目', path: '/tmp/finder-test', sessionIds: [] }] };
   const listeners = new Set();
-  const binding = { sessionId: 'session-a', ctx: { get: name => name === 'conversation' ? { input: { requestDraftInitialization: (target, draft) => { drafts.push({ target, draft }); return options.draftStatus ?? 'applied'; } } } : undefined } };
+  const binding = { sessionId: 'session-a', session: { projections: { faceOf: () => ({ getSnapshot: () => 'cordis' }) } }, ctx: { get: name => name === 'conversation' ? { input: { requestDraftInitialization: (target, draft) => { drafts.push({ target, draft }); return options.draftStatus ?? 'applied'; } } } : undefined } };
   const ctx = {
     workspaces: { list: { getSnapshot: () => snapshot, subscribe: fn => { listeners.add(fn); return () => listeners.delete(fn); } } },
     uiWorkspace: {
@@ -45,14 +48,15 @@ function host(options = {}) {
       openSession: id => opened.push(id),
     },
     sessions: {
+      ...(options.creator ? { create: async args => { created.push(args); const id = options.create ? await options.create(args) : 'session-a'; snapshot = { ...snapshot, items: snapshot.items.map(item => ({ ...item, sessionIds: [...item.sessionIds, id] })) }; return id; } } : {}),
       retain: (id, retainOptions) => { retained.push({ id, options: retainOptions }); return { binding, ready: options.ready ?? Promise.resolve(binding), release: () => released.push(id) }; },
       binding: () => options.expired ? undefined : binding,
     },
     layout: { selectPanel: id => panels.push(id) },
     effect: fn => effects.push(fn()),
-    slots: { inject: (_name, fn) => fn(), register: (spec, component) => { registrations.push({ spec, component }); return () => {}; } },
+    slots: { inject: (_name, fn) => fn(), register: (spec, component) => { registrations.push({ spec, component }); return () => {}; }, entriesOfSlot: () => [], subscribe: () => () => {} },
   };
-  return { ctx, starts, panels, connected, retained, drafts, opened, released, binding, registrations, effects, setSnapshot: value => { snapshot = value; for (const fn of listeners) fn(); }, dispose: () => { for (const stop of effects.reverse()) if (typeof stop === 'function') stop(); } };
+  return { ctx, created, starts, panels, connected, retained, drafts, opened, released, binding, registrations, effects, setSnapshot: value => { snapshot = value; for (const fn of listeners) fn(); }, dispose: () => { for (const stop of effects.reverse()) if (typeof stop === 'function') stop(); } };
 }
 
 function server(routes = {}) {
@@ -82,7 +86,9 @@ async function renderWorkbench(snapshot, options = {}) {
   };
   const loaded = await loadClient({ React, ...options }); const h = host();
   loaded.module.apply(h.ctx);
-  const tree = h.registrations.find(item => item.spec.name === 'main').component();
+  const rawTree = h.registrations.find(item => item.spec.name === 'main').component();
+  const resolve = node => Array.isArray(node) ? node.map(resolve) : !node || typeof node !== 'object' ? node : typeof node.type === 'function' ? resolve(node.type({ ...node.props, children: node.children })) : { ...node, props: options.openEvidence && node.type === 'details' && node.children.some(child => child?.type === 'summary' && child.children.includes('来源与备选方案')) ? { ...node.props, open: true } : node.props, children: resolve(node.children) };
+  const tree = resolve(rawTree);
   const nodes = [];
   const walk = node => {
     if (Array.isArray(node)) { for (const child of node) walk(child); return; }
@@ -112,6 +118,18 @@ test('native client registers one sidebar entry and the matching main panel and 
   assert.equal(loaded.tags.length, 1);
   assert.match(loaded.tags[0].textContent, /\.pf_/);
   h.dispose(); assert.equal(loaded.tags.length, 0);
+});
+
+test('embedded execution declares the official file body seat with a session-scoped Tab API', async () => {
+  const loaded = await loadClient(); const h = host(); loaded.module.apply(h.ctx);
+  const execution = h.registrations.find(item => item.spec.name === 'plugin-finder.execution');
+  const preview = execution.spec.children['plugin-finder.execution.file'];
+  assert.equal(preview.kind, 'keyed'); assert.equal(preview.scope, 'session');
+  assert.equal(typeof preview.inject.hooks.tabInfo, 'function');
+  assert.ok(h.registrations.every(item => !item.spec.children?.['sidebar.right.pane.tab']), 'the official file slot has one existing declarer and must never be redeclared');
+  assert.ok(loaded.module.inject.includes('sidebarRightTabs'));
+  assert.ok(!loaded.module.inject.includes('sidebarRight'), 'global main-view sidebar must not route embedded execution files');
+  h.dispose();
 });
 
 test('bootstrap does not call models; analysis is editable before recommendation', async () => {
@@ -312,7 +330,10 @@ test('home describes live source search without presenting the old cache count a
   const controller = module.createFinderController(h.ctx, { fetch: api.fetch });
   await controller.bootstrap();
   const rendered = await renderWorkbench(controller.getSnapshot());
-  assert.match(rendered.text, /按需求搜索插件来源/);
+  assert.equal(controller.getSnapshot().view, 'home');
+  assert.ok(rendered.visibleNodes.some(node => node.type === 'button' && node.children.includes('帮我找方案')));
+  assert.match(rendered.visibleText, /说说你的需求.*找到就用/);
+  assert.equal(rendered.nodes.some(node => node.props?.className === 'pf_tabs'), false);
   assert.doesNotMatch(rendered.text, /索引 15|15 条插件记录/);
   assert.match(rendered.text, /GitHub DSH 插件/);
   controller.close();
@@ -361,28 +382,37 @@ test('source failures do not render an empty result as proof that no plugin exis
   controller.close();
 });
 
-test('recommendation prioritizes plan, selected installation and handoff while retaining folded evidence and history', async () => {
+test('recommendation prioritizes direct use and creation while retaining folded evidence and history', async () => {
   const { module } = await loadClient(); const h = host();
   const workflow = { ...identifiedWorkflow(), plan: { ...fixturePlan(), limits: ['关键限制一', '关键限制二', '关键限制三', '补充限制四'] }, candidates: [{ ...candidate, capabilities: ['原始能力长字段完整保留'], limitations: ['作者限制完整保留'] }], feedback: [{ id: 'older', outcome: 'partial', note: '旧反馈详细说明完整保留' }], warnings: ['检索内部详细核对提示完整保留'] };
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
-  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind();
   const rendered = await renderWorkbench(controller.getSnapshot());
-  const positions = ['建议这样完成', '所选插件安装指引', '把方案带到 DSH 会话', '查看本次搜索与供给覆盖'].map(label => rendered.visibleText.indexOf(label));
+  const positions = ['当前方案', '使用这个方案', '创建自己的插件', '这次会做什么', '来源与备选方案'].map(label => rendered.visibleText.indexOf(label));
   assert.ok(positions.every(index => index >= 0), positions.join(',')); assert.deepEqual([...positions].sort((a, b) => a - b), positions);
-  assert.ok(rendered.visibleNodes.some(node => node.type === 'select' && node.props['aria-label'] === '历史版本'));
-  for (const phrase of ['关键限制一', '关键限制二', '关键限制三']) assert.ok(rendered.visibleText.includes(phrase), phrase);
-  for (const phrase of ['原始能力长字段完整保留', '作者限制完整保留', '旧反馈详细说明完整保留', '检索内部详细核对提示完整保留', '补充限制四']) {
+  assert.doesNotMatch(rendered.visibleText, /复制|粘贴|交接|去会话继续|Creator|下一步/);
+  const history = rendered.nodes.find(node => node.type === 'details' && node.props['aria-label'] === '当前方案与历史版本');
+  assert.ok(history); assert.equal(Boolean(history.props.open), false);
+  assert.match(rendered.text, /方案记录 · 版本/);assert.ok(!rendered.visibleText.includes('方案记录 · 版本'));
+  const versionSelect = rendered.nodes.find(node => node.type === 'select' && node.props['aria-label'] === '历史版本');
+  assert.ok(versionSelect); assert.equal(versionSelect.props.value, workflow.revisionId);
+  assert.equal(versionSelect.children.length, workflow.revisions.length);
+  for (const phrase of ['关键限制一', '关键限制二']) assert.ok(rendered.visibleText.includes(phrase), phrase);
+  for (const phrase of ['原始能力长字段完整保留', '作者限制完整保留', '旧反馈详细说明完整保留', '检索内部详细核对提示完整保留', '关键限制三', '补充限制四']) {
     assert.ok(rendered.text.includes(phrase), phrase); assert.ok(!rendered.visibleText.includes(phrase), phrase);
   }
   const search = rendered.nodes.find(node => node.type === 'details' && node.props['aria-label'] === '本次搜索来源');
   assert.ok(search); assert.equal(search.props.open, false); controller.close();
 });
 
-test('selected installation guide exposes exact copy and native-manager steps without installing anything', async () => {
+test('optional folded source controls retain exact copy and native-manager actions without becoming main path', async () => {
   const { module } = await loadClient(); const h = host(); const workflow = { ...identifiedWorkflow(), candidates: [{ ...candidate, install: { ...candidate.install, lifecycleScripts: ['prepare'] } }] };
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
-  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
-  const copied = []; const rendered = await renderWorkbench(controller.getSnapshot(), { keepAlive: true, navigator: { clipboard: { writeText: async value => copied.push(value) } } });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind();
+  const collapsed = await renderWorkbench(controller.getSnapshot());
+  assert.match(collapsed.visibleText, /使用这个方案/);assert.match(collapsed.visibleText, /创建自己的插件/);
+  assert.doesNotMatch(collapsed.visibleText, /复制安装来源|粘贴|打开原生插件管理|把方案带到 DSH 会话/);
+  const copied = []; const rendered = await renderWorkbench(controller.getSnapshot(), { keepAlive: true, openEvidence: true, navigator: { clipboard: { writeText: async value => copied.push(value) } } });
   for (const phrase of ['所选插件安装指引', candidate.install.spec, '添加插件', '粘贴', '安装', '启用', '回到侧栏', '发现好插件', '我的方案', '本机方案会保留', 'prepare']) assert.ok(rendered.visibleText.includes(phrase), phrase);
   const copyAction = rendered.visibleNodes.find(node => node.type === 'button' && node.children.includes('复制安装来源'));
   const managerAction = rendered.visibleNodes.find(node => node.type === 'button' && node.children.includes('打开原生插件管理'));
@@ -391,13 +421,14 @@ test('selected installation guide exposes exact copy and native-manager steps wi
   assert.equal(api.calls.length, 1); assert.doesNotMatch(rendered.visibleText, /已安装成功|自动安装完成|已验证兼容/); rendered.dispose(); controller.close();
 });
 
-test('folding search evidence keeps failure and cache boundaries visible before handoff', async () => {
+test('folding search evidence keeps failure and cache boundaries visible before using an available plan', async () => {
   const { module } = await loadClient();
-  for (const [status, expected] of [['failed', /搜索未完成.*部分来源读取失败/], ['stale', /缓存/]]) {
+  for (const [status, expected] of [['failed', /部分来源尚未查完/], ['stale', /部分来源尚未查完/]]) {
     const h = host(); const workflow = { ...identifiedWorkflow(), discovery: { searchedAt: '2026-10-21T10:00:00Z', sources: [{ id: 'community', title: '社区目录', status, error: '来源详细失败说明', fetchedAt: '2026-10-20T10:00:00Z' }] } };
     const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
-    const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const rendered = await renderWorkbench(controller.getSnapshot());
-    assert.match(rendered.visibleText, expected); assert.ok(rendered.visibleText.indexOf(status === 'failed' ? '搜索未完成' : '缓存') < rendered.visibleText.indexOf('把方案带到 DSH 会话'));
+    const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind(); const rendered = await renderWorkbench(controller.getSnapshot());
+    assert.match(rendered.visibleText, expected); assert.ok(rendered.visibleText.indexOf('部分来源尚未查完') < rendered.visibleText.indexOf('使用这个方案'));
+    assert.ok(!rendered.visibleText.includes('重试查找'));
     assert.ok(!rendered.visibleText.includes('来源详细失败说明')); assert.ok(rendered.nodes.some(node => node.type === 'details' && node.props['aria-label'] === '本次搜索来源' && node.props.open === false)); controller.close();
   }
 });
@@ -407,9 +438,10 @@ test('native plans skip installation guidance and missing selected sources never
   for (const native of [true, false]) {
     const h = host(); const workflow = { ...identifiedWorkflow(), ...(native ? { plan: { ...fixturePlan(), kind: 'native', pluginIds: [], steps: fixturePlan().steps.map(step => ({ ...step, owner: 'dsh' })) }, candidates: [] } : { candidates: [{ ...candidate, install: {} }] }) };
     const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
-    const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const rendered = await renderWorkbench(controller.getSnapshot());
-    assert.ok(rendered.visibleText.includes('把方案带到 DSH 会话'));
-    if (native) assert.ok(!rendered.visibleText.includes('所选插件安装指引')); else { assert.match(rendered.visibleText, /精确安装来源.*未确认|暂无.*精确安装来源/); assert.ok(!rendered.visibleNodes.some(node => node.type === 'button' && node.children.includes('复制安装来源'))); }
+    const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind(); const rendered = await renderWorkbench(controller.getSnapshot());
+    assert.ok(rendered.visibleText.includes('使用这个方案')); assert.ok(rendered.visibleText.includes('创建自己的插件'));
+    assert.doesNotMatch(rendered.visibleText, /把方案带到 DSH 会话|安装、工作区与会话草稿|复制|粘贴/);
+    if (native) assert.ok(!rendered.visibleText.includes('所选插件安装指引')); else { assert.match(rendered.text, /精确安装来源.*未确认|暂无.*精确安装来源/); assert.ok(!rendered.visibleNodes.some(node => node.type === 'button' && node.children.includes('复制安装来源'))); }
     controller.close();
   }
 });
@@ -553,13 +585,14 @@ test('ready search sources do not imply that a user market has already been conf
   controller.close();
 });
 
-test('preserved drafts have an explicit exact-session opener that never writes, connects again or submits', async () => {
+test('legacy preserved-draft opener still targets the exact session without writes or submission', async () => {
   const { module } = await loadClient(); const h = host({ draftStatus: 'preserved' }); const api = server();
   const controller = module.createFinderController(h.ctx, { fetch: api.fetch });
   await controller.bootstrap(); await controller.analyze('检查 CSV'); await controller.recommend();
   controller.selectWorkspace('workspace-a'); await controller.handoff();
   assert.deepEqual(copy(controller.getSnapshot().preservedTarget), { sessionId: 'session-a', workspaceId: 'workspace-a' });
-  const rendered = await renderWorkbench(controller.getSnapshot()); assert.ok(rendered.nodes.some(node => node.type === 'button' && node.children.includes('打开已有草稿')));
+  const rendered = await renderWorkbench(controller.getSnapshot()); assert.ok(!rendered.visibleNodes.some(node => node.type === 'button' && node.children.some(label => typeof label === 'string' && /打开已有草稿|确认方案，去会话继续/.test(label))));
+  assert.equal(typeof controller.openPreservedDraft, 'function');
   assert.equal(controller.openPreservedDraft(), true);
   assert.deepEqual(h.opened, ['session-a']); assert.deepEqual(h.panels, [null]);
   assert.equal(h.connected.length, 1); assert.equal(h.drafts.length, 1); assert.equal(h.starts.length, 0);
@@ -603,11 +636,13 @@ const identifiedWorkflow = (taskId = 'task-a', revisionNumber = 1, stage = 'plan
 const summaryFor = workflow => ({ taskId: workflow.taskId, request: workflow.request, title: workflow.plan?.title ?? workflow.intent.goal, updatedAt: workflow.updatedAt, revisionCount: workflow.revisions.length, latestRevisionId: workflow.revisionId, latestRevisionNumber: workflow.revisionNumber, stage: workflow.stage });
 const historyEnvelope = workflow => ({ workflow, history: [summaryFor(workflow)], historyTotal: 1 });
 
-test('blank workflow still exposes 我的方案 and opens exact task versions without model calls', async () => {
+test('blank home exposes history and opens exact task versions without model calls', async () => {
   const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow();
   const api = server({ history: async () => ({ ok: true, json: async () => historyEnvelope(a) }), open: async () => ({ ok: true, json: async () => historyEnvelope(a) }) });
   const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
-  const blank = await renderWorkbench(controller.getSnapshot()); assert.match(blank.text, /找方案/); assert.match(blank.text, /我的方案/);
+  const blank = await renderWorkbench(controller.getSnapshot()); assert.equal(controller.getSnapshot().view, 'home');
+  assert.ok(blank.visibleNodes.some(node => node.type === 'button' && node.children.includes('帮我找方案')));
+  assert.ok(blank.visibleNodes.some(node => node.type === 'button' && node.children.includes('历史方案')));
   assert.equal(await controller.showHistory(), true); assert.equal(controller.getSnapshot().view, 'history');
   assert.equal(await controller.openTask('task-a', 'task-a-revision-1'), true);
   assert.equal(controller.getSnapshot().taskId, 'task-a'); assert.equal(controller.getSnapshot().revisionId, 'task-a-revision-1');
@@ -708,7 +743,7 @@ test('saved-session continuation rejects expired bindings and releases the retai
 test('history rendering shows restoration origin, version choices and only selected-version feedback', async () => {
   const { module } = await loadClient(); const h = host(); const a = { ...identifiedWorkflow(), origin: { type: 'backup', label: '原始需求备份.json', importedAt: '2026-10-20T14:00:00Z' } };
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(a), ...historyEnvelope(a) }) }) });
-  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind();
   const rendered = await renderWorkbench(controller.getSnapshot()); assert.match(rendered.text, /恢复来源：原始需求备份.json/); assert.match(rendered.text, /这个版本的反馈/); assert.match(rendered.text, /缺少出处/);
   assert.ok(rendered.nodes.some(node => node.type === 'select' && node.props['aria-label'] === '历史版本'));
   assert.ok(rendered.nodes.some(node => node.type === 'button' && node.children.includes('反馈并优化方案'))); controller.close();
@@ -769,7 +804,7 @@ test('coverage presents real source supply and bounded inspection separately fro
 test('old saved plans keep their source evidence without fabricated zero coverage', async () => {
   const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow();
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
-  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const rendered = await renderWorkbench(controller.getSnapshot());
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind(); const rendered = await renderWorkbench(controller.getSnapshot());
   assert.match(rendered.text, /未记录.*供给覆盖|供给覆盖.*未记录/); assert.match(rendered.text, /来源曾使用缓存/); assert.match(rendered.text, /2026-10-20T12:00:00Z/);
   assert.doesNotMatch(rendered.text, /供给记录[：\s]+0|未检查[：\s]+0/);
   assert.equal(api.calls.length, 1); controller.close();
@@ -778,7 +813,7 @@ test('old saved plans keep their source evidence without fabricated zero coverag
 test('coverage preserves failed and stale source boundaries without summing overlapping supplies', async () => {
   const { module } = await loadClient(); const h = host(); const workflow = { ...identifiedWorkflow(), discovery: { searchedAt: '2026-10-20T16:00:00Z', sources: [], sourceCoverage: [{ sourceId: 'a', status: 'cached', fetchedAt: '2026-10-19T01:00:00Z', total: 6084, matched: 2, inspected: 1, resolved: 1, excluded: 0, uninspected: 1, inspectionBudget: 24 }, { sourceId: 'b', status: 'stale', total: 6084, matched: 2, inspected: 1, resolved: 1, excluded: 0, uninspected: 1, inspectionBudget: 24 }, { sourceId: 'c', status: 'failed', total: null, matched: null, inspected: null, resolved: null, excluded: null, uninspected: null, inspectionBudget: 24 }], coverage: { matched: 3, inspected: 2, resolved: 2, excluded: 0, uninspected: 1, returned: 1, inspectionBudget: 24 } } };
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
-  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const rendered = await renderWorkbench(controller.getSnapshot());
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind(); const rendered = await renderWorkbench(controller.getSnapshot());
   assert.match(rendered.text, /使用缓存/); assert.match(rendered.text, /使用过期缓存/); assert.match(rendered.text, /读取失败/); assert.match(rendered.text, /2026-10-19T01:00:00Z/);
   assert.doesNotMatch(rendered.text, /12168|12,168/); assert.match(rendered.text, /未记录|未确认/); controller.close();
 });
@@ -786,7 +821,7 @@ test('coverage preserves failed and stale source boundaries without summing over
 test('each recorded candidate offers only an explicit local author-feedback draft download', async () => {
   const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow();
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
-  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const rendered = await renderWorkbench(controller.getSnapshot());
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind(); const rendered = await renderWorkbench(controller.getSnapshot());
   assert.ok(rendered.nodes.some(node => node.type === 'button' && node.children.includes('导出给作者的反馈草稿')));
   assert.match(rendered.text, /请填写场景摘要并核对后自行分享/);
   assert.doesNotMatch(rendered.text, /自动发送给作者|作者后台已同步/); controller.close();
@@ -796,7 +831,7 @@ test('clicking the author-feedback draft button downloads redacted Markdown and 
   const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow();
   const backup = { format: 'plugin-finder-task', version: 1, task: { id: workflow.taskId, originalRequest: 'PRIVATE ORIGINAL /Users/private/material.md', revisions: [{ id: workflow.revisionId, number: 1, createdAt: '2026-10-20T12:00:00Z', workflow: { plan: fixturePlan(), candidates: [candidate] } }], feedback: [{ revisionId: workflow.revisionId, outcome: 'blocked', note: 'PRIVATE FEEDBACK' }], handoffs: [{ sessionId: 'private-session-id' }] } };
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }), export: async () => ({ ok: true, json: async () => backup }) });
-  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const snapshot = controller.getSnapshot(); controller.close();
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind(); const snapshot = controller.getSnapshot(); controller.close();
   let downloaded; const clicked = [];
   class LocalURL extends URL { static createObjectURL(blob) { downloaded = blob; return 'blob:local-only'; } static revokeObjectURL() {} }
   const document = { head: { appendChild() {} }, body: { appendChild() {} }, createElement: tag => tag === 'a' ? { click() { clicked.push({ href: this.href, download: this.download }); }, remove() {} } : { dataset: {}, remove() {} } };
@@ -814,11 +849,15 @@ const telemetryStatus = (patch = {}) => ({ enabled: false, consent: 'unasked', p
 test('unasked consent is opt-in and bootstrap does not register, upload, poll or change the workflow', async () => {
   const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow(); const status = telemetryStatus();
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), telemetry: status }) }) });
-  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); const rendered = await renderWorkbench(controller.getSnapshot());
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  const home = await renderWorkbench(controller.getSnapshot());
+  assert.equal(home.nodes.some(node => node.props?.className === 'pf_telemetry'), false);
+  assert.ok(home.nodes.some(node => node.type === 'button' && node.children.includes('回传设置')));
+  controller.showFind(); assert.equal((await renderWorkbench(controller.getSnapshot())).nodes.some(node => node.props?.className === 'pf_telemetry'), false); controller.openTelemetrySettings(); const rendered = await renderWorkbench(controller.getSnapshot());
   assert.deepEqual(copy(controller.getSnapshot().telemetry), status); assert.match(rendered.text, /同意并自动回传/); assert.match(rendered.text, /暂不同意/);
   assert.match(rendered.text, /摘要/); assert.match(rendered.text, /集中/); assert.match(rendered.text, /不倒灌|不补传/); assert.match(rendered.text, /文件|完整会话/);
   const settings = rendered.nodes.find(node => node.type === 'details' && node.props.className === 'pf_telemetry');
-  assert.ok(settings); assert.equal(settings.props.open, false, 'consent is never automatically expanded on first use');
+  assert.ok(settings); assert.equal(settings.props.open, true, 'consent settings appear only after the explicit action');
   assert.ok(rendered.nodes.some(node => node.type === 'button' && node.children.includes('回传设置')));
   assert.match(rendered.text, /无法保证识别所有敏感内容/); assert.match(rendered.text, /关联需求.*方案.*摘要/);
   assert.equal(rendered.nodes.some(node => node.type === 'input' && node.props.type === 'checkbox' && (node.props.checked || node.props.defaultChecked)), false);
@@ -828,14 +867,14 @@ test('unasked consent is opt-in and bootstrap does not register, upload, poll or
 test('first unasked feedback may show one optional settings entry without collecting the saved record', async () => {
   const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow(); const status = telemetryStatus();
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), telemetry: status }) }), feedback: async () => ({ ok: true, json: async () => ({ saved: true, ...historyEnvelope(workflow), telemetry: status }) }) });
-  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind();
   assert.equal(controller.getSnapshot().telemetrySuggestionVisible, false);
   assert.equal(await controller.saveFeedback('partial', '真实反馈'), true);
   assert.equal(controller.getSnapshot().telemetry.enabled, false); assert.equal(controller.getSnapshot().telemetrySuggestionVisible, true);
   const rendered = await renderWorkbench(controller.getSnapshot());
   assert.match(rendered.text, /可选：允许自动回传后续反馈摘要/); assert.match(rendered.text, /本次已保存的记录不会追溯上传/);
   assert.ok(rendered.nodes.some(node => node.type === 'button' && node.children.includes('查看可选回传设置')));
-  assert.equal(rendered.nodes.find(node => node.type === 'details' && node.props.className === 'pf_telemetry').props.open, false);
+  assert.equal(rendered.nodes.some(node => node.type === 'details' && node.props.className === 'pf_telemetry'), false);
   controller.openTelemetrySettings(); assert.equal(controller.getSnapshot().telemetrySettingsOpen, true);
   assert.equal(controller.getSnapshot().telemetry.enabled, false); assert.equal(controller.getSnapshot().telemetrySuggestionVisible, false);
   assert.equal((await renderWorkbench(controller.getSnapshot())).nodes.find(node => node.type === 'details' && node.props.className === 'pf_telemetry').props.open, true);
@@ -865,18 +904,18 @@ test('only explicit consent actions send the displayed policy version and declin
 test('enabled feedback reports pending automatic sync instead of claiming a network receipt', async () => {
   const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow(); const status = telemetryStatus({ enabled: true, consent: 'accepted', hasRemoteRegistration: true, queued: 1, lastError: '网络暂不可用' });
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), telemetry: status }) }), feedback: async () => ({ ok: true, json: async () => ({ saved: true, ...historyEnvelope(workflow), telemetry: status }) }) });
-  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); await controller.saveFeedback('partial', '只在模型摘要里清理');
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind(); await controller.saveFeedback('partial', '只在模型摘要里清理');
   assert.match(controller.getSnapshot().notice, /自动同步|等待同步/); assert.doesNotMatch(controller.getSnapshot().notice, /已回传|已送达|同步完成/);
-  const rendered = await renderWorkbench(controller.getSnapshot()); assert.match(rendered.text, /网络暂不可用/); assert.match(rendered.text, /停止回传/); controller.close();
+  controller.openTelemetrySettings(); const rendered = await renderWorkbench(controller.getSnapshot()); assert.match(rendered.text, /网络暂不可用/); assert.match(rendered.text, /停止回传/); controller.close();
 });
 
 test('status refresh is manual and deletion pending never renders a completed deletion', async () => {
   const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow(); let status = telemetryStatus({ enabled: true, consent: 'accepted', hasRemoteRegistration: true, queued: 2, delivered: 4 });
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), telemetry: status }) }), 'telemetry-delete': async () => { status = telemetryStatus({ consent: 'declined', delivered: 4, deletionPending: true, lastError: '离线，删除待处理', hasRemoteRegistration: true }); return { ok: true, json: async () => status }; }, 'telemetry-status': async () => ({ ok: true, json: async () => status }) });
-  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); assert.equal(await controller.deleteTelemetry(), true);
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind(); assert.equal(await controller.deleteTelemetry(), true);
   assert.equal(controller.getSnapshot().telemetry.enabled, false); assert.equal(controller.getSnapshot().telemetry.deletionPending, true); assert.match(controller.getSnapshot().notice, /待处理|尚未确认/); assert.doesNotMatch(controller.getSnapshot().notice, /删除完成|已删除全部/);
   assert.equal(api.calls.some(call => call.url.endsWith('telemetry-status')), false); await controller.refreshTelemetry(); assert.equal(api.calls.at(-1).options.method, 'GET'); assert.equal(api.calls.filter(call => call.url.endsWith('telemetry-status')).length, 1);
-  const rendered = await renderWorkbench(controller.getSnapshot()); assert.match(rendered.text, /删除待处理|删除申请.*待处理/); controller.close();
+  controller.openTelemetrySettings(); const rendered = await renderWorkbench(controller.getSnapshot()); assert.match(rendered.text, /删除待处理|删除申请.*待处理/); controller.close();
 });
 
 test('plan selection is durably recorded before a native handoff and selection failure blocks Host side effects', async () => {
@@ -917,4 +956,517 @@ test('a successful local feedback with queue failure visibly reports unconfirmed
   const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); assert.equal(await controller.saveFeedback('partial', '真实反馈'), true);
   const state = controller.getSnapshot(); assert.equal(state.feedbackSaved, true); assert.equal(state.taskId, workflow.taskId); assert.match(state.notice, /本机/); assert.match(state.notice, /未能确认入队|未能保存/); assert.doesNotMatch(state.notice, /将按.*自动同步|等待自动同步/);
   const rendered = await renderWorkbench(state); assert.ok(rendered.text.includes(warning)); assert.match(rendered.text, /集中同步异常|集中记录未能/); controller.close();
+});
+
+const creationFixture = () => ({ version: 1, source: { taskId: 'task-a', revisionId: 'task-a-revision-1' }, trigger: { kind: 'user-customization', reason: '定制专用面板' }, strategy: 'new', reuseAssessment: '现成插件可参考，定制保留本地工作流。', candidateDecisions: [{ pluginId: 'data', decision: 'reuse', reason: '可先用现成分析功能' }], questions: [{ id: 'view', question: '需要哪种视图？', options: ['列表', '卡片'], reason: '影响首版界面' }], answers: [], assumptions: ['手动录入'], blueprint: Object.fromEntries(['name', 'purpose', 'workflow', 'inputs', 'outputs', 'ui', 'data', 'tools', 'runtime', 'scope', 'acceptance'].map(k => [k, '合成蓝图 ' + k])), status: 'draft', supply: { status: 'current', intentHash: 'intent', searchedAt: '2026-10-22' }, contentHash: 'hash-a', draft: '请使用官方 Creator 创建合成插件。' });
+const creationWorkflow = () => ({ ...identifiedWorkflow(), localOnly: true, creation: creationFixture(), creatorAttempts: [], creatorHandoff: null });
+
+test('co-creation start is explicit customization and preserves ordinary history', async () => {
+  const { module } = await loadClient(); const h = host(); let workflow = identifiedWorkflow();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }), 'creation-start': async options => { assert.equal(JSON.parse(options.body).trigger, 'user-customization'); workflow = creationWorkflow(); return { ok: true, json: async () => historyEnvelope(workflow) }; } });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch }); await c.bootstrap(); await c.startCreation();
+  assert.equal(c.getSnapshot().creation.status, 'draft'); assert.equal(c.getSnapshot().view, 'create'); assert.equal(c.getSnapshot().feedback.length, 1);
+  const rendered = await renderWorkbench(c.getSnapshot()); assert.match(rendered.visibleText, /创建自己的插件/); assert.match(rendered.visibleText, /开始创建/); assert.match(rendered.visibleText, /需要哪种视图/);
+  assert.doesNotMatch(rendered.visibleText, /确认蓝图并核对供给|复制|交接|Creator/);
+  assert.equal(rendered.visibleNodes.find(node => node.type === 'button' && node.children.includes('开始创建')).props.disabled, true, 'a genuinely unanswered required question blocks execution');
+  assert.equal(rendered.visibleNodes.some(node => node.type === 'select' && node.props['aria-label'] === 'Creator 工作区'), false); assert.match(rendered.text, /本机/);
+  assert.equal(h.connected.length, 0); assert.equal(h.drafts.length, 0); c.close();
+});
+
+test('editable creation draft survives navigation and saving appends a revision', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = creationWorkflow(); let sent;
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }), 'creation-update': async options => { sent = JSON.parse(options.body); return { ok: true, json: async () => historyEnvelope({ ...workflow, revisionId: 'task-a-revision-2', creation: { ...workflow.creation, blueprint: sent.blueprint } }) }; } });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch }); await c.bootstrap(); c.editCreation({ blueprint: { name: '专用工作台' } }); c.showFind(); c.showCreation();
+  assert.equal(c.getSnapshot().creationForm.blueprint.name, '专用工作台'); assert.equal(c.getSnapshot().creationDirty, true);
+  assert.equal(await c.updateCreation(), true); assert.equal(sent.blueprint.name, '专用工作台'); assert.equal(sent.confirm, false); assert.equal(c.getSnapshot().revisionId, 'task-a-revision-2'); assert.equal(c.getSnapshot().creationDirty, false); c.close();
+});
+
+test('Creator handoff refuses unconfirmed and edited blueprints without claiming', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = creationWorkflow();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch }); await c.bootstrap(); c.selectWorkspace('workspace-a');
+  assert.equal(await c.creatorHandoff(), false); assert.equal(api.calls.filter(x => x.url.endsWith('creator-claim')).length, 0); assert.match(c.getSnapshot().error, /确认/); c.close();
+});
+
+test('co-creation feedback stays local even when ordinary telemetry is enabled', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = creationWorkflow();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), telemetry: { enabled: true, consent: 'accepted', policyVersion: 'v1' } }) }) });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch }); await c.bootstrap(); await c.saveFeedback('partial', '合成反馈');
+  assert.match(c.getSnapshot().notice, /本机/); assert.doesNotMatch(c.getSnapshot().notice, /自动同步/); assert.equal(c.getSnapshot().telemetrySuggestionVisible, false); c.close();
+});
+
+const readyCreationWorkflow = () => { const w = creationWorkflow(); w.creation.status = 'ready'; w.creation.questions = []; return w; };
+const readyBootstrap = workflow => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), hostVersion: '0.2.1-rc.2' });
+
+test('ready blueprint uses official Creator claim and saves exact source before draft navigation', async () => {
+  const { module } = await loadClient(); const h = host({ creator: true }); let workflow = readyCreationWorkflow(); let attempt;
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => readyBootstrap(workflow) }), 'creator-claim': async options => { attempt = { ...JSON.parse(options.body), attemptId: 'attempt-a', status: 'creating', purpose: 'creator' }; return { ok: true, json: async () => ({ ...historyEnvelope(workflow), claim: 'acquired', attempt }) }; }, 'creator-record': async options => { attempt = { ...attempt, ...JSON.parse(options.body) }; workflow = { ...workflow, creatorAttempts: [attempt], creatorHandoff: attempt }; return { ok: true, json: async () => ({ ...historyEnvelope(workflow), saved: true, attempt }) }; } });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch }); await c.bootstrap(); c.selectWorkspace('workspace-a'); assert.equal(await c.creatorHandoff(), true);
+  assert.deepEqual(copy(h.created), [{ workspaceId: 'workspace-a', agentPreset: 'cordis' }]); assert.equal(h.connected.length, 0); assert.equal(h.drafts.length, 1); assert.equal(h.drafts[0].draft.clearPreviousDraft, false); assert.deepEqual(h.opened, ['session-a']); assert.equal(c.getSnapshot().creatorHandoff.status, 'applied'); c.close();
+});
+
+test('late Creator save recovery survives close and can save while server active revision differs', async () => {
+  const { module } = await loadClient(); let resolveCreate; const h = host({ creator: true, create: () => new Promise(resolve => { resolveCreate = resolve; }) }); const workflow = readyCreationWorkflow(); let attempt, fail = true;
+  const map = new Map(); const draftStorage = { getItem: k => map.get(k) || null, setItem: (k, v) => map.set(k, v), removeItem: k => map.delete(k) };
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => readyBootstrap(workflow) }), 'creator-claim': async options => { attempt = { ...JSON.parse(options.body), attemptId: 'attempt-late', status: 'creating', purpose: 'creator' }; workflow.creatorAttempts = [attempt]; return { ok: true, json: async () => ({ ...historyEnvelope(workflow), claim: 'acquired', attempt }) }; }, 'creator-record': async options => { if (fail) throw new Error('offline'); attempt = { ...attempt, ...JSON.parse(options.body) }; return { ok: true, json: async () => ({ ...historyEnvelope(identifiedWorkflow('task-other')), saved: true, attempt }) }; } });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage }); await c.bootstrap(); c.selectWorkspace('workspace-a'); const pending = c.creatorHandoff();
+  while (!resolveCreate) await new Promise(resolve => setTimeout(resolve, 0)); c.cancel(); assert.equal(await pending, false); c.close(); resolveCreate('session-a');
+  for (let i = 0; i < 30 && !map.has('dsh.plugin-finder.creator-recovery.attempt-late'); i++) await new Promise(resolve => setTimeout(resolve, 1));
+  const restored = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage }); await restored.bootstrap(); assert.equal(restored.getSnapshot().pendingCreatorRecord.sessionId, 'session-a'); fail = false;
+  assert.equal(await restored.retryCreatorSave(), true); assert.equal(restored.getSnapshot().taskId, 'task-a'); assert.equal(restored.getSnapshot().pendingCreatorRecord, null); assert.equal(h.created.length, 1); assert.equal(h.drafts.length, 0); restored.close();
+});
+
+test('two open windows preserve separate Creator recovery records', async () => {
+  const { module } = await loadClient(); const map = new Map(); const draftStorage = { getItem: k => map.get(k) || null, setItem: (k, v) => map.set(k, v), removeItem: k => map.delete(k) };
+  const make = async suffix => {
+    const workflow = readyCreationWorkflow(); workflow.taskId = 'task-' + suffix; workflow.revisionId = 'revision-' + suffix; const h = host({ creator: true });
+    const api = server({ bootstrap: async () => ({ ok: true, json: async () => readyBootstrap(workflow) }), 'creator-claim': async options => ({ ok: true, json: async () => ({ ...historyEnvelope(workflow), claim: 'acquired', attempt: { ...JSON.parse(options.body), attemptId: 'attempt-' + suffix, status: 'creating' } }) }), 'creator-record': async () => { throw new Error('offline'); } });
+    const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage }); await c.bootstrap(); c.selectWorkspace('workspace-a'); return c;
+  };
+  const a = await make('a'), b = await make('b'); await a.creatorHandoff(); await b.creatorHandoff();
+  const records = [...map.values()].map(value => JSON.parse(value));
+  assert.ok(records.some(record => record.attemptId === 'attempt-a')); assert.ok(records.some(record => record.attemptId === 'attempt-b')); a.close(); b.close();
+});
+
+test('save-only recovery accepts the same session already settled by server', async () => {
+  const { module } = await loadClient(); const workflow = readyCreationWorkflow(); let fail = true, attempt;
+  const h = host({ creator: true }); const api = server({ bootstrap: async () => ({ ok: true, json: async () => readyBootstrap(workflow) }), 'creator-claim': async options => { attempt = { ...JSON.parse(options.body), attemptId: 'attempt-settled', status: 'creating' }; return { ok: true, json: async () => ({ ...historyEnvelope(workflow), claim: 'acquired', attempt }) }; }, 'creator-record': async options => { if (fail) throw new Error('offline'); return { ok: true, json: async () => ({ saved: true, attempt: { ...attempt, ...JSON.parse(options.body), status: 'applied' } }) }; } });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch }); await c.bootstrap(); c.selectWorkspace('workspace-a'); await c.creatorHandoff(); assert.equal(c.getSnapshot().pendingCreatorRecord.status, 'created'); fail = false;
+  assert.equal(await c.retryCreatorSave(), true); assert.equal(c.getSnapshot().pendingCreatorRecord, null); assert.equal(h.drafts.length, 0); assert.equal(h.created.length, 1); c.close();
+});
+
+test('saving one Creator recovery keeps the next workspace recovery available until both are saved', async () => {
+  const { module } = await loadClient(); const h = host({ creator: true }); const workflow = readyCreationWorkflow();
+  const records = ['a', 'b'].map(suffix => ({ taskId: workflow.taskId, revisionId: workflow.revisionId, contentHash: workflow.creation.contentHash, workspaceId: 'workspace-' + suffix, attemptId: 'attempt-' + suffix, sessionId: 'session-' + suffix, status: 'created' }));
+  workflow.creatorAttempts = records.map(({ sessionId, ...record }) => ({ ...record, status: 'creating' }));
+  const map = new Map(records.map(record => ['dsh.plugin-finder.creator-recovery.' + record.attemptId, JSON.stringify(record)]));
+  const draftStorage = { getItem: key => map.get(key) || null, setItem: (key, value) => map.set(key, value), removeItem: key => map.delete(key) };
+  const saved = [];
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => readyBootstrap(workflow) }), 'creator-record': async options => {
+    const attempt = JSON.parse(options.body); saved.push(attempt);
+    workflow.creatorAttempts = workflow.creatorAttempts.map(item => item.attemptId === attempt.attemptId ? attempt : item);
+    return { ok: true, json: async () => ({ ...historyEnvelope(workflow), saved: true, attempt }) };
+  } });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage });
+  try {
+    await c.bootstrap(); assert.equal(c.getSnapshot().pendingCreatorRecord.attemptId, 'attempt-a');
+    assert.equal(await c.retryCreatorSave(), true);
+    assert.equal(c.getSnapshot().pendingCreatorRecord?.attemptId, 'attempt-b');
+    assert.equal(map.has('dsh.plugin-finder.creator-recovery.attempt-a'), false);
+    assert.equal(map.has('dsh.plugin-finder.creator-recovery.attempt-b'), true);
+    assert.equal(await c.retryCreatorSave(), true);
+    assert.equal(c.getSnapshot().pendingCreatorRecord, null); assert.equal(map.size, 0);
+    assert.deepEqual(saved, records); assert.equal(h.created.length, 0); assert.equal(h.drafts.length, 0);
+  } finally { c.close(); }
+});
+
+
+test('editing accumulated constraints retains more than six accepted restrictions', async () => {
+  const { module } = await loadClient(); const h = host(); const api = server(); const c = module.createFinderController(h.ctx, { fetch: api.fetch }); await c.bootstrap(); await c.analyze('合成约束编辑');
+  const constraints = Array.from({ length: 12 }, (_, i) => '明确限制' + i); c.editIntent({ constraints }); assert.deepEqual(copy(c.getSnapshot().intent.constraints), constraints); c.close();
+});
+
+test('featured browsing preserves the active task and makes no extra request or draft write', async () => {
+  const { module } = await loadClient(); const h = host();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(savedWorkflow('plan')) }) });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch }); await c.bootstrap();
+  const before = copy(c.getSnapshot());
+  assert.equal(typeof c.showFeatured, 'function'); c.showFeatured('agent-twin');
+  assert.equal(c.getSnapshot().view, 'featured'); assert.equal(c.getSnapshot().featuredId, 'agent-twin');
+  assert.equal(c.getSnapshot().taskId, before.taskId); assert.deepEqual(copy(c.getSnapshot().plan), before.plan);
+  assert.equal(api.calls.length, 1); assert.equal(h.drafts.length, 0); c.close();
+});
+
+test('featured preferences persist locally without requests and dismissed recommendations can be restored', async () => {
+  const { module } = await loadClient(); const h = host(); const api = server(); const values = new Map();
+  const draftStorage = { getItem: key => values.get(key), setItem: (key, value) => values.set(key, value) };
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage });
+  assert.equal(typeof c.toggleFeaturedInterest, 'function'); c.toggleFeaturedInterest('projects'); c.dismissFeatured('dsh-dot');
+  assert.deepEqual(copy(c.getSnapshot().featuredPreferences), { version: 1, interests: ['projects'], dismissed: ['dsh-dot'] });
+  assert.equal(api.calls.length, 0); c.close();
+  const again = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage });
+  assert.deepEqual(copy(again.getSnapshot().featuredPreferences.interests), ['projects']);
+  again.restoreFeatured(); assert.deepEqual(copy(again.getSnapshot().featuredPreferences.dismissed), []); again.close();
+});
+
+test('a featured scenario keeps active work until reset is acknowledged and retries the same scenario', async () => {
+  const { module } = await loadClient(); const h = host(); let fail = true; const values = new Map();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(identifiedWorkflow()) }), reset: async () => fail ? { ok: false, json: async () => ({ error: { message: '保存失败' } }) } : { ok: true, json: async () => ({ cleared: true }) } });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: { getItem: key => values.get(key), setItem: (key,value) => values.set(key,value) } }); await c.bootstrap();
+  assert.equal(typeof c.tryFeatured, 'function'); assert.equal(await c.tryFeatured('agent-twin'), false);
+  assert.equal(c.getSnapshot().taskId, 'task-a'); assert.deepEqual(copy(c.getSnapshot().plan), fixturePlan());
+  fail = false; assert.equal(await c.retryReset(), true);
+  assert.equal(c.getSnapshot().stage, 'describe'); assert.equal(c.getSnapshot().taskId, null); assert.ok(c.getSnapshot().request.length > 20);
+  assert.equal(api.calls.filter(x => /analyze|recommend|creator/.test(x.url)).length, 0); assert.equal(h.drafts.length,0); c.close();
+});
+
+test('featured scenario preserves typed input across controller recreation and restores it', async () => {
+  const { module } = await loadClient(); const h = host(); const api = server(); const values = new Map();
+  const draftStorage = { getItem: key => values.get(key), setItem: (key,value) => values.set(key,value) };
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage }); c.setRequest('这段尚未提交的私人需求必须保留');
+  assert.equal(typeof c.tryFeatured, 'function'); assert.equal(await c.tryFeatured('family-assistant'), true);
+  const id = c.getSnapshot().featuredDrafts.find(x => x.request === '这段尚未提交的私人需求必须保留').id; c.close();
+  const again = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage });
+  assert.equal(await again.restoreFeaturedDraft(id), true); assert.equal(again.getSnapshot().request, '这段尚未提交的私人需求必须保留');
+  assert.equal(api.calls.filter(x => /analyze|recommend|creator/.test(x.url)).length,0); again.close();
+});
+
+test('featured scene rejects missing catalog ids and warns when preferences cannot persist', async () => {
+  const { module } = await loadClient(); const h = host(); const api = server();
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: { getItem(){return null;}, setItem(){throw Error('disk');} } });
+  assert.equal(typeof c.tryFeatured, 'function'); assert.equal(await c.tryFeatured('not-a-product'), false); assert.equal(api.calls.length, 0);
+  c.toggleFeaturedInterest('family'); assert.deepEqual(copy(c.getSnapshot().featuredPreferences.interests),['family']); assert.match(c.getSnapshot().featuredWarning,/本次|当前窗口/); c.close();
+});
+
+test('featured cards are browsable without a model and preview entries have no install action', async () => {
+  const { module } = await loadClient(); const h = host(); const c = module.createFinderController(h.ctx, { fetch: server().fetch });
+  assert.equal(typeof c.showFeatured, 'function'); c.showFeatured('family-assistant');
+  const rendered = await renderWorkbench(c.getSnapshot());
+  assert.match(rendered.text,/微信家庭|家人/); assert.match(rendered.text,/预览/);
+  assert.ok(!rendered.nodes.some(n=>n.type==='button' && String(n.children).includes('复制安装来源')));
+  assert.ok(rendered.nodes.some(n=>n.type==='button' && String(n.children).includes('试试这个场景') && !n.props.disabled)); c.close();
+});
+
+test('featured switching blocks on draft storage failure and keeps edited understanding', async () => {
+  const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(a) }) });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: { getItem(){return null;}, setItem(){throw Error('disk');} } }); await c.bootstrap(); c.editIntent({goal:'尚未保存的新目标'});
+  assert.equal(await c.tryFeatured('agent-twin'), false); assert.equal(c.getSnapshot().intent.goal,'尚未保存的新目标'); assert.equal(c.getSnapshot().taskId,a.taskId); assert.equal(api.calls.length,1); assert.match(c.getSnapshot().error,/尚未可靠保存/); c.close();
+});
+
+test('featured draft restores exact task and unsaved understanding after recreation', async () => {
+  const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow(); const values=new Map(); const draftStorage={getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)};
+  const api=server({bootstrap:async()=>({ok:true,json:async()=>restoredBootstrap(a)}),open:async()=>({ok:true,json:async()=>historyEnvelope(a)})});
+  const c=module.createFinderController(h.ctx,{fetch:api.fetch,draftStorage}); await c.bootstrap(); c.editIntent({goal:'仅在当前编辑里的目标',constraints:['不要发送任何内容']}); await c.tryFeatured('agent-twin'); const id=c.getSnapshot().featuredDrafts[0].id;c.close();
+  const again=module.createFinderController(h.ctx,{fetch:api.fetch,draftStorage}); assert.equal(await again.restoreFeaturedDraft(id),true); assert.equal(again.getSnapshot().taskId,a.taskId); assert.equal(again.getSnapshot().intent.goal,'仅在当前编辑里的目标');assert.equal(again.getSnapshot().plan,null);assert.equal(again.getSnapshot().stage,'understand');assert.deepEqual(copy(again.getSnapshot().intent.constraints),['不要发送任何内容']); again.close();
+});
+
+test('featured draft restores edited blueprint without overwriting saved server revision', async()=>{
+  const {module}=await loadClient();const h=host();const a={...identifiedWorkflow(),creation:creationFixture()};const values=new Map();const draftStorage={getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)};
+  const api=server({bootstrap:async()=>({ok:true,json:async()=>restoredBootstrap(a)}),open:async()=>({ok:true,json:async()=>historyEnvelope(a)})});
+  const c=module.createFinderController(h.ctx,{fetch:api.fetch,draftStorage});await c.bootstrap();c.editCreation({blueprint:{name:'保留未保存的蓝图名字'}});await c.tryFeatured('family-assistant');const id=c.getSnapshot().featuredDrafts[0].id;c.close();
+  const again=module.createFinderController(h.ctx,{fetch:api.fetch,draftStorage});await again.restoreFeaturedDraft(id);assert.equal(again.getSnapshot().creationForm.blueprint.name,'保留未保存的蓝图名字');assert.equal(again.getSnapshot().creationDirty,true);assert.notEqual(again.getSnapshot().creation.blueprint.name,'保留未保存的蓝图名字');assert.equal(api.calls.some(x=>x.url.includes('creation-update')),false);again.close();
+});
+
+test('featured retry does not replace input typed after failed reset',async()=>{
+  const {module}=await loadClient();const h=host();let fail=true;const values=new Map();const api=server({reset:async()=>fail?{ok:false,json:async()=>({error:{message:'失败'}})}:{ok:true,json:async()=>({cleared:true})}});
+  const c=module.createFinderController(h.ctx,{fetch:api.fetch,draftStorage:{getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)}});c.setRequest('原输入');await c.tryFeatured('family-assistant');c.setRequest('失败后重新写的输入');fail=false;await c.retryReset();assert.equal(c.getSnapshot().request,'失败后重新写的输入');assert.equal(c.getSnapshot().featuredDrafts[0].request,'原输入');c.close();
+});
+
+test('featured view chosen while bootstrap is pending remains open',async()=>{
+  const {module}=await loadClient();const h=host();let done;const api=server({bootstrap:()=>new Promise(resolve=>{done=()=>resolve({ok:true,json:async()=>restoredBootstrap(identifiedWorkflow())});})});
+  const c=module.createFinderController(h.ctx,{fetch:api.fetch});const pending=c.bootstrap();c.showFeatured('agent-twin');done();await pending;assert.equal(c.getSnapshot().view,'featured');assert.equal(c.getSnapshot().taskId,'task-a');c.close();
+});
+
+test('featured retry preserves understanding and blueprint edits made after reset failure',async()=>{
+  const {module}=await loadClient();
+  for(const kind of ['intent','blueprint']){
+    const h=host();const a={...identifiedWorkflow(),...(kind==='blueprint'?{creation:creationFixture()}:{})};let fail=true;const values=new Map();
+    const api=server({open:async()=>({ok:true,json:async()=>historyEnvelope(a)}),bootstrap:async()=>({ok:true,json:async()=>restoredBootstrap(a)}),reset:async()=>fail?{ok:false,json:async()=>({error:{message:'失败'}})}:{ok:true,json:async()=>({cleared:true})}});
+    const c=module.createFinderController(h.ctx,{fetch:api.fetch,draftStorage:{getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)}});await c.bootstrap();await c.tryFeatured('agent-twin');
+    if(kind==='intent')c.editIntent({goal:'失败后修改的理解'});else c.editCreation({blueprint:{name:'失败后修改的蓝图'}});
+    fail=false;await c.retryReset();assert.equal(c.getSnapshot().taskId,a.taskId);
+    assert.equal(kind==='intent'?c.getSnapshot().intent?.goal:c.getSnapshot().creationForm?.blueprint.name,kind==='intent'?'失败后修改的理解':'失败后修改的蓝图');c.close();
+  }
+});
+
+test('featured corrupted editor data stays untouched and cannot crash restoration or rendering',async()=>{
+ const {module}=await loadClient();const h=host();const key='dsh.plugin-finder.featured-drafts.v1';
+ for(const form of [{blueprint:{name:'bad'},answers:[null],assumptions:[1]},{blueprint:creationFixture().blueprint,answers:[{id:'view',answer:5}],assumptions:[]}]){
+  const raw=JSON.stringify([{id:'bad',createdAt:'2026-10-22',request:'损坏草稿',stage:'plan',taskId:'task-a',revisionId:'task-a-revision-1',editor:{contentHash:'hash-a',form}}]);const values=new Map([[key,raw]]);const api=server();
+  const c=module.createFinderController(h.ctx,{fetch:api.fetch,draftStorage:{getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)}});assert.equal(c.getSnapshot().featuredDrafts.length,0);assert.match(c.getSnapshot().featuredWarning,/无法读取/);assert.equal(await c.restoreFeaturedDraft('bad'),false);assert.equal(values.get(key),raw);c.showFeatured();await renderWorkbench(c.getSnapshot());c.close();
+ }
+});
+
+function memoryStorage() { const values = new Map(); return { values, getItem: k => values.get(k), setItem: (k, v) => values.set(k, v), removeItem: k => values.delete(k) }; }
+test('single flow opens home even with a saved creation and keeps new input separate across browsing and reload', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = creationWorkflow(); const storage = memoryStorage();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(workflow) }) });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await c.bootstrap();
+  assert.equal(c.getSnapshot().view, 'home'); c.setHomeRequest('准备查找的另一件事'); c.editCreation({ blueprint: { name: '原蓝图未保存编辑' } });
+  c.showFeatured('agent-twin'); c.showHome();
+  assert.equal(c.getSnapshot().homeRequest, '准备查找的另一件事'); assert.equal(c.getSnapshot().creationForm.blueprint.name, '原蓝图未保存编辑');
+  const rendered = await renderWorkbench(c.getSnapshot());
+  assert.match(rendered.visibleText, /你想完成什么/); assert.match(rendered.visibleText, /帮我找方案/); assert.match(rendered.visibleText, /精选插件/); assert.match(rendered.visibleText, /继续上次/);
+  assert.equal(rendered.nodes.some(node => node.props?.className === 'pf_tabs'), false);
+  assert.doesNotMatch(rendered.visibleText, /重新读取配置|首版蓝图|Creator 工作区|同意并自动回传/);
+  c.close(); const again = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await again.bootstrap();
+  assert.equal(again.getSnapshot().homeRequest, '准备查找的另一件事'); assert.equal(again.getSnapshot().creationForm.blueprint.name, '原蓝图未保存编辑'); again.close();
+});
+test('single flow searches once from home and archives existing unsaved work before resetting exact identity', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = creationWorkflow(); const storage = memoryStorage();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(workflow) }) });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await c.bootstrap(); c.editCreation({ blueprint: { name: '旧蓝图编辑' } }); c.setHomeRequest('检查 CSV');
+  assert.equal(await c.searchHome(), true);
+  assert.deepEqual(api.calls.map(x => x.url.split('/').at(-1)), ['bootstrap', 'reset', 'analyze', 'recommend']);
+  assert.deepEqual(JSON.parse(api.calls[1].options.body), { taskId: workflow.taskId, revisionId: workflow.revisionId });
+  assert.equal(c.getSnapshot().featuredDrafts[0].editor.form.blueprint.name, '旧蓝图编辑'); assert.equal(c.getSnapshot().stage, 'plan'); assert.equal(c.getSnapshot().view, 'find'); assert.equal(c.getSnapshot().homeRequest, ''); assert.equal(c.getSnapshot().searching, false); c.close();
+});
+test('one community action analyzes the existing home request with the selected identity and preserves blueprint edits', async () => {
+  const { module } = await loadClient(); const h = host(), workflow = creationWorkflow(), storage = memoryStorage();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(workflow) }) });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage });
+  const entry = getCommunityOverview().categories[0].previews[0];
+  const originalRequest = '请只读预览当前工作区的 plugin-discovery-demo.md，显示 Mermaid 图形和数学公式，不修改原文件。';
+  await c.bootstrap(); c.editCreation({ blueprint: { name: '目录切换前未保存的蓝图编辑' } }); c.setHomeRequest(originalRequest);
+  const running = c.startCommunityPlugin(entry.id); assert.equal(await c.startCommunityPlugin(entry.id), false); assert.equal(await running, true);
+  assert.deepEqual(api.calls.map(call => call.url.split('/').at(-1)), ['bootstrap', 'reset', 'analyze', 'recommend']);
+  const analysis = JSON.parse(api.calls.find(call => call.url.endsWith('/analyze')).options.body), request = analysis.request;
+  assert.equal(analysis.communityEntryId, entry.id);
+  assert.equal(request, originalRequest);
+  assert.doesNotMatch(request, /不要安装、运行插件|https?:|[{}]/);
+  assert.ok(c.getSnapshot().featuredDrafts.some(draft => draft.request === originalRequest));
+  assert.ok(c.getSnapshot().featuredDrafts.some(draft => draft.editor?.form.blueprint.name === '目录切换前未保存的蓝图编辑'));
+  assert.equal(c.getSnapshot().stage, 'plan'); assert.equal(h.created.length, 0); assert.equal(h.drafts.length, 0); c.close();
+});
+test('community selection supplies its default request only for an empty or whitespace-only home input', async () => {
+  for (const originalRequest of ['', ' \t\n ']) {
+    const { module } = await loadClient(); const h = host(), api = server();
+    const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: memoryStorage() });
+    await c.bootstrap(); c.setHomeRequest(originalRequest);
+    const entry = getCommunityOverview().categories[0].previews[0];
+    assert.equal(await c.startCommunityPlugin(entry.id), true);
+    const analysis = JSON.parse(api.calls.find(call => call.url.endsWith('/analyze')).options.body);
+    assert.equal(analysis.request, '我想了解并使用刚选中的插件：它能帮我完成什么、需要哪些配置，以及怎样在当前工作区开始使用。');
+    assert.equal(analysis.communityEntryId, entry.id); c.close();
+  }
+});
+test('community reset failure keeps the old task and original input recoverable without calling a model', async () => {
+  const { module } = await loadClient(); const h = host(), workflow = identifiedWorkflow();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(workflow) }), reset: async () => ({ ok: false, json: async () => ({ error: { message: '保存未确认' } }) }) });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: memoryStorage() }); await c.bootstrap(); c.setHomeRequest('仍需保留的首页输入');
+  const entry = getCommunityOverview().categories[0].previews[0];
+  assert.equal(await c.startCommunityPlugin(entry.id), false);
+  assert.equal(c.getSnapshot().taskId, workflow.taskId); assert.deepEqual(copy(c.getSnapshot().plan), workflow.plan);
+  assert.ok(c.getSnapshot().featuredDrafts.some(draft => draft.request === '仍需保留的首页输入'));
+  assert.equal(c.getSnapshot().homeCommunityEntryId, entry.id); assert.equal(c.getSnapshot().homeRequest, '仍需保留的首页输入');
+  assert.deepEqual(api.calls.map(call => call.url.split('/').at(-1)), ['bootstrap', 'reset']); c.close();
+});
+test('community selection rejects unknown IDs and blocks replacement if the original input cannot be saved', async () => {
+  const { module } = await loadClient(); const h = host(), storage = memoryStorage(), api = server();
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await c.bootstrap(); c.setHomeRequest('保存失败也不能丢');
+  assert.equal(await c.startCommunityPlugin('untrusted-arbitrary-plugin'), false);
+  storage.setItem = () => { throw new Error('disk'); };
+  assert.equal(await c.startCommunityPlugin(getCommunityOverview().categories[0].previews[0].id), false);
+  assert.equal(c.getSnapshot().homeRequest, '保存失败也不能丢'); assert.equal(api.calls.length, 1); c.close();
+});
+test('community identity survives failed analysis, reload and draft restoration but never leaks into ordinary or featured requests', async () => {
+  const { module } = await loadClient(); const h = host(), storage = memoryStorage(); let fail = true;
+  const api = server({ analyze: async () => fail ? { ok: false, json: async () => ({ error: { message: '暂时未能分析' } }) } : { ok: true, json: async () => ({ intent: fixtureIntent() }) } });
+  const entry = getCommunityOverview().categories[0].previews[0];
+  const first = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await first.bootstrap();
+  assert.equal(await first.startCommunityPlugin(entry.id), false); first.close();
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await c.bootstrap();
+  assert.equal(c.getSnapshot().homeCommunityEntryId, entry.id);
+  const request = c.getSnapshot().homeRequest; c.prepareHomeExample('另一个普通需求');
+  const draft = c.getSnapshot().featuredDrafts.find(item => item.request === request);
+  assert.equal(draft.communityEntryId, entry.id); assert.equal(c.getSnapshot().homeCommunityEntryId, null);
+  assert.equal(await c.restoreFeaturedDraft(draft.id), true); assert.equal(c.getSnapshot().homeCommunityEntryId, entry.id);
+  fail = false; assert.equal(await c.searchHome(), true);
+  let analyses = api.calls.filter(call => call.url.endsWith('/analyze')).map(call => JSON.parse(call.options.body));
+  assert.deepEqual(analyses.map(body => body.communityEntryId), [entry.id, entry.id]);
+  c.setHomeRequest('普通新需求'); assert.equal(await c.searchHome(), true);
+  assert.equal(await c.startFeatured('family-assistant'), true);
+  analyses = api.calls.filter(call => call.url.endsWith('/analyze')).map(call => JSON.parse(call.options.body));
+  assert.equal(analyses.at(-2).communityEntryId, undefined); assert.equal(analyses.at(-1).communityEntryId, undefined); c.close();
+});
+test('identical community request text preserves different selected identities across switching and draft restoration', async () => {
+  const { module } = await loadClient(); const h = host(), storage = memoryStorage();
+  const api = server({ analyze: async () => ({ ok: false, json: async () => ({ error: { message: '暂时未能分析' } }) }) });
+  const [first, second] = getCommunityOverview().categories[0].previews;
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await c.bootstrap();
+  assert.equal(await c.startCommunityPlugin(first.id), false); const request = c.getSnapshot().homeRequest;
+  assert.equal(await c.startCommunityPlugin(second.id), false);
+  assert.equal(c.getSnapshot().homeRequest, request); assert.equal(c.getSnapshot().homeCommunityEntryId, second.id);
+  const firstDraft = c.getSnapshot().featuredDrafts.find(draft => draft.request === request && draft.communityEntryId === first.id);
+  assert.ok(firstDraft, 'the same request text must not discard the previous selected plugin');
+  assert.equal(await c.restoreFeaturedDraft(firstDraft.id), true);
+  assert.equal(c.getSnapshot().homeCommunityEntryId, first.id);
+  assert.ok(c.getSnapshot().featuredDrafts.some(draft => draft.request === request && draft.communityEntryId === second.id));
+  assert.equal(await c.startCommunityPlugin(second.id), false);
+  for (const entry of [first, second]) assert.equal(c.getSnapshot().featuredDrafts.filter(draft => draft.request === request && draft.communityEntryId === entry.id && draft.stage === 'describe' && !draft.taskId).length, 1);
+  assert.deepEqual(api.calls.filter(call => call.url.endsWith('/analyze')).map(call => JSON.parse(call.options.body).communityEntryId), [first.id, second.id, second.id]);
+  c.close();
+});
+test('editing a failed or restored community request retains its selection until explicit cancellation', async () => {
+  const { module } = await loadClient(); const h = host(), storage = memoryStorage();
+  const api = server({ analyze: async () => ({ ok: false, json: async () => ({ error: { message: '来源暂不可用' } }) }) });
+  const entry = getCommunityOverview().categories[0].previews[0];
+  let c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await c.bootstrap();
+  assert.equal(await c.startCommunityPlugin(entry.id), false);
+  const edited = `${c.getSnapshot().homeRequest} 只处理本地资料。`;
+  c.setHomeRequest(edited); assert.equal(c.getSnapshot().homeCommunityEntryId, entry.id);
+  c.close(); c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await c.bootstrap();
+  assert.equal(c.getSnapshot().homeRequest, edited); assert.equal(c.getSnapshot().homeCommunityEntryId, entry.id);
+  assert.equal(await c.searchHome(), false);
+  c.prepareHomeExample('一个新的普通需求'); assert.equal(c.getSnapshot().homeCommunityEntryId, null);
+  const draft = c.getSnapshot().featuredDrafts.find(item => item.request === edited && item.communityEntryId === entry.id);
+  assert.ok(draft); assert.equal(await c.restoreFeaturedDraft(draft.id), true);
+  const restoredEdit = `${edited} 暂不连接账号。`; c.setHomeRequest(restoredEdit);
+  assert.equal(c.getSnapshot().homeCommunityEntryId, entry.id); assert.equal(await c.searchHome(), false);
+  assert.equal(c.clearHomeCommunitySelection(), true);
+  assert.equal(c.getSnapshot().homeRequest, restoredEdit); assert.equal(c.getSnapshot().homeCommunityEntryId, null);
+  assert.equal(await c.searchHome(), false);
+  assert.deepEqual(api.calls.filter(call => call.url.endsWith('/analyze')).map(call => JSON.parse(call.options.body).communityEntryId), [entry.id, entry.id, entry.id, undefined]);
+  c.close();
+});
+test('saved workflow selection survives history readback and retry while opening a normal workflow clears it', async () => {
+  const { module } = await loadClient(); const h = host();
+  const entry = getCommunityOverview().categories[0].previews[0];
+  const selected = { ...identifiedWorkflow(), communityEntryId: entry.id };
+  const ordinary = { ...identifiedWorkflow(), taskId: 'ordinary-task', revisionId: 'ordinary-revision' };
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(selected) }), open: async () => ({ ok: true, json: async () => historyEnvelope(ordinary) }) });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: memoryStorage() }); await c.bootstrap();
+  assert.equal(c.getSnapshot().communityEntryId, entry.id); await c.analyze();
+  assert.equal(JSON.parse(api.calls.find(call => call.url.endsWith('/analyze')).options.body).communityEntryId, entry.id);
+  assert.equal(await c.openTask(ordinary.taskId, ordinary.revisionId), true); assert.equal(c.getSnapshot().communityEntryId, null);
+  await c.analyze(); assert.equal(JSON.parse(api.calls.filter(call => call.url.endsWith('/analyze')).at(-1).options.body).communityEntryId, undefined); c.close();
+});
+test('legacy home text remains readable without inventing a selected community identity', async () => {
+  const { module } = await loadClient(); const storage = memoryStorage(), h = host(), api = server();
+  storage.setItem('dsh.plugin-finder.home-input.v1', '旧版首页原输入');
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage });
+  assert.equal(c.getSnapshot().homeRequest, '旧版首页原输入'); assert.equal(c.getSnapshot().homeCommunityEntryId, null);
+  c.setHomeRequest('新普通输入'); c.close();
+  assert.equal(storage.getItem('dsh.plugin-finder.home-input.v1'), '旧版首页原输入');
+  const reopened = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage });
+  assert.equal(reopened.getSnapshot().homeRequest, '新普通输入'); assert.equal(reopened.getSnapshot().homeCommunityEntryId, null); reopened.close();
+});
+test('single flow reset failure preserves active plan and home input without calling a model', async () => {
+  const { module } = await loadClient(); const h = host(); const workflow = identifiedWorkflow();
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(workflow) }), reset: async () => ({ ok: false, json: async () => ({ error: { message: '保存未确认' } }) }) });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: memoryStorage() }); await c.bootstrap(); c.setHomeRequest('另一个需求');
+  assert.equal(await c.searchHome(), false); assert.equal(c.getSnapshot().taskId, workflow.taskId); assert.equal(c.getSnapshot().homeRequest, '另一个需求'); assert.equal(api.calls.length, 2); c.close();
+});
+test('single flow cancellation prevents recommendation after analysis and rejects duplicate submission', async () => {
+  const { module } = await loadClient(); const h = host(); let finish;
+  const api = server({ analyze: () => new Promise(resolve => { finish = () => resolve({ ok: true, json: async () => ({ intent: fixtureIntent() }) }); }) });
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: memoryStorage() }); await c.bootstrap(); c.setHomeRequest('检查 CSV'); const pending = c.searchHome();
+  while (!finish) await new Promise(resolve => setTimeout(resolve, 1));
+  assert.equal(await c.searchHome(), false); c.cancel(); finish(); assert.equal(await pending, false); assert.equal(api.calls.some(x => x.url.endsWith('/recommend')), false); assert.equal(c.getSnapshot().homeRequest, '检查 CSV'); c.close();
+});
+test('legacy creation guide route restores the same creation surface while failed sources prioritize retry', async () => {
+  const { module } = await loadClient();
+  for (const discovery of [
+    { sources: [{ id: 'source', status: 'failed' }] },
+    { sources: [{ id: 'source', status: 'stale' }] },
+    { sources: [], sourceCoverage: [{ sourceId: 'coverage', status: 'failed' }] },
+    { sources: [], sourceCoverage: [{ sourceId: 'coverage', status: 'stale' }] },
+    { status: 'failed', sources: [] },
+  ]) {
+    const h = host(); const workflow = { ...identifiedWorkflow(), candidates: [], plan: { ...fixturePlan(), kind: 'gap', pluginIds: [], steps: [] }, discovery };
+    const api = server({ bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(workflow) }) });
+    const c = module.createFinderController(h.ctx, { fetch: api.fetch }); await c.bootstrap(); c.showFind();
+    const results = await renderWorkbench(c.getSnapshot());
+    assert.match(results.visibleText, /重试查找/); assert.match(results.visibleText, /供给仍待核对/);
+    assert.doesNotMatch(results.visibleText, /还没有合适的方案，要一起做一个吗|供给缺口/);
+    assert.match(results.text, /搜索未完成，暂不能判断是否存在合适插件/);
+    assert.doesNotMatch(results.text, /本次已返回的来源中没有找到足够合适/);
+    c.showCreationGuide(); assert.equal(c.getSnapshot().view, 'creation-guide'); assert.equal(api.calls.length, 1);
+    const guide = await renderWorkbench(c.getSnapshot()); assert.match(guide.visibleText, /创建自己的插件/); assert.match(guide.visibleText, /部分来源尚未查完/);
+    assert.doesNotMatch(guide.visibleText, /Creator|复制|交接/);assert.match(guide.text, /搜索未完成，暂不能判断是否存在合适插件/);
+    c.showFind(); assert.equal(c.getSnapshot().taskId, workflow.taskId); assert.deepEqual(copy(c.getSnapshot().plan), workflow.plan); c.close();
+  }
+});
+
+test('home input is archived before a featured scenario and can be restored from history after reload', async () => {
+  const { module } = await loadClient(); const h = host(); const storage = memoryStorage();
+  const api = server({ history: async () => ({ ok: true, json: async () => ({ history: [], historyTotal: 0 }) }) });
+  const original = '先保存这段首页输入，稍后再继续查找';
+  const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await c.bootstrap();
+  c.setHomeRequest(original); assert.equal(await c.tryFeatured('family-assistant'), true);
+  const saved = c.getSnapshot().featuredDrafts.find(item => item.request === original);
+  assert.ok(saved); assert.equal(saved.stage, 'describe'); assert.equal(saved.taskId, null); assert.equal(saved.revisionId, null);
+  assert.notEqual(c.getSnapshot().homeRequest, original); assert.equal(c.getSnapshot().view, 'home');
+  assert.equal(await c.showHistory(), true);
+  assert.match((await renderWorkbench(c.getSnapshot())).text, /先保存这段首页输入，稍后再继续查找/);
+  c.close();
+  const again = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await again.bootstrap();
+  assert.ok(again.getSnapshot().featuredDrafts.some(item => item.id === saved.id && item.request === original));
+  assert.equal(await again.restoreFeaturedDraft(saved.id), true);
+  assert.equal(again.getSnapshot().homeRequest, original); assert.equal(again.getSnapshot().request, original);
+  assert.equal(again.getSnapshot().stage, 'describe'); assert.equal(again.getSnapshot().view, 'home');
+  assert.equal(api.calls.some(call => /analyze|recommend|creation|handoff/.test(call.url)), false);
+  assert.equal(h.drafts.length, 0); again.close();
+});
+
+test('home archive storage failure blocks featured replacement and draft restoration before reset', async () => {
+  const { module } = await loadClient();
+  for (const action of ['scenario', 'restore']) {
+    const h = host(); const storage = memoryStorage();
+    storage.setItem('dsh.plugin-finder.featured-drafts.v1', JSON.stringify([{ id: 'older-input', createdAt: '2026-10-22', request: '以前保留的需求', stage: 'describe', taskId: null, revisionId: null, intent: null }]));
+    const api = server({ bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(identifiedWorkflow()) }) });
+    const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await c.bootstrap();
+    c.setHomeRequest('这段首页新输入尚未提交');
+    const before = copy(c.getSnapshot().featuredDrafts);
+    storage.setItem = () => { throw new Error('disk'); };
+    assert.equal(await (action === 'scenario' ? c.tryFeatured('agent-twin') : c.restoreFeaturedDraft('older-input')), false);
+    assert.equal(c.getSnapshot().homeRequest, '这段首页新输入尚未提交');
+    assert.equal(c.getSnapshot().taskId, 'task-a'); assert.deepEqual(copy(c.getSnapshot().plan), fixturePlan());
+    assert.deepEqual(copy(c.getSnapshot().featuredDrafts), before); assert.match(c.getSnapshot().error, /尚未可靠保存/);
+    assert.deepEqual(api.calls.map(call => call.url.split('/').at(-1)), ['bootstrap']);
+    assert.equal(h.drafts.length, 0); c.close();
+  }
+});
+
+test('home edits after a failed featured reset cancel the stale switch and preserve the original task', async () => {
+  const { module } = await loadClient();
+  for (const existing of [false, true]) {
+    const h = host(); const workflow = identifiedWorkflow(); let fail = true;
+    const api = server({
+      bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(existing ? workflow : undefined) }),
+      reset: async () => fail ? { ok: false, json: async () => ({ error: { message: '保存未确认' } }) } : { ok: true, json: async () => ({ cleared: true }) },
+      open: async () => ({ ok: true, json: async () => historyEnvelope(workflow) }),
+    });
+    const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: memoryStorage() }); await c.bootstrap();
+    c.setHomeRequest('准备切换前的首页输入'); assert.equal(await c.tryFeatured('agent-twin'), false);
+    assert.equal(c.getSnapshot().resetPending, true);
+    c.setHomeRequest('失败后新写的首页输入'); fail = false;
+    assert.equal(await c.retryReset(), true);
+    assert.equal(c.getSnapshot().homeRequest, '失败后新写的首页输入'); assert.equal(c.getSnapshot().resetPending, false);
+    assert.equal(c.getSnapshot().taskId, existing ? workflow.taskId : null);
+    if (existing) { assert.equal(c.getSnapshot().revisionId, workflow.revisionId); assert.deepEqual(copy(c.getSnapshot().plan), workflow.plan); }
+    assert.ok(c.getSnapshot().featuredDrafts.some(item => item.request === '准备切换前的首页输入'));
+    assert.match(c.getSnapshot().notice, /原场景切换已取消/);
+    assert.equal(api.calls.filter(call => call.url.endsWith('/reset')).length, 1);
+    assert.deepEqual(api.calls.filter(call => call.url.endsWith('/open')).map(call => JSON.parse(call.options.body)), existing ? [{ taskId: workflow.taskId, revisionId: workflow.revisionId }] : []);
+    assert.equal(api.calls.some(call => /analyze|recommend|creation|handoff/.test(call.url)), false); c.close();
+  }
+});
+
+test('a full input archive permits searching from an unchanged saved task but protects unsaved edits', async () => {
+  const { module } = await loadClient();
+  for (const variant of ['saved-plan', 'saved-creation', 'edited-understanding', 'edited-blueprint']) {
+    const h = host(); const storage = memoryStorage();
+    const archived = Array.from({ length: 20 }, (_, index) => ({ id: `input-${index}`, createdAt: '2026-10-22', request: `保留输入 ${index}`, stage: 'describe', taskId: null, revisionId: null, intent: null }));
+    storage.setItem('dsh.plugin-finder.featured-drafts.v1', JSON.stringify(archived));
+    const previous = variant === 'saved-creation' || variant === 'edited-blueprint' ? creationWorkflow() : identifiedWorkflow();
+    const understood = { ...identifiedWorkflow('next-task', 1, 'understand'), request: '另一个要完成的任务' };
+    const recommended = { ...identifiedWorkflow('next-task', 2), request: understood.request };
+    const api = server({
+      bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(previous) }),
+      analyze: async () => ({ ok: true, json: async () => historyEnvelope(understood) }),
+      recommend: async () => ({ ok: true, json: async () => historyEnvelope(recommended) }),
+    });
+    const c = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await c.bootstrap();
+    if (variant === 'edited-understanding') c.editIntent({ goal: '还没保存的目标修改' });
+    if (variant === 'edited-blueprint') c.editCreation({ blueprint: { name: '还没保存的蓝图修改' } });
+    const before = copy(c.getSnapshot()); c.setHomeRequest(understood.request);
+    const edited = variant.startsWith('edited');
+    assert.equal(await c.searchHome(), !edited, variant);
+    assert.deepEqual(copy(c.getSnapshot().featuredDrafts), archived, variant);
+    assert.deepEqual(JSON.parse(storage.getItem('dsh.plugin-finder.featured-drafts.v1')), archived, variant);
+    if (edited) {
+      assert.deepEqual(api.calls.map(call => call.url.split('/').at(-1)), ['bootstrap']);
+      assert.equal(c.getSnapshot().homeRequest, understood.request); assert.equal(c.getSnapshot().taskId, before.taskId);
+      assert.equal(c.getSnapshot().revisionId, before.revisionId); assert.deepEqual(copy(c.getSnapshot().intent), before.intent);
+      assert.deepEqual(copy(c.getSnapshot().creationForm), before.creationForm); assert.equal(c.getSnapshot().creationDirty, before.creationDirty);
+      assert.match(c.getSnapshot().error, /20.*输入/);
+    } else {
+      assert.deepEqual(api.calls.map(call => call.url.split('/').at(-1)), ['bootstrap', 'reset', 'analyze', 'recommend']);
+      assert.equal(c.getSnapshot().taskId, recommended.taskId); assert.equal(c.getSnapshot().revisionId, recommended.revisionId);
+      assert.deepEqual(copy(c.getSnapshot().plan), recommended.plan); assert.equal(c.getSnapshot().homeRequest, '');
+    }
+    c.close();
+  }
 });

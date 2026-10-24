@@ -1,0 +1,80 @@
+{
+  "mode": "bounded-offline-demo",
+  "sharedProductionComponents": [
+    "src/community-catalog-data.js",
+    "src/community-catalog.js",
+    "src/community-presentation.js",
+    "src/community-view.js",
+    "src/experience-view.js",
+    "src/featured-catalog.js",
+    "src/featured-view.js",
+    "src/featured.js"
+  ],
+  "bytes": 5122689,
+  "sha256": "3112b0fbc8e6bc2defafaa20b59c3d8ce30f02080bd014421a88c6456658682b",
+  "inlineScriptSha256": "FBDiAv1KSjIRG0peDkDmpz+rdKks4j6HTJdDZ4Xjle0=",
+  "sourceHashes": [
+    {
+      "file": "docs/design/experience-v2/preview-controller.mjs",
+      "sha256": "2187fef77ac57603f8ee8a88a36ee0fe9708811f19e7f4671baed17f89b4efc4"
+    },
+    {
+      "file": "docs/design/experience-v2/preview-entry.jsx",
+      "sha256": "1f19920e6fdd65ff74acf6548e54fdff0a3c60bef6c260db561ebc9066ca3bb0"
+    },
+    {
+      "file": "scripts/build-experience-preview.mjs",
+      "sha256": "9bada5f587720e43d0bcb6560757cdde83743488c14f6b5b36b00d9ac19de6b8"
+    },
+    {
+      "file": "src/client-style.js",
+      "sha256": "ec102c791b8d3861b8a28e97fca4485aca7bbb867d929454dd42432df4d9efc6"
+    },
+    {
+      "file": "src/community-catalog-data.js",
+      "sha256": "ff3e9849de35b127c7b5892ac7d9367f1d724d8e9ed0b2c5451b700265c269f3"
+    },
+    {
+      "file": "src/community-catalog.js",
+      "sha256": "de5b8c5d1cfd4533429f26d19413f68475818acc16be5fc04127eaece925e640"
+    },
+    {
+      "file": "src/community-presentation.js",
+      "sha256": "bc6ae8e58a2601203321da4f78ee8e63145b25a3b230f5c15c3963800e0d8a5d"
+    },
+    {
+      "file": "src/community-view.js",
+      "sha256": "f163ad55571d3582fd0a7654f579537ee9a138216cb2c431b53ad6ce3392822c"
+    },
+    {
+      "file": "src/experience-style.js",
+      "sha256": "28117b94661e02a0bff20f727d7fa9e5bc40ed939e0c86f65a8767b43acb18b7"
+    },
+    {
+      "file": "src/experience-view.js",
+      "sha256": "2051e472cdddd72e75def01f6cd14ec779fad364ebaa9929a9874318d9d99306"
+    },
+    {
+      "file": "src/featured-catalog.js",
+      "sha256": "ca4c996ac896ca916c89a0141b33489c9e5919411b3a5dcff6ad9b346708a18b"
+    },
+    {
+      "file": "src/featured-view.js",
+      "sha256": "3641db33d37892febdb01532156423540c52b6570b553f12b8dee4ec8de5e193"
+    },
+    {
+      "file": "src/featured.js",
+      "sha256": "7dda94583d1e16177347f9cb2d23c824b0d0da0c5f7a3f0de2003634d9a8c746"
+    }
+  ],
+  "network": "blocked-by-CSP",
+  "storageKey": "dsh.plugin-finder.current-workspace-demo.v1",
+  "browserTested": true,
+  "browserVerification": {
+    "scope": "bounded-offline-demo",
+    "report": "HOME-ALIGNMENT-20261023.md",
+    "date": "2026-10-23",
+    "taskSpace": 194,
+    "actualHostTested": false
+  }
+}

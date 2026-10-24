@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "sourceSha256": "d53b17dcb090a8bf4ee807e7bd2c8926116d221fac7dad516dccef59d3f2edd0",
+  "productionSha256": "ff3e9849de35b127c7b5892ac7d9367f1d724d8e9ed0b2c5451b700265c269f3",
+  "bytes": 3793138,
+  "sourceTotal": 6565,
+  "total": 6563,
+  "excludedTotal": 2,
+  "excluded": [
+    {
+      "sourceId": "https://github.com/piggy00544/dsh-workproof/tree/main/packages/dsh-delivery-receipts",
+      "reason": "own-legacy-namespace-pending-migration"
+    },
+    {
+      "sourceId": "https://github.com/piggy00544/dsh-workproof/tree/main/packages/dsh-evidence-ledger",
+      "reason": "own-legacy-namespace-pending-migration"
+    }
+  ],
+  "categories": [
+    {
+      "id": "work",
+      "count": 1476,
+      "previewCount": 3
+    },
+    {
+      "id": "content",
+      "count": 324,
+      "previewCount": 3
+    },
+    {
+      "id": "knowledge",
+      "count": 617,
+      "previewCount": 3
+    },
+    {
+      "id": "experience",
+      "count": 1693,
+      "previewCount": 3
+    },
+    {
+      "id": "develop",
+      "count": 994,
+      "previewCount": 3
+    },
+    {
+      "id": "manage",
+      "count": 1459,
+      "previewCount": 3
+    }
+  ],
+  "order": "Manual reviewed previews, then presence of npm+version and descriptive metadata, then name/id. Stars are not used.",
+  "scope": "Local read-only metadata; no network, model, installation or author code runs during browsing."
+}

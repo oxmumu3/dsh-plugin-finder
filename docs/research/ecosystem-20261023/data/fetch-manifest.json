@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "sourceBoundary": "Third-party catalog snapshots, not official plugin review or installation evidence",
+  "fetched": [
+    {
+      "name": "plugins.json",
+      "url": "https://awesome-dsh-plugin.com/plugins.json",
+      "finalUrl": "https://awesome-dsh-plugin.com/plugins.json",
+      "startedAt": "2026-10-23T12:49:11.808Z",
+      "fetchedAt": "2026-10-23T12:49:13.350Z",
+      "status": 200,
+      "bytes": 8280801,
+      "sha256": "d53b17dcb090a8bf4ee807e7bd2c8926116d221fac7dad516dccef59d3f2edd0",
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "etag": "W/\"6adae0d2-7e5ae1\"",
+        "last-modified": "Fri, 23 Oct 2026 04:21:38 GMT",
+        "cache-control": "max-age=600",
+        "date": "Fri, 23 Oct 2026 12:49:12 GMT",
+        "content-encoding": "gzip"
+      },
+      "access": "Public unauthenticated HTTPS GET; no plugin code executed",
+      "licenseStatus": "Pending source license audit; public access is not redistribution permission"
+    },
+    {
+      "name": "index.json",
+      "url": "https://awesome-dsh-plugin.com/index.json",
+      "finalUrl": "https://awesome-dsh-plugin.com/index.json",
+      "startedAt": "2026-10-23T12:49:13.420Z",
+      "fetchedAt": "2026-10-23T12:49:14.342Z",
+      "status": 200,
+      "bytes": 2674042,
+      "sha256": "8be09abf82913f247b618658d84cf4d44bd7feb6163cc9a713969957b32f8f52",
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "etag": "W/\"6adae0d0-28cd7a\"",
+        "last-modified": "Fri, 23 Oct 2026 04:21:36 GMT",
+        "cache-control": "max-age=600",
+        "date": "Fri, 23 Oct 2026 12:49:13 GMT",
+        "content-encoding": "gzip"
+      },
+      "access": "Public unauthenticated HTTPS GET; no plugin code executed",
+      "licenseStatus": "Pending source license audit; public access is not redistribution permission"
+    },
+    {
+      "name": "homepage.html",
+      "url": "https://awesome-dsh-plugin.com/",
+      "finalUrl": "https://awesome-dsh-plugin.com/",
+      "startedAt": "2026-10-23T12:49:14.375Z",
+      "fetchedAt": "2026-10-23T12:49:14.695Z",
+      "status": 200,
+      "bytes": 959547,
+      "sha256": "280fd591a7f14a1bc2c9408997d2e5e8cbb495655af49f3e8d3be96b4c5a4258",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "etag": "W/\"6adae0d1-ea43b\"",
+        "last-modified": "Fri, 23 Oct 2026 04:21:37 GMT",
+        "cache-control": "max-age=600",
+        "date": "Fri, 23 Oct 2026 12:49:14 GMT",
+        "content-encoding": "gzip"
+      },
+      "access": "Public unauthenticated HTTPS GET; no plugin code executed",
+      "licenseStatus": "Pending source license audit; public access is not redistribution permission"
+    }
+  ]
+}

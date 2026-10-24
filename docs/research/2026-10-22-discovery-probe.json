@@ -1,0 +1,1800 @@
+{
+  "checkedAt": "2026-10-22T07:40:36.013Z",
+  "kind": "production-discovery-only",
+  "scope": "Public synthetic inputs; no host market, model calls, installs, user files, or sessions",
+  "runs": [
+    {
+      "id": "reuse-markdown",
+      "intent": {
+        "goal": "预览Markdown里的Mermaid图和KaTeX公式",
+        "input": "Markdown文本",
+        "output": "可视化预览",
+        "constraints": [],
+        "capabilities": [
+          "渲染Mermaid图形",
+          "显示KaTeX公式"
+        ],
+        "queries": [
+          "Mermaid KaTeX markdown preview",
+          "Markdown 流程图 公式"
+        ]
+      },
+      "result": {
+        "candidates": [
+          {
+            "id": "dsh-kp-notes",
+            "name": "dsh-kp-notes",
+            "title": "UnitySirx/dsh-kp-notes#plugin/dsh-kp-notes",
+            "summary": "DeepSeek Harness 知识点(Knowledge Point)笔记插件：把 Markdown 笔记目录变成卡片式学习画布，章节 / 小节 / 知识点 / 题目分层，支持 KaTeX 公式、Mermaid 流程图、思维导图与面板内编辑",
+            "authorDescription": "DeepSeek Harness 知识点(Knowledge Point)笔记插件：把 Markdown 笔记目录变成卡片式学习画布，章节 / 小节 / 知识点 / 题目分层，支持 KaTeX 公式、Mermaid 流程图、思维导图与面板内编辑",
+            "author": "UnitySir",
+            "repository": "https://github.com/UnitySirx/dsh-kp-notes",
+            "homepage": "https://github.com/UnitySirx/dsh-kp-notes#readme",
+            "capabilities": [
+              "DeepSeek Harness 知识点(Knowledge Point)笔记插件：把 Markdown 笔记目录变成卡片式学习画布，章节 / 小节 / 知识点 / 题目分层，支持 KaTeX 公式、Mermaid 流程图、思维导图与面板内编辑",
+              "DeepSeek Harness 知识点笔记插件：把 Markdown 笔记目录变成卡片式学习画布，目录 = 章节、文件 = 小节、正文 = 知识点；题目可遮挡答案自测，支持 KaTeX 公式、Mermaid 流程图、思维导图与面板内编辑。",
+              "dsh-plugin",
+              "deepseek-harness",
+              "markdown",
+              "notes"
+            ],
+            "keywords": [
+              "dsh-plugin",
+              "deepseek-harness",
+              "markdown",
+              "notes",
+              "knowledge-base",
+              "study",
+              "canvas",
+              "katex",
+              "mermaid"
+            ],
+            "inputs": [],
+            "outputs": [],
+            "firstUse": "",
+            "requirements": {
+              "extraApiKey": "unknown",
+              "platforms": [],
+              "notes": [
+                "账号、输入输出和首次使用前提来自作者资料；未知条件需在会话确认。"
+              ]
+            },
+            "limitations": [
+              "来自动态来源与作者资料的候选线索；尚未安装、运行或验证组合。"
+            ],
+            "compatibility": {
+              "dsh": [
+                "^0.2.0-rc.1"
+              ],
+              "node": ">=20",
+              "basis": "author-peer-dependencies"
+            },
+            "hostCompatibility": {
+              "status": "compatible",
+              "range": [
+                "^0.2.0-rc.1"
+              ],
+              "basis": "author-peer-dependencies",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "nodeCompatibility": {
+              "status": "compatible",
+              "range": ">=20",
+              "basis": "engines.node",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "install": {
+              "type": "git",
+              "spec": "git+https://github.com/UnitySirx/dsh-kp-notes.git#cc7f7af57cb1a9ddd13226792cdee0336e1a7230&path:/plugin/dsh-kp-notes",
+              "version": "1.0.0",
+              "commit": "cc7f7af57cb1a9ddd13226792cdee0336e1a7230",
+              "readiness": "metadata-only",
+              "entrypoints": [
+                {
+                  "path": "./host.js",
+                  "url": "https://raw.githubusercontent.com/UnitySirx/dsh-kp-notes/cc7f7af57cb1a9ddd13226792cdee0336e1a7230/plugin/dsh-kp-notes/host.js",
+                  "status": "present"
+                }
+              ],
+              "lifecycleScripts": []
+            },
+            "sourceTags": [
+              {
+                "id": "awesome-full",
+                "title": "Awesome DSH 完整社区目录",
+                "url": "https://awesome-dsh-plugin.com/plugins.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:20.414Z",
+                "total": 6378,
+                "npmTotal": 3280,
+                "githubOnlyTotal": 3098,
+                "rejectedRows": 0,
+                "catalogUpdatedAt": "2026-10-22"
+              }
+            ],
+            "documentation": {
+              "url": "https://raw.githubusercontent.com/UnitySirx/dsh-kp-notes/cc7f7af57cb1a9ddd13226792cdee0336e1a7230/plugin/dsh-kp-notes/README.md",
+              "text": "# dsh-kp-notes · 知识点笔记（学习画布）\n\n> 基于 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 开发的知识点(Knowledge Point)笔记插件 —— 把一整个目录的 Markdown 笔记变成一张可平移、缩放的卡片画布：**一个目录 = 一章，一章 = 一张卡**，知识点是卡片，题目自带答案遮挡，随手自测。\n\n左侧边栏「全局面板」里叫 **知识点笔记**（英文界面 `Knowledge Notes`）。完整文档、开发说明与全部截图见仓库：<https://github.com/UnitySirx/dsh-kp-notes>\n\n![多画布](https://raw.githubusercontent.com/UnitySirx/dsh-kp-notes/main/plugin/dsh-kp-notes/screenshots/01-canvases.jpg)\n![知识点详情：表格 + KaTeX 公式](https://raw.githubusercontent.com/UnitySirx/dsh-kp-notes/main/plugin/dsh-kp-notes/screenshots/03-point-detail.jpg)\n![题目答案遮挡](https://raw.githubusercontent.com/UnitySirx/dsh-kp-notes/main/plugin/dsh-kp-notes/screenshots/04-questions.jpg)\n![思维导图](https://raw.githubusercontent.com/UnitySirx/dsh-kp-notes/main/plugin/dsh-kp-notes/screenshots/06-mindmap.jpg)\n\n## 安装\n\n```bash\n# 从 npm 装\ndsh plugin --profile <profile 名> add dsh-kp-notes\n\n# 或者直接装本仓库（源码即成品，没有构建步骤）\ndsh plugin --profile <profile 名> add link:/绝对路径/rk-study/plugin/dsh-kp-notes\n```\n\n装完刷新页面，在左侧「全局面板 → 知识点笔记」打开；第一次用点「⇪ 导入目录」把已有笔记库加进来，或者「＋ 新建学习画布」。\n\n## 它能做什么\n\n- **目录即章节**：`notes/<章>/<小节>.md` 是小节，文件里的知识点变成卡片，点卡片开右侧详情。\n- **正文全量渲染**：Markdown 表格、`$$KaTeX$$` 公式、```` ```mermaid ```` 流程图、代码块，不用装任何东西。\n- **题目与自测**：`questions/<章>/<同名>.md` 里写题目，选择题自动排 4 个选项，答案默认遮挡，点开才看解析（也可以「显示全部答案」）。\n- **画布内编辑**：新建/编辑/删除知识点与题目，所见即所得，落盘还是普通 Markdown（带 frontmatter），随时能被其它工具接手。\n- **思维导图**：一键把「画布 → 章 → 小节 → 知识点」画成可折叠的导图。\n- **多画布 + Git 提交**：一个插件面板管多个笔记库；「⎇ Git 提交」让宿主模型读改动清单生成 commit 信息。\n- **深色 / 浅色 / 跟随系统**三档配色，中英双语界面。\n\n## 笔记目录约定\n\n```\n<学习库>/\n├── notes/<章>/<小节>.md          # 小节：type: section\n├── notes/<章>/<小节>/<知识点>.md  # 知识点：type: point\n└── questions/<章>/<同名>.md       # 题目：type: question（用 point: 指回知识点）\n```\n\n不按这个结构也能用：只要是 Markdown，插件会按目录/标题自己整理出一张画布。\n\n## 许可\n\nMIT © UnitySir · 有问题开 [Issue](https://github.com/UnitySirx/dsh-kp-notes/issues) 或 QQ `451991189`\n",
+              "readAt": "2026-10-22T07:40:21.962Z",
+              "truncated": false
+            },
+            "match": {
+              "score": 87,
+              "terms": [
+                "mermaid",
+                "katex",
+                "markdown",
+                "preview",
+                "流程图",
+                "流程",
+                "程图",
+                "公式",
+                "渲染",
+                "图形",
+                "显示"
+              ],
+              "capabilities": []
+            },
+            "evidence": {
+              "metadata": "manifest-checked",
+              "installation": "not-tested",
+              "task": "not-tested",
+              "combination": "not-tested",
+              "capabilityBasis": "author-description/index-keywords as quoted functionality clues; README supplied for model interpretation; not execution proof",
+              "fetchedAt": "2026-10-22T07:40:21.963Z",
+              "sources": [
+                {
+                  "kind": "market-index",
+                  "url": "https://awesome-dsh-plugin.com/plugins.json",
+                  "query": "Mermaid KaTeX markdown preview",
+                  "fetchedAt": "2026-10-22T07:40:20.414Z"
+                },
+                {
+                  "kind": "manifest",
+                  "url": "https://raw.githubusercontent.com/UnitySirx/dsh-kp-notes/cc7f7af57cb1a9ddd13226792cdee0336e1a7230/plugin/dsh-kp-notes/package.json"
+                },
+                {
+                  "kind": "author-documentation",
+                  "url": "https://raw.githubusercontent.com/UnitySirx/dsh-kp-notes/cc7f7af57cb1a9ddd13226792cdee0336e1a7230/plugin/dsh-kp-notes/README.md",
+                  "fetchedAt": "2026-10-22T07:40:21.962Z",
+                  "sha256": "5a1f0190f53d207382d5645be275abdc93131e41cc95cf81b239805e0a1810bf"
+                }
+              ]
+            }
+          },
+          {
+            "id": "dsh-mermaid-preview",
+            "name": "dsh-mermaid-preview",
+            "title": "realguan/dsh-mermaid-preview",
+            "summary": "Render Mermaid fenced code blocks as dsh-native diagram cards in every DeepSeek Harness (dsh) Web Markdown surface, with seven open-source design-system themes (Radix Colors by default), live light/dark following and a full-window zoom viewer.",
+            "authorDescription": "Render Mermaid fenced code blocks as dsh-native diagram cards in every DeepSeek Harness (dsh) Web Markdown surface, with seven open-source design-system themes (Radix Colors by default), live light/dark following and a full-window zoom viewer.",
+            "author": "realguan",
+            "repository": "https://github.com/realguan/dsh-mermaid-preview",
+            "homepage": "https://github.com/realguan/dsh-mermaid-preview#readme",
+            "capabilities": [
+              "Render Mermaid fenced code blocks as dsh-native diagram cards in every DeepSeek Harness (dsh) Web Markdown surface, with seven open-source d",
+              "在 Markdown 中将 Mermaid 围栏代码渲染为原生图表卡片，内置 8 套设计系统主题与自适应布局。",
+              "dsh",
+              "deepseek-harness",
+              "dsh-plugin",
+              "cordis"
+            ],
+            "keywords": [
+              "dsh",
+              "deepseek-harness",
+              "dsh-plugin",
+              "cordis",
+              "mermaid",
+              "diagram",
+              "markdown"
+            ],
+            "inputs": [],
+            "outputs": [],
+            "firstUse": "",
+            "requirements": {
+              "extraApiKey": "unknown",
+              "platforms": [],
+              "notes": [
+                "账号、输入输出和首次使用前提来自作者资料；未知条件需在会话确认。"
+              ]
+            },
+            "limitations": [
+              "来自动态来源与作者资料的候选线索；尚未安装、运行或验证组合。"
+            ],
+            "compatibility": {
+              "dsh": null,
+              "node": ">=18",
+              "basis": "author-peer-dependencies"
+            },
+            "hostCompatibility": {
+              "status": "unknown",
+              "range": null,
+              "basis": "author-peer-dependencies"
+            },
+            "nodeCompatibility": {
+              "status": "compatible",
+              "range": ">=18",
+              "basis": "engines.node",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "install": {
+              "type": "git",
+              "spec": "git+https://github.com/realguan/dsh-mermaid-preview.git#fcbb7e3ff3c273962524a9bb5610aeb4f01c6cb3",
+              "version": "0.6.0",
+              "commit": "fcbb7e3ff3c273962524a9bb5610aeb4f01c6cb3",
+              "readiness": "metadata-only",
+              "entrypoints": [
+                {
+                  "path": "index.js",
+                  "url": "https://raw.githubusercontent.com/realguan/dsh-mermaid-preview/fcbb7e3ff3c273962524a9bb5610aeb4f01c6cb3/index.js",
+                  "status": "present"
+                }
+              ],
+              "lifecycleScripts": []
+            },
+            "sourceTags": [
+              {
+                "id": "awesome-full",
+                "title": "Awesome DSH 完整社区目录",
+                "url": "https://awesome-dsh-plugin.com/plugins.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:20.414Z",
+                "total": 6378,
+                "npmTotal": 3280,
+                "githubOnlyTotal": 3098,
+                "rejectedRows": 0,
+                "catalogUpdatedAt": "2026-10-22"
+              }
+            ],
+            "documentation": {
+              "url": "https://raw.githubusercontent.com/realguan/dsh-mermaid-preview/fcbb7e3ff3c273962524a9bb5610aeb4f01c6cb3/README.md",
+              "text": "# dsh-mermaid-preview\n\n<p align=\"center\">\n  <img src=\"assets/banner.png\" alt=\"dsh-mermaid-preview\" width=\"100%\" />\n</p>\n\n<p align=\"center\">\n  <a href=\"https://github.com/realguan/dsh-mermaid-preview/releases/latest\"><img src=\"https://img.shields.io/github/v/release/realguan/dsh-mermaid-preview?style=flat-square&color=4D6BFE&label=release\" alt=\"latest release\" /></a>\n  <a href=\"./LICENSE\"><img src=\"https://img.shields.io/badge/license-MIT-4D6BFE?style=flat-square\" alt=\"MIT\" /></a>\n  <a href=\"https://github.com/deepseek-ai/deepseek-harness\"><img src=\"https://img.shields.io/badge/dsh-0.2.x-4D6BFE?style=flat-square\" alt=\"dsh 0.2.x\" /></a>\n  <img src=\"https://img.shields.io/badge/mermaid-11.17.2-4D6BFE?style=flat-square\" alt=\"mermaid 11.17.2\" />\n  <img src=\"https://img.shields.io/badge/network-none-3CB371?style=flat-square\" alt=\"no network\" />\n</p>\n\n<p align=\"center\">\n  在 <a href=\"https://github.com/deepseek-ai/deepseek-harness\">DeepSeek Harness</a> 里，把 Markdown 的\n  <code>mermaid</code> 围栏渲染成设计系统配色的原生图表卡片。\n</p>\n\n<p align=\"center\">\n  <a href=\"#安装\">安装</a> ·\n  <a href=\"#看效果\">看效果</a> ·\n  <a href=\"#特性\">特性</a> ·\n  <a href=\"#常见问题\">常见问题</a>\n</p>\n\n> English: [README.en.md](./README.en.md)\n\n---\n\n## 安装\n\n**一句话**：把仓库地址贴进 dsh 的插件页，装完重启。\n\n### 方式一：桌面客户端图形界面（推荐）\n\n1. 左侧导航 → **设置 → 插件**（或侧栏的**插件**页）；\n2. 点右上角 **＋ 添加插件**；\n3. 输入框里填：\n\n   ```\n   github:realguan/dsh-mermaid-preview\n   ```\n\n4. 选**安装源**（国内网络可选「中国大陆镜像源」）；\n5. 读完安全提示 → **安装**；\n6. **重启客户端**（替换已装包的同名代码需要重启，热更新不足以让新 bundle 生效）。\n\n> ⚠️ 插件在本机以你的权限运行。只装来源可信的插件。\n> 插件安装后暂不支持自动更新 —— 升级要先卸载再装新版。\n\n### 方式二：命令行\n\n```bash\n# 装进默认 profile\ndsh plugin add github:realguan/dsh-mermaid-preview\n\n# 或明确指定 profile（web / desktop）\ndsh plugin --profile desktop add github:realguan/dsh-mermaid-preview\n```\n\n**`dsh plugin add` 会自动把包注册成 bundle 层** —— 这正是本插件能被加载的关键，\n不需要再手改配置。装完重启 `dsh web`（或重启桌面客户端）即生效。\n\n想固定到某个版本：\n\n```bash\ndsh plugin --profile desktop add github:realguan/dsh-mermaid-preview#v0.6.0\n```\n\n### 方式三：本地源码（开发者）\n\n```bash\ngit clone https://github.com/realguan/dsh-mermaid-preview.git\ncd dsh-mermaid-preview\n\nnpm run build          # 从 src/ 重建 dist/（dist 已随仓库提交，消费者无需构建）\nnpm run check          # 自检：语法 / manifest / 产物一致性 / 引擎完整性 / 无 CDN\n\ndsh plugin --profile web add link:$PWD\n```\n\n改完 `src/` 之后要重新 `npm run build`；`dist/` 与 `src/` 不一致时 `npm run check` 会直接失败。\n\n### 验证装好了\n\n```bash\n# 组合结果里应该有 mermaid-preview 行\ndsh --profile web --dump-config | grep -A2 mermaid-preview\n```\n\n然后在任意会话里发一条带 ` ```mermaid ` 围栏的消息 —— 应该出图，不是代码块。\n\n**没反应？** 见 [常见问题](#装上了但完全不渲染围栏还是代码块)。\n\n### 卸载\n\n```bash\ndsh plugin --profile desktop remove dsh-mermaid-preview\n```\n\n或在插件页里关掉。卸载后卡片 DOM、样式、注入节点全部随插件 fiber 清理。\n\n---\n\n## 看效果\n\n### 一张图，长在对话里\n\n左侧是文件树、终端并排的工作区，右边是会话列——图表就是这个宽度里的一张卡片：\n类型标签按图型配色，右侧四个控件（主题 / 复制源码 / 显示源码 / 放大）。\n\n![浅色主题下的图表卡片](assets/shot-overview-light.png)\n\n同一段对话切到深色主题，配色、卡片、查看器一起重绘：\n\n![深色主题下的图表卡片](assets/shot-overview-dark.png)\n\n### 23 种图型，一套设计语言\n\n不是「mermaid 默认调色板换个容器」——每种图型的节点形状、圆角、配色都按设计系统的\n语言重新推导。下面几个是同一套主题下的不同图型（点开可看原始尺寸）：\n\n| sequenceDiagram | timeline |\n| --- | --- |\n| ![时序图](assets/shot-sequence.png) | ![时间轴](assets/shot-timeline.png) |\n\n| gantt | mindmap |\n| --- | --- |\n| ![甘特图](assets/shot-gantt.png) | ![思维导图](assets/shot-mindmap.png) |\n\n| journey | pie |\n| --- | --- |\n| ![用户旅程](assets/shot-journey.png) | ![饼图](assets/shot-pie.png) |\n\n| classDiagram（深色） | 语法错误时 |\n| --- | --- |\n| ![类图](assets/shot-class.png) | ![语法错误提示](assets/shot-error.png) |\n\n失败不是红色报错墙：保留源码，给一句人话，解析器原文收在「查看详情」里，\n文本一改就自动重试。\n\n### 想先试试？不用装 dsh\n\n```bash\nnpm run demo        # → http://localhost:8090\n```\n\n左边写 Mermaid，右边实时出图；顶部「风格」下拉框可实时对比全部主题，明暗也能切。\n演示页直接 `import` 插件的 `src/theme.js`，所以它看到的图和对话里完全一致。\n\n<p align=\"center\">\n  <img src=\"assets/demo-light.png\" alt=\"独立演示页（浅色）\" width=\"49%\" />\n  <img src=\"assets/demo-dark.png\" alt=\"独立演示页（深色）\" width=\"49%\" />\n</p>\n\n更多图型示例见 [examples/showcase.md](./examples/showcase.md)。\n\n---\n\n## 特性\n\n**🎨 8 套设计系统主题，卡片里直接换**\n默认 **Radix Colors**，另有 Apple HIG、GitHub Primer、IBM Carbon、Atlassian、\nMaterial Design 2、Shopify Polaris，以及一套中性的 dsh 主题。每套都从该系统官方的\n实色/中性色 token 重新推导粉彩节点、数据图 ramp、序列图与便签配色；节点圆角跟随该\n系统的形状语言（Carbon/Material 更方，Radix/Apple 更圆）。点卡片头部的调色板按钮就能\n换，页面上所有图表即时重绘，选择记在 localStorage 里。\n\n**🌗 跟随明暗与语言**\n切主题时图表配色、卡片和查看器一起重绘；按钮和提示走 dsh 的 locale 服务，中英随界面切换。\n\n**📐 图跟着卡片走**\n所有图型按卡片宽度**完整适配** —— 宽图等比缩小到整图可见（不裁切、不横向滚动），\n小图最多放大 1.5×。卡片布局可切换：默认**滚动容器**（高图限高、卡片内滚动），\n点一下变**完整展开**（卡片随图变高），选择会记住。\n\n**🔍 全窗口查看器**\n点图表或头部放大按钮进入：模糊遮罩、悬浮工具条、滚轮缩放（以光标为锚点）、\n拖拽平移、适应窗口（小图会放大到填窗，上限 2.5×）/ 1:1、双击切换、`0` 复位、\n`Esc` 关闭。看细节靠它，不靠把卡片撑大。\n\n**🔌 离线可用，零网络请求**\nMermaid 引擎**随包附带**（`dist/client.mermaid.js`），由 dsh 自己的包内分块路由按需\n送达。断网、内网、隔离网都能出图 —— 插件全程不联网。\n\n**🧾 图表不是代码**\n卡片头部左侧显示图表类型（`flowchart` / `gantt` / `C4Container` …）而不是「代码块」，\n壳层那条通用横幅被属性隐藏，不会出现两行头。\n\n**🛟 失败不吓人**\n引擎缺失或语法错误时保留源码，给一条安静的提示条（一句人话 + 可展开的解析器详情），\n文本一改就自动重试。流式输出中途的半截围栏静默退避重试，不弹错误。\n\n**⚡ 少渲染，而不是渲染得更快**\n`mermaid.render` 本身占一次渲染 95% 的开销，所以优化都在「少做一次」：屏幕外的图不渲染\n（滚到再渲染）、渲染结果缓存（LRU 40 条 / 4MB）、主题配置只在 `(scheme, variant)` 变化\n时下发、每个渲染任务之间让出主线程。实测九图语料：屏幕外 `mermaid.render` 9 次 → 0 次，\n同配色再来一轮 753ms → 14ms。\n\n**📚 23 种图型全覆盖**\nflowchart / sequenceDiagram / classDiagram / stateDiagram-v2 / gantt / pie / erDiagram /\njourney / mindmap / gitGraph / timeline / quadrantChart / requirementDiagram / 各类 C4 /\nsankey / block / packet / architecture / radar / treemap / kanban / xychart 等。\n\n**🧹 干净卸载**\n样式、观察器、定时器、脚本、注入节点、查看器全部随插件 fiber 清理。\n\n---\n\n## 工作原理（30 秒版）\n\ndsh 的 Markdown 渲染器把围栏渲染成 `.md-code-block`：头部是\n`[data-code-block-banner]`，正文是 `[data-code-block-content]`。对 shiki 不认识的\n语言（含 `mermaid`），头部只显示通用文案，正文是纯 `<pre>`。\n\n插件用 `MutationObserver` 找到「正文首元素是 `<pre>`」的块，再判围栏首条语句是不是\nmermaid 语句；命中后按需加载引擎，把 SVG 注入追加在块尾部的容器，并用一个属性隐藏原\n正文 —— **从不替换或删除 React 拥有的节点**。\n\n```mermaid\nflowchart LR\n    A[Markdown 渲染器<br/>输出 .md-code-block] -->|MutationObserver + 250ms 静默| B{未高亮围栏<br/>且首条语句是 mermaid?}\n    B -->|是| C[按需加载随包附带的引擎]\n    C --> D[mermaid.render<br/>securityLevel strict]\n    D --> E[SVG 注入块尾容器<br/>原正文按属性隐藏]\n    E --> F[保留横幅 + 复制按钮<br/>可切换 图表/源码]\n    F -->|点击图表| G[全窗口查看器<br/>缩放 / 平移 / 适应窗口]\n```\n\n完整原理、DOM 契约、清理策略与已知边界见 [docs/architecture.md](./docs/arch",
+              "readAt": "2026-10-22T07:40:21.772Z",
+              "truncated": true
+            },
+            "match": {
+              "score": 79,
+              "terms": [
+                "mermaid",
+                "katex",
+                "markdown",
+                "preview",
+                "流程图",
+                "流程",
+                "程图",
+                "公式",
+                "渲染",
+                "图形",
+                "显示"
+              ],
+              "capabilities": []
+            },
+            "evidence": {
+              "metadata": "manifest-checked",
+              "installation": "not-tested",
+              "task": "not-tested",
+              "combination": "not-tested",
+              "capabilityBasis": "author-description/index-keywords as quoted functionality clues; README supplied for model interpretation; not execution proof",
+              "fetchedAt": "2026-10-22T07:40:21.772Z",
+              "sources": [
+                {
+                  "kind": "market-index",
+                  "url": "https://awesome-dsh-plugin.com/plugins.json",
+                  "query": "Mermaid KaTeX markdown preview",
+                  "fetchedAt": "2026-10-22T07:40:20.414Z"
+                },
+                {
+                  "kind": "manifest",
+                  "url": "https://raw.githubusercontent.com/realguan/dsh-mermaid-preview/fcbb7e3ff3c273962524a9bb5610aeb4f01c6cb3/package.json"
+                },
+                {
+                  "kind": "author-documentation",
+                  "url": "https://raw.githubusercontent.com/realguan/dsh-mermaid-preview/fcbb7e3ff3c273962524a9bb5610aeb4f01c6cb3/README.md",
+                  "fetchedAt": "2026-10-22T07:40:21.772Z",
+                  "sha256": "26f00a2de8ab8642f1f8673531abb62a8db22d94e4763dac21c3fa912ce94569"
+                }
+              ]
+            }
+          },
+          {
+            "id": "dsh-plugin-mermaid-gb-svg",
+            "name": "dsh-plugin-mermaid-gb-svg",
+            "title": "sandyyst/dsh-plugin-mermaid-gb-svg",
+            "summary": "DSH 插件：Mermaid 流程图 → GB/T 1526-1989（等同 ISO 5807）国标流程图 SVG，符号合规、正交走线、超 A4/A3 自动分页。DeepSeek Harness plugin: Mermaid flowcharts to GB/T 1526-1989 (ISO 5807) compliant flowchart SVG with A4/A3 pagination.",
+            "authorDescription": "DSH 插件：Mermaid 流程图 → GB/T 1526-1989（等同 ISO 5807）国标流程图 SVG，符号合规、正交走线、超 A4/A3 自动分页。DeepSeek Harness plugin: Mermaid flowcharts to GB/T 1526-1989 (ISO 5807) compliant flowchart SVG with A4/A3 pagination.",
+            "author": "sandyyst",
+            "repository": "https://github.com/sandyyst/dsh-plugin-mermaid-gb-svg",
+            "homepage": "https://github.com/sandyyst/dsh-plugin-mermaid-gb-svg#readme",
+            "capabilities": [
+              "DSH 插件：Mermaid 流程图 → GB/T 1526-1989（等同 ISO 5807）国标流程图 SVG，符号合规、正交走线、超 A4/A3 自动分页。DeepSeek Harness plugin: Mermaid flowcharts to GB/T 1526-19",
+              "把 Mermaid 流程图转成符合 GB/T 1526-1989（等同 ISO 5807）图形符号的 SVG，可选用 A4/A3 幅面自动分页。",
+              "dsh",
+              "dsh-plugin",
+              "dsh-bundle",
+              "deepseek"
+            ],
+            "keywords": [
+              "dsh",
+              "dsh-plugin",
+              "dsh-bundle",
+              "deepseek",
+              "deepseek-harness",
+              "cordis",
+              "mermaid",
+              "mermaid-to-svg",
+              "flowchart",
+              "flowchart-symbols",
+              "svg",
+              "gb-t-1526",
+              "gbt1526",
+              "iso-5807",
+              "国标",
+              "流程图",
+              "流程图符号",
+              "a4"
+            ],
+            "inputs": [],
+            "outputs": [],
+            "firstUse": "",
+            "requirements": {
+              "extraApiKey": "unknown",
+              "platforms": [],
+              "notes": [
+                "账号、输入输出和首次使用前提来自作者资料；未知条件需在会话确认。"
+              ]
+            },
+            "limitations": [
+              "来自动态来源与作者资料的候选线索；尚未安装、运行或验证组合。",
+              "已核对精确 npm 版本的 bundle 清单，未下载或执行安装包；实际安装仍由宿主确认。",
+              "本轮未能读取作者 README，输入输出与首次使用方式仍待确认。"
+            ],
+            "compatibility": {
+              "dsh": [
+                ">=0.0.1-rc.1 <0.0.2-0 || >=0.1.5-0 <0.1.6-0 || >=0.1.6-0 <0.1.7-0 || >=0.1.7-0 <0.1.8-0 || >=0.1.8-0 <0.2.0-0 || ^0.2.0-rc.2"
+              ],
+              "node": ">=20",
+              "basis": "author-peer-dependencies"
+            },
+            "hostCompatibility": {
+              "status": "compatible",
+              "range": [
+                ">=0.0.1-rc.1 <0.0.2-0 || >=0.1.5-0 <0.1.6-0 || >=0.1.6-0 <0.1.7-0 || >=0.1.7-0 <0.1.8-0 || >=0.1.8-0 <0.2.0-0 || ^0.2.0-rc.2"
+              ],
+              "basis": "author-peer-dependencies",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "nodeCompatibility": {
+              "status": "compatible",
+              "range": ">=20",
+              "basis": "engines.node",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "install": {
+              "type": "npm",
+              "spec": "dsh-plugin-mermaid-gb-svg@0.1.4",
+              "version": "0.1.4",
+              "commit": "83814cf987acc5f8d50d460d48ce22d2ea9be12f",
+              "registry": "https://registry.npmjs.org/",
+              "readiness": "metadata-only",
+              "entrypoints": [],
+              "lifecycleScripts": []
+            },
+            "sourceTags": [
+              {
+                "id": "awesome-full",
+                "title": "Awesome DSH 完整社区目录",
+                "url": "https://awesome-dsh-plugin.com/plugins.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:20.414Z",
+                "total": 6378,
+                "npmTotal": 3280,
+                "githubOnlyTotal": 3098,
+                "rejectedRows": 0,
+                "catalogUpdatedAt": "2026-10-22"
+              },
+              {
+                "id": "awesome",
+                "title": "Awesome DSH Plugin 插件精选",
+                "url": "https://awesome-dsh-plugin.com/index.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:19.437Z",
+                "total": 3261
+              }
+            ],
+            "documentation": {
+              "url": null,
+              "text": "",
+              "readAt": null,
+              "truncated": false
+            },
+            "match": {
+              "score": 71,
+              "terms": [
+                "mermaid",
+                "katex",
+                "markdown",
+                "preview",
+                "流程图",
+                "流程",
+                "程图",
+                "公式",
+                "渲染",
+                "图形",
+                "显示"
+              ],
+              "capabilities": []
+            },
+            "evidence": {
+              "metadata": "manifest-checked",
+              "installation": "not-tested",
+              "task": "not-tested",
+              "combination": "not-tested",
+              "capabilityBasis": "author-description/index-keywords as quoted functionality clues; README supplied for model interpretation; not execution proof",
+              "fetchedAt": "2026-10-22T07:40:21.255Z",
+              "sources": [
+                {
+                  "kind": "market-index",
+                  "url": "https://awesome-dsh-plugin.com/plugins.json",
+                  "query": "Mermaid KaTeX markdown preview",
+                  "fetchedAt": "2026-10-22T07:40:20.414Z"
+                },
+                {
+                  "kind": "registry-manifest",
+                  "url": "https://registry.npmjs.org/dsh-plugin-mermaid-gb-svg/0.1.4"
+                }
+              ]
+            }
+          },
+          {
+            "id": "@baconbao/dsh-mermaid-image-preview",
+            "name": "@baconbao/dsh-mermaid-image-preview",
+            "title": "baconbao/dsh-mermaid-image-preview",
+            "summary": "A DeepSeek Harness Plugin for Previewing Mermaid Diagram by Images in Chat Sessions. View on GitHub (https://github.com/baconbao/dsh-mermaid-image-preview).",
+            "authorDescription": "A DeepSeek Harness Plugin for Previewing Mermaid Diagram by Images in Chat Sessions. View on GitHub (https://github.com/baconbao/dsh-mermaid-image-preview).",
+            "author": "baconbao",
+            "repository": "https://github.com/baconbao/dsh-mermaid-image-preview",
+            "homepage": "https://github.com/baconbao/dsh-mermaid-image-preview",
+            "capabilities": [
+              "A DeepSeek Harness Plugin for Previewing Mermaid Diagram by Images in Chat Sessions. View on GitHub (https://github.com/baconbao/dsh-mermaid",
+              "当 DSH Web 中的消息包含 Mermaid 语法时，通过本地渲染以图像形式预览 Mermaid Diagrams，并允许接入外部渲染服务器。",
+              "code-review",
+              "git-workflow"
+            ],
+            "keywords": [],
+            "inputs": [],
+            "outputs": [],
+            "firstUse": "",
+            "requirements": {
+              "extraApiKey": "unknown",
+              "platforms": [],
+              "notes": [
+                "账号、输入输出和首次使用前提来自作者资料；未知条件需在会话确认。"
+              ]
+            },
+            "limitations": [
+              "来自动态来源与作者资料的候选线索；尚未安装、运行或验证组合。"
+            ],
+            "compatibility": {
+              "dsh": [
+                ">=0.1.6-alpha.2"
+              ],
+              "node": null,
+              "basis": "author-peer-dependencies"
+            },
+            "hostCompatibility": {
+              "status": "compatible",
+              "range": [
+                ">=0.1.6-alpha.2"
+              ],
+              "basis": "author-peer-dependencies",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "nodeCompatibility": {
+              "status": "unknown",
+              "range": null,
+              "basis": "engines.node"
+            },
+            "install": {
+              "type": "git",
+              "spec": "git+https://github.com/baconbao/dsh-mermaid-image-preview.git#b8cc6ea851463fdaa848132bd651eeb6990fd374",
+              "version": "0.4.0",
+              "commit": "b8cc6ea851463fdaa848132bd651eeb6990fd374",
+              "readiness": "metadata-only",
+              "entrypoints": [
+                {
+                  "path": "lib/index.js",
+                  "url": "https://raw.githubusercontent.com/baconbao/dsh-mermaid-image-preview/b8cc6ea851463fdaa848132bd651eeb6990fd374/lib/index.js",
+                  "status": "present"
+                }
+              ],
+              "lifecycleScripts": []
+            },
+            "sourceTags": [
+              {
+                "id": "awesome-full",
+                "title": "Awesome DSH 完整社区目录",
+                "url": "https://awesome-dsh-plugin.com/plugins.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:20.414Z",
+                "total": 6378,
+                "npmTotal": 3280,
+                "githubOnlyTotal": 3098,
+                "rejectedRows": 0,
+                "catalogUpdatedAt": "2026-10-22"
+              }
+            ],
+            "documentation": {
+              "url": "https://raw.githubusercontent.com/baconbao/dsh-mermaid-image-preview/b8cc6ea851463fdaa848132bd651eeb6990fd374/README.md",
+              "text": "# dsh-mermaid-image-preview\n\n[![Awesome DSH Plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com/p/baconbao/dsh-mermaid-image-preview/)\n![DSH Plugin Profile Badge](https://img.shields.io/badge/DSH%20profile-Web%20%2F%20Desktop-5B4CF0)\n![DSH Plugin Works-on Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fbaconbao.github.io%2Fbadge-endpoints%2Fdsh-mermaid-image-preview%2Fworks-on.json)\n[![Release Badge](https://img.shields.io/github/v/release/baconbao/dsh-mermaid-image-preview)](https://github.com/baconbao/dsh-mermaid-image-preview/releases)\n[![License Badge](https://img.shields.io/github/license/baconbao/dsh-mermaid-image-preview)](./LICENSE)\n\nA DeepSeek Harness Plugin for Previewing Mermaid Diagram Images\n\nPreview Mermaid syntax as images via local rendering in DSH when a chat message contains a Mermaid fenced code block (` ```mermaid ` or ` ```mmd `).\n\n![dsh-mermaid-image-preview](https://raw.githubusercontent.com/baconbao/dsh-mermaid-image-preview/ce80d380212961ea8ee0294dc1b28584c4b9cc1e/docs/img/dsh-mermaid-image-preview.png)\n\n## Features and how it works\n\n- **Preview mermaid diagrams by rendering images directly!**\n- **Local renderer first!** If it fails, it can fall back to an external or self-hosted rendering engine by configuring a fallback server.\n- **Nothing gets replaced:** the preview is added below the agent's reply, so\n  the original messages are not covered up or changed.\n- Settings in Plugin page: adjust the plugin's runtime settings in the Plugins panel - no restart needed.\n- Light/dark themes follow the UI automatically.\n\n## Support diagram types\n\nThe plugin renders diagrams locally with a built-in renderer. It supports\n13 diagram types out of the box.\n\n**Rendered locally:** flowchart, sequenceDiagram, classDiagram, stateDiagram, erDiagram, pie, journey, gitGraph, requirementDiagram, timeline, quadrantChart, packet-beta, xychart-beta\n\n**Expand:** gantt, mindmap, block-beta, sankey-beta, architecture-beta, zenuml, C4Context\n\n> [!NOTE]\n> You can enable the fallback to render expanded types — see **Configuration** below.\n\n## Installation\n\n### Install from `github`\n\n#### Install with DeepSeek Harness Desktop (the `desktop` profile)\n\nIn **DeepSeek Harness (Desktop)**, go to the **Plugins** panel, click the **+ Add plugin** button,\npaste one of the URLs below, then click the **Install** button.\n\n```markdown\n### latest release version\nhttps://github.com/baconbao/dsh-mermaid-image-preview\n### specific version\nhttps://github.com/baconbao/dsh-mermaid-image-preview#<VERSION_TAG|GIT_TAG>\n### dev version\nhttps://github.com/baconbao/dsh-mermaid-image-preview#dev\n```\n\n> [!NOTE]\n> Make sure Git is installed on your machine before installing.\n\n\n#### Install with DeepSeek Harness WebUI (the `web` profile)\n\n```bash\n### latest release version\n$ npx @deepseek-ai/dsh plugin --profile web add github:baconbao/dsh-mermaid-image-preview\n\n### specific version\n$ npx @deepseek-ai/dsh plugin --profile web add github:baconbao/dsh-mermaid-image-preview#<VERSION_TAG|GIT_TAG>\n\n### dev version\n$ npx @deepseek-ai/dsh plugin --profile web add github:baconbao/dsh-mermaid-image-preview#dev\n```\n\n### Install from source code\n\n```bash\n$ git clone https://github.com/baconbao/dsh-mermaid-image-preview\n$ cd dsh-mermaid-image-preview\n$ pnpm install\n$ dsh plugin --profile web add .\n```\n\n> [!IMPORTANT]\n> Restart DSH after installing.\n\n## Configuration\n\n### Change runtime settings on the plugin page\n\n![dsh-mermaid-image-preview_settings](https://raw.githubusercontent.com/baconbao/dsh-mermaid-image-preview/ce80d380212961ea8ee0294dc1b28584c4b9cc1e/docs/img/dsh-mermaid-image-preview_setting.png)\n\nThe **Plugins** panel lists this plugin under **Installed**; open its page and the\nconfiguration block carries the runtime settings - no restart needed.\nValues are stored in localStorage and applied immediately across all sessions.\n\n### Change render server via configuration file\n\nDiagrams are rendered locally by default. To use your own render server or\nenable the external fallback, edit the profile's `cordis.patch.yml` (e.g.\n`~/.dsh/profiles/web/cordis.patch.yml` for WebUI, or `~/.dsh/profiles/desktop/cordis.patch.yml` for Desktop):\n\n```yaml\n- id: ui-dsh-mermaid-image-preview\n  config:\n    enableLocalRender: true\n    fallbackRenderUrl: https://mermaid.ink\n    enableFallback: false\n```\n\n- `enableLocalRender`: render locally (default `true`). Set it to `false` to always use the fallback server (`enableFallback` is ignored).\n- `fallbackRenderUrl`: fallback render server (default `https://mermaid.ink`).\n- `enableFallback`: use the fallback server when local rendering fails (default `false`).\n- Restart DSH after changing these settings.\n- To host your own fallback render server, see <https://github.com/jihchi/mermaid.ink> for the details.\n\n## Uninstallation\n\n#### Unstall with DeepSeek Harness Desktop (the `desktop` profile)\n\nOpen this plugin's page in the **Plugins** panel, then click **Uninstall**.\n\n#### Unstall with DeepSeek Harness WebUI (the `web` profile)\n\n```bash\n$ dsh plugin --profile web remove @baconbao/dsh-mermaid-image-preview\n```\n\n> [!NOTE]\n> Since **v0.2.0**, the plugin/package ID has been `@baconbao/dsh-mermaid-image-preview` (it was `dsh-mermaid-image-preview` before).\n\n## Test\n\nAsk the agent to produce:\n\n````\n```mermaid\ngraph TD\n  A[Start] --> B{Success?}\n  B -->|Yes| C[Done]\n  B -->|No| D[Retry]\n```\n````\n\n## Compatibility\n\n| This plugin version | Supported DSH version |\n| --- | --- |\n| **v0.4.0** and later | **0.1.6-alpha.2** and later |\n| **v0.3.2** and earlier | **0.1.0-rc.6** – **0.1.6-alpha.1** |\n\n---\n\n## Author\n\nbaconbao, vibe coding with AI\n\n## License\n\n[MIT](./LICENSE)\n",
+              "readAt": "2026-10-22T07:40:23.015Z",
+              "truncated": false
+            },
+            "match": {
+              "score": 67,
+              "terms": [
+                "mermaid",
+                "katex",
+                "markdown",
+                "preview",
+                "流程图",
+                "流程",
+                "程图",
+                "公式",
+                "渲染",
+                "图形",
+                "显示"
+              ],
+              "capabilities": []
+            },
+            "evidence": {
+              "metadata": "manifest-checked",
+              "installation": "not-tested",
+              "task": "not-tested",
+              "combination": "not-tested",
+              "capabilityBasis": "author-description/index-keywords as quoted functionality clues; README supplied for model interpretation; not execution proof",
+              "fetchedAt": "2026-10-22T07:40:23.015Z",
+              "sources": [
+                {
+                  "kind": "market-index",
+                  "url": "https://awesome-dsh-plugin.com/plugins.json",
+                  "query": "Mermaid KaTeX markdown preview",
+                  "fetchedAt": "2026-10-22T07:40:20.414Z"
+                },
+                {
+                  "kind": "manifest",
+                  "url": "https://raw.githubusercontent.com/baconbao/dsh-mermaid-image-preview/b8cc6ea851463fdaa848132bd651eeb6990fd374/package.json"
+                },
+                {
+                  "kind": "author-documentation",
+                  "url": "https://raw.githubusercontent.com/baconbao/dsh-mermaid-image-preview/b8cc6ea851463fdaa848132bd651eeb6990fd374/README.md",
+                  "fetchedAt": "2026-10-22T07:40:23.015Z",
+                  "sha256": "c0a0a3a2adf232265fcabc72043a8be2ff02f08d10c11959b5c11738c41de78e"
+                }
+              ]
+            }
+          },
+          {
+            "id": "dsh-markdown-preview",
+            "name": "dsh-markdown-preview",
+            "title": "GitHubJiKe/dsh-markdown-preview",
+            "summary": "In-chat preview for produced files in DeepSeek Harness Web: click a produced-file chip to render Markdown (server-side markdown-it + highlight.js), images, or plain text right in the conversation; system-app open and reveal-in-folder stay one click away.",
+            "authorDescription": "In-chat preview for produced files in DeepSeek Harness Web: click a produced-file chip to render Markdown (server-side markdown-it + highlight.js), images, or plain text right in the conversation; system-app open and reveal-in-folder stay one click away.",
+            "author": "GitHubJiKe",
+            "repository": "https://github.com/GitHubJiKe/dsh-markdown-preview",
+            "homepage": "https://github.com/GitHubJiKe/dsh-markdown-preview#readme",
+            "capabilities": [
+              "In-chat preview for produced files in DeepSeek Harness Web: click a produced-file chip to render Markdown (server-side markdown-it + highlig",
+              "产物文件聊天内预览：点击产物 chip 直接在对话中渲染 Markdown（宿主侧 markdown-it + highlight.js 代码高亮）、图片或纯文本，系统应用打开与在文件夹中显示仍一键可达。",
+              "deepseek-harness",
+              "dsh",
+              "dsh-plugin",
+              "markdown",
+              "code-review"
+            ],
+            "keywords": [
+              "deepseek-harness",
+              "dsh",
+              "dsh-plugin",
+              "markdown",
+              "markdown-preview",
+              "preview",
+              "web-ui"
+            ],
+            "inputs": [],
+            "outputs": [],
+            "firstUse": "",
+            "requirements": {
+              "extraApiKey": "unknown",
+              "platforms": [],
+              "notes": [
+                "账号、输入输出和首次使用前提来自作者资料；未知条件需在会话确认。"
+              ]
+            },
+            "limitations": [
+              "来自动态来源与作者资料的候选线索；尚未安装、运行或验证组合。",
+              "已核对精确 npm 版本的 bundle 清单，未下载或执行安装包；实际安装仍由宿主确认。"
+            ],
+            "compatibility": {
+              "dsh": null,
+              "node": ">=20.0.0",
+              "basis": "author-peer-dependencies"
+            },
+            "hostCompatibility": {
+              "status": "unknown",
+              "range": null,
+              "basis": "author-peer-dependencies"
+            },
+            "nodeCompatibility": {
+              "status": "compatible",
+              "range": ">=20.0.0",
+              "basis": "engines.node",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "install": {
+              "type": "npm",
+              "spec": "dsh-markdown-preview@0.4.0",
+              "version": "0.4.0",
+              "commit": "8202df21fa38603019b7522ec27d8a61af6f4bf7",
+              "registry": "https://registry.npmjs.org/",
+              "readiness": "metadata-only",
+              "entrypoints": [],
+              "lifecycleScripts": []
+            },
+            "sourceTags": [
+              {
+                "id": "awesome-full",
+                "title": "Awesome DSH 完整社区目录",
+                "url": "https://awesome-dsh-plugin.com/plugins.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:20.414Z",
+                "total": 6378,
+                "npmTotal": 3280,
+                "githubOnlyTotal": 3098,
+                "rejectedRows": 0,
+                "catalogUpdatedAt": "2026-10-22"
+              },
+              {
+                "id": "awesome",
+                "title": "Awesome DSH Plugin 插件精选",
+                "url": "https://awesome-dsh-plugin.com/index.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:19.437Z",
+                "total": 3261
+              }
+            ],
+            "documentation": {
+              "url": "https://raw.githubusercontent.com/GitHubJiKe/dsh-markdown-preview/8202df21fa38603019b7522ec27d8a61af6f4bf7/README.md",
+              "text": "# dsh-markdown-preview\n\n**In-chat preview for produced files in [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web.**\n\nBy default, clicking a produced-file chip in the DSH Web GUI hands the file to\nthe operating system's default application (`open` on macOS → Xcode for many\nextensions). This plugin makes that click **render the file right in the\nconversation** — Markdown is rendered with `markdown-it` + `highlight.js`\nserver-side, images preview inline, **code files (JSON / JS / TS / Python /\nYAML / …) open in a dark syntax-highlighted code view**, and any other text file\nshows as plain text. The stock behaviors stay one click away: open in the system\napp, or reveal in the folder.\n\n## Features\n\n- **Click a produced-file chip → inline preview**, no native app, no new tab.\n- **Markdown rendered properly** (GFM tables, fenced code, blockquotes, links,\n  hard line breaks) with **syntax highlighting** in code fences\n  (highlight.js common languages).\n- **Code-file preview with full syntax highlighting** (v0.3.0): 40+ extensions\n  (`.json` `.js` `.ts` `.py` `.yml` `.sh` `.css` `.html` …) render in a dark\n  editor-style view with GitHub-Dark token colors, highlighted server-side.\n- **Fullscreen viewer** (v0.3.0): one click expands the preview — Markdown,\n  image, code, or plain text — to a full-viewport overlay with the toolbar\n  kept on top; close with the button or `Esc`.\n- **Image preview** (PNG / JPEG / GIF / WebP / SVG) as data URLs — no extra\n  route. SVG is safe to inline: browsers never execute scripts inside SVG\n  loaded through an `<img>` element.\n- Plain-text fallback for every other text file; binary files are sniffed and\n  refused with a clear message.\n- Panel header with file size, **fullscreen**, **copy content**, **open in\n  system app**, and collapse.\n- 1 MiB cap for text / 4 MiB for images, with an explicit truncation notice.\n- Keeps the stock experience: chips, \"+ N files\", and \"Show in folder\" still\n  behave as before, and inline code-mentions of produced files stay clickable.\n- **Theme-aware preview panel**: background, body text, links, code and error\n  colors all use real DSH theme variables (v0.1.1 fixes unreadable text on the\n  always-white background in dark mode).\n\n## Install\n\n```sh\ndsh plugin --profile web add dsh-markdown-preview\n```\n\nRestart `dsh web`. Requires pnpm on PATH (`dsh plugin` forwards to pnpm),\n**Node.js >= 20**, and DSH `>= 0.1.1-rc.2 < 0.2.0`.\n\n## Usage\n\nNothing to configure. After restart, any turn that produced files shows the\nfamiliar produced-files row; clicking a chip toggles the preview panel.\n\n## How it works\n\nThis plugin is **purely additive**. Its Bundle Patch inserts one plugin-owned\nrow and disables, renames, and re-declares nothing: every official component\nkeeps its own registration and its own entry ID. In particular the official\nproduced-files bundle stays enabled — this plugin does not take over its\n`deliverables` Conversation Node definition, its `chatFileMentions` provider,\nits `deliverables` locale namespace, or its host-side file-reference prompt\nsection.\n\n- **One slot entry, won by priority.** The produced-files row lives on the\n  `conversation.chat.turnTail` **chain** seat. A chain seat elects the first\n  entry whose selector accepts, in ascending slot priority, which is the slot\n  layer's documented extension point (\"register at a different priority to\n  shadow it\"). The client half registers there at priority `-1`: the smallest step that\n  beats the official fallback (priority `0`) while leaving every contributor\n  below it room to shadow this row — a specialised produced-HTML row at `-10`,\n  for instance, keeps the HTML turns it selects for. The official row stays\n  registered and renders as before for every turn this plugin declines, and\n  whenever this plugin is uninstalled.\n- **The file list is read, not recomputed.** The selector reads the\n  `deliverables` Turn data that the official row already publishes. Turns that\n  also declare *presented* files deliberately decline here, so the official\n  row keeps the surface and host routes that own them. This plugin therefore\n  expects the official produced-files row to stay enabled — it ships in the\n  `dsh-web-app` bundle, and if another layer disables it there is no published\n  produced-file list left to preview.\n- **Host half** (`lib/index.js`): serves `read` (file content — Markdown\n  rendered to **escaped HTML** with `markdown-it` `html:false` and its\n  safe-link policy, images as base64 data URLs, **code files highlighted\n  server-side** by extension, other text capped at 1 MiB after a binary\n  NUL-byte sniff), `open` (native desktop opener), and `capabilities`. Both\n  `read` and `open` resolve workspace-relative paths against the registered\n  workspace roots, never the host process cwd.\n- **Two route carriers, one contract.** DSH moved route registration between\n  connection generations, so the host half mounts whichever carrier the running\n  DSH exposes:\n  - **0.1.5 and newer** — exact Fetch routes below `/api`\n    (`/api/markdown-preview.read|open|capabilities`), the carrier official\n    plugins use. Its shared channel applies the same Host/Origin fence and\n    browser-authentication policy before dispatch.\n  - **0.1.0 / 0.1.1** — the logical RPC channel `/preview`, registered with\n    that generation's `loopback` trust authority.\n\n  The browser half elects the carrier on its first call and falls back to the\n  other one if a carrier answers nothing in this plugin's vocabulary, so both\n  generations work without configuration. Both carriers call the same handler.\n- Rendering happens **on the host**, keeping the browser bundle thin and\n  dependency-free (it requires only `react`).\n\n## Compatibility and verification\n\n`package.json` declares an exact `dsh.compatibility.dshReleases` matrix. Every\n`compatible` entry below was verified by **installing this plugin into a\ndisposable DSH profile and booting it on an isolated port**, then driving the\nplugin's own",
+              "readAt": "2026-10-22T07:40:22.189Z",
+              "truncated": true
+            },
+            "match": {
+              "score": 66,
+              "terms": [
+                "mermaid",
+                "katex",
+                "markdown",
+                "preview",
+                "流程图",
+                "流程",
+                "程图",
+                "公式",
+                "渲染",
+                "图形",
+                "显示"
+              ],
+              "capabilities": []
+            },
+            "evidence": {
+              "metadata": "manifest-checked",
+              "installation": "not-tested",
+              "task": "not-tested",
+              "combination": "not-tested",
+              "capabilityBasis": "author-description/index-keywords as quoted functionality clues; README supplied for model interpretation; not execution proof",
+              "fetchedAt": "2026-10-22T07:40:22.189Z",
+              "sources": [
+                {
+                  "kind": "market-index",
+                  "url": "https://awesome-dsh-plugin.com/plugins.json",
+                  "query": "Mermaid KaTeX markdown preview",
+                  "fetchedAt": "2026-10-22T07:40:20.414Z"
+                },
+                {
+                  "kind": "registry-manifest",
+                  "url": "https://registry.npmjs.org/dsh-markdown-preview/0.4.0"
+                },
+                {
+                  "kind": "author-documentation",
+                  "url": "https://raw.githubusercontent.com/GitHubJiKe/dsh-markdown-preview/8202df21fa38603019b7522ec27d8a61af6f4bf7/README.md",
+                  "fetchedAt": "2026-10-22T07:40:22.189Z",
+                  "sha256": "585fef4516a983d8a1eb3ad31eac6efd46b9a27f54bf41c22eec86f2a87c2845"
+                }
+              ]
+            }
+          },
+          {
+            "id": "dsh-md-studio",
+            "name": "dsh-md-studio",
+            "title": "BioAIEvolu/dsh-md-studio",
+            "summary": "Markdown Studio：在 DSH 原生右侧文件预览与对话消息中渲染 Mermaid 图表、KaTeX 公式、GFM 表格、任务列表、脚注及代码高亮。渲染引擎随包内置，完全离线可用。 / Native DSH right-sidebar Markdown preview with Mermaid diagrams, KaTeX math, GFM tables and syntax highlighting — fully offline.",
+            "authorDescription": "Markdown Studio：在 DSH 原生右侧文件预览与对话消息中渲染 Mermaid 图表、KaTeX 公式、GFM 表格、任务列表、脚注及代码高亮。渲染引擎随包内置，完全离线可用。 / Native DSH right-sidebar Markdown preview with Mermaid diagrams, KaTeX math, GFM tables and syntax highlighting — fully offline.",
+            "author": "BioAIEvolu",
+            "repository": "https://github.com/BioAIEvolu/dsh-md-studio",
+            "homepage": "https://github.com/BioAIEvolu/dsh-md-studio#readme",
+            "capabilities": [
+              "Markdown Studio：在 DSH 原生右侧文件预览与对话消息中渲染 Mermaid 图表、KaTeX 公式、GFM 表格、任务列表、脚注及代码高亮。渲染引擎随包内置，完全离线可用。 / Native DSH right-sidebar Markdown preview ",
+              "在 DSH 原生右侧文件预览中渲染 Mermaid 图表、KaTeX 公式、GFM 表格与代码高亮，渲染引擎随包内置，完全离线。",
+              "deepseek-harness",
+              "dsh",
+              "dsh-plugin",
+              "markdown",
+              "data-analysis",
+              "code-review"
+            ],
+            "keywords": [
+              "deepseek-harness",
+              "dsh",
+              "dsh-plugin",
+              "markdown",
+              "mermaid",
+              "katex",
+              "syntax-highlighting",
+              "preview"
+            ],
+            "inputs": [],
+            "outputs": [],
+            "firstUse": "",
+            "requirements": {
+              "extraApiKey": "unknown",
+              "platforms": [],
+              "notes": [
+                "账号、输入输出和首次使用前提来自作者资料；未知条件需在会话确认。"
+              ]
+            },
+            "limitations": [
+              "来自动态来源与作者资料的候选线索；尚未安装、运行或验证组合。",
+              "已核对精确 npm 版本的 bundle 清单，未下载或执行安装包；实际安装仍由宿主确认。"
+            ],
+            "compatibility": {
+              "dsh": ">=0.2.0-rc.2 <0.3.0-0",
+              "node": ">=22.19.0",
+              "basis": "engines.dsh"
+            },
+            "hostCompatibility": {
+              "status": "compatible",
+              "range": ">=0.2.0-rc.2 <0.3.0-0",
+              "basis": "engines.dsh",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "nodeCompatibility": {
+              "status": "compatible",
+              "range": ">=22.19.0",
+              "basis": "engines.node",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "install": {
+              "type": "npm",
+              "spec": "dsh-md-studio@1.2.0",
+              "version": "1.2.0",
+              "commit": "ffd70b3992a5d55448e4c5c51ba5ccdfeeca6c4e",
+              "registry": "https://registry.npmjs.org/",
+              "readiness": "metadata-only",
+              "entrypoints": [],
+              "lifecycleScripts": []
+            },
+            "sourceTags": [
+              {
+                "id": "awesome-full",
+                "title": "Awesome DSH 完整社区目录",
+                "url": "https://awesome-dsh-plugin.com/plugins.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:20.414Z",
+                "total": 6378,
+                "npmTotal": 3280,
+                "githubOnlyTotal": 3098,
+                "rejectedRows": 0,
+                "catalogUpdatedAt": "2026-10-22"
+              },
+              {
+                "id": "awesome",
+                "title": "Awesome DSH Plugin 插件精选",
+                "url": "https://awesome-dsh-plugin.com/index.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:19.437Z",
+                "total": 3261
+              }
+            ],
+            "documentation": {
+              "url": "https://raw.githubusercontent.com/BioAIEvolu/dsh-md-studio/ffd70b3992a5d55448e4c5c51ba5ccdfeeca6c4e/README.md",
+              "text": "<div align=\"center\">\n\n# 📄 Markdown Studio for DeepSeek Harness\n\n**在 DSH 原生右侧文件预览中，把 Markdown 里的 Mermaid 图表、数学公式、代码高亮一次看全。**\n\n渲染引擎随插件内置，**完全离线可用** · 无需改动你的文档 · 停用即恢复官方渲染器\n\n[![CI](https://github.com/BioAIEvolu/dsh-md-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/BioAIEvolu/dsh-md-studio/actions/workflows/ci.yml)\n[![npm](https://img.shields.io/npm/v/dsh-md-studio)](https://www.npmjs.com/package/dsh-md-studio)\n[![GitHub release](https://img.shields.io/github/v/release/BioAIEvolu/dsh-md-studio)](https://github.com/BioAIEvolu/dsh-md-studio/releases)\n[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)\n[![DSH](https://img.shields.io/badge/DeepSeek%20Harness-0.2.0--rc.2-blue)](https://github.com/deepseek-ai/deepseek-harness)\n[![English](https://img.shields.io/badge/docs-English-green)](README.en.md)\n\n[同一份 Mermaid 代码块：官方预览 vs Markdown Studio](docs/images/before-after.png)\n\n</div>\n\n---\n\n## 为什么需要它\n\nDeepSeek Harness 的右侧文件预览很好用，但 **Mermaid 代码块只会显示为一堆源码**——架构图、时序图、流程图全都要靠想象。外部方案要么需要开独立面板、要么依赖 CDN 联网。\n\n**Markdown Studio 直接接管原生预览的 Markdown 渲染器**：文件读取、权限校验、刷新、标签页这些全部保留 DSH 原生行为，只有\"画\"的部分被增强。渲染引擎（Mermaid / markdown-it / KaTeX / highlight.js / DOMPurify）**随插件打包**，断网也能看图。\n\n| 官方预览 | Markdown Studio |\n|---|---|\n| `​```mermaid` 显示为代码块 | 就地渲染为 SVG 图 + 工具栏 |\n| 长文档来回滚动 | 图文混排，所见即所得 |\n\n## ✨ 特性\n\n- **📈 Mermaid 图表**：流程图、时序图、甘特图、饼图等 Mermaid 11 全系图型；每张图带 **图形/源码切换 · 全屏（缩放/拖拽）· 下载 SVG** 工具栏；深浅主题自动重绘\n- **🩹 语法自动修复**：真实文档里最常见的 `W2[Codex / Claude Code (ACP)]` 这类\"标签含英文括号\"语法错误，**自动修复后照常渲染**，并在徽章标注\"已自动修复\"——不用改你的文档\n- **📐 KaTeX 数学公式**：行内 `$...$` 与块级 `$$...$$`\n- **📝 完整 GFM**：表格、任务列表、脚注、删除线、标题锚点跳转\n- **🎨 代码高亮**：highlight.js 常用语言集\n- **🖼️ 本地图片**：相对路径按文档目录解析，经 DSH 原生鉴权接口读取\n- **📴 完全离线**：渲染零网络请求（有自动化测试断言兜底）；作者写在文档里的远程图片仍按原 URL 加载\n- **🛡️ 安全**：DOMPurify 双重净化（文档 HTML + 图表 SVG），禁执行脚本；Mermaid `strict` 模式\n\n## 📸 截图\n\n| 深色主题 | |\n|---|---|\n| ![深色主题完整渲染](docs/images/demo-dark.png) | ![浅色主题完整渲染](docs/images/demo-light.png) |\n| 深色 | 浅色 |\n\n## 🚀 安装\n\n> 需要 DeepSeek Harness `0.2.0-rc.2+`（客户端插槽 API 依赖，见 [兼容性](#️-兼容性)）\n\n**方式一 · 可视化插件市场（dshmarket）**\n在 DSH 设置 → 插件 → 市场中搜索 `dsh-md-studio`。\n\n**方式二 · 命令行（GitHub）**\n```sh\ndsh plugin --profile desktop add github:BioAIEvolu/dsh-md-studio\n```\n\n**方式三 · 命令行（npm，发布后可用）**\n```sh\ndsh plugin --profile desktop add dsh-md-studio\n```\n\n安装后重启 DSH Desktop，在右侧打开任意 `.md` 文件即可。\n\n## 📖 使用\n\n打开 Markdown 文件后：\n\n- 文档顶部出现 **Markdown Studio** 标识与 **查看源码** 按钮（整篇源码/渲染视图切换）\n- 每个 Mermaid 图表自带工具栏：**图形 / 源码 / 全屏 / 下载 SVG**\n- 全屏模式支持滚轮缩放、拖拽平移、一键适应\n- 语法错误的图表保留源码并给出原因，**不影响文档里其他图表**\n- 不想用了？在插件管理中停用，官方渲染器原样恢复\n\n试试仓库里的 [docs/demo.md](docs/demo.md)——一份覆盖全部特性的验证文档。\n\n## 🧠 工作原理\n\n不扫描页面 DOM、不开独立窗口，而是注册 DSH 文档预览的**官方扩展插槽**，以更高优先级接管官方 Markdown 渲染键：\n\n```mermaid\nflowchart LR\n    A[打开 .md 文件] --> B[DSH 原生文件预览]\n    B --> C{document slot}\n    C -->|Markdown Studio 接管| D[本插件渲染器]\n    C -->|其他类型保持官方| E[PDF / 图片 / Excel / 代码]\n    D --> F[markdown-it + GFM]\n    D --> G[Mermaid 图表]\n    D --> H[KaTeX 公式]\n    F --> I[DOMPurify 净化]\n    G --> I\n    I --> O[右侧标签页渲染]\n```\n\n- 文件读取、分页、刷新、生命周期仍由 DSH 管理——插件只负责\"画\"\n- 通过实时 Inspect 验证插槽注册：本插件 `active: true`，官方 Markdown 渲染器自动让位\n\n## ✅ 质量保障\n\n`node test/browser.mjs` 加载与发布完全一致的 bundle，在真实 Chromium 中断网验证（**零网络请求、零页面异常** 断言）：\n\n| 验证项 | |\n|---|---|\n| Mermaid 四类图渲染 + 节点文字可见 | ✅ |\n| 含括号标签自动修复 | ✅ |\n| GFM 表格 / 任务列表 / 脚注 | ✅ |\n| 行内 + 块级 KaTeX | ✅ |\n| 代码高亮 | ✅ |\n| 图形/源码切换、全屏、SVG 下载 | ✅ |\n| 深浅主题重绘 | ✅ |\n| 非法图表隔离（一图坏不拖累整页） | ✅ |\n| XSS 净化（脚本不执行） | ✅ |\n| 快速切换文件无陈旧渲染 | ✅ |\n| 卸载清理 | ✅ |\n\n## ⚠️ 兼容性\n\n- 适配 **DSH `0.2.0-rc.2`**（`engines.dsh: >=0.2.0-rc.2 <0.3.0-0`）；其他版本未验证，升级 DSH 后如插槽 API 变更请提 issue\n- 文档上限 200 万字符；单图 5 万字符 / 2000 行 / 2000 边\n- Mermaid 输出经净化：图表内的交互点击、外部图片引用会被禁用\n\n## 🛠️ 从源码构建\n\n```sh\npnpm install --ignore-scripts\nnode scripts/build.mjs        # 产出 lib/（含字体与三方授权清单）\nnode test/browser.mjs         # 真实浏览器测试\nnode test/screenshots.mjs     # 重新生成文档截图\npnpm pack                     # 打包 dsh-md-studio-x.y.z.tgz\n```\n\n构建产物 `lib/client.js` 为 DSH ModuleLoader 工厂格式，仅依赖宿主 React，其余依赖全部打包。\n\n## 🗺️ Roadmap\n\n- [ ] 对话内 Mermaid 渲染（与 [dsh-mermaid](https://github.com/MrmoLabs/dsh-mermaid) 互补）\n- [ ] 图表导出 PNG\n- [ ] 目录（TOC）侧栏\n- [ ] 设置页（字号、图表方向）\n\n## 🙏 致谢\n\n- [dsh-mermaid](https://github.com/MrmoLabs/dsh-mermaid)（MrmoLabs）与 [dsh-artifact-preview](https://github.com/nirvanaslash/dsh-artifact-preview)（nirvanaslash）——1.0 版的整合来源，1.1 的交互设计参考\n- 渲染库：[Mermaid](https://mermaid.js.org/) · [markdown-it](https://github.com/markdown-it/markdown-it) · [DOMPurify](https://github.com/cure53/DOMPurify) · [highlight.js](https://highlightjs.org/) · [KaTeX](https://katex.org/)，完整授权见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)\n\n## ⭐ 支持项目\n\n如果这个插件帮你省掉了\"改文档语法\"和\"切窗口看图\"的时间，欢迎点个 Star；问题与需求请提 [Issue](https://github.com/BioAIEvolu/dsh-md-studio/issues)，PR 欢迎。\n\nEnglish documentation: [README.en.md](README.en.md)\n\n## License\n\n[MIT](LICENSE) © BioAIEvolu\n",
+              "readAt": "2026-10-22T07:40:22.292Z",
+              "truncated": false
+            },
+            "match": {
+              "score": 64,
+              "terms": [
+                "mermaid",
+                "katex",
+                "markdown",
+                "preview",
+                "流程图",
+                "流程",
+                "程图",
+                "公式",
+                "渲染",
+                "图形",
+                "显示"
+              ],
+              "capabilities": []
+            },
+            "evidence": {
+              "metadata": "manifest-checked",
+              "installation": "not-tested",
+              "task": "not-tested",
+              "combination": "not-tested",
+              "capabilityBasis": "author-description/index-keywords as quoted functionality clues; README supplied for model interpretation; not execution proof",
+              "fetchedAt": "2026-10-22T07:40:22.293Z",
+              "sources": [
+                {
+                  "kind": "market-index",
+                  "url": "https://awesome-dsh-plugin.com/plugins.json",
+                  "query": "Mermaid KaTeX markdown preview",
+                  "fetchedAt": "2026-10-22T07:40:20.414Z"
+                },
+                {
+                  "kind": "registry-manifest",
+                  "url": "https://registry.npmjs.org/dsh-md-studio/1.2.0"
+                },
+                {
+                  "kind": "author-documentation",
+                  "url": "https://raw.githubusercontent.com/BioAIEvolu/dsh-md-studio/ffd70b3992a5d55448e4c5c51ba5ccdfeeca6c4e/README.md",
+                  "fetchedAt": "2026-10-22T07:40:22.292Z",
+                  "sha256": "1c3b0b350a32017762f150abc68d987fa97499be5eb059f721138cec7ed3fd50"
+                }
+              ]
+            }
+          }
+        ],
+        "sources": [
+          {
+            "id": "host-market",
+            "title": "DSH 已配置市场",
+            "url": "",
+            "status": "unconfigured",
+            "fetchedAt": null,
+            "total": 0
+          },
+          {
+            "id": "github-topic",
+            "title": "GitHub dsh-plugin topic",
+            "url": "https://github.com/topics/dsh-plugin",
+            "queryUrl": "https://api.github.com/search/repositories?q=topic%3Adsh-plugin+Mermaid+KaTeX+markdown+preview&per_page=12",
+            "status": "live",
+            "fetchedAt": "2026-10-22T07:40:17.790Z",
+            "total": 1,
+            "totalKind": "matches"
+          },
+          {
+            "id": "awesome",
+            "title": "Awesome DSH Plugin 插件精选",
+            "url": "https://awesome-dsh-plugin.com/index.json",
+            "status": "live",
+            "fetchedAt": "2026-10-22T07:40:19.437Z",
+            "total": 3261
+          },
+          {
+            "id": "awesome-full",
+            "title": "Awesome DSH 完整社区目录",
+            "url": "https://awesome-dsh-plugin.com/plugins.json",
+            "status": "live",
+            "fetchedAt": "2026-10-22T07:40:20.414Z",
+            "total": 6378,
+            "npmTotal": 3280,
+            "githubOnlyTotal": 3098,
+            "rejectedRows": 0,
+            "catalogUpdatedAt": "2026-10-22"
+          }
+        ],
+        "warnings": [
+          "dsh-plugin-mermaid-gb-svg: README unavailable; only manifest and index evidence read",
+          "本轮从来源匹配 1246 条候选，按相关性读取前 6 条作者资料；尚未逐条核验全部候选。"
+        ],
+        "searchedAt": "2026-10-22T07:40:23.015Z",
+        "coverage": {
+          "matched": 1246,
+          "inspected": 6,
+          "resolved": 6,
+          "excluded": 0,
+          "excludedReasons": {},
+          "uninspected": 1240,
+          "returned": 6,
+          "inspectionBudget": 24
+        },
+        "sourceCoverage": [
+          {
+            "sourceId": "host-market",
+            "url": "",
+            "status": "unconfigured",
+            "fetchedAt": null,
+            "total": 0,
+            "matched": 0,
+            "inspected": 0,
+            "resolved": 0,
+            "excluded": 0,
+            "uninspected": 0,
+            "inspectionBudget": 24
+          },
+          {
+            "sourceId": "github-topic",
+            "url": "https://github.com/topics/dsh-plugin",
+            "status": "live",
+            "fetchedAt": "2026-10-22T07:40:17.790Z",
+            "total": 1,
+            "matched": 1,
+            "inspected": 0,
+            "resolved": 0,
+            "excluded": 0,
+            "uninspected": 1,
+            "inspectionBudget": 24
+          },
+          {
+            "sourceId": "awesome",
+            "url": "https://awesome-dsh-plugin.com/index.json",
+            "status": "live",
+            "fetchedAt": "2026-10-22T07:40:19.437Z",
+            "total": 3261,
+            "matched": 536,
+            "inspected": 3,
+            "resolved": 3,
+            "excluded": 0,
+            "uninspected": 533,
+            "inspectionBudget": 24
+          },
+          {
+            "sourceId": "awesome-full",
+            "url": "https://awesome-dsh-plugin.com/plugins.json",
+            "status": "live",
+            "fetchedAt": "2026-10-22T07:40:20.414Z",
+            "total": 6378,
+            "npmTotal": 3280,
+            "githubOnlyTotal": 3098,
+            "rejectedRows": 0,
+            "matched": 1180,
+            "inspected": 6,
+            "resolved": 6,
+            "excluded": 0,
+            "uninspected": 1174,
+            "inspectionBudget": 24
+          }
+        ]
+      }
+    },
+    {
+      "id": "create-local-library",
+      "intent": {
+        "goal": "在DSH里只读索引本地Markdown资料目录，人工标注主题和阅读状态，再按关键词检索回看原文",
+        "input": "本地Markdown目录",
+        "output": "资料列表、可编辑元数据、原文预览和检索结果",
+        "constraints": [
+          "不上传文件",
+          "不需要额外模型Key",
+          "不修改原文件"
+        ],
+        "capabilities": [
+          "只读索引Markdown目录",
+          "人工维护资料元数据",
+          "按主题关键词检索原文"
+        ],
+        "queries": [
+          "local Markdown research library metadata tags",
+          "本地 Markdown 只读索引 人工标签 阅读状态"
+        ]
+      },
+      "result": {
+        "candidates": [
+          {
+            "id": "dsh-ai-library",
+            "name": "dsh-ai-library",
+            "title": "Instant-KING/dsh-ai-library",
+            "summary": "资料馆：把本地多源资料库渲染成 DeepSeek Harness 原生面板。内置 11 种预览器（pdf.js / 代码高亮 / 3D / 表格 / 字体 / 压缩包 / 音频…）、论文多平台检索、GitHub 仓库卡与一键安装。",
+            "authorDescription": "资料馆：把本地多源资料库渲染成 DeepSeek Harness 原生面板。内置 11 种预览器（pdf.js / 代码高亮 / 3D / 表格 / 字体 / 压缩包 / 音频…）、论文多平台检索、GitHub 仓库卡与一键安装。",
+            "author": "Instant-KING",
+            "repository": "https://github.com/Instant-KING/dsh-ai-library",
+            "homepage": "https://github.com/Instant-KING/dsh-ai-library#readme",
+            "capabilities": [
+              "资料馆：把本地多源资料库渲染成 DeepSeek Harness 原生面板。内置 11 种预览器（pdf.js / 代码高亮 / 3D / 表格 / 字体 / 压缩包 / 音频…）、论文多平台检索、GitHub 仓库卡与一键安装。",
+              "DSH 的本地资料馆：把本机文件与产物索引成可搜索的卡片树，支持 PDF / Office / 图片预览，另带论文检索（arXiv、OpenAlex、Crossref 等）、把网页存成 markdown 快照、插件市场标签页，以及已装插件资源的同步与一键切换（人设、表情包图集、鲸",
+              "dsh",
+              "dsh-plugin",
+              "deepseek-harness",
+              "library",
+              "data-analysis",
+              "literature-search",
+              "pdf-reading",
+              "git-workflow"
+            ],
+            "keywords": [
+              "dsh",
+              "dsh-plugin",
+              "deepseek-harness",
+              "library",
+              "knowledge-base",
+              "pdfjs",
+              "paper-search",
+              "code-viewer"
+            ],
+            "inputs": [],
+            "outputs": [],
+            "firstUse": "",
+            "requirements": {
+              "extraApiKey": "not-required",
+              "platforms": [],
+              "notes": [
+                "账号、输入输出和首次使用前提来自作者资料；未知条件需在会话确认。"
+              ]
+            },
+            "limitations": [
+              "来自动态来源与作者资料的候选线索；尚未安装、运行或验证组合。",
+              "已核对精确 npm 版本的 bundle 清单，未下载或执行安装包；实际安装仍由宿主确认。"
+            ],
+            "compatibility": {
+              "dsh": null,
+              "node": ">=20",
+              "basis": "author-peer-dependencies"
+            },
+            "hostCompatibility": {
+              "status": "unknown",
+              "range": null,
+              "basis": "author-peer-dependencies"
+            },
+            "nodeCompatibility": {
+              "status": "compatible",
+              "range": ">=20",
+              "basis": "engines.node",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "install": {
+              "type": "npm",
+              "spec": "dsh-ai-library@0.3.39",
+              "version": "0.3.39",
+              "commit": "adb27bcd0c01c7de3a9d7010e23b9b67c772624a",
+              "registry": "https://registry.npmjs.org/",
+              "readiness": "metadata-only",
+              "entrypoints": [],
+              "lifecycleScripts": []
+            },
+            "sourceTags": [
+              {
+                "id": "awesome-full",
+                "title": "Awesome DSH 完整社区目录",
+                "url": "https://awesome-dsh-plugin.com/plugins.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:20.496Z",
+                "total": 6378,
+                "npmTotal": 3280,
+                "githubOnlyTotal": 3098,
+                "rejectedRows": 0,
+                "catalogUpdatedAt": "2026-10-22"
+              },
+              {
+                "id": "awesome",
+                "title": "Awesome DSH Plugin 插件精选",
+                "url": "https://awesome-dsh-plugin.com/index.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:19.462Z",
+                "total": 3261
+              }
+            ],
+            "documentation": {
+              "url": "https://raw.githubusercontent.com/Instant-KING/dsh-ai-library/adb27bcd0c01c7de3a9d7010e23b9b67c772624a/README.md",
+              "text": "# dsh-ai-library · 资料馆\n\n> 仓库：<https://github.com/Instant-KING/dsh-ai-library> · npm：`dsh-ai-library`\n\n把**本地多源资料库**渲染成 DeepSeek Harness 的原生面板：左侧三级分类树、中间卡片网格、右侧预览（自带 pdf.js 阅读器），支持条目编辑与拖拽分组。\n\n- 自带 pdf.js **4.10.38**，不需要外网 CDN\n- Markdown 现场渲染、Office 文件转 PDF 预览\n- 拖拽卡片改分组、批量打标签、新建/编辑/删除条目\n- 数据全部留在本地；**除你主动检索 / 手动同步市场 / 存网页快照外不联网**（论文检索请求公开 API，AnySearch 匿名请求，见下文 key 配置；网页正文可交给 DSH 的 `read_page` 抽取，此时本插件自身不发请求）\n\n---\n\n## 大肥鱼会替你做这些\n\n- **像妈妈一样的大肥鱼**：你把东西弄得到处都是，它会把东西收好 —— 本机产物自动入库、自动分类、随时能搜。\n- **要搜好用的插件？** 大肥鱼自己去[插件市场](https://api.dshmk.com/)翻，卡片上直接写清 star、版本、兼不兼容。\n- **要写漂亮的前端组件？** 把 [react-bits](https://github.com/DavidHDev/react-bits) 这类仓库丢进来建库，大肥鱼就在馆藏里搜现成组件来做页面 UI —— 不用从零抄。\n- **要搜真实存在的论文？** 大肥鱼自己调十个源的 API（arXiv / OpenAlex / Crossref / DOAJ / Europe PMC / INSPIRE / Zenodo / HAL / DataCite / OpenAIRE），带 DOI 和 PDF 链接，不会编文献。\n\n## 安装\n\n三种方式，选一种（装完**重启 DSH**）：\n\n```bash\n# ① npm（推荐）\ndsh plugin --profile desktop add dsh-ai-library\n\n# ② 直接从 GitHub\ndsh plugin --profile desktop add github:Instant-KING/dsh-ai-library\n\n# ③ 本地目录（开发用，不装包）\n# clone 后在 profile 的 cordis.patch.yml 里用绝对路径 insert：\n#   - insert:\n#       - id: dsh-ai-library\n#         name: E:/path/to/dsh-ai-library/lib/index.js\n```\n\n装完第一次打开面板会自动建空库；把文件丢进 `<下载目录>/ai-library/items/` 就能看到。\n\n## 论文检索需要配哪些 key\n\n十个学术源（arXiv / OpenAlex / Crossref / DOAJ / Europe PMC / INSPIRE / Zenodo / HAL / DataCite / OpenAIRE）**免 key 直接用**。\n下面几个是可选的付费/受限源，**不配只是查不到它的结果**，不会报错：\n\n| 平台 | 配置项 | 去哪申请 | 用途 |\n|---|---|---|---|\n| **Sciverse** | `paperKeys.sciverse`（`sv-` 开头） | <https://sciverse.space/> → 开发者控制台 | 元数据 + **语义检索(RAG)** + 读原文 |\n| IEEE Xplore | `paperKeys.ieee` | <https://developer.ieee.org/> | IEEE 论文 |\n| ScienceDirect | `paperKeys.elsevier` | <https://dev.elsevier.com/> | Elsevier 期刊 |\n| Springer | `paperKeys.springer` | <https://dev.springernature.com/> | Springer 论文 |\n| AnySearch（可选） | `paperKeys.anysearch` | <https://www.anysearch.com/console/api-keys> | 网页检索；**留空也能用**（匿名免费配额） |\n\n**两种填法（任选）**\n\n1. 面板里填：工具栏「论文检索」→ 右上角「配置 key」→ 粘贴 → 保存（立即生效，不用重启）\n2. 改文件：插件目录 `config.json`\n\n```json\n{\n  \"paperKeys\": {\n    \"sciverse\": \"sv-你的token\",\n    \"ieee\": \"\",\n    \"elsevier\": \"\",\n    \"springer\": \"\",\n    \"anysearch\": \"\"\n  }\n}\n```\n\n> ⚠️ **语义检索（RAG）只支持 Sciverse**：没配 `sciverse` 时面板提示「需要 sciverse key」，\n> 接口返回 400 并说明原因，不会静默失败。\n## 配置\n\n插件目录下的 `config.json`（可不建，全部字段都有默认值）。参考 [config.example.json](config.example.json)。\n\n| 字段 | 默认 | 说明 |\n|---|---|---|\n| `root` | `<下载目录>/ai-library` | 数据根目录，其余路径从它推出 |\n| `libraryFile` | `<root>/library.js` | 手写条目 |\n| `projectFile` | `<root>/project-items.js` | 批量导入条目（可选） |\n| `marketFile` | `<root>/market-items.js` | 市场同步产物（可选） |\n| `githubFile` | `<root>/github-items.js` | GitHub 项目同步产物（可选） |\n| `userItemsFile` | `<root>/user-items.json` | 面板编辑器写入的条目 |\n| `itemsDir` | `<root>/items` | 文件根目录（只允许读这里） |\n| `cacheDir` | `<root>/.cache` | 缓存 |\n| `translateCache` | `<cache>/translate` | 翻译产物 |\n| `marketCache` | `<cache>/market.json` | 市场原始目录缓存 |\n| `vendorDir` | `<插件>/vendor` | 内置 pdf.js / three.js |\n| `soffice` | 自动探测 | LibreOffice 可执行文件（Office 转 PDF） |\n| `motionDir` | 空（关闭） | 外部只读挂载的提示词库 |\n| `translateUrl` | `http://127.0.0.1:11008` | PDFMathTranslate 服务 |\n| `workspaceDir` | 空 | 自动入库扫描的根目录 |\n| `watchDirs` | `[]` | 自动入库监听的目录 |\n| `autoCaptureOnBoot` | `false` | 启动后自动扫一次 watchDirs |\n| `autoCaptureProject` | `自动入库` | 自动入库的分组名 |\n| `autoCaptureDepth` | `2` | 自动入库递归深度 |\n| `toolsEnabled` | `true` | 是否注册 14 个 AI 工具 |\n| `marketUrl` | `https://api.dshmk.com/` | 插件市场源 |\n| `marketEnabled` | `false` | 是否自动同步市场（默认关，开了启动后自动拉） |\n| `marketLimit` | `300` | 市场最多收录条数 |\n| `marketTtlMs` | 6 小时 | 市场缓存有效期 |\n| `paperKeys` | `{}` | `{ ieee, elsevier, springer }`，论文检索用 |\n\n所有路径字段都支持 `~`（会展开成用户主目录）。环境变量（优先级高于 config.json）：\n\n```\nAILIB_ROOT  AILIB_MOTION_DIR  AILIB_WORKSPACE  SOFFICE  PDFMATHTRANSLATE_URL\n```\n\n> 论文检索已内置（`lib/paper.js`，纯 Node），**不需要 Python**，也不需要外部项目。\n\n\n> 🔐 **密钥说明**：`config.json` 里的 `paperKeys`（Sciverse / IEEE / Elsevier / Springer / AnySearch）\n> 以**明文**保存在插件目录，同名项目通常都是这样。请确保该目录权限不被他人读取；\n> 如果插件装在共享盘或多用户机器上，建议改用环境变量 `SCIVERSE_API_TOKEN` 等方式，或只填需要的 key。\n\n### 主色（主题）\n\n面板的主色（高亮、选中态、极光背景）来自 CSS 变量 `--ailib-accent`，解析顺序：\n\n```\nconfig.json 的 accent（或环境变量 AILIB_ACCENT）\n  ↓ 没填\nDSH 主题变量 --dsw-alias-brand-primary / --dsw-static-deepseek-500（DSH 若暴露了就用它）\n  ↓ 都没有\n插件默认金色 #e6c16f（视觉与旧版完全一致）\n```\n\n想让插件跟 DSH 品牌色一致，在 `config.json` 里写：\n\n```json\n{ \"accent\": \"#4176E6\" }\n```\n\n按钮尺寸、圆角、动效都不变，只换主色；极光背景的主色也会跟着变。\n\n## 表情包图集（与 dsh-meme 联动）\n\n左侧「表情包图集」直接列出 dsh-meme 的图集（内置包 + `~/.dsh/meme-packs` 下你导入的）：\n\n- 选一个图集 → 主区显示封面、张数、图片网格\n- 点「启用这个图集」→ 写 `~/.dsh/dsh-expression.json` 的 `enabledPacks`，表情包插件**立即生效**\n- 「导入图集…」填一个**解压好的目录路径**（需含 `index.db`），会复制进 `~/.dsh/meme-packs/<id>`\n- 「删除」只删用户导入的包，内置包删不掉\n\n## 数据格式\n\n`library.js` 是普通 JS：\n\n```js\nwindow.LIBRARY = {\n  title: '我的资料库',\n  items: [\n    {\n      id: 'k-1',                 // 唯一，必填\n      kind: 'paper',             // paper / plugin / doc / note …\n      status: 'available',\n      title: '一维谐振子',\n      summary: '升降算符解法',\n      source: 'arXiv',\n      tags: ['量子力学'],\n      notes: ['摘自2026-03讲座'],\n      files: ['items/papers/harmonic.pdf'],   // 相对 items/\n      preview: {\n        variants: [\n          { label: '原文', src: 'papers/harmonic.pdf' },\n          { label: '笔记', src: 'notes/harmonic.md' },\n        ],\n      },\n    },\n  ],\n  groups: {\n    'k-1': '力学',               // id → 子分类，不写就落到「未分类」\n  },\n}\n```\n\n把文件丢进 `<root>/items/`，条目里写相对路径即可。\n\n### 合并优先级\n\n```\n多个数据源按顺序合并，后写的覆盖先写的：\n\n  外部挂载源  <  批量导入  <  市场同步  <  GitHub  <  library.js  <  user-items.json\n```\n\n`user-items.json` 优先级最高，所以**编辑器改的东西永远生效，但不会动你的 `library.js`**。\n\n---\n\n## 编辑\n\n| 操作 | 入口 |\n|---|---|\n| 新建 | 面板右上「＋ 新建」 |\n| 编辑 | 卡片右上 ✎ |\n| 删除 | 卡片右上 🗑（手写条目会被**隐藏**，源文件不动） |\n| 改分组 | 把卡片**拖到左栏分组行** |\n| 多选 | 卡片右上 ＋，或 Ctrl + 点击卡片 |\n| 批量 | 选中后顶部出现：改分组 / 加标签 / 删除 |\n\n> 删 `user-items.json` 即可回到「只有 library.js」的原始状态。\n\n---\n\n## 系统提示词\n\n装载后本插件会往宿主注册一个 `ai-library` 提示词片段（`ctx.inject(['systemPrompt'], …)`，order 160），\n告诉 AI：**本机新建/修改的文件要在回话前入库**，并给出各场景该用哪个工具（`library_import` / `library_autocapture` / `library_repo_build` / `library_save_url` / `library_pa",
+              "readAt": "2026-10-22T07:40:21.132Z",
+              "truncated": true
+            },
+            "match": {
+              "score": 96,
+              "terms": [
+                "local",
+                "markdown",
+                "research",
+                "library",
+                "metadata",
+                "tags",
+                "本地",
+                "只读索引",
+                "只读",
+                "读索",
+                "索引",
+                "人工标签",
+                "人工",
+                "工标",
+                "标签",
+                "阅读状态",
+                "阅读",
+                "读状",
+                "状态",
+                "目录",
+                "工维",
+                "维护",
+                "护资",
+                "资料",
+                "料元",
+                "元数",
+                "数据",
+                "按主",
+                "主题",
+                "题关",
+                "关键",
+                "键词",
+                "词检",
+                "检索",
+                "索原",
+                "原文"
+              ],
+              "capabilities": []
+            },
+            "evidence": {
+              "metadata": "manifest-checked",
+              "installation": "not-tested",
+              "task": "not-tested",
+              "combination": "not-tested",
+              "capabilityBasis": "author-description/index-keywords as quoted functionality clues; README supplied for model interpretation; not execution proof",
+              "fetchedAt": "2026-10-22T07:40:21.133Z",
+              "sources": [
+                {
+                  "kind": "market-index",
+                  "url": "https://awesome-dsh-plugin.com/plugins.json",
+                  "query": "local Markdown research library metadata tags",
+                  "fetchedAt": "2026-10-22T07:40:20.496Z"
+                },
+                {
+                  "kind": "registry-manifest",
+                  "url": "https://registry.npmjs.org/dsh-ai-library/0.3.39"
+                },
+                {
+                  "kind": "author-documentation",
+                  "url": "https://raw.githubusercontent.com/Instant-KING/dsh-ai-library/adb27bcd0c01c7de3a9d7010e23b9b67c772624a/README.md",
+                  "fetchedAt": "2026-10-22T07:40:21.132Z",
+                  "sha256": "bcb602680b33f1b20acb41fc07dab11f6dfb32cc848947a852f60ba05cc1dad7"
+                }
+              ]
+            }
+          },
+          {
+            "id": "dsh-knit",
+            "name": "dsh-knit",
+            "title": "PolinniZhong/dsh-knit",
+            "summary": "Context retrieval for DeepSeek Harness: ranks docs, code and media by relevance into a sidebar Context Pack. Lexical and fully local by default. Hybrid is off until you configure a provider; it sends your query and file titles/summaries, not bodies.",
+            "authorDescription": "Context retrieval for DeepSeek Harness: ranks docs, code and media by relevance into a sidebar Context Pack. Lexical and fully local by default. Hybrid is off until you configure a provider; it sends your query and file titles/summaries, not bodies.",
+            "author": "Polinni",
+            "repository": "https://github.com/PolinniZhong/dsh-knit",
+            "homepage": "https://github.com/PolinniZhong/dsh-knit",
+            "capabilities": [
+              "Context retrieval for DeepSeek Harness: ranks docs, code and media by relevance into a sidebar Context Pack. Lexical and fully local by defa",
+              "把会话工作区里已有的 Markdown 文档、源码、图片与视频列进 DSH 侧边栏，按与当前对话的相关性排序。默认的词法模式用最近几条消息在本地与标题、摘要、正文做带 IDF 加权的匹配（BM25）—— 不调用模型、没有网络出口，内容不出本机。列表来自工作区扫描，而不是「最近打开",
+              "dsh-plugin",
+              "deepseek-harness",
+              "dsh",
+              "markdown",
+              "evidence-ledger",
+              "git-workflow"
+            ],
+            "keywords": [
+              "dsh-plugin",
+              "deepseek-harness",
+              "dsh",
+              "markdown",
+              "documents",
+              "code",
+              "code-context",
+              "typescript",
+              "sidebar",
+              "right-sidebar",
+              "recent-files",
+              "relevance",
+              "context-pack",
+              "workspace-context",
+              "context-retrieval",
+              "hybrid-retrieval",
+              "semantic-retrieval",
+              "context-lifecycle",
+              "task-context",
+              "images"
+            ],
+            "inputs": [],
+            "outputs": [],
+            "firstUse": "",
+            "requirements": {
+              "extraApiKey": "not-required",
+              "platforms": [],
+              "notes": [
+                "账号、输入输出和首次使用前提来自作者资料；未知条件需在会话确认。"
+              ]
+            },
+            "limitations": [
+              "来自动态来源与作者资料的候选线索；尚未安装、运行或验证组合。",
+              "已核对精确 npm 版本的 bundle 清单，未下载或执行安装包；实际安装仍由宿主确认。"
+            ],
+            "compatibility": {
+              "dsh": null,
+              "node": ">=22.19",
+              "basis": "author-peer-dependencies"
+            },
+            "hostCompatibility": {
+              "status": "unknown",
+              "range": null,
+              "basis": "author-peer-dependencies"
+            },
+            "nodeCompatibility": {
+              "status": "compatible",
+              "range": ">=22.19",
+              "basis": "engines.node",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "install": {
+              "type": "npm",
+              "spec": "dsh-knit@0.24.0",
+              "version": "0.24.0",
+              "commit": "cc517911e13a96185c8f464b2be7cd4ca616c38a",
+              "registry": "https://registry.npmjs.org/",
+              "readiness": "metadata-only",
+              "entrypoints": [],
+              "lifecycleScripts": []
+            },
+            "sourceTags": [
+              {
+                "id": "awesome-full",
+                "title": "Awesome DSH 完整社区目录",
+                "url": "https://awesome-dsh-plugin.com/plugins.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:20.496Z",
+                "total": 6378,
+                "npmTotal": 3280,
+                "githubOnlyTotal": 3098,
+                "rejectedRows": 0,
+                "catalogUpdatedAt": "2026-10-22"
+              },
+              {
+                "id": "awesome",
+                "title": "Awesome DSH Plugin 插件精选",
+                "url": "https://awesome-dsh-plugin.com/index.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:19.462Z",
+                "total": 3261
+              }
+            ],
+            "documentation": {
+              "url": "https://raw.githubusercontent.com/PolinniZhong/dsh-knit/cc517911e13a96185c8f464b2be7cd4ca616c38a/README.md",
+              "text": "# Knit\n\n> **面向 AI Coding Agent 的任务感知工作区上下文检索与生命周期追踪。**\n>\n> Task-aware workspace context retrieval and lifecycle tracking for AI coding agents.\n\nKnit 接的是**当前任务**和**整个工作区**之间那一层：从工作区里找出最相关的文档、源码与媒体，\n组织成 **主要 / 辅助 / 相关** 三层上下文（Context Pack），交给面板、也交给 agent；\n再持续追踪这些上下文**有没有被读、被读之后有没有变**。\n\n**找到 → 组织 → 追踪**，默认的**词法模式**三步都在本机用字符串运算完成 —— 不调模型、不联网、零延迟、内容不出本机。\n可选的**混合模式默认关闭**：只有你自己配好 provider **并且**手动切到混合检索，才会有出网请求；\n那时发出去的是**你这句查询原话 + 每篇候选文件的标题与摘要**（**完整正文、绝对路径都不发**）——\n⚠️ 这里有两个容易想当然的地方，见下面的「**混合模式到底发出去了什么**」。\n\n```text\n                      当前任务\n                         │\n                    工作区检索\n            ┌────────────┼────────────┐\n            ▼            ▼            ▼\n        主要上下文    辅助上下文    相关上下文\n            └────────────┼────────────┘\n                         ▼\n                    Context Pack ──►  `knit_docs` 工具（给 agent）\n                         ▼\n                     Agent 读取\n                         ▼\n                读取证据 · Context Epoch\n                         ▼\n                    工作区发生变化\n                         ▼\n                 重新读取 · 生命周期\n```\n\n> **它不是「更聪明的最近文件列表」，也不是「代码浏览器」。**\n> 最近文件记的是「你点开过什么、哪个更新」；Knit 回答的是\n> **当前这个任务，项目里哪些东西最值得先看 —— 以及看过之后，事情变成了什么样。**\n\n![Knit 面板真机截图：右侧栏停在「代码」档，每行标出命中段，就地展开代码预览并停在那一段](https://raw.githubusercontent.com/PolinniZhong/dsh-knit/main/docs/screenshot.png)\n\n*真机截图（不是原型）：同一个工作区，这张停在 **「代码」档** —— v0.19 起，源码和 Markdown 一样是一等公民。*\n*每行下面的副行写着它是怎么被命中的（`直接命中 classification · changelog` / `路径命中 agents · classification`），*\n*以及**命中段** —— 这次查询在这份文件里最像的是哪一段（`命中段 24–38`）。*\n*点一行**就地**展开预览，并且**直接停在那一段**上：这里是 `knit/src/host/passage.js`，行号栏 + 语法高亮，*\n*命中的那几行带一条灰底横带；预览头里只有路径和四个动作（复制 / 全屏 / 本地打开 / 关闭）。*\n*头部只放路径、一个计数与两个开关；列表按「相关」还是「最新」排，由左边那一对页签决定 —— 按「相关」时排的就是你正在聊什么。*\n*v0.14 起列表永远单列：最左边独立一列是序号（与标题第一行垂直居中），右边第一行＝*\n*Primary 点 + 标题 + 相对时间（**时间靠右**），摘要再往下；**路径只出现在预览头里**（目录收敛成一个 `…/` 占位，完整相对路径在悬停提示里），列表行不再重复。*\n*序号是**跨三档连续**的一条（先看 / 辅助 / 背景）；「其他相关文档」不在包里、不编号，那一格用一个 `·` 占位 ——*\n*空着会被读成「漏了一个号」（2026-10-01）。*\n\n![排序跟着对话走：发一句话，右侧栏的列表按这句话重排，并标出各自的命中段](https://raw.githubusercontent.com/PolinniZhong/dsh-knit/main/docs/demo-reorder.gif)\n\n*排序跟着对话走（同一个工作区、新开的一个会话）：聊天里先聊过一轮发布清单，顶上几条就是发布清单那一族；*\n*再问一句「Knit 里 BM25 的字段权重是怎么定的？」，列表整个换成 BM25 那一族 ——*\n*分组标题与**跨三档连续的序号**随之一起出现，每篇下面多一行「为什么」（命中在哪、怎么命中的、命中段是哪一段）。*\n*⚠️ 面板是**每 5 秒轮询一次**的，重排不是发消息那一瞬间：这一屏里顶上几条是这一轮对话推进之后才整个换掉的*\n*（中间那几十秒被剪掉了）。动图比真实时间快。*\n\n扫整个项目文件夹的文档 / 代码 / 图片 / 视频 · 排序跟着对话走 · 默认词法模式下不调模型、不联网\n\n```sh\ndsh plugin --profile web add dsh-knit\n```\n\n---\n\n## 为什么需要它\n\n> Agent 一天产出 20 篇文档，你找不到刚才那篇。\n\n这是它最开始要解决的问题：**产出速度超过了人翻目录的速度**。\nDSH 自带的「最近文件」只记你点开过什么；一轮对话结束，前面那几篇就沉下去了。\n\nKnit 换了个问法：**不看「谁新」，看「和现在这件事有多相关」**。\n它扫的是**整个工作区**（不是这一轮生成的那几篇），按你正在聊的内容排序 ——\n重启 DSH、换会话、跨天回来，它都还在。\n\n后来问题往前长了一步：真要动一个功能时，最该先看的往往不是文档，而是**那几行源码**。\nv0.19 起代码进了同一条链路。再往后，「排在前面」也不够用了 ——\n**排出来的那些，agent 到底读了没有？读完改过没有？** v0.15–v0.18 补的就是这一层。\n\n三句话：**找到**（扫全工作区、按当前任务排序）→ **组织**（主要 / 辅助 / 相关三层 + 每条的理由）\n→ **追踪**（读了没有、读完变了没有）。\n\n---\n\n## 「最近文件列表」和「代码浏览器」都不是它\n\n这两个类比各自只说中 Knit 的一个**表层形态**，说不到它回答的问题。\n\n|  | 最近文件列表 | 代码浏览器 | **Knit** |\n|---|---|---|---|\n| 范围 | 你点开过的 | 一棵目录树 | **整个工作区**：文档 / 代码 / 图片 / 视频 |\n| 排序 | 修改时间 | 你自己翻 | **当前任务的相关性**（BM25 + IDF，本地算） |\n| 输出 | 一条平铺列表 | 你打开的那一个文件 | **主要 / 辅助 / 相关** 三层，每条都写明为什么在这里 |\n| 给谁 | 你 | 你 | 你**和** agent —— 同一份 Context Pack，走 `knit_docs` |\n| 之后 | 不管 | 不管 | **读了没有 / 读完变了没有**（读取证据 + 生命周期） |\n\n三条最要紧的区别：\n\n1. **范围**：最近打开列表只记你**点开过**的文件；Knit 扫**整个项目文件夹** ——\n   重启 DSH、新开会话、跨天回来，它都还在。\n2. **排序**：它按时间排；Knit 按**你正在聊什么**排 ——\n   聊架构，架构文档浮上来；聊 loader 的 bug，`plugin-loader.ts` 浮上来。\n3. **它不止于「找」**：找完还要**组织**（三层 + 可核验的理由）和**追踪**（哪些真被读了、读完有没有变）。\n\n**默认词法模式下不调模型、不联网**：全是本地字符串运算，零延迟、零成本、内容不出本机。\n可选的**混合模式默认关闭**，指向**本机服务（loopback）**时内容不出这台机器。\n⚠️ 语义收益仍待真 provider 实测（`value-evidence: pending`），不承诺召回提升。\n\n### 混合模式到底发出去了什么\n\n这段是**按报文实测**写的，不是按设计意图写的 —— 复现命令与逐条断言见\n[`docs/evaluations/hybrid-retrieval.md`](https://github.com/PolinniZhong/dsh-knit/blob/main/docs/evaluations/hybrid-retrieval.md)（审计脚本\n`tools/semantic-request-audit.mjs` 会把每一次请求的 body 录下来再逐条判）。\n\n**发出去了**（请求体只有 `{ model, input }` 两个字段，`input` 是一串文本）：\n\n| # | 内容 | 精确边界 |\n|---|---|---|\n| ① | **你这句查询原话** | 面板走会话路径时是「最近一条有实质内容的用户消息」，截到 **80 字**；`knit_docs(query=…)` 走显式路径时最多 2000 字。**每一轮刷新都会重发一次**（文档向量有缓存，查询没有） |\n| ② | **每篇候选文件的标题** | Markdown 是正文里的第一个 `# 标题`（没有就用文件名）；代码是**带扩展名的文件名**；图片 / 视频是**去掉扩展名的文件名** |\n| ③ | **每篇候选文件的摘要** | Markdown 的「摘要」是**正文首个正文段落的节选（≤ 60 字）**——它**来自正文**；代码的「摘要」是**工作区相对目录**（如 `src/host/`）；媒体没有摘要 |\n\n**没有发出去**：完整正文（审计对工作区里每一篇够长的文件都做了「开头 200 字 + 中段 200 字」两处探针，一处都没出现）、\n绝对路径（工作区根 / 家目录 / `file://` 一条都没出现）、会话历史、你工作区里没被选中的文件。\n\n⚠️ **两个容易想当然的地方**：\n①**「摘要」不等于「与正文无关的元数据」**——Markdown 的摘要是正文的节选，所以**会有至多 60 字的正文离开本机**；\n②**图片 / 视频的文件名也会被发出去**（它们没有摘要，发的是文件名本身，例如 `screenshot-media`）。\n\n---\n\n## 安装\n\n```sh\ndsh plugin --profile web add dsh-knit\n```\n\n装完**重启 DSH**，然后硬刷新浏览器（`Cmd + Shift + R`）。\n\n**怎么打开：**\n\n- **会话头部右侧的 Knit 图标按钮**（就在右侧栏展开按钮旁边）—— 一键开面板\n- 或右侧栏 tab 条上的「+」→「Knit 最近文档」\n\n**可选**：装了 `dsh-better-sidebar` 的话，面板也会注册成它的一个 tab；\n没装不受影响，两边是各自独立的可选依赖。\n\n**升级**：命令和首次安装是同一条，装完同样要**重启 DSH** + 硬刷新。\n\n---\n\n## 功能\n\n| 能力 | |\n|---|---|\n| **按当前对话相关性排序**（BM25 + IDF）—— **默认纯本地、零模型调用**；可选的混合模式默认关闭，见下 | ✅ |\n| **当前任务上下文**：把排序结果拆成 **主要 / 辅助 / 相关** 三层，每条都写明「为什么在这里」 | ✅ |\n| **关系证据**（v0.21）：每行标出 `检索` / `关系` / `用户固定`；「为什么」展开**行级证据**（引用 / 导入 / 测试 / 文档，带对方文件与行号，面板最多 3 条、工具最多 2 条）—— 每条都能按行号 grep 回原文，一个字的理由都不是编的 | ✅ |\n| **固定 / 排除**（v0.21）：固定进最上方独立区（不编号，三层编号不变）；排除在**检索之前**生效（计数与状态摘要同时变，可恢复）；宿主给了存储就**活过重启**，没给就写明「本会话有效（未持久化）」 | ✅ |\n| **检索状态摘要**（v0.21.x）：面板头部一行如实显示 `收集 · 排除 · 候选 ｜ BM25 词法检索 · 关系 · 固定 ｜ 入包`（组内中点、组间细竖线、没有箭头），换任务 / 换档都跟着变 | ✅ |\n| **工具栏一行**（2026-10-12）：`相关 / 最新`（排序）`文档 / 代码 / 媒体`（类型）—— 两组之间**没有竖线**，靠间距分界 ｜ 右侧是搜索框（唯一可伸缩项，常规 180–240px，面板窄了先缩它，其余按钮永不被挤）。**检索方式不在这行** —— 它是第三行状态摘要里的**可点状态格**（`BM25 检索 ›`，见下一条）；**四项彼此独立** —— 切排序 / 切类型 / 切检索方式都不动搜索词 | ✅ |\n| **顶行计数**（v0.21.x）：只显示阿拉伯数字（`9` / 过滤时 `3 / 79`）—— 量词随类型档变，索性不上屏；悬停提示里仍是完整那句（`9 个代码文件`） | ✅ |\n| **给 agent 用的 `knit_docs` 工具**：让模型拿回**三层任务上下文**（不是一条平铺列表） | ✅ |\n| **文档生命周期**（v0.17）：每篇推荐文档现在处于 `未读 / 已读 / 读后已更新 / 修改后已重新读取` 哪一档，另外给出最近读了哪篇、包外读了哪几篇、上下文最近一次怎么变 | ✅ |\n| 相关性 / 修改时间双模式一键切换（偏好记在 localStorage） | ✅ |\n| 扫描会话工作区里的 `.m",
+              "readAt": "2026-10-22T07:40:21.129Z",
+              "truncated": true
+            },
+            "match": {
+              "score": 77,
+              "terms": [
+                "local",
+                "markdown",
+                "research",
+                "library",
+                "metadata",
+                "tags",
+                "本地",
+                "只读索引",
+                "只读",
+                "读索",
+                "索引",
+                "人工标签",
+                "人工",
+                "工标",
+                "标签",
+                "阅读状态",
+                "阅读",
+                "读状",
+                "状态",
+                "目录",
+                "工维",
+                "维护",
+                "护资",
+                "资料",
+                "料元",
+                "元数",
+                "数据",
+                "按主",
+                "主题",
+                "题关",
+                "关键",
+                "键词",
+                "词检",
+                "检索",
+                "索原",
+                "原文"
+              ],
+              "capabilities": []
+            },
+            "evidence": {
+              "metadata": "manifest-checked",
+              "installation": "not-tested",
+              "task": "not-tested",
+              "combination": "not-tested",
+              "capabilityBasis": "author-description/index-keywords as quoted functionality clues; README supplied for model interpretation; not execution proof",
+              "fetchedAt": "2026-10-22T07:40:21.130Z",
+              "sources": [
+                {
+                  "kind": "market-index",
+                  "url": "https://awesome-dsh-plugin.com/plugins.json",
+                  "query": "local Markdown research library metadata tags",
+                  "fetchedAt": "2026-10-22T07:40:20.496Z"
+                },
+                {
+                  "kind": "registry-manifest",
+                  "url": "https://registry.npmjs.org/dsh-knit/0.24.0"
+                },
+                {
+                  "kind": "author-documentation",
+                  "url": "https://raw.githubusercontent.com/PolinniZhong/dsh-knit/cc517911e13a96185c8f464b2be7cd4ca616c38a/README.md",
+                  "fetchedAt": "2026-10-22T07:40:21.129Z",
+                  "sha256": "d39cd82e1094bd508af61524ef6803289c132a2544f069e1754be81621863d67"
+                }
+              ]
+            }
+          },
+          {
+            "id": "dsh-zotero",
+            "name": "dsh-zotero",
+            "title": "Hongcheng-LI/dsh-zotero",
+            "summary": "Zotero tools for DeepSeek Harness: search your library, read item metadata, list collections and attachments, download PDFs and attach notes via the Zotero local API.",
+            "authorDescription": "Zotero tools for DeepSeek Harness: search your library, read item metadata, list collections and attachments, download PDFs and attach notes via the Zotero local API.",
+            "author": "lhc",
+            "repository": "https://github.com/Hongcheng-LI/dsh-zotero",
+            "homepage": "https://github.com/Hongcheng-LI/dsh-zotero",
+            "capabilities": [
+              "Zotero tools for DeepSeek Harness: search your library, read item metadata, list collections and attachments, download PDFs and attach notes",
+              "通过 Zotero 本地 API（无需 API Key）操作文献库：检索条目/分类、读元数据与摘要、列附件、读全文（缓存未命中时现场解析 PDF）、下载 PDF、管理笔记。",
+              "dsh-plugin",
+              "deepseek-harness",
+              "dsh",
+              "zotero",
+              "pdf-reading"
+            ],
+            "keywords": [
+              "dsh-plugin",
+              "deepseek-harness",
+              "dsh",
+              "zotero",
+              "reference-manager",
+              "research"
+            ],
+            "inputs": [],
+            "outputs": [],
+            "firstUse": "",
+            "requirements": {
+              "extraApiKey": "not-required",
+              "platforms": [],
+              "notes": [
+                "账号、输入输出和首次使用前提来自作者资料；未知条件需在会话确认。"
+              ]
+            },
+            "limitations": [
+              "来自动态来源与作者资料的候选线索；尚未安装、运行或验证组合。"
+            ],
+            "compatibility": {
+              "dsh": null,
+              "node": ">=20",
+              "basis": "author-peer-dependencies"
+            },
+            "hostCompatibility": {
+              "status": "unknown",
+              "range": null,
+              "basis": "author-peer-dependencies"
+            },
+            "nodeCompatibility": {
+              "status": "compatible",
+              "range": ">=20",
+              "basis": "engines.node",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "install": {
+              "type": "git",
+              "spec": "git+https://github.com/Hongcheng-LI/dsh-zotero.git#e4042d5139aa81d810b95928d63632f80a32a7ac",
+              "version": "0.2.2",
+              "commit": "e4042d5139aa81d810b95928d63632f80a32a7ac",
+              "readiness": "metadata-only",
+              "entrypoints": [
+                {
+                  "path": "lib/index.js",
+                  "url": "https://raw.githubusercontent.com/Hongcheng-LI/dsh-zotero/e4042d5139aa81d810b95928d63632f80a32a7ac/lib/index.js",
+                  "status": "present"
+                }
+              ],
+              "lifecycleScripts": []
+            },
+            "sourceTags": [
+              {
+                "id": "awesome-full",
+                "title": "Awesome DSH 完整社区目录",
+                "url": "https://awesome-dsh-plugin.com/plugins.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:20.496Z",
+                "total": 6378,
+                "npmTotal": 3280,
+                "githubOnlyTotal": 3098,
+                "rejectedRows": 0,
+                "catalogUpdatedAt": "2026-10-22"
+              }
+            ],
+            "documentation": {
+              "url": "https://raw.githubusercontent.com/Hongcheng-LI/dsh-zotero/e4042d5139aa81d810b95928d63632f80a32a7ac/README.md",
+              "text": "# dsh-zotero\n\n[English](#english) | [中文](#中文)\n\n<a name=\"中文\"></a>\n\nDeepSeek Harness 的 Zotero 工具插件：让 agent 直接**检索你的 Zotero 文献库、阅读条目元数据与摘要、列出分类和 PDF 附件、读 PDF 全文、代写读书笔记**。通过 Zotero 本地 API（7 代及以上可用，实测 9.x；`http://127.0.0.1:23119`）访问，无需 API Key，纯 Node 实现，零核心改动。\n\n> **兼容版本**：按 **DSH 运行时 0.2.0-rc.x**（桌面版 44.x 内核）的插件规范更新——schemastery `Config` 配置校验与设置表单、`locale/` 插件管理器元信息、预构建 `lib/` 直装、`dsh.plugin.json` 已按新规范移除（新运行时不读取该文件）。插件本体不声明任何 `@deepseek-ai/dsh-*` peer，能通过所有版本的兼容门禁；并用真实 `@deepseek-ai/dsh-tools` 注册表做契约测试（见「开发」）。\n\n## 前置条件\n\n1. 本机安装并运行 **Zotero 7 及以上**（本地 API 自 7 代引入；本项目在 **Zotero 9.0.6 / Windows** 上实测通过）；\n2. 打开 Zotero：**设置 → 高级 → 通用 → 勾选「允许本机上的其他应用程序与 Zotero 通信」**。\n\n> 兼容性说明：读取类工具（检索/条目/全文/附件路径/笔记读取）在 Zotero 9 上全部实测通过。笔记**写入**（create/append/update/delete）受本地 API 只读限制不可用（见工具表说明）。\n\n## 工具一览\n\n| 工具 | 作用 |\n|---|---|\n| `zotero_collections` | 列出文献库的所有分类（collectionKey + 条目数），用于限定检索范围 |\n| `zotero_search` | 按关键词检索文献库（标题/作者/年份），支持条目类型、分类、标签、年份区间（sinceYear/beforeYear）、排序、分页；`mode` 控制返回粒度省 token |\n| `zotero_recent` | 列出最近添加的条目（\"我刚导入的文献\"场景） |\n| `zotero_item` | 按 key 读取条目详情：作者、期刊、DOI、摘要、标签、附件列表 |\n| `zotero_fulltext` | 读条目全文纯文本：优先读 Zotero 全文缓存（`.zotero-ft-cache`，零下载），无缓存时**现场解析本地 PDF**（pdfjs-dist，约 0.3s）并写缓存；仅远程链接附件才下载到工作区 |\n| `zotero_attachment_path` | 返回附件在 storage 的原始绝对路径，让 read 工具零拷贝直读 |\n| `zotero_download` | 把条目的 PDF 附件下载到会话工作区（默认），供模型用 read 工具阅读 |\n| `zotero_notes` | 列出某条目的子笔记，或全库按关键词搜笔记正文 |\n| `zotero_note` | 笔记写入：create 新增 / append 追加 / update 更新 / delete 删除。⚠️ 实测多数版本的本地 API 为只读（POST/PATCH/DELETE 未开放），写操作会返回明确提示并建议手动操作 |\n\n示例对话：\n\n> 在我的 Zotero 里搜一下 transformer 相关的论文，挑 2020 年以后的，把第一篇的全文读一遍，给我写个摘要存进笔记。\n\n## 安装\n\n**方式一：GUI 插件管理器**（桌面版 44.x）——设置 → 插件 → 安装，填入仓库地址：\n\n```\ngithub:Hongcheng-LI/dsh-zotero\n```\n\n**方式二：CLI**（web / desktop profile 均可）：\n\n```sh\ndsh plugin add github:Hongcheng-LI/dsh-zotero           # 当前 profile\ndsh plugin --profile web add github:Hongcheng-LI/dsh-zotero\n```\n\n装好后重启 DSH。仓库自带**预构建的 `lib/`**，且**不声明任何生命周期脚本**——pnpm 10 对声明 `prepare` 的 git 依赖会直接拒装（`ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED`），本插件零脚本、免白名单直装；插件自带空配置，不会弄崩启动；Zotero 未运行时工具会返回明确的连接提示。\n\n## 配置（可选）\n\n默认配置即可用（本地库、端口 23119）。插件导出了 schemastery `Config` schema：\n\n- **GUI**：插件管理器 → dsh-zotero → 配置，直接用表单改（中英双语描述）；\n- **cordis.patch.yml**：在你的 profile（`$DSH_HOME/profiles/<name>/`）里覆盖 `tool-zotero` 行，然后重启：\n\n```yaml\n- id: tool-zotero\n  config:\n    baseUrl: http://127.0.0.1:23119   # Zotero 本地 API 地址\n    library: user                      # user（我的文献库）或 group:<群组ID>\n    downloadDir: D:/papers             # 附件下载目录，缺省存到会话工作区\n    dataDir: D:/ZoteroData             # Zotero 数据目录（含 profiles.ini），默认自动探测\n    storageDir: .../zotero/storage     # 直接指定 storage 目录（zotero_fulltext / attachment_path 用）\n    maxAttachmentBytes: 67108864       # 单附件下载上限，默认 64MB\n    maxFulltextChars: 80000            # zotero_fulltext 返回的最大字符数，默认 80000\n    maxLimit: 50                       # 检索结果条数上限，默认 50\n    timeoutMs: 15000                   # 本地 API 超时（毫秒）\n```\n\n非法配置（比如 `library: abc`）会在**加载期**被 Config schema 拒绝并明确报错，而不是等到调用才失败。\n\n全文与附件路径：插件通过本地 API `/file` 端点的 302 重定向拿到附件的真实磁盘路径（自定义数据目录也能自动识别，无需配置），全文优先读 Zotero 自己维护的 `.zotero-ft-cache` 缓存（与附件同目录）。`dataDir`/`storageDir` 配置仅在重定向不可用时作为兜底。\n\n## 开发\n\n```sh\nnpm install\nnpm test           # 构建单元测试（离线，不需要 Zotero）\nnpm run audit      # 运行时审计：清单 / patch / 构建产物 / locale / 兼容门禁\nnpm run test:smoke # 真实环境冒烟测试：对本机 Zotero 完整跑一遍工具链\n```\n\n**运行时契约测试（可选但推荐）**：`test/registry-contract.test.mjs` 会用**真实**的 DSH 工具注册表注册全部 9 个工具，并跑一遍 execute → output schema 校验 → render 管线（mock 的 Zotero 本地 API，离线可跑）。`@deepseek-ai/dsh-tools` 刻意不出现在 package.json（插件对 DSH 零运行时依赖），想跑契约测试时装一份与目标运行时一致的版本即可，不装则自动跳过：\n\n```sh\nnpm install --no-save @deepseek-ai/dsh-tools@0.2.0-rc.2\nnpm test\n```\n\n**`lib/` 是入库的，且没有 `prepare` 脚本**：DSH 的插件安装走 pnpm，pnpm 10 对声明了 `prepare` 的 git 依赖会硬性拒装（不是静默跳过），所以构建产物必须入库、生命周期脚本必须为空。改动 `src/` 后先 `npm run build`，把刷新后的 `lib/` 一起提交。\n\n结构遵循 DSH 插件规范（0.2.0-rc.x）：`package.json` 的 `dsh.bundle.patch` 声明、`cordis.patch.yml` 运行时注入行、schemastery `Config` 配置 schema、`locale/` 插件管理器元信息、`src/` 源码、`lib/` 构建产物。\n\n---\n\n<a name=\"english\"></a>\n\nZotero tools for DeepSeek Harness: search your library, read item metadata and abstracts, list collections and PDF attachments, read full text, download PDFs into the session workspace, and attach notes — all through the Zotero local API (no API key needed).\n\n> **Compatibility**: updated for the **DSH 0.2.0-rc.x plugin contract** (desktop 44.x core) — schemastery `Config` (validated config + settings form), `locale/` metadata for the plugin manager, prebuilt `lib/` shipped in-repo (pnpm 10 blocks dependency build scripts), `dsh.plugin.json` removed per the current spec. The plugin declares no `@deepseek-ai/dsh-*` peers, so it passes the version-compatibility gate on every DSH release; a contract test runs every tool through the real `@deepseek-ai/dsh-tools` registry.\n\nRequires Zotero 7+ (tested on 9.0.6 / Windows) running locally with \"Allow other applications on this computer\" enabled in Settings → Advanced.\n\n| Tool | What it does |\n|---|---|\n| `zotero_collections` | List library collections with keys and counts |\n| `zotero_search` | Quick-search items; filters by type, collection, tag, year range; sort/pagination; `mode` controls verbosity |\n| `zotero_recent` | Recently added items |\n| `zotero_item` | Full metadata of one item plus attachment keys |\n| `zotero_fulltext` | Full text as plain text (Zotero fulltext cache first, PDF download fallback) |\n| `zotero_attachment_path` | On-disk path of a stored attachment (zero-copy read) |\n| `zotero_download` | Download an attachment (PDF) to the workspace |\n| `zotero_notes` | List an item's child notes or search notes library-wide |\n| `zotero_note` | Create / append / update / delete notes |\n\nInstall: `dsh plugin add github:Hongcheng-LI/dsh-zotero` (or via the desktop plugin manager), then restart DSH. Optional config (`baseUrl`, `library`, `downloadDir`, `maxAttachmentBytes`, `maxLimit`, `timeoutMs`, …) is available both as a settings form (schemastery `Config`) and under the `tool-zotero` row of your profile's `c",
+              "readAt": "2026-10-22T07:40:35.947Z",
+              "truncated": true
+            },
+            "match": {
+              "score": 51,
+              "terms": [
+                "local",
+                "markdown",
+                "research",
+                "library",
+                "metadata",
+                "tags",
+                "本地",
+                "只读索引",
+                "只读",
+                "读索",
+                "索引",
+                "人工标签",
+                "人工",
+                "工标",
+                "标签",
+                "阅读状态",
+                "阅读",
+                "读状",
+                "状态",
+                "目录",
+                "工维",
+                "维护",
+                "护资",
+                "资料",
+                "料元",
+                "元数",
+                "数据",
+                "按主",
+                "主题",
+                "题关",
+                "关键",
+                "键词",
+                "词检",
+                "检索",
+                "索原",
+                "原文"
+              ],
+              "capabilities": []
+            },
+            "evidence": {
+              "metadata": "manifest-checked",
+              "installation": "not-tested",
+              "task": "not-tested",
+              "combination": "not-tested",
+              "capabilityBasis": "author-description/index-keywords as quoted functionality clues; README supplied for model interpretation; not execution proof",
+              "fetchedAt": "2026-10-22T07:40:35.947Z",
+              "sources": [
+                {
+                  "kind": "market-index",
+                  "url": "https://awesome-dsh-plugin.com/plugins.json",
+                  "query": "local Markdown research library metadata tags",
+                  "fetchedAt": "2026-10-22T07:40:20.496Z"
+                },
+                {
+                  "kind": "manifest",
+                  "url": "https://raw.githubusercontent.com/Hongcheng-LI/dsh-zotero/e4042d5139aa81d810b95928d63632f80a32a7ac/package.json"
+                },
+                {
+                  "kind": "author-documentation",
+                  "url": "https://raw.githubusercontent.com/Hongcheng-LI/dsh-zotero/e4042d5139aa81d810b95928d63632f80a32a7ac/README.md",
+                  "fetchedAt": "2026-10-22T07:40:35.947Z",
+                  "sha256": "bb38194dd3a5f7e52c23fb4fff8ba7a0b3a9725f485347389a62af002ac40bc0"
+                }
+              ]
+            }
+          },
+          {
+            "id": "dsh-lost-and-found",
+            "name": "dsh-lost-and-found",
+            "title": "wangzhanchao883/dsh-lost-and-found",
+            "summary": "[支持 DSH 0.1.7–0.2.x / DSH 0.1.7–0.2.x compatible] Local file recall for DeepSeek Harness: it watches the folders you choose and keeps a SQLite index of what appeared — name, type, size, appeared-at, location and origin — so \"where did I put that file?\" be",
+            "authorDescription": "[支持 DSH 0.1.7–0.2.x / DSH 0.1.7–0.2.x compatible] Local file recall for DeepSeek Harness: it watches the folders you choose and keeps a SQLite index of what appeared — name, type, size, appeared-at, location and origin — so \"where did I put that file?\" be",
+            "author": "wangzhanchao883",
+            "repository": "https://github.com/wangzhanchao883/dsh-lost-and-found",
+            "homepage": "https://github.com/wangzhanchao883/dsh-lost-and-found",
+            "capabilities": [
+              "[支持 DSH 0.1.7–0.2.x / DSH 0.1.7–0.2.x compatible] Local file recall for DeepSeek Harness: it watches the folders you choose and keeps a SQLi",
+              "本地文件记忆索引：把指定的文件夹记进本机一个 SQLite 库，忘了东西放哪问一句就能找回，不必翻硬盘；缓存、版本库与程序目录整棵跳过。每个目录各有独立增量锚点，后加入的目录首扫回填全部历史。只读，绝不修改、移动或删除你的文件。 支持 DSH 0.1.7 ~ 0.2.x,已在 0",
+              "deepseek-harness",
+              "dsh",
+              "dsh-plugin",
+              "plugin",
+              "data-analysis"
+            ],
+            "keywords": [
+              "deepseek-harness",
+              "dsh",
+              "dsh-plugin",
+              "plugin",
+              "file-index",
+              "file-search",
+              "lost-and-found",
+              "recall",
+              "find-my-file",
+              "sqlite",
+              "local-first",
+              "read-only",
+              "windows",
+              "productivity"
+            ],
+            "inputs": [],
+            "outputs": [],
+            "firstUse": "",
+            "requirements": {
+              "extraApiKey": "not-required",
+              "platforms": [],
+              "notes": [
+                "账号、输入输出和首次使用前提来自作者资料；未知条件需在会话确认。"
+              ]
+            },
+            "limitations": [
+              "来自动态来源与作者资料的候选线索；尚未安装、运行或验证组合。",
+              "已核对精确 npm 版本的 bundle 清单，未下载或执行安装包；实际安装仍由宿主确认。"
+            ],
+            "compatibility": {
+              "dsh": [
+                ">=0.0.1-rc.1 <0.1.0 || >=0.1.0-rc.1 <0.2.0-0 || >=0.2.0-rc.1 <0.3.0-0"
+              ],
+              "node": "^22.0.0 || >=24",
+              "basis": "author-peer-dependencies"
+            },
+            "hostCompatibility": {
+              "status": "compatible",
+              "range": [
+                ">=0.0.1-rc.1 <0.1.0 || >=0.1.0-rc.1 <0.2.0-0 || >=0.2.0-rc.1 <0.3.0-0"
+              ],
+              "basis": "author-peer-dependencies",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "nodeCompatibility": {
+              "status": "compatible",
+              "range": "^22.0.0 || >=24",
+              "basis": "engines.node",
+              "note": "Version-range check only; installation and task execution have not been verified."
+            },
+            "install": {
+              "type": "npm",
+              "spec": "dsh-lost-and-found@0.1.5",
+              "version": "0.1.5",
+              "commit": "9b313c66a2f1e14641cb858d37c8e9a6ef69bec3",
+              "registry": "https://registry.npmjs.org/",
+              "readiness": "metadata-only",
+              "entrypoints": [],
+              "lifecycleScripts": []
+            },
+            "sourceTags": [
+              {
+                "id": "awesome-full",
+                "title": "Awesome DSH 完整社区目录",
+                "url": "https://awesome-dsh-plugin.com/plugins.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:20.496Z",
+                "total": 6378,
+                "npmTotal": 3280,
+                "githubOnlyTotal": 3098,
+                "rejectedRows": 0,
+                "catalogUpdatedAt": "2026-10-22"
+              },
+              {
+                "id": "awesome",
+                "title": "Awesome DSH Plugin 插件精选",
+                "url": "https://awesome-dsh-plugin.com/index.json",
+                "status": "live",
+                "fetchedAt": "2026-10-22T07:40:19.462Z",
+                "total": 3261
+              }
+            ],
+            "documentation": {
+              "url": "https://raw.githubusercontent.com/wangzhanchao883/dsh-lost-and-found/9b313c66a2f1e14641cb858d37c8e9a6ef69bec3/README.md",
+              "text": "# 文件快速寻回 · dsh-lost-and-found\n\n[![Test](https://github.com/wangzhanchao883/dsh-lost-and-found/actions/workflows/test.yml/badge.svg)](https://github.com/wangzhanchao883/dsh-lost-and-found/actions/workflows/test.yml)\n[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)\n[![npm](https://img.shields.io/npm/v/dsh-lost-and-found.svg)](https://www.npmjs.com/package/dsh-lost-and-found)\n\n> 忘了文件放哪，问一句就能找回来，再也不用翻遍硬盘。\n\n忘了文件放哪，问一句就能找回来，再也不用翻遍硬盘。这款 DSH 插件把你指定的文件夹变成一座随问随答的本地文献库。支持多目录只读扫描，缓存与程序目录整棵跳过，几万个文件十几秒扫完；结果统一登记进本地 SQLite 索引，随时可从零重建。名字、类型、大小、出现时间、位置、来源自动入库，图片内容交给大模型看过之后写回描述。找文件采用两段式：先按时间、类型、目录、来源硬过滤，再按文件名、标签、路径、摘要、图片描述分层加权，多关键词取交，命中的是哪一层直接标给你看。索引里没有的当场实时兜底找一遍，但只现场比对、绝不写库，插件只读，绝不修改、移动或删除你的文件。比每次让大模型硬翻目录更省更可控，比你自己的记忆更靠得住，几万文件规模也照样秒回。\n\n![在对话里找回文件](https://raw.githubusercontent.com/wangzhanchao883/dsh-lost-and-found/main/assets/screenshots/4-find-in-chat.png)\n\n| 设置页：扫描概况与一键扫描 | 监视的文件夹（可逐个设内容深度） | 高级选项 |\n| --- | --- | --- |\n| ![settings](https://raw.githubusercontent.com/wangzhanchao883/dsh-lost-and-found/main/assets/screenshots/1-settings-overview.png) | ![folders](https://raw.githubusercontent.com/wangzhanchao883/dsh-lost-and-found/main/assets/screenshots/2-watched-folders.png) | ![advanced](https://raw.githubusercontent.com/wangzhanchao883/dsh-lost-and-found/main/assets/screenshots/3-advanced-options.png) |\n\n---\n\n## English summary\n\n`dsh-lost-and-found` answers *\"where did I put that file?\"* from a **local SQLite\nindex** instead of walking your disk on every question. You pick the folders to\nwatch; the plugin records what appeared — name, type, size, appeared-at, location\nand origin — and prunes caches, VCS and program folders at the directory level,\nso a scan of tens of thousands of files finishes in seconds.\n\nSearch is two-stage: SQL hard filters (time / type / folder / origin) first, then\nmulti-keyword AND matching scored by *where* the hit landed (name > tags > path >\nsummary > image description > excerpt), and the result tells you which layer hit.\nWhen the index has no hit, the watched folders are scanned live as a fallback —\ncompared only, never written back.\n\n**Every watched folder keeps its own incremental anchor.** A folder added later is\nbackfilled in full on its first scan; after that it is incremental, and a folder\nwhose scan was interrupted keeps its anchor so the next run finishes the job.\n\n**Read-only promise:** the plugin never modifies, moves, renames or deletes your\nfiles, never writes NTFS alternate data streams, never generates thumbnails, never\ntouches timestamps, and never uploads anything — the whole index is one SQLite\nfile on your machine.\n\n```sh\ndsh plugin --profile web add dsh-lost-and-found\n```\n\nRequires DSH with the web profile and Node.js `^22` or `>=24`. Windows-focused\n(uses `birthtime` on NTFS), but nothing here is Windows-only by design.\n\n---\n\n## 它做什么\n\n- 按你设定的间隔（每天 / 每 3 天 / 每周）扫描你指定的文件夹；打开 DSH 时会检查是否到期并补扫\n- 记录文件名、类型、大小、**出现时间**、位置、来源，写进本地 SQLite 索引\n- **每个目录各有自己的增量锚点**：新加入的目录第一次扫描会把它的历史文件一并收进来，之后转为增量\n- 支持按**关键词**、时间范围、文件类型、目录范围、来源组合查找，并按「命中在哪一层」加权排序\n- 索引里没有的，会对扫描目录做一次**实时兜底扫描**，尽力找回（只读，不写库）\n- 图片内容可以交给模型看过之后写回描述，之后按画面内容也能搜到\n- 提示你**扫描范围之外**哪些文件夹最近出现了新文件（只提示，不自动收录）\n- 记忆库可随时从零重建：索引是派生数据，不是唯一真相\n\n## 它不做什么\n\n- **绝不修改、移动、重命名或删除你的任何文件**\n- 不会去看你没有指定的文件夹\n- 不写 NTFS 附加数据流（ADS）、不生成缩略图、不改任何时间戳\n- 不联网上传任何内容：所有记录只存在你本机的一个 SQLite 文件里\n- 不做文件同步、不做备份、不做重复文件清理（那些是别的工具的职责）\n\n## 怎么用\n\n不用记命令。直接说人话：\n\n- 「我上个月收到的那份报价单在哪？」\n- 「我让你写的那份关于 XX 的报告存哪了？」\n- 「下载的那个安装包放哪了，好像这周下的」\n- 「我记得有张截图，上面有转账金额 1280」\n\n也可以直接调用工具：\n\n| 工具 | 作用 |\n| --- | --- |\n| `file_find` | 找文件（核心）：关键词 + 时间/类型/目录/来源过滤，索引没命中时自动兜底 |\n| `file_index_scan` | 立刻扫描一次（`wait=true` 等它跑完；`full=true` 强制忽略锚点全量重扫） |\n| `file_index_status` | 概况：上次扫描时间、库内数量、扫描目录、待处理项、库位置 |\n| `file_index_open` | 在资源管理器里定位某个文件 |\n| `file_index_forget` | 从记忆库里删掉某条记录（**不动文件**） |\n| `file_index_verify` | 手动检查一批记录是否还在原处 |\n| `file_index_pending_images` / `file_index_set_image_desc` | 图片内容的「待看清单 / 写回描述」 |\n\n## 环境要求\n\n- DSH **0.1.7 ~ 0.2.x**，使用 `web` profile\n  （设置页依赖 0.1.7 才有的 `configForms` 客户端服务与 `Config` 导出契约。更早的 0.1.x 上\n  **host 功能仍然可用** —— 扫描、检索、工具调用都不受影响 —— 但设置页不会出现）\n- **0.2 已实测可用**：本机在 `0.2.0-rc.1` 上完整跑通（含浏览器端设置页），`peerDependencies`\n  上界已从 `<0.2.0-0` 抬到 `<0.3.0-0`\n- Node.js `^22` 或 `>=24`（用到内置 `node:sqlite`）\n- 无需 API key、无需联网；扫描与检索全部在本机完成\n\n## 安装\n\n从 npm：\n\n```sh\ndsh plugin --profile web add dsh-lost-and-found\n```\n\n直接从仓库：\n\n```sh\ndsh plugin --profile web add https://github.com/wangzhanchao883/dsh-lost-and-found\n```\n\n开发期把工作副本链进 profile（改完**必须重启 DSH**，插件源码不热更新）：\n\n```sh\ndsh plugin --profile web add link:/path/to/dsh-lost-and-found\n```\n\n## 配置\n\n设置页里有：**扫描概况与「立即扫描」按钮**、**扫描目录（可增删，每个目录可单独设内容深度）**、**记忆库存放位置**、**扫描间隔**、**内容读取说明**与高级选项。\n\n| 配置项 | 默认 | 说明 |\n| --- | --- | --- |\n| `enabled` | `true` | 关闭后不再自动扫描，也不再提供找文件工具 |\n| `roots` | `[]` | 要监视的目录，每个目录带自己的 `policy` |\n| `dbPath` | 空 | 索引库位置；留空用 `%LOCALAPPDATA%\\dsh-lost-and-found\\index.db`。可以填**文件**路径，也可以直接填**文件夹**（会用该文件夹下的 `index.db`） |\n| `intervalDays` | `1` | 自动扫描间隔；`0` = 只手动 |\n| `firstScanMode` | `full` | 一个目录**第一次**被扫时收多久：`full` 全部历史 / `window` 最近 `firstRunWindowDays` 天 / `none` 只收今后新增 |\n| `firstRunWindowDays` | `7` | 仅当 `firstScanMode = window` 时生效 |\n| `maxFileMB` | `50` | 超过此体积只记基本信息，不读内容 |\n| `imageQuotaPerRun` | `20` | 每次看图配额 |\n| `patrolEnabled` | `true` | 是否提示白名单外有新文件的目录 |\n| `backupKeep` | `7` | 每日备份保留份数，`0` = 不备份 |\n| `extraExcludeDirs` / `extraExcludePatterns` | `[]` | 追加的排除目录名 / 路径片段（`re:` 前缀表示正则） |\n\n### 配置存在哪（DSH 0.1.7 起）\n\nDSH 0.1.7 起，设置服务**不再替插件另存一份配置** —— 它只把 Loader 里本插件条目的\n`Config` *投影*成表单，权威值始终在 profile 的补丁文件里：\n\n- 设置页里改的值会写进 `$DSH_HOME/profiles/web/cordis.patch.yml` 中 `id: dsh-lost-and-found` 那段\n- 想手改也行，直接编辑那个文件，效果与设置页完全一致\n- **改完立刻生效，不需要重启 DSH**：0.1.7 移除了旧版的 `watch`，插件改为在**每次用到配置之前**\n  重新读一遍投影（`settings.describe()`），所以面板里加完目录就能直接点「立即扫描」\n- 从 0.1.2 升级上来的话注意：0.1.2 只在插件加载那一刻读一次配置，会表现为\n  「面板里明明加了文件夹，点扫描却说还没设置」—— 0.1.3 修的就是这个\n\n## 扫描目录的内容深度（每个目录可不同）\n\n- **完整**：记基本信息，并允许把图片交给模型看过之后写回描述（默认）\n- **只摘要**：记基本信息；不把图片交给模型\n- **只记基本信息**：只记名字、类型、位置、时间（适合含证件/合同等敏感内容的目录）\n\n> 下拉框里的档位名写的是「完整（正文+摘要+看图）」，其中**正文与摘要抽取尚未启用**，见下方路线图；当前真正生效的",
+              "readAt": "2026-10-22T07:40:35.126Z",
+              "truncated": true
+            },
+            "match": {
+              "score": 51,
+              "terms": [
+                "local",
+                "markdown",
+                "research",
+                "library",
+                "metadata",
+                "tags",
+                "本地",
+                "只读索引",
+                "只读",
+                "读索",
+                "索引",
+                "人工标签",
+                "人工",
+                "工标",
+                "标签",
+                "阅读状态",
+                "阅读",
+                "读状",
+                "状态",
+                "目录",
+                "工维",
+                "维护",
+                "护资",
+                "资料",
+                "料元",
+                "元数",
+                "数据",
+                "按主",
+                "主题",
+                "题关",
+                "关键",
+                "键词",
+                "词检",
+                "检索",
+                "索原",
+                "原文"
+              ],
+              "capabilities": []
+            },
+            "evidence": {
+              "metadata": "manifest-checked",
+              "installation": "not-tested",
+              "task": "not-tested",
+              "combination": "not-tested",
+              "capabilityBasis": "author-description/index-keywords as quoted functionality clues; README supplied for model interpretation; not execution proof",
+              "fetchedAt": "2026-10-22T07:40:35.126Z",
+              "sources": [
+                {
+                  "kind": "market-index",
+                  "url": "https://awesome-dsh-plugin.com/plugins.json",
+                  "query": "local Markdown research library metadata tags",
+                  "fetchedAt": "2026-10-22T07:40:20.496Z"
+                },
+                {
+                  "kind": "registry-manifest",
+                  "url": "https://registry.npmjs.org/dsh-lost-and-found/0.1.5"
+                },
+                {
+                  "kind": "author-documentation",
+                  "url": "https://raw.githubusercontent.com/wangzhanchao883/dsh-lost-and-found/9b313c66a2f1e14641cb858d37c8e9a6ef69bec3/README.md",
+                  "fetchedAt": "2026-10-22T07:40:35.126Z",
+                  "sha256": "51e66545c64069dd2a20e5b3dde21164324eacf3f5a5fc195b0271ea2b02af5e"
+                }
+              ]
+            }
+          }
+        ],
+        "sources": [
+          {
+            "id": "host-market",
+            "title": "DSH 已配置市场",
+            "url": "",
+            "status": "unconfigured",
+            "fetchedAt": null,
+            "total": 0
+          },
+          {
+            "id": "github-topic",
+            "title": "GitHub dsh-plugin topic",
+            "url": "https://github.com/topics/dsh-plugin",
+            "queryUrl": "https://api.github.com/search/repositories?q=topic%3Adsh-plugin+local+Markdown+research+library+metadata+tags&per_page=12",
+            "status": "live",
+            "fetchedAt": "2026-10-22T07:40:17.772Z",
+            "total": 0,
+            "totalKind": "matches"
+          },
+          {
+            "id": "awesome",
+            "title": "Awesome DSH Plugin 插件精选",
+            "url": "https://awesome-dsh-plugin.com/index.json",
+            "status": "live",
+            "fetchedAt": "2026-10-22T07:40:19.462Z",
+            "total": 3261
+          },
+          {
+            "id": "awesome-full",
+            "title": "Awesome DSH 完整社区目录",
+            "url": "https://awesome-dsh-plugin.com/plugins.json",
+            "status": "live",
+            "fetchedAt": "2026-10-22T07:40:20.496Z",
+            "total": 6378,
+            "npmTotal": 3280,
+            "githubOnlyTotal": 3098,
+            "rejectedRows": 0,
+            "catalogUpdatedAt": "2026-10-22"
+          }
+        ],
+        "warnings": [
+          "@f1star/dsh-research: author-declared runtime incompatibility",
+          "dsh-douyin-browser-local: author-declared platform incompatibility",
+          "@modusensus/dsh-mneme: 作者资料读取超时，保留其他已读候选。",
+          "fetch failed",
+          "本轮从来源匹配 2915 条候选，按相关性读取前 24 条作者资料；尚未逐条核验全部候选。",
+          "16 个候选的免额外 Key 前提未确认，未直接推荐；不代表这些插件一定需要 Key。"
+        ],
+        "searchedAt": "2026-10-22T07:40:36.009Z",
+        "coverage": {
+          "matched": 2915,
+          "inspected": 24,
+          "resolved": 20,
+          "excluded": 20,
+          "excludedReasons": {
+            "author-unresolved": 3,
+            "extra-key-unknown": 16,
+            "author-read-timeout": 1
+          },
+          "uninspected": 2891,
+          "returned": 4,
+          "inspectionBudget": 24
+        },
+        "sourceCoverage": [
+          {
+            "sourceId": "host-market",
+            "url": "",
+            "status": "unconfigured",
+            "fetchedAt": null,
+            "total": 0,
+            "matched": 0,
+            "inspected": 0,
+            "resolved": 0,
+            "excluded": 0,
+            "uninspected": 0,
+            "inspectionBudget": 24
+          },
+          {
+            "sourceId": "github-topic",
+            "url": "https://github.com/topics/dsh-plugin",
+            "status": "live",
+            "fetchedAt": "2026-10-22T07:40:17.772Z",
+            "total": 0,
+            "matched": 0,
+            "inspected": 0,
+            "resolved": 0,
+            "excluded": 0,
+            "uninspected": 0,
+            "inspectionBudget": 24
+          },
+          {
+            "sourceId": "awesome",
+            "url": "https://awesome-dsh-plugin.com/index.json",
+            "status": "live",
+            "fetchedAt": "2026-10-22T07:40:19.462Z",
+            "total": 3261,
+            "matched": 1381,
+            "inspected": 14,
+            "resolved": 13,
+            "excluded": 11,
+            "uninspected": 1367,
+            "inspectionBudget": 24
+          },
+          {
+            "sourceId": "awesome-full",
+            "url": "https://awesome-dsh-plugin.com/plugins.json",
+            "status": "live",
+            "fetchedAt": "2026-10-22T07:40:20.496Z",
+            "total": 6378,
+            "npmTotal": 3280,
+            "githubOnlyTotal": 3098,
+            "rejectedRows": 0,
+            "matched": 2733,
+            "inspected": 24,
+            "resolved": 20,
+            "excluded": 20,
+            "uninspected": 2709,
+            "inspectionBudget": 24
+          }
+        ]
+      }
+    }
+  ]
+}

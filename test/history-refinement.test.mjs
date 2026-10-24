@@ -154,3 +154,12 @@ test('recommendation feedback context is bounded to recent ancestor notes and ex
   const notes=f.calls.at(-1).data.userFeedbackContext;assert.equal(notes?.length,6);assert.ok(notes.every(note=>typeof note==='string'&&note.length<=1500));assert.ok(notes.includes('从原版本重新选择'));
   assert.ok(notes.some(note=>note.startsWith('共同问题7：')));assert.ok(notes.every(note=>!note.includes('仅后续分支')));assert.ok(notes.every(note=>!note.startsWith('共同问题0：')));
 });
+
+test('reset replay after a lost acknowledgment succeeds only while active remains blank',async()=>{
+ const f=fixture();const a=await planned(f);const original=await f.service.exportTask({taskId:a.workflow.taskId});
+ // Server committed the first request; pretend its acknowledgment never reached the client.
+ await f.service.reset(ids(a.workflow));
+ const replay=await f.service.reset(ids(a.workflow));assert.equal(replay.cleared,true);assert.equal(replay.workflow,null);
+ assert.deepEqual(await f.service.exportTask({taskId:a.workflow.taskId}),original);
+ const b=await f.service.analyze({request});await assert.rejects(f.service.reset(ids(a.workflow)),e=>e.code==='STALE_WORKFLOW');assert.equal((await f.service.bootstrap()).workflow.taskId,b.workflow.taskId);
+});

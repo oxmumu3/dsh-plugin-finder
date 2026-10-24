@@ -26,7 +26,7 @@ test('combination must have two distinct used candidates and cover requested cap
   assert.throws(()=>parsePlan({...basePlan,steps:basePlan.steps.slice(0,1)},plugins,intent));
   assert.throws(()=>parsePlan({...basePlan,steps:[{...basePlan.steps[0],owner:'unknown'},basePlan.steps[1]]},plugins,intent));
 });
-test('service uses discovered source records and deterministic safe handoff text',async()=>{
+test('service uses discovered source records and keeps execution in the workspace draft',async()=>{
   assert.equal(typeof createFinderService,'function');
   const calls=[];const model={status:()=>({configured:true,label:'configured-model'}),async call(arg){calls.push(arg);return{text:JSON.stringify(calls.length===1?intent:basePlan),model:{label:'configured-model'}};}};
   const svc=createFinderService({discovery:discover(plugins),catalog:{generatedAt:'2026-10-20T00:00:00Z',plugins},model,search:()=>plugins,hostVersion:'0.2.1-rc.2'});
@@ -35,6 +35,20 @@ test('service uses discovered source records and deterministic safe handoff text
   assert.ok(result.plan.nextPrompt.includes('核对 CSV'));assert.ok(result.plan.nextPrompt.includes('quality@1.0.0'));
   assert.ok(result.plan.limits.some(s=>s.includes('未')));assert.equal(calls.length,2);
   assert.ok(calls[1].system.includes('不可信'));assert.ok(!result.plan.nextPrompt.includes('已验证可用'));
+  assert.doesNotMatch(result.plan.nextPrompt,/由我在DSH管理器确认|复制到|粘贴到|手动安装|重启宿主/);
+  assert.match(result.plan.nextPrompt,/当前工作区/);assert.match(result.plan.nextPrompt,/官方工具/);assert.match(result.plan.nextPrompt,/已有授权/);
+  assert.match(result.plan.nextPrompt,/尚未执行/);
+});
+test('recommendation separates unknown installation from analysis-only restrictions and human decisions',async()=>{
+  let call;const svc=createFinderService({discovery:discover(plugins),search:()=>plugins,model:{status:()=>({configured:true}),call:async args=>{call=args;return{text:JSON.stringify(basePlan)};}}});
+  const result=await svc.recommend({intent});
+  assert.deepEqual(call.data.intent.constraints,intent.constraints);
+  assert.equal(call.data.candidates[0].evidence.installation,'not-tested');
+  assert.match(call.system,/未核对安装状态[^。]*不能[^。]*未安装/);
+  assert.match(call.system,/本阶段[^。]*不调用工具[^。]*后续[^。]*手动/);
+  assert.match(call.system,/human[^。]*业务[^。]*判断/);
+  assert.match(call.system,/安装[^。]*官方工具/);
+  assert.deepEqual(result.plan.steps,basePlan.steps);
 });
 test('successful discovery with no matches supports a model-native or gap decision, without invented candidates',async()=>{
   let called=false;const svc=createFinderService({discovery:discover([]),catalog:{plugins:[]},model:{status:()=>({configured:true}),call:async()=>{called=true;return {text:JSON.stringify({...basePlan,kind:'gap',pluginIds:[],steps:[]}),model:{label:'configured'}};}},search:()=>[]});
@@ -74,4 +88,14 @@ test('live discovery receives Key eligibility before candidate slots fill and pe
 test('rich recommendation preserves every capability while requesting compact output with reasoning headroom',async()=>{
  let call;const svc=createFinderService({discovery:discover([]),model:{status:()=>({configured:true}),call:async arg=>{call=arg;return{text:JSON.stringify({...basePlan,kind:'gap',pluginIds:[],steps:[]})};}}});
  await svc.recommend({intent});assert.equal(call.maxTokens,12000);assert.match(call.system,/简洁输出/);assert.match(call.system,/覆盖intent.capabilities中的每一项/);assert.deepEqual(call.data.intent.capabilities,intent.capabilities);
+});
+test('getting started recommendation keeps unspecified material unknown and limits the proposed work to a first usable entry',async()=>{
+ const startIntent={goal:'了解插件并在当前工作区开始使用',input:'尚未提供具体文件',output:'用途说明与一个可用起点',constraints:['不读取无关项目'],capabilities:['核对数据','生成报告'],queries:['csv report']};
+ let call;const svc=createFinderService({discovery:discover(plugins),search:()=>plugins,model:{status:()=>({configured:true}),call:async arg=>{call=arg;return{text:JSON.stringify(basePlan)};}}});
+ await svc.recommend({intent:startIntent});
+ assert.deepEqual(call.data.intent,startIntent);
+ assert.match(call.system,/开始使用[^。]*必要配置[^。]*最小可用入口/);
+ assert.match(call.system,/不能假设[^。]*文件/);
+ assert.match(call.system,/不自动[^。]*整个插件[^。]*审计/);
+ assert.match(call.system,/真实[^。]*必要材料[^。]*权限/);
 });

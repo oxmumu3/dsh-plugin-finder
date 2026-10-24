@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { assessCompatibility, inferCapabilities } from '../catalog/index.mjs';
 import {fullCatalog,repositoryOf,safeRepositoryPath as safePath} from './supply.js';
+import {getCommunityEntry} from './community-catalog.js';
 
 const INDEX_URL = 'https://awesome-dsh-plugin.com/index.json';
 const FULL_URL = 'https://awesome-dsh-plugin.com/plugins.json';
@@ -145,7 +146,7 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
     const { signal, hostVersion, nodeVersion, platform, warnings } = context;
     const entry = row.entry; const chosen = versionOf(entry, hostVersion);
     if (entry.versions?.length && !chosen) throw new Error(`${entry.name}: no compatible index version`);
-    let manifest; let manifestUrl; let commit; let repo; let directory = ''; let spec; let sourceType; let registry;let skipDocumentation=false;
+    let manifest; let manifestUrl; let commit; let repo; let directory = ''; let spec; let sourceType; let registry;let skipDocumentation=false;let authorVersionWarning='';
     if (chosen?.source.type === 'npm') {
       registry = chosen.source.registry ?? 'https://registry.npmjs.org/';
       if (new URL(registry).origin !== 'https://registry.npmjs.org') throw new Error(`${entry.name}: custom registry requires host confirmation`);
@@ -157,10 +158,23 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
       spec = `${manifest.name}@${manifest.version}`; sourceType = 'npm';
       repo = repositoryOf(manifest.repository) ?? repositoryOf(entry.repository);
       const catalogRepository=repositoryOf(entry.repository);
+      if(context.communityEntryId){
+        const declared=repositoryOf(manifest.repository);
+        if(!declared||declared.url.toLowerCase()!==catalogRepository?.url.toLowerCase())throw new Error('Selected author repository does not match the npm manifest');
+        if(declared.directory&&declared.directory!==catalogRepository?.directory)throw new Error('Selected package directory does not match the npm manifest');
+        repo=catalogRepository;
+      }
       if(repo&&!repo.directory&&catalogRepository?.url===repo.url&&catalogRepository.directory)repo=catalogRepository;
       commit = /^[a-f0-9]{40}$/.test(manifest.gitHead ?? '') ? manifest.gitHead : undefined;
       if(repo?.treeSegments){try{({repo,commit}=await resolveRepository(repo,signal,commit));}catch{abortIfNeeded(signal,lifetimeSignal);skipDocumentation=true;warnings.push(`${manifest.name}: README directory unresolved; npm manifest retained without guessed repository documentation`);}}
       directory = repo?.directory ?? '';
+      if(context.communityEntryId){
+        if(skipDocumentation||!repo)throw new Error('Selected package directory could not be resolved');
+        if(!/^[a-f0-9]{40}$/.test(commit??''))({repo,commit}=await resolveRepository(repo,signal,commit));directory=repo.directory??'';
+        const authorManifest=(await json(`https://raw.githubusercontent.com/${repo.name}/${commit}/${directory?directory+'/':''}package.json`,{signal})).value;
+        if(authorManifest.name!==manifest.name)throw new Error('Selected author package name does not match the npm package');
+        if(authorManifest.version!==manifest.version){authorVersionWarning=`作者资料提交中的版本 ${authorManifest.version??'未知'} 与 npm 发布版 ${manifest.version} 不同；已核对包名与作者目录，未证明资料提交与发布包字节等价。`;warnings.push(authorVersionWarning);}
+      }
     } else {
       repo = repositoryOf(chosen?.source?.url ?? entry.repository);
       if (!repo) throw new Error(`${entry.name}: no supported author repository`);
@@ -184,7 +198,7 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
     const nodeCompatibility = assessCompatibility({ compatibility: { dsh: compatibility.node, basis: 'engines.node' } }, nodeVersion ?? process.versions.node);
     if (hostCompatibility.status === 'incompatible' || nodeCompatibility.status === 'incompatible') throw new Error(`${manifest.name}: author-declared runtime incompatibility`);
     if (platform && Array.isArray(manifest.os) && manifest.os.length && !manifest.os.includes(platform) && manifest.os.some(value => !value.startsWith('!'))) throw new Error(`${manifest.name}: author-declared platform incompatibility`);
-    const limitations = ['来自动态来源与作者资料的候选线索；尚未安装、运行或验证组合。'];
+    const limitations = ['来自动态来源与作者资料的候选线索；尚未安装、运行或验证组合。',...(authorVersionWarning?[authorVersionWarning]:[])];
     let readiness = 'metadata-only'; const entrypoints = [];
     if (sourceType === 'git') {
       const base = `https://raw.githubusercontent.com/${repo.name}/${commit}/${directory ? directory + '/' : ''}`;
@@ -203,7 +217,7 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
     let documentation = { url: null, text: '', readAt: null, truncated: false };
     if (repo&&!skipDocumentation) {
       const ref = commit ?? 'HEAD';
-      const paths = unique([directory ? `${directory}/README.md` : 'README.md', 'README.md', 'README.zh.md']);
+      const paths = context.communityEntryId ? unique([directory ? `${directory}/README.md` : 'README.md',directory ? `${directory}/README.zh.md` : 'README.zh.md']) : unique([directory ? `${directory}/README.md` : 'README.md', 'README.md', 'README.zh.md']);
       for (const path of paths) {
         const url = `https://raw.githubusercontent.com/${repo.name}/${ref}/${path}`;
         try {
@@ -229,6 +243,7 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
       compatibility, hostCompatibility, nodeCompatibility,
       install: { type: sourceType, spec, version: manifest.version, ...(commit ? { commit } : {}), ...(registry ? { registry } : {}), readiness, entrypoints, lifecycleScripts: ['preinstall', 'install', 'postinstall', 'prepare'].filter(key => manifest.scripts?.[key]) },
       sourceTags: [row.origin], documentation, match: { score: row.score, terms: row.terms ?? [], capabilities: [] },
+      ...(context.communityEntryId?{communityEntryId:context.communityEntryId,communitySourceUrl:context.communitySourceUrl}:{}),
       evidence: { metadata: 'manifest-checked', installation: 'not-tested', task: 'not-tested', combination: 'not-tested', capabilityBasis: 'author-description/index-keywords as quoted functionality clues; README supplied for model interpretation; not execution proof', fetchedAt: iso(), sources: [
         { kind: row.origin.id === 'github-topic' ? 'github-topic' : 'market-index', url: row.origin.url, query: row.query, fetchedAt: row.origin.fetchedAt },
         { kind: sourceType === 'npm' ? 'registry-manifest' : 'manifest', url: manifestUrl },
@@ -239,6 +254,33 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
 
   return {
     close() { ownLifetime.abort(); cache.clear(); },
+    async searchSelected({communityEntryId,hostVersion,nodeVersion,platform,signal}={}){
+      const selected=getCommunityEntry(communityEntryId);
+      if(!selected)throw new Error('Selected community entry is unavailable');
+      abortIfNeeded(signal,lifetimeSignal);
+      const warnings=[],source={id:'community-selected-author',title:'所选插件的作者资料',url:selected.sourceUrl,status:'failed',fetchedAt:iso()};
+      const selectedContext={entryId:selected.id,name:selected.name,sourceUrl:selected.sourceUrl,status:'unresolved',reason:''};
+      try{
+        const boundedSignal=AbortSignal.any([signal,lifetimeSignal,AbortSignal.timeout(searchTimeoutMs)].filter(Boolean));
+        const repo=repositoryOf(selected.sourceUrl);if(!repo)throw new Error('Selected author URL is unsupported');
+        const repositoryResult=await json(`https://api.github.com/repos/${repo.name}`,{signal:boundedSignal}),repository=repositoryResult.value;
+        if(repositoryResult.status==='stale')throw new Error('Selected author ownership response is stale and could not be refreshed');
+        if(String(repository.full_name??'').toLowerCase()!==repo.name.toLowerCase())throw new Error('Selected author repository ownership could not be confirmed');
+        const entry=fullCatalog({name:'awesome-dsh-plugin',plugins:[{name:selected.name,url:selected.sourceUrl,npm:selected.npmName,version:selected.version,description:{zh:selected.summary},category:selected.sourceCategory}]}).entries[0];
+        if(!entry)throw new Error('Selected entry metadata is incomplete');
+        const candidate=await authorDetails({entry,origin:source,score:1,terms:[]},{signal:boundedSignal,hostVersion,nodeVersion,platform,warnings,communityEntryId:selected.id,communitySourceUrl:selected.sourceUrl});
+        source.status=repositoryResult.status;source.fetchedAt=repositoryResult.fetchedAt;selectedContext.status='checked';
+        return{candidates:[candidate],sources:[source],warnings,searchedAt:iso(),selected:selectedContext,coverage:{scope:'selected-entry',inspected:1,resolved:1}};
+      }catch(error){
+        abortIfNeeded(signal,lifetimeSignal);
+        const detail=String(error?.message??'Unknown author source failure').slice(0,240);
+        const incompatible=/incompatib|no compatible index version/i.test(detail);
+        selectedContext.status=incompatible?'incompatible':'unresolved';
+        selectedContext.reason=incompatible?'所选插件的版本或运行环境声明与当前环境不兼容。':'尚未核对清楚所选插件的作者来源、包版本或所选目录，不能确认这条使用方案。';
+        warnings.push(selectedContext.reason+' 核对信息：'+detail);
+        return{candidates:[],sources:[source],warnings,searchedAt:iso(),selected:selectedContext,coverage:{scope:'selected-entry',inspected:1,resolved:0}};
+      }
+    },
     async search({ intent, hostVersion, nodeVersion, platform, requiresNoApiKey=false, signal } = {}) {
       abortIfNeeded(signal, lifetimeSignal);
       const deadline=Date.now()+searchTimeoutMs;

@@ -1,0 +1,7 @@
+# Author documentation is local research evidence; each author retains its license.
+/data/author-readmes/
+# Re-fetchable website / upstream raw responses; public evidence keeps URLs and hashes.
+/data/homepage.html
+/data/upstream/
+# Full normalized research copy is reproducible from the CC0 catalog.
+/data/normalized-catalog.research.json

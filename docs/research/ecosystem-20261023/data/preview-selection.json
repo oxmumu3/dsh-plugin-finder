@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "selectionPolicy": "每类选择三个用途不同、描述具体、可追溯作者资料的代表入口；不是热度、质量或安全排名。只有作者README读取并人工核对用途后才允许 preview=true。",
+  "entries": [
+    {
+      "categoryId": "work",
+      "repositoryUrl": "https://github.com/cloader/dsh-taskboard",
+      "useCase": "把待办放进项目看板，手动或定时推进",
+      "summaryOverride": "把待办整理成项目看板，选好模型后手动或定时执行，完成后再验收。"
+    },
+    {
+      "categoryId": "work",
+      "repositoryUrl": "https://github.com/Vncntvx/dsh-zotero",
+      "useCase": "从 Zotero 找论文、笔记和可引用的证据",
+      "summaryOverride": "从本机 Zotero 查论文、笔记和引用，打开原文核对证据；需已配置 Zotero。"
+    },
+    {
+      "categoryId": "work",
+      "repositoryUrl": "https://github.com/EthanYoQ/Invoice-Downloader/tree/main/plugins/dsh-invoice-downloader",
+      "useCase": "下载邮箱发票并整理报销汇总",
+      "summaryOverride": "从邮箱收集发票并生成 Excel 汇总；需 Python 3.10+，首次安装需联网，识别文本会交给当前模型。"
+    },
+    {
+      "categoryId": "content",
+      "repositoryUrl": "https://github.com/BioAIEvolu/dsh-md-studio",
+      "useCase": "直接看 Markdown 图表、公式和表格",
+      "summaryOverride": "直接预览 Markdown 中的流程图、数学公式和表格，便于阅读和检查文档。"
+    },
+    {
+      "categoryId": "content",
+      "repositoryUrl": "https://github.com/kw78/dsh-office-tools",
+      "useCase": "读取和生成 Word、Excel、PowerPoint",
+      "summaryOverride": "在工作区读取和生成 Word、Excel、PowerPoint，整理已有材料或制作新文档。"
+    },
+    {
+      "categoryId": "content",
+      "repositoryUrl": "https://github.com/PensiveFei/dsh-voice-scribe",
+      "useCase": "用语音听写输入需求",
+      "summaryOverride": "用语音听写代替打字；需允许麦克风，可选浏览器识别或自行配置云端识别。"
+    },
+    {
+      "categoryId": "knowledge",
+      "repositoryUrl": "https://github.com/ECNU/EduWork/tree/main/packages/dsh-memory",
+      "useCase": "检索过去对话，并保留来源的本地记忆",
+      "summaryOverride": "在本机管理记忆、查找过去的对话并保留来源；需 Node 24.18+ 与 DSH 0.2.1-rc.2。"
+    },
+    {
+      "categoryId": "knowledge",
+      "repositoryUrl": "https://github.com/benrong2048-boop/dsh-prompt-polish",
+      "useCase": "把一句话补成目标明确的任务描述",
+      "summaryOverride": "把一句话补成目标、约束和输出清楚的需求；确认后再写回输入框，会消耗模型额度。"
+    },
+    {
+      "categoryId": "knowledge",
+      "repositoryUrl": "https://github.com/lifangjin/dsh-maoying",
+      "useCase": "围绕大纲、角色和审校推进长篇小说",
+      "summaryOverride": "围绕大纲、角色设定和审校推进小说创作；先启用作者提供的小说助手预设。"
+    },
+    {
+      "categoryId": "experience",
+      "repositoryUrl": "https://github.com/boogoo619/dsh-focus-overlay",
+      "useCase": "用简洁的全屏视图专注阅读回复",
+      "summaryOverride": "用简洁的全屏视图专注阅读回复，把工具调用折叠起来。"
+    },
+    {
+      "categoryId": "experience",
+      "repositoryUrl": "https://github.com/yongfanbeta/dsh-pomodoro",
+      "useCase": "为任务安排专注和休息时间",
+      "summaryOverride": "为任务安排专注与休息时间，查看专注记录并导出；记录保存在本机。"
+    },
+    {
+      "categoryId": "experience",
+      "repositoryUrl": "https://github.com/Nwflower/dsh-claude-style",
+      "useCase": "切换舒适的明暗界面外观",
+      "summaryOverride": "切换 Claude 风格的明暗界面；作者采用 MIT 与 PolyForm Shield 条款，使用前需查看许可。"
+    },
+    {
+      "categoryId": "develop",
+      "repositoryUrl": "https://github.com/saya-ch/dsh-mobile",
+      "useCase": "从手机接着使用 Harness",
+      "summaryOverride": "从手机接着使用电脑里的 Harness；需配对和配置连接，原生 App 仅支持 Android。"
+    },
+    {
+      "categoryId": "develop",
+      "repositoryUrl": "https://github.com/f-e-n-g-0531/dsh-vcs",
+      "useCase": "只读查看 Git 或 SVN 的文件差异",
+      "summaryOverride": "只读查看 Git 或 SVN 的改动和历史；作者仅许可非商业使用，商用需另行授权。"
+    },
+    {
+      "categoryId": "develop",
+      "repositoryUrl": "https://github.com/Tencent/BrowserSkill/tree/main/packages/dsh-plugin-browserskill",
+      "useCase": "让 Agent 在可见浏览器中完成网页操作",
+      "summaryOverride": "让助手在可见浏览器中浏览、填表和截图；需另装 bsk CLI 与 Chrome 或 Edge 扩展。"
+    },
+    {
+      "categoryId": "manage",
+      "repositoryUrl": "https://github.com/Han-1413141/dsh-cost-meter",
+      "useCase": "查看模型花费与预算",
+      "summaryOverride": "查看会话花费、账户余额和预算，按配置的价格规则统计模型费用。"
+    },
+    {
+      "categoryId": "manage",
+      "repositoryUrl": "https://github.com/Nwflower/dsh-chat-import",
+      "useCase": "把其他工具的对话历史迁入 Harness",
+      "summaryOverride": "导入其他 AI 工具的对话历史，在 Harness 里接着聊；需提供相应历史文件。"
+    },
+    {
+      "categoryId": "manage",
+      "repositoryUrl": "https://github.com/HOWILLMAKEIT/dsh-model-context-catalog",
+      "useCase": "核对并配置已有模型的上下文窗口",
+      "summaryOverride": "核对已配置模型的上下文容量，查看数据来源后再确认更新。"
+    }
+  ]
+}

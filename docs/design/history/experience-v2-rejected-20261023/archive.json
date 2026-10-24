@@ -1,0 +1,22 @@
+{
+  "archivedAt": "2026-10-23T11:34:41.612187+00:00",
+  "source": "docs/design/experience-v2",
+  "reason": "用户明确否定逐步下一步、预览、复制到项目与 Creator 交接主路径；本次保留旧版原件与原检查记录，当前入口改为同一工作区直接使用或创建。历史 QA 只适用于被归档旧版。",
+  "files": [
+    {
+      "file": "index.html",
+      "bytes": 73938,
+      "sha256": "74043906f680573603f26811cf0b1232551c7b3daf7efcdfeadf7030d1927947"
+    },
+    {
+      "file": "DESIGN.md",
+      "bytes": 6609,
+      "sha256": "07e60b8f0d5151d2fbb88635b45259f49616d48f27a59ead96a2ea674628eb8e"
+    },
+    {
+      "file": "QA.md",
+      "bytes": 6309,
+      "sha256": "392f26f2c9826e8a46b78e4076f1278363dadb1334b8906c4a476cd19dbb5da5"
+    }
+  ]
+}

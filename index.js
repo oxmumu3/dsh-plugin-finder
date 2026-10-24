@@ -10,6 +10,8 @@ import {withOwnedDomains} from './src/lifecycle.js';
 import {createTelemetry} from './src/telemetry.js';
 import {withTelemetryApi} from './src/telemetry-api.js';
 import {COLLECTOR_URL,CLIENT_VERSION} from './src/telemetry-config.js';
+import {createRuntimeContextReader} from './src/runtime-context.js';
+import {createPluginInstaller} from './src/plugin-installation.js';
 export const name='plugin-finder';
 export const inject=['connection','storageDomain'];
 const feedback=z.object({id:z.string().uuid(),createdAt:z.string().datetime(),outcome:z.enum(['complete','partial','blocked']),pluginIds:z.array(z.string().max(200)).max(2),note:z.string().max(1500),stage:z.string().max(80)}).strict();
@@ -35,7 +37,7 @@ export async function apply(ctx){
   let core;
   const telemetryStore={read:async()=>JSON.parse((await telemetryHandle.global.get()).serialized),write:value=>telemetryHandle.global.set({serialized:JSON.stringify(value)})};
   const telemetry=createTelemetry({store:telemetryStore,endpoint:COLLECTOR_URL,listPending:epoch=>core.pendingTelemetry(epoch),clientVersion:CLIENT_VERSION,hostVersion:getDshRuntimeVersion()});
-  core=createFinderService({discovery,model:createHostModel(ctx),feedbackStore,workflowStore,historyStore,telemetry,hostVersion:getDshRuntimeVersion()});
+  core=createFinderService({discovery,model:createHostModel(ctx),feedbackStore,workflowStore,historyStore,telemetry,hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal})});
   const service=withTelemetryApi(core,telemetry);
   telemetry.committed();
   const stopRoutes=registerFinderRoutes(ctx,service);
