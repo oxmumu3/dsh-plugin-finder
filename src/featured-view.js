@@ -120,5 +120,5 @@ export function renderFeaturedView({ h, state, controller, copyText, busy = fals
   return h('div', { className: 'pf_featured' },
     state.featuredWarning ? h('div', { className: 'pf_banner pf_small', role: 'status' }, text(state.featuredWarning)) : null,
     content,
-    h('p', { className: 'pf_small pf_muted pf_featured_disclosure' }, selected ? '自研策展 · 奥克斯木木山。收录表达作者的场景选择，不代表官方审核或质量认证。' : '作者精选 · 奥克斯木木山。使用前提与验证范围见详情。'));
+    h('p', { className: 'pf_small pf_muted pf_featured_disclosure' }, selected ? '自研策展 · 牛村木木山。收录表达作者的场景选择，不代表官方审核或质量认证。' : '作者精选 · 牛村木木山。使用前提与验证范围见详情。'));
 }
