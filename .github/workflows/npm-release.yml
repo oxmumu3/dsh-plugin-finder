@@ -30,8 +30,10 @@ jobs:
       CONFIRMED_PACKAGE_NAME: ${{ vars.NPM_PACKAGE_NAME }}
       PUBLISH: ${{ inputs.publish }}
       SOURCE_REF: ${{ github.ref }}
-      ARTIFACT_DIR: ${{ runner.temp }}/finder-npm
     steps:
+      - name: Set artifact directory
+        shell: bash
+        run: echo "ARTIFACT_DIR=$RUNNER_TEMP/finder-npm" >> "$GITHUB_ENV"
       - name: Check publication authorization
         shell: bash
         run: |
@@ -85,8 +87,10 @@ jobs:
       id-token: write
     env:
       PACKAGE_NAME: ${{ inputs.package_name }}
-      ARTIFACT_DIR: ${{ runner.temp }}/finder-npm
     steps:
+      - name: Set artifact directory
+        shell: bash
+        run: echo "ARTIFACT_DIR=$RUNNER_TEMP/finder-npm" >> "$GITHUB_ENV"
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
