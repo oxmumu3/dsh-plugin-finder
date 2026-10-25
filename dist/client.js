@@ -1,5 +1,5 @@
 // DSH native client. React is provided by the host ModuleLoader.
-window.__ModuleLoader__.load({id:'dsh-plugin-finder',factory:require=>{const module={exports:{}};const exports=module.exports;
+window.__ModuleLoader__.load({id:"dsh-plugin-finder",factory:require=>{const module={exports:{}};const exports=module.exports;
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -1675,7 +1675,7 @@ function renderFeaturedView({ h, state, controller, copyText, busy = false, mode
     { className: "pf_featured" },
     state.featuredWarning ? h("div", { className: "pf_banner pf_small", role: "status" }, text(state.featuredWarning)) : null,
     content,
-    h("p", { className: "pf_small pf_muted pf_featured_disclosure" }, selected ? "\u81EA\u7814\u7B56\u5C55 \xB7 \u5965\u514B\u65AF\u6728\u6728\u5C71\u3002\u6536\u5F55\u8868\u8FBE\u4F5C\u8005\u7684\u573A\u666F\u9009\u62E9\uFF0C\u4E0D\u4EE3\u8868\u5B98\u65B9\u5BA1\u6838\u6216\u8D28\u91CF\u8BA4\u8BC1\u3002" : "\u4F5C\u8005\u7CBE\u9009 \xB7 \u5965\u514B\u65AF\u6728\u6728\u5C71\u3002\u4F7F\u7528\u524D\u63D0\u4E0E\u9A8C\u8BC1\u8303\u56F4\u89C1\u8BE6\u60C5\u3002")
+    h("p", { className: "pf_small pf_muted pf_featured_disclosure" }, selected ? "\u81EA\u7814\u7B56\u5C55 \xB7 \u725B\u6751\u6728\u6728\u5C71\u3002\u6536\u5F55\u8868\u8FBE\u4F5C\u8005\u7684\u573A\u666F\u9009\u62E9\uFF0C\u4E0D\u4EE3\u8868\u5B98\u65B9\u5BA1\u6838\u6216\u8D28\u91CF\u8BA4\u8BC1\u3002" : "\u4F5C\u8005\u7CBE\u9009 \xB7 \u725B\u6751\u6728\u6728\u5C71\u3002\u4F7F\u7528\u524D\u63D0\u4E0E\u9A8C\u8BC1\u8303\u56F4\u89C1\u8BE6\u60C5\u3002")
   );
 }
 
