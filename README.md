@@ -44,6 +44,8 @@ https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.9.0-preview.10
 
 **历史公开版本 `0.3.0-preview.2` 继续保留。** [历史 Release](https://github.com/oxmumu3/dsh-plugin-finder/releases/tag/v0.3.0-preview.2) 与 [历史安装包](https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz) 保留用于追溯，不包含本页描述的当前工作区执行与分类浏览流程。旧版本的草稿接续方式不作为本版使用说明。
 
+**npm 渠道正在准备。** 现有 GitHub 安装入口继续有效；候选 npm 包名尚待发布账号确认，暂不提供未发布包的安装指令。已有用户无需为此重新安装。发布维护流程见 [npm 分发说明](https://github.com/oxmumu3/dsh-plugin-finder/blob/main/docs/npm-publishing.md)；同一 Finder 的新旧包不应同时启用。
+
 ## 从哪里发现插件
 
 - **Awesome DSH 第三方目录**：按需读取[完整目录](https://awesome-dsh-plugin.com/plugins.json)，检索 npm 与 GitHub-only 记录；[format-1 市场索引](https://awesome-dsh-plugin.com/index.json)作为补充。它不是 DSH 官方审核目录。
@@ -103,4 +105,4 @@ npm pack
 
 [版本记录](CHANGELOG.md)、[历史 V2 设计](docs/experience-v2-preview.md)、[历史首次实跑](docs/first-use-case.md)、[历史对照实验](docs/experiment.md)和[历史验证记录](docs/verification.md)保留原有证据边界，不能替代当前版本验收。
 
-项目作者为奥克斯木木山，正式代码项目归属为 `oxmumu3`，采用 [MIT License](LICENSE)。第三方索引、插件与作者文档遵循各自许可证。
+项目作者为牛村木木山，正式代码项目归属为 `oxmumu3`，采用 [MIT License](LICENSE)。第三方索引、插件与作者文档遵循各自许可证。
