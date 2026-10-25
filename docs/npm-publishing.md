@@ -27,6 +27,10 @@ node release/prepare-npm.mjs --package-name @your-account/dsh-plugin-finder --ou
 
 发布前，在 npm 账号中确认包名/发布权，建立首包，并在该包的 Trusted Publisher 设置中绑定 GitHub owner `oxmumu3`、repository `dsh-plugin-finder`、workflow filename `npm-release.yml`。明确允许 `npm publish`；只有 stage 权限仍需要每版人工审批。配置 repository variable `NPM_PACKAGE_NAME`，然后触发并核验第一次可信发布。npm 保存设置不等于发布已经成功。
 
+首次发布顺序必须区分版本：先由账号所有者完成首次认证，把经校验的 `0.9.0-preview.10` 制品发布到 `next`，核对注册表和 DSH 安装结果。该版本一经发布不能重新发布。后续验证 OIDC 时，先准备新的 `0.9.0-preview.11`：同步源码 `package.json`、lockfile、发布检查器的版本断言和相应测试，经复审和完整准备流程后，再绑定 Trusted Publisher 并触发发布。不能用已经手动发布的同一个版本重复跑自动发布验收。
+
+本轮可以先验证远端 `publish=false` 构建；它不依赖 npm 账号。首次人工发布和后续 OIDC 首发是两项独立验收，不能提前标记完成。
+
 工作流采用 GitHub 托管 runner、Node 24和符合要求的 npm CLI；只有发布 job 获得 `id-token: write`。不需要把 npm 长效写入 token 放进仓库。预览包发布到 `next`，不自动提升为稳定版。
 
 当前 npm 要求新可信发布配置在两天内成功发布一次进行验证；账号、包名与制品准备好后再绑定并及时验收。账号登录、邮箱/passkey/双重验证等本人确认由账号所有者完成。
