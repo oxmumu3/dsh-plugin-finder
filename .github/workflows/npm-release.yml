@@ -1,0 +1,118 @@
+name: Prepare or publish npm package
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: 'Confirmed npm package name (default is an unconfirmed candidate)'
+        required: true
+        type: string
+        default: '@oxmumu3/dsh-plugin-finder'
+      publish:
+        description: 'Publish the checked artifact using the configured npm trusted publisher'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-release-${{ inputs.package_name }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: github.repository == 'oxmumu3/dsh-plugin-finder'
+    runs-on: ubuntu-latest
+    env:
+      PACKAGE_NAME: ${{ inputs.package_name }}
+      CONFIRMED_PACKAGE_NAME: ${{ vars.NPM_PACKAGE_NAME }}
+      PUBLISH: ${{ inputs.publish }}
+      SOURCE_REF: ${{ github.ref }}
+      ARTIFACT_DIR: ${{ runner.temp }}/finder-npm
+    steps:
+      - name: Check publication authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$PUBLISH" == "true" ]]; then
+            [[ "$SOURCE_REF" == 'refs/heads/main' ]] || { echo 'Publishing requires the main branch.' >&2; exit 1; }
+            [[ -n "$CONFIRMED_PACKAGE_NAME" && "$PACKAGE_NAME" == "$CONFIRMED_PACKAGE_NAME" ]] || { echo 'Configure NPM_PACKAGE_NAME after confirming ownership; it must exactly match the input.' >&2; exit 1; }
+          fi
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Check Node and npm versions
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          const [major, minor, patch] = execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim().split('.').map(Number);
+          if (Number(process.versions.node.split('.')[0]) < 24 || !(major > 11 || major === 11 && (minor > 5 || minor === 5 && patch >= 1))) throw new Error('Node >=24 and npm >=11.5.1 are required');
+          NODE
+      - run: npm ci --ignore-scripts --legacy-peer-deps
+      - run: npm test
+      - run: npm run build
+      - name: Prepare and independently verify public package
+        shell: bash
+        run: |
+          set -euo pipefail
+          node release/prepare-npm.mjs --package-name "$PACKAGE_NAME" --output "$ARTIFACT_DIR"
+          archives=("$ARTIFACT_DIR"/*.tgz)
+          [[ ${#archives[@]} == 1 && -f "${archives[0]}" ]]
+          node release/check-npm-package.mjs --package-name "$PACKAGE_NAME" --tarball "${archives[0]}"
+          cd "$ARTIFACT_DIR"
+          sha256sum --check SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: finder-npm-${{ github.run_id }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            ${{ env.ARTIFACT_DIR }}/*.tgz
+            ${{ env.ARTIFACT_DIR }}/manifest.json
+            ${{ env.ARTIFACT_DIR }}/SHA256SUMS
+
+  publish:
+    needs: prepare
+    if: inputs.publish && github.repository == 'oxmumu3/dsh-plugin-finder' && github.ref == 'refs/heads/main' && vars.NPM_PACKAGE_NAME != '' && vars.NPM_PACKAGE_NAME == inputs.package_name
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PACKAGE_NAME: ${{ inputs.package_name }}
+      ARTIFACT_DIR: ${{ runner.temp }}/finder-npm
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Check Node and npm versions for OIDC
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          const [major, minor, patch] = execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim().split('.').map(Number);
+          if (Number(process.versions.node.split('.')[0]) < 24 || !(major > 11 || major === 11 && (minor > 5 || minor === 5 && patch >= 1))) throw new Error('Node >=24 and npm >=11.5.1 are required for OIDC');
+          NODE
+      - run: npm ci --ignore-scripts --legacy-peer-deps
+      - uses: actions/download-artifact@v5
+        with:
+          name: finder-npm-${{ github.run_id }}
+          path: ${{ env.ARTIFACT_DIR }}
+      - name: Verify and publish the same prepared artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$ARTIFACT_DIR"
+          sha256sum --check SHA256SUMS
+          cd "$GITHUB_WORKSPACE"
+          archives=("$ARTIFACT_DIR"/*.tgz)
+          [[ ${#archives[@]} == 1 && -f "${archives[0]}" ]]
+          node release/check-npm-package.mjs --package-name "$PACKAGE_NAME" --tarball "${archives[0]}"
+          npm publish "${archives[0]}" --access public --tag next --provenance --registry https://registry.npmjs.org/ --ignore-scripts
