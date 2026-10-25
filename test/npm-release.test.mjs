@@ -178,3 +178,21 @@ test('workflow defaults to preparation and restricts publishing to the verified 
   assert.match(workflow, /node-version: '24'/); assert.match(workflow, /11\.5\.1/);
   assert.match(workflow, /sha256sum --check SHA256SUMS/);
 });
+
+test('workflow resolves runner artifact directories at runtime before consuming them', async t => {
+  const workflow = parseYaml(await readFile(new URL('../.github/workflows/npm-release.yml', import.meta.url), 'utf8'));
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'finder-workflow-env-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  for (const [name, job] of Object.entries(workflow.jobs)) {
+    for (const value of Object.values(job.env ?? {})) {
+      assert.doesNotMatch(String(value), /\$\{\{\s*runner\./, `${name}: runner context is unavailable in job.env`);
+    }
+    assert.equal(job.env?.ARTIFACT_DIR, undefined);
+    const initialization = job.steps[0];
+    assert.match(initialization.run ?? '', /GITHUB_ENV/, `${name}: initialize runtime env before artifact consumers`);
+    const environmentFile = path.join(directory, `${name}.env`);
+    const runnerTemporary = path.join(directory, 'runner temporary');
+    await run('bash', ['-euo', 'pipefail', '-c', initialization.run], { env: { ...process.env, RUNNER_TEMP: runnerTemporary, GITHUB_ENV: environmentFile } });
+    assert.equal(await readFile(environmentFile, 'utf8'), `ARTIFACT_DIR=${runnerTemporary}/finder-npm\n`);
+  }
+});
