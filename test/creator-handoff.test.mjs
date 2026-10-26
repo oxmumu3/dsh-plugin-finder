@@ -49,6 +49,10 @@ test('creates one fresh Creator session, saves its identity, verifies and prepar
   assert.deepEqual(f.calls.panels, [null]);
   assert.equal(f.calls.release, 1);
 });
+test('official rc.3 retains the verified Creator draft path',async()=>{
+  const f=fixture({hostVersion:'0.2.1-rc.3'}),result=await prepareCreatorDraft(f.ctx,f.options);
+  assert.equal(result.status,'applied');assert.equal(f.calls.create.length,1);assert.equal(f.calls.draft.length,1);
+});
 
 test('a duplicate claim cannot create while the winning creation is pending', async () => {
   const f = fixture(); const created = deferred();

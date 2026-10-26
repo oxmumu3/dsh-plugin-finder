@@ -430,4 +430,64 @@ export const experienceCss = `
   .pfv_composer, .pfv_button { transition: none; }
   .pfv_progress_dot { animation: none; }
 }
+
+.pfv_opportunity .pfv_home_card { min-height: 228px; }
+.pfv_opportunity_evidence { margin-top: 12px; color: var(--pfv_muted); font-size: 12px; }
+.pfv_opportunity_evidence summary,.pfv_opportunity_controls summary { min-height: 32px; cursor: pointer; display: flex; align-items: center; }
+.pfv_opportunity_evidence > div { margin: 8px 0; overflow-wrap: anywhere; }
+.pfv_opportunity_evidence p { margin-top: 4px; white-space: pre-wrap; }
+.pfv_opportunity_controls { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 8px; color: var(--pfv_muted); font-size: 12px; }
+.pfv_opportunity_controls > .pfv_button { padding: 4px 0; font-size: 12px; }
+.pfv_opportunity_controls details .pfv_button { display: block; }
+.pfv_opportunity_settings { padding: 24px 0 32px; border-block: 1px solid var(--pfv_line); margin-bottom: 32px; }
+.pfv_scope_columns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 32px; }
+.pfv_scope_columns fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.pfv_scope_columns legend { font-weight: 600; margin-bottom: 12px; }
+.pfv_scope_columns select,.pfv_scope_columns textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--pfv_strong_line); color: var(--pfv_ink); background: var(--pfv_paper); border-radius: 8px; font: inherit; }
+.pfv_scope_columns details { margin-top: 12px; font-size: 13px; }
+.pfv_scope_columns summary { min-height: 44px; cursor: pointer; padding-block: 10px; }
+.pfv_scope_columns details label { display: block; margin-bottom: 8px; }
+.pfv_scope_list { max-height: 280px; overflow-y: auto; margin-top: 12px; }
+.pfv_scope_choice { min-height: 44px; display: flex; align-items: flex-start; gap: 10px; padding-block: 10px; line-height: 1.7; font-size: 14px; cursor: pointer; overflow-wrap: anywhere; }
+.pfv_scope_choice input { margin-top: 4px; flex-shrink: 0; accent-color: var(--pfv_accent); }
+.pfv_scope_footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 24px; }
+.pfv_product_intro { display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.6fr) 44px; gap: 24px; align-items: start; margin-top: 20px; margin-bottom: 16px; padding: 24px; background: var(--pfv_tint); border-radius: 14px; }
+.pf_v2 .pfv_product_intro h2 { font-size: 19px; margin: 0; line-height: 1.5; }
+.pfv_product_intro p { font-size: 13px; color: var(--pfv_muted); line-height: 1.8; margin-top: 8px; }
+.pfv_product_intro ol { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 24px; counter-reset: intro; list-style: none; padding: 0; margin: 0; }
+.pfv_product_intro li { counter-increment: intro; min-width: 0; }
+.pfv_product_intro li::before { content: counter(intro); display: block; font-size: 12px; color: var(--pfv_accent); margin-bottom: 4px; }
+.pfv_product_intro strong { display: block; font-size: 14px; line-height: 1.6; }
+.pfv_product_intro li span { display: block; font-size: 13px; color: var(--pfv_muted); margin-top: 4px; line-height: 1.7; }
+.pfv_intro_close { width: 44px; min-width: 44px; padding: 0; margin-top: -8px; margin-right: -8px; }
+@container finder (max-width: 820px) { .pfv_product_intro { grid-template-columns: minmax(0,1fr) 44px; gap: 16px; } .pfv_product_intro ol { grid-column: 1 / -1; grid-row: 2; } .pfv_intro_close { grid-row: 1; grid-column: 2; } .pfv_scope_columns { grid-template-columns: minmax(0,1fr); gap: 24px; } }
+@container finder (max-width: 520px) { .pfv_product_intro { padding: 16px; margin-top: 12px; } .pfv_product_intro ol { grid-template-columns: minmax(0,1fr); gap: 8px; } .pfv_product_intro li { display: flex; gap: 12px; align-items: baseline; } .pfv_product_intro li span { display: none; } .pfv_scope_footer { align-items: flex-start; flex-direction: column; } }
+
+.pfv_opportunity .pfv_scenario_card > h3 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pfv_opportunity .pfv_scenario_card > .pfv_prose { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pfv_opportunity_controls { grid-column: 2; grid-row: 4; }
+
+@container finder (max-width: 760px) { .pfv_opportunity_controls { grid-area: auto; margin-top: 8px; } }
+
+/* One expert, two ways to start the same conversation. No overlay or extra nav. */
+.pfv_expert_identity { display: flex; align-items: flex-start; gap: 14px; padding-top: 14px; margin-bottom: 2px; }
+.pfv_expert_mark { width: 44px; height: 44px; flex: none; color: var(--pfv_accent); }
+.pfv_expert_mark svg { display: block; width: 100%; height: 100%; }
+.pf_v2 .pfv_expert_identity h1 { margin: 0; font-size: 24px; line-height: 1.4; letter-spacing: -.3px; font-weight: 650; color: var(--pfv_ink); }
+.pfv_expert_identity p { margin: 6px 0 0; color: var(--pfv_muted); font-size: 14px; line-height: 1.7; }
+.pfv_expert_identity + .pfv_home_start { padding-top: 18px; }
+.pfv_expert_identity + .pfv_home_start .pfv_home_heading { font-size: 22px; line-height: 1.4; letter-spacing: -.3px; }
+.pfv_expert_identity + .pfv_home_start .pfv_home_lead { font-size: 13px; margin: 8px 0 16px; line-height: 1.7; }
+.pfv_expert_identity + .pfv_home_start .pfv_home_card { min-height: 216px; }
+.pfv_expert_identity + .pfv_home_start .pfv_scenario_card { border-color: transparent; background: var(--pfv_tint); box-shadow: none; }
+.pfv_expert_identity + .pfv_home_start .pfv_scenario_card h3 { font-size: 18px; line-height: 1.55; }
+@container finder (max-width: 760px) {
+  .pfv_expert_identity { gap: 12px; padding-top: 12px; margin-bottom: 6px; }
+  .pfv_expert_mark { width: 36px; height: 36px; }
+  .pf_v2 .pfv_expert_identity h1 { font-size: 22px; }
+  .pfv_expert_identity p { font-size: 13px; }
+  .pfv_expert_identity + .pfv_home_start { padding-top: 12px; }
+  .pfv_expert_identity + .pfv_home_start .pfv_home_heading { font-size: 20px; }
+  .pfv_expert_identity + .pfv_home_start .pfv_home_card { min-height: 208px; }
+}
 `;

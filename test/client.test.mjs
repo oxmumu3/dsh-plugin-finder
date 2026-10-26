@@ -332,7 +332,8 @@ test('home describes live source search without presenting the old cache count a
   const rendered = await renderWorkbench(controller.getSnapshot());
   assert.equal(controller.getSnapshot().view, 'home');
   assert.ok(rendered.visibleNodes.some(node => node.type === 'button' && node.children.includes('帮我找方案')));
-  assert.match(rendered.visibleText, /说说你的需求.*找到就用/);
+  assert.ok(rendered.visibleNodes.some(node => node.type === 'section' && node.props?.['aria-labelledby'] === 'pfv_home_title'));
+  assert.ok(rendered.visibleNodes.some(node => node.type === 'textarea' && node.props?.id === 'pfv_home_input' && node.props?.['aria-label'] === '任务描述'));
   assert.equal(rendered.nodes.some(node => node.props?.className === 'pf_tabs'), false);
   assert.doesNotMatch(rendered.text, /索引 15|15 条插件记录/);
   assert.match(rendered.text, /GitHub DSH 插件/);
@@ -1187,7 +1188,9 @@ test('single flow opens home even with a saved creation and keeps new input sepa
   c.showFeatured('agent-twin'); c.showHome();
   assert.equal(c.getSnapshot().homeRequest, '准备查找的另一件事'); assert.equal(c.getSnapshot().creationForm.blueprint.name, '原蓝图未保存编辑');
   const rendered = await renderWorkbench(c.getSnapshot());
-  assert.match(rendered.visibleText, /你想完成什么/); assert.match(rendered.visibleText, /帮我找方案/); assert.match(rendered.visibleText, /精选插件/); assert.match(rendered.visibleText, /继续上次/);
+  assert.ok(rendered.visibleNodes.some(node => node.type === 'section' && node.props?.['aria-labelledby'] === 'pfv_home_title'));
+  assert.equal(rendered.visibleNodes.find(node => node.type === 'textarea' && node.props?.id === 'pfv_home_input')?.props.value, '准备查找的另一件事');
+  assert.match(rendered.visibleText, /帮我找方案/); assert.match(rendered.visibleText, /精选插件/); assert.match(rendered.visibleText, /继续上次/);
   assert.equal(rendered.nodes.some(node => node.props?.className === 'pf_tabs'), false);
   assert.doesNotMatch(rendered.visibleText, /重新读取配置|首版蓝图|Creator 工作区|同意并自动回传/);
   c.close(); const again = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await again.bootstrap();

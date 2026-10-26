@@ -30,13 +30,16 @@ function termsFor(intent) {
   return [...terms].slice(0, 70);
 }
 
-function rankEntry(entry, terms, secondaryTerms=[]) {
+function rankEntry(entry, terms, secondaryTerms=[], queryGroups=[]) {
   const name = String(entry.name ?? '').toLowerCase();
   const description = typeof entry.description === 'string' ? entry.description : Object.values(entry.description ?? {}).join(' ');
   const haystack = [name, localized(entry.title), description, ...(entry.metadata?.keywords ?? [])].join(' ').toLowerCase();
   const primary=terms.reduce((score,term)=>score+(name.includes(term)?8:haystack.includes(term)?3:0),0);
   const secondary=Math.min(6,secondaryTerms.reduce((score,term)=>score+(name.includes(term)?2:haystack.includes(term)?1:0),0));
-  return primary?primary*4+secondary:terms.length?Math.min(secondary,1):secondary;
+  // Reward coverage across the user's distinct queries, not just keyword-rich names.
+  // The bounded bonus is a retrieval clue, never capability or execution proof.
+  const coverage=queryGroups.length?queryGroups.reduce((sum,group)=>sum+group.filter(term=>haystack.includes(term)).length/group.length,0)/queryGroups.length:0;
+  return primary?primary*4+secondary+Math.round(coverage*80):terms.length?Math.min(secondary,1):secondary;
 }
 
 function versionOf(entry, hostVersion) {
@@ -284,12 +287,13 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
     async search({ intent, hostVersion, nodeVersion, platform, requiresNoApiKey=false, signal } = {}) {
       abortIfNeeded(signal, lifetimeSignal);
       const deadline=Date.now()+searchTimeoutMs;
+      const queryGroups=unique((intent?.queries??[]).map(value=>termsFor({queries:[value]}).sort().join('\n'))).slice(0,8).map(value=>value.split('\n'));
       const primaryTerms=termsFor({queries:intent?.queries??[]});const secondaryTerms=termsFor({capabilities:intent?.capabilities??[]});const terms=unique([...primaryTerms,...secondaryTerms]); const query = String((intent?.queries ?? []).find(value => /[a-z]/i.test(value)) ?? intent?.queries?.[0] ?? intent?.goal ?? '').slice(0, 80);
       const rows = []; const sources = []; const warnings = [];const sourceCounts=new Map();
       const counts=source=>{if(!sourceCounts.has(source))sourceCounts.set(source,{matched:0,inspected:0,resolved:0,excluded:0});return sourceCounts.get(source);};
       const addRows = (entries, origin, forced = false) => {
         for (const entry of entries) {
-          const score = rankEntry(entry, primaryTerms, secondaryTerms);
+          const score = rankEntry(entry, primaryTerms, secondaryTerms, queryGroups);
           if (score || forced) {rows.push({ entry, origin, score: score || 1, query, terms });counts(origin).matched++;}
         }
       };

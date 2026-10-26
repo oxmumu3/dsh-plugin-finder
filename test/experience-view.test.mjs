@@ -27,7 +27,8 @@ function render(state = fixture(), extra = {}) {
 
 test('home has one demand composer, editable examples and four distinct products without navigation tabs', () => {
   const { view, calls } = render(fixture({ view: 'home', homeRequest: '', featuredPreferences: { interests: ['family'], dismissed: [] } }));
-  assert.match(content(view, true), /你想完成什么/);
+  assert.match(content(view, true), /我是你的插件专家/);
+  assert.match(content(view, true), /告诉我你的目标/);
   assert.equal(visibleNodes(view).filter(node => node.type === 'textarea').length, 1);
   assert.equal(nodes(view).filter(node => node.props.role === 'tab' || node.props.role === 'tablist').length, 0);
   const products = nodes(view).filter(node => node.type === 'article');
@@ -387,4 +388,21 @@ test('keyboard submit respects composition and model output stays text', () => {
   assert.equal(submissions, 1);
   assert.ok(nodes(view).every(node => !node.props.dangerouslySetInnerHTML));
   assert.equal(nodes(view).filter(node => node.type === 'script' || node.type === 'img').length, 0);
+});
+
+
+test('one expert identity owns both direct demand and proactive advice without an extra conversation wall',()=>{
+  const state=fixture({view:'home',homeRequest:'保留我还没提交的目标',opportunity:{consent:{enabled:true},status:'ready',opportunities:[{id:'idea-a',title:'把零散材料变成清楚的简报',expectedResult:'一份可核对的简报',suggestedRequest:'只整理选定材料',observation:'你选定的材料有可复用步骤',evidenceRefs:[{id:'source-a',label:'brief.md',excerpt:'授权材料'}]}]}});
+  const {view}=render(state);
+  const identity=nodes(view).filter(n=>n.props.className==='pfv_expert_identity');
+  assert.equal(identity.length,1);
+  assert.equal(nodes(view).filter(n=>n.type==='h1'&&content(n)==='我是你的插件专家').length,1);
+  const group=nodes(view).find(n=>n.props.role==='group'&&n.props['aria-labelledby']==='pfv_expert_title');
+  assert.ok(group);
+  assert.match(content(group),/告诉我你的目标/);assert.match(content(group),/我猜你可能需要/);
+  assert.equal(byLabel(view,'任务描述').props.value,'保留我还没提交的目标');
+  assert.equal(nodes(group).filter(n=>n.props.className==='pfv_opportunity_controls').length,1);
+  const aside=nodes(group).find(n=>n.type==='aside'&&n.props['aria-label']==='猜你喜欢');
+  assert.equal(aside.children.length,3,'feedback controls remain outside the three shared grid rows');
+  assert.equal(nodes(view).filter(n=>n.props.role==='tab').length,0);
 });

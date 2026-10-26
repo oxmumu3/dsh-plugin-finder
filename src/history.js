@@ -5,6 +5,7 @@ import {validateTelemetryEvent} from './telemetry-contract.js';
 import {parseCreation,parseTrigger,creationContentHash,CREATOR_STATUSES} from './creation.js';
 import {assertCommunityPlan} from './community-selection.js';
 import {validatePreparation,requirePrepared,preparedPrompt} from './execution-preparation.js';
+import {parseOpportunityOrigin,isIssuedOpportunityOrigin,opportunityTaskId,sameOpportunityOrigin,requireOpportunityWorkspace,OPPORTUNITY_TASK_PREFIX} from './opportunity-origin.js';
 
 export const MAX_TASK_BYTES=8_000_000;
 export const MAX_IMPORT_BYTES=8_100_000;
@@ -45,6 +46,7 @@ export function validateWorkflow(value){
   if(value.communityEntryId!==undefined)workflow.communityEntryId=text(value.communityEntryId,1000,'INVALID_BACKUP');
   if(value.creation!==undefined){workflow.creation=parseCreation(value.creation);if(workflow.creation.supply.status==='current'&&workflow.creation.supply.intentHash!==hash(intent))fail('INVALID_BACKUP');}
   if(value.localOnly!==undefined){if(value.localOnly!==true)fail('INVALID_BACKUP');workflow.localOnly=true;}
+  if(value.opportunityOrigin!==undefined){workflow.opportunityOrigin=parseOpportunityOrigin(value.opportunityOrigin);workflow.localOnly=true;}
   if(workflow.creation)workflow.localOnly=true;
   for(const key of ['model','eligibility','discovery','catalogUpdatedAt','analysisWarning'])if(value[key]!==undefined)workflow[key]=publicSourceData(copy(value[key]),key);
   if(value.warnings!==undefined){workflow.warnings=array(value.warnings,100).map(item=>publicSourceText(text(item,4000,'INVALID_BACKUP')));}
@@ -67,6 +69,11 @@ function validateTask(value){
     if(!record(revision)||revision.number!==index+1||!stamp(revision.createdAt)||revisionIds.has(revision.id))fail('INVALID_BACKUP');
     const parent=revision.parentRevisionId??null;if(parent!==null&&!revisionIds.has(parent))fail('INVALID_BACKUP');
     const cleaned={id:id(revision.id),number:revision.number,createdAt:revision.createdAt,parentRevisionId:parent,workflow:validateWorkflow(revision.workflow)};
+    const firstOrigin=task.revisions[0]?.workflow.opportunityOrigin;
+    if(index===0){
+      if(cleaned.workflow.opportunityOrigin&&(task.format!==2||task.id!==opportunityTaskId(cleaned.workflow.opportunityOrigin)))fail('INVALID_BACKUP');
+      if(task.id.startsWith(OPPORTUNITY_TASK_PREFIX)&&!cleaned.workflow.opportunityOrigin)fail('INVALID_BACKUP');
+    }else if(firstOrigin?!cleaned.workflow.opportunityOrigin||!sameOpportunityOrigin(firstOrigin,cleaned.workflow.opportunityOrigin):cleaned.workflow.opportunityOrigin!==undefined)fail('INVALID_BACKUP');
     if(cleaned.workflow.request!==task.originalRequest)fail('INVALID_BACKUP');
     if(task.originalConstraints.some(constraint=>!cleaned.workflow.intent.constraints.includes(constraint)))fail('INVALID_BACKUP');
     const parentRevision=task.revisions.find(item=>item.id===parent);
@@ -137,7 +144,14 @@ function validateTask(value){
   bounded(withoutTelemetry(task));
   return task;
 }
-const contentHash=task=>{const {origin,...content}=withoutTelemetry(task);for(const field of ['creatorAttempts','executions'])if(content[field])content[field]=content[field].map(({provenance,...attempt})=>attempt);return hash(content);};
+const contentHash=task=>{
+  const {origin,...content}=withoutTelemetry(task);
+  // Import changes authority, not the underlying saved solution. Normalize only
+  // that provenance bit when comparing an existing task with its exact backup.
+  content.revisions=content.revisions.map(revision=>revision.workflow.opportunityOrigin?{...revision,workflow:{...revision.workflow,opportunityOrigin:{...revision.workflow.opportunityOrigin,provenance:'imported'}}}:revision);
+  for(const field of ['creatorAttempts','executions'])if(content[field])content[field]=content[field].map(({provenance,...attempt})=>field==='executions'?{...attempt,contentHash:hash(content.revisions.find(revision=>revision.id===attempt.revisionId).workflow)}:attempt);
+  return hash(content);
+};
 
 function privateRevision(task,revision){let current=revision;const seen=new Set();while(current&&!seen.has(current.id)){if(current.workflow.creation||current.workflow.localOnly)return true;seen.add(current.id);current=task.revisions.find(item=>item.id===current.parentRevisionId);}return false;}
 
@@ -227,9 +241,15 @@ export function createHistoryRepository({store,clock=()=>new Date(),telemetry}={
   };
   const view=async(selected)=>{const selectedContext=selected??await active();return{workflow:selectedContext?projectWorkflow(selectedContext.task,selectedContext.revision.id):null,...await list()};};
   const append=async(workflow,base=null,extra={})=>{
+    const inherited=base?.task.revisions[0]?.workflow.opportunityOrigin;
+    if(base){
+      if(inherited){if(workflow.opportunityOrigin&&!sameOpportunityOrigin(inherited,workflow.opportunityOrigin))fail('INVALID_INPUT');workflow={...workflow,opportunityOrigin:copy(inherited),localOnly:true};}
+      else if(workflow.opportunityOrigin!==undefined)fail('INVALID_INPUT');
+    }else if(workflow.opportunityOrigin!==undefined&&!isIssuedOpportunityOrigin(workflow.opportunityOrigin))fail('INVALID_INPUT');
     const cleaned=validateWorkflow(workflow),now=clock().toISOString();
     if(base&&privateRevision(base.task,base.revision))cleaned.localOnly=true;
-    const task=base?copy(base.task):{format:1,id:randomUUID(),originalRequest:cleaned.request,originalConstraints:[...cleaned.intent.constraints],createdAt:now,updatedAt:now,revisions:[],feedback:[],handoffs:[]};
+    const task=base?copy(base.task):{format:1,id:cleaned.opportunityOrigin?opportunityTaskId(cleaned.opportunityOrigin):randomUUID(),originalRequest:cleaned.request,originalConstraints:[...cleaned.intent.constraints],createdAt:now,updatedAt:now,revisions:[],feedback:[],handoffs:[]};
+    if(!base&&cleaned.opportunityOrigin&&await io(()=>store.read(task.id)))fail('OPPORTUNITY_PENDING');
     if(cleaned.localOnly||cleaned.intent.constraints.length>MAX_MODEL_CONSTRAINTS)task.format=2;
     if(cleaned.request!==task.originalRequest||task.originalConstraints.some(item=>!cleaned.intent.constraints.includes(item)))fail();
     const revision={id:randomUUID(),number:task.revisions.length+1,createdAt:now,parentRevisionId:base?.revision.id??null,workflow:cleaned,...(extra.feedbackText?{feedbackText:extra.feedbackText}:{})};
@@ -243,7 +263,7 @@ export function createHistoryRepository({store,clock=()=>new Date(),telemetry}={
   const importBackup=async({workflow,origin='本机 JSON 备份',type='backup'}={})=>{
     bounded(workflow,MAX_IMPORT_BYTES);const label=text(origin,200,'INVALID_BACKUP');let task,sourceFormat,sourceHash;
     if(record(workflow)&&workflow.format===2){
-      if(workflow.creation!==undefined||workflow.localOnly!==undefined)fail('INVALID_BACKUP');
+      if(workflow.creation!==undefined||workflow.localOnly!==undefined||workflow.opportunityOrigin!==undefined)fail('INVALID_BACKUP');
       const cleaned=validateWorkflow(workflow);sourceHash=hash(cleaned);sourceFormat='legacy-format-2';const now=clock().toISOString();
       const sourceTime=stamp(cleaned.discovery?.searchedAt)?cleaned.discovery.searchedAt:stamp(cleaned.catalogUpdatedAt)?cleaned.catalogUpdatedAt:now;
       task={format:cleaned.intent.constraints.length>MAX_MODEL_CONSTRAINTS?2:1,id:'restored-'+sourceHash.slice(0,40),originalRequest:cleaned.request,originalConstraints:[...cleaned.intent.constraints],createdAt:sourceTime,updatedAt:sourceTime,revisions:[{id:'restored-revision-'+sourceHash.slice(0,32),number:1,createdAt:sourceTime,parentRevisionId:null,workflow:cleaned}],feedback:[],handoffs:[]};
@@ -252,8 +272,9 @@ export function createHistoryRepository({store,clock=()=>new Date(),telemetry}={
     const existing=await io(()=>store.read(task.id));
     if(existing){const old=await read(task.id);if(!(sourceFormat==='legacy-format-2'&&old.origin?.sourceHash===sourceHash)&&contentHash(old)!==contentHash(task))fail('INVALID_BACKUP');return{imported:true,duplicate:true,importedTaskId:task.id};}
     // A backup is data, never a locally issued authority for late writes.
+    task.revisions=task.revisions.map(revision=>revision.workflow.opportunityOrigin?{...revision,workflow:{...revision.workflow,opportunityOrigin:{...revision.workflow.opportunityOrigin,provenance:'imported'}}}:revision);
     if(task.creatorAttempts)task.creatorAttempts=task.creatorAttempts.map(attempt=>({...attempt,provenance:'imported'}));
-    if(task.executions)task.executions=task.executions.map(attempt=>({...attempt,provenance:'imported'}));
+    if(task.executions)task.executions=task.executions.map(attempt=>({...attempt,provenance:'imported',contentHash:hash(task.revisions.find(revision=>revision.id===attempt.revisionId).workflow)}));
     task.origin={type,label,importedAt:clock().toISOString(),sourceHash,sourceFormat};await write(task);return{imported:true,duplicate:false,importedTaskId:task.id};
   };
   const executionContext=async(input={})=>{
@@ -309,6 +330,7 @@ export function createHistoryRepository({store,clock=()=>new Date(),telemetry}={
       const notification=committed(report);return{task,revision,...(notification.telemetryWarning?{telemetryWarning:notification.telemetryWarning}:{})};
     },
     async claimCreator(base,{contentHash,workspaceId}={}){
+      requireOpportunityWorkspace(base?.revision.workflow,workspaceId);
       const creation=base?.revision.workflow.creation;
       if(!creation||creation.status!=='ready'||creation.supply.status!=='current')fail('CREATION_NOT_READY');
       if(typeof contentHash!=='string'||contentHash!==creationContentHash(creation))fail('STALE_WORKFLOW');
@@ -341,6 +363,7 @@ export function createHistoryRepository({store,clock=()=>new Date(),telemetry}={
       task.updatedAt=attempt.updatedAt;await write(task);return{task,revision,attempt:copy(attempt)};
     },
     async claimExecution(base,{kind,workspaceId,prompt}={}){
+      requireOpportunityWorkspace(base?.revision.workflow,workspaceId);
       executionReady(base?.revision.workflow,kind);workspaceId=text(workspaceId,200);
       const task=copy(base.task),revision=task.revisions.find(item=>item.id===base.revision.id);
       const existing=(task.executions??[]).find(attempt=>attempt.revisionId===revision.id&&attempt.kind===kind&&attempt.workspaceId===workspaceId);

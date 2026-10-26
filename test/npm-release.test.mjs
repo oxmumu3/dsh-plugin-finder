@@ -66,7 +66,7 @@ for (const packageName of ['@actual-owner/dsh-plugin-finder', 'dsh-plugin-finder
     const f = await materialize(t, packageName);
     const { checkNpmPackage } = await import(checkerUrl);
     const checked = await checkNpmPackage({ tarball: f.result.tarball, packageName });
-    assert.equal(checked.name, packageName); assert.equal(checked.version, '0.9.0-preview.10');
+    assert.equal(checked.name, packageName); assert.equal(checked.version, JSON.parse(await readFile(path.join(root,'package.json'),'utf8')).version);
     const pkg = JSON.parse(await readFile(path.join(f.result.stageDirectory, 'package.json'), 'utf8'));
     assert.equal(pkg.publishConfig.access, 'public'); assert.equal(pkg.publishConfig.tag, 'next');
     assert.equal(pkg.publishConfig.registry, 'https://registry.npmjs.org/');

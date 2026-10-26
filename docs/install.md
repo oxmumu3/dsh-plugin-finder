@@ -1,16 +1,16 @@
 # 安装、首次使用与卸载
 
-本次发布版本为 `0.9.0-preview.10`，公开预览版。使用以下固定版本来源，已有历史、输入和原生草稿继续保留。
+本次发布版本为 `0.10.0-preview.4`，公开预览版。使用以下固定版本来源，已有历史、输入和原生草稿继续保留。
 
-- [版本说明与附件](https://github.com/oxmumu3/dsh-plugin-finder/releases/tag/v0.9.0-preview.10)
-- [安装包 dsh-plugin-finder-0.9.0-preview.10.tgz](https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.9.0-preview.10/dsh-plugin-finder-0.9.0-preview.10.tgz)
-- [SHA256SUMS](https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.9.0-preview.10/SHA256SUMS)
+- [版本说明与附件](https://github.com/oxmumu3/dsh-plugin-finder/releases/tag/v0.10.0-preview.4)
+- [安装包 dsh-plugin-finder-0.10.0-preview.4.tgz](https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.10.0-preview.4/dsh-plugin-finder-0.10.0-preview.4.tgz)
+- [SHA256SUMS](https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.10.0-preview.4/SHA256SUMS)
 
 ## 兼容范围
 
 | 官方 DSH 版本 | 本版能力 |
 |---|---|
-| `0.2.1-rc.2` | 分类浏览、搜索、历史，以及在当前工作区执行方案和启动官方 Creator。实际结果以本轮验收记录为准。 |
+| `0.2.1-rc.2` / `0.2.1-rc.3` | 分类浏览、搜索、历史，以及在当前工作区执行方案和启动官方 Creator。实际结果以本轮验收记录为准。 |
 | `0.2.0-rc.2` | 分类浏览、搜索和历史；不支持本版直接执行。 |
 | 其他或无法识别的版本 | 尚未确认兼容，不把安装成功当作执行能力已支持。 |
 
@@ -21,15 +21,15 @@
 在正在使用的 DSH 原生「插件 → 添加插件」中，粘贴以下完整来源：
 
 ```text
-https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.9.0-preview.10/dsh-plugin-finder-0.9.0-preview.10.tgz
+https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.10.0-preview.4/dsh-plugin-finder-0.10.0-preview.4.tgz
 ```
 
-按宿主提示核对包名、兼容诊断并安装／更新、启用，确认实际显示 `0.9.0-preview.10`，再打开侧栏「发现好插件」。首页显示需求输入；「历史方案」保留原任务及各版本。也可先下载包，使用 Release 的 `SHA256SUMS` 核对后，填入安装包在**宿主机器**上的完整路径。重要历史可先从「历史方案」导出备份。
+按宿主提示核对包名、兼容诊断并安装／更新、启用，确认实际显示 `0.10.0-preview.4`，再打开侧栏「发现好插件」。首页显示需求输入；「历史方案」保留原任务及各版本。也可先下载包，使用 Release 的 `SHA256SUMS` 核对后，填入安装包在**宿主机器**上的完整路径。重要历史可先从「历史方案」导出备份。
 
 CLI 管理的宿主可使用以下命令，将 `your-profile` 换成真实目标：
 
 ```sh
-dsh plugin --profile your-profile add "https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.9.0-preview.10/dsh-plugin-finder-0.9.0-preview.10.tgz"
+dsh plugin --profile your-profile add "https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.10.0-preview.4/dsh-plugin-finder-0.10.0-preview.4.tgz"
 ```
 
 Desktop 与终端同名 `dsh` 可能来自不同安装，优先使用当前应用的原生插件页。不为升级另建无关 profile，不清除 `plugin_finder_history` 或会话草稿；重启和激活要求以目标宿主提示为准。

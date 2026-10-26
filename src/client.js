@@ -1,5 +1,6 @@
 import React from 'react';
-import { prepareCreatorDraft } from './creator-handoff.js';
+import { createOpportunityClient } from './opportunity-client.js';
+import { prepareCreatorDraft, supportsCreatorHost } from './creator-handoff.js';
 import { executeInWorkspace, inferWorkspace } from './workspace-execution.js';
 import { watchExecutionConversation } from './execution-conversation-view.js';
 import { createExecutionFileOpener, createExecutionPreviewSurface, executionPreviewTabInfoFactory, mirrorExecutionPreviewSlots, renderExecutionAssistant } from './execution-markdown.js';
@@ -139,6 +140,7 @@ export function createFinderController(ctx, options = {}) {
   let executionMount = null;
   let executionStarting = false;
   let state = Object.freeze({
+    opportunity: null, opportunityBusy: '', opportunityError: '', opportunityEditing: false, opportunityFiles: [], opportunityDraft: null, productIntroVisible: true,
     execution: null, executionReference: null, executions: [], executionWorkspaceLabel: '',
     creation: null, creationForm: null, creationDirty: false, localOnly: false, creatorAttempts: [], creatorHandoff: null, pendingCreatorRecord: null,
     conversation: [], followupText: '', followupWarning: '', followupPending: false, followupRetry: null, pendingOutcome: null,
@@ -179,7 +181,7 @@ export function createFinderController(ctx, options = {}) {
     const controller = new AbortController();
     operation = { id, controller, kind };
     publish({ busy: kind, error: '', notice: '', telemetryWarning: '' });
-    const timer = setTimeout(() => controller.abort('timeout'), ['recommend', 'creation-start', 'creation-update', 'creation-refine'].includes(kind) ? 300000 : 125000);
+    const timer = setTimeout(() => controller.abort('timeout'), ['recommend', 'creation-start', 'creation-update', 'creation-refine', 'opportunity-adopt'].includes(kind) ? 300000 : 125000);
     try {
       const response = await fetchRequest(endpoint + path, {
         method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin', redirect: 'error', cache: 'no-store', signal: controller.signal,
@@ -219,6 +221,8 @@ export function createFinderController(ctx, options = {}) {
   const identity = () => state.taskId && state.revisionId ? { taskId: state.taskId, revisionId: state.revisionId } : {};
   const editorCache = new Map();
   const draftStorage = options.draftStorage ?? globalThis.localStorage;
+  const introKey = 'dsh.plugin-finder.product-intro.v1';
+  try { publish({ productIntroVisible: draftStorage?.getItem(introKey) !== 'hidden' }); } catch {}
   const followupCache = new Map();
   const followupRecovery = new Map();
   const followupKey = (taskId, revisionId) => taskId && revisionId ? `dsh.plugin-finder.followup.${taskId}.${revisionId}` : null;
@@ -462,7 +466,7 @@ export function createFinderController(ctx, options = {}) {
     syncWorkspaces();
     const workspaceId = resumeAttempt?.workspaceId || state.workspaceId;
     if (!workspaceId || !workspaceSnapshot()?.items?.some(item => item.workspaceId === workspaceId)) { publish({ error: resumeAttempt ? '原任务工作区暂时无法读取，执行记录仍保留。' : '请选择这次任务使用的工作区。' }); return false; }
-    if (state.bootstrap?.hostVersion !== '0.2.1-rc.2' || typeof ctx.uiSession?.sessionStatus?.getSnapshot !== 'function') {
+    if (!supportsCreatorHost(state.bootstrap?.hostVersion) || typeof ctx.uiSession?.sessionStatus?.getSnapshot !== 'function') {
       publish({ error: '当前宿主缺少本页执行所需接口，请升级到支持的 Harness 版本。' }); return false;
     }
     executionStarting = true;
@@ -540,7 +544,19 @@ export function createFinderController(ctx, options = {}) {
       return false;
     } finally { executionStarting = false; }
   };
+  const opportunityClient = createOpportunityClient({
+    getState: () => state, publish, fetchRequest, run, preferenceStore: draftStorage,
+    onReveal: () => globalThis.requestAnimationFrame?.(() => globalThis.document?.getElementById('pfv_opportunity_title')?.scrollIntoView({block:'start',behavior:'smooth'})),
+    preserve: entry => parkHomeInput(entry.suggestedRequest) && parkFeaturedDraft(),
+    applyResult: value => {
+      if (!value?.workflow || !validSavedWorkflow(value.workflow) || !value.workflow.taskId || !value.workflow.revisionId) throw handoffFailure('这条建议的方案还没有可靠保存，原输入与草稿保留。');
+      applyEnvelope(value, { view: 'find', restoredFrom: '', opportunityOrigin: value.opportunityOrigin || null, notice: '已按你采纳的建议查找方案，接下来可以在当前工作区使用。' });
+      saveHomeInput('');
+      globalThis.requestAnimationFrame?.(() => globalThis.document?.querySelector('[data-plugin-finder]')?.scrollIntoView({block:'start',behavior:'instant'}));
+    },
+  });
   return {
+    ...opportunityClient.methods,
     getSnapshot: () => state,
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
     bootstrap() {
@@ -550,13 +566,14 @@ export function createFinderController(ctx, options = {}) {
         if (typeof value?.model?.configured !== 'boolean') throw new Error('invalid bootstrap');
         const { workflow, workflowWarning: warningValue, ...bootstrap } = value;
         const warning = workflowWarning(warningValue);
+        if (value.opportunity) opportunityClient.apply(value.opportunity);
         publish({ bootstrap, bootstrapLoaded: true, modelLabel: text(value.model.label), storageWarning: warning, ...historyPatch(value), ...(warning ? { notice: warning } : {}) });
         if (firstRead && revision === 0 && draftRevision === revision && !state.request.trim() && state.stage === 'describe' && workflow) {
           if (validSavedWorkflow(workflow)) {
             applyWorkflow(workflow, { view: state.view, restoredFrom: '本机历史', notice: warning || '已恢复本机任务与方案，可继续安装或接续会话。' });
           } else if (!warning) publish({ notice: '本机记录格式无法恢复，可继续填写新需求。' });
         }
-      });
+      }).then(ok => { if (ok) opportunityClient.maybeRefresh(); return ok; });
     },
     setRequest(request) { if (!closed && (!operation || operation.kind === 'bootstrap')) { draftRevision += 1; publish({ request: text(request).slice(0, 6000), error: '', notice: '' }); } },
     setFollowup(value) {
@@ -616,8 +633,11 @@ export function createFinderController(ctx, options = {}) {
       saveHomeInput(request); publish({ error: '', notice: '' }); return true;
     },
     showHome() { if (!closed && !operation && !state.searching) publish({ view: 'home', featuredId: null, notice: '' }); },
+    showProductIntro() { if (closed || operation || state.searching) return; try { draftStorage?.setItem(introKey, 'visible'); } catch {} publish({ view: 'home', productIntroVisible: true }); },
+    hideProductIntro() { try { draftStorage?.setItem(introKey, 'hidden'); } catch {} publish({ productIntroVisible: false }); },
     async searchHome() {
       if (closed || operation || state.searching) return false;
+      opportunityClient.methods.cancelOpportunityDiscovery();
       const request = state.homeRequest.trim();
       const communityEntryId = state.homeCommunityEntryId;
       if (!request) { publish({ error: '请先描述要完成的事。' }); return false; }
@@ -741,7 +761,7 @@ export function createFinderController(ctx, options = {}) {
       if (!state.creation || state.creation.status !== 'ready' || state.creation.supply?.status !== 'current' || state.creationDirty) { publish({ error: '请先保存并确认当前蓝图，再交给官方 Creator。' }); return false; }
       const workspaceId = state.workspaceId || state.creatorHandoff?.workspaceId;
       if (!workspaceId || !workspaceSnapshot()?.items?.some(item => item.workspaceId === workspaceId)) { publish({ error: '请先选择 Creator 要使用的实际工作区。' }); return false; }
-      if (!state.creatorAttempts?.some(item => item.sessionId && item.workspaceId === workspaceId && item.contentHash === state.creation.contentHash) && (state.bootstrap?.hostVersion !== '0.2.1-rc.2' || [ctx.sessions?.create, ctx.sessions?.retain, ctx.sessions?.binding, ctx.uiWorkspace?.openSession, ctx.layout?.selectPanel, ctx.workspaces?.list?.getSnapshot].some(method => typeof method !== 'function'))) { publish({ notice: '当前宿主尚不能可靠创建官方 Creator。请复制蓝图，在原生 Creator 中继续。' }); return false; }
+      if (!state.creatorAttempts?.some(item => item.sessionId && item.workspaceId === workspaceId && item.contentHash === state.creation.contentHash) && (!supportsCreatorHost(state.bootstrap?.hostVersion) || [ctx.sessions?.create, ctx.sessions?.retain, ctx.sessions?.binding, ctx.uiWorkspace?.openSession, ctx.layout?.selectPanel, ctx.workspaces?.list?.getSnapshot].some(method => typeof method !== 'function'))) { publish({ notice: '当前宿主尚不能可靠创建官方 Creator。请复制蓝图，在原生 Creator 中继续。' }); return false; }
       const source = { ...identity(), contentHash: state.creation.contentHash, workspaceId };
       const prompt = state.creation.draft;
       const id = ++sequence, controller = new AbortController(); operation = { id, controller, kind: 'creator' };
@@ -1059,6 +1079,7 @@ export function createFinderController(ctx, options = {}) {
     reportError(message) { publish({ error: text(message).slice(0, 600), notice: '' }); },
     close() {
       if (closed) return;
+      opportunityClient.close();
       closed = true; sequence += 1; searchGeneration += 1;
       executionMount?.reject(abortError()); executionMount = null;
       // Detach first: aborting a still-pending prompt wait must not mean Stop.
@@ -1346,7 +1367,7 @@ export function apply(ctx) {
         h('details', { className: 'pf_details' }, h('summary', null, '预览已保存的完整蓝图'), h('pre', { className: 'pf_code' }, creation.draft))) : null;
     return h('div', { className: 'pf_root pf_v2', 'data-plugin-finder': true }, h('div', { className: 'pf_inner' },
       h('header', { className: 'pf_header' }, button('发现好插件', () => controller.showHome(), { className: 'pf_btn pf_text', disabled: busy }),
-        h('div', { className: 'pf_header_actions' }, button('历史方案', () => controller.showHistory(), { className: 'pf_btn pf_text', disabled: busy }),
+        h('div', { className: 'pf_header_actions' }, button('小试一试', () => controller.showProductIntro(), { id: 'pfv_intro_toggle', className: 'pf_btn pf_text', disabled: busy, 'aria-expanded': state.view === 'home' && state.productIntroVisible }), button('历史方案', () => controller.showHistory(), { className: 'pf_btn pf_text', disabled: busy }),
           h('details', { className: 'pf_options pf_details' }, h('summary', null, '更多'), button('重新读取配置', () => controller.bootstrap(), { disabled: busy }), button('回传设置', openTelemetrySettings), button('导入本机备份', () => importInput.current?.click(), { disabled: busy })),
           h('input', { type: 'file', ref: importInput, accept: '.json,application/json', 'aria-label': '导入本机方案备份', style: { display: 'none' }, onChange: importFile }))),
       state.view === 'history' ? h('div', { className: 'pf_flow_back' }, button('返回首页', () => controller.showHome(), { className: 'pf_btn pf_text', disabled: busy })) : null,
@@ -1356,7 +1377,7 @@ export function apply(ctx) {
       state.storageWarning && !state.notice.includes(state.storageWarning) ? h('div', { className: 'pf_banner pf_small', role: 'status' }, state.storageWarning) : null,
       state.followupWarning ? h('p', { className: 'pf_banner pf_small', role: 'status' }, state.followupWarning) : null,
       state.resetPending && state.busy !== 'reset' ? h('div', { className: 'pf_banner pf_small', role: 'status' }, '开始新需求尚未确认，已有方案仍保留。', button('重试开始新需求', () => controller.retryReset(), { disabled: busy })) : null,
-      busy && ['home', 'featured', 'history', 'creation-guide'].includes(state.view) && !state.searching ? h('div', { className: 'pf_status', role: 'status' }, h('span', { className: 'pf_spinner', 'aria-hidden': true }), { 'creation-start': '正在评估复用机会并生成共创草案…', 'creation-update': '正在保存蓝图并按需重新核对供给…', 'creation-refine': '正在根据你的描述修改蓝图…', creator: '正在连接官方 Creator 并保留会话关联…', 'creator-save': '正在保存 Creator 原会话关联…', bootstrap: '正在读取连接与配置…', analyze: '正在理解目标、材料与约束…', recommend: '正在搜索来源、读取候选资料并推荐…', handoff: '正在连接选定工作区并准备未发送草稿…', feedback: '正在保存到本机…', reset: '正在保存并开始新需求…', history: '正在读取本机历史方案…', open: '正在打开所选方案与版本…', refine: '正在根据反馈重新理解需求…', import: '正在导入本机备份…', export: '正在导出任务备份…', continue: '正在核对原会话绑定…', 'handoff-save': '正在保存原会话关联…', 'telemetry-status': '正在读取同步状态…', 'telemetry-consent': '正在保存自动回传选择…', 'telemetry-delete': '正在停止回传并申请删除记录…' }[state.busy], button('取消', () => controller.cancel(), { className: 'pf_btn pf_text' })) : null,
+      busy && ['home', 'featured', 'history', 'creation-guide'].includes(state.view) && !state.searching ? h('div', { className: 'pf_status', role: 'status' }, h('span', { className: 'pf_spinner', 'aria-hidden': true }), { 'opportunity-adopt': '正在核对建议并查找方案…', 'creation-start': '正在评估复用机会并生成共创草案…', 'creation-update': '正在保存蓝图并按需重新核对供给…', 'creation-refine': '正在根据你的描述修改蓝图…', creator: '正在连接官方 Creator 并保留会话关联…', 'creator-save': '正在保存 Creator 原会话关联…', bootstrap: '正在读取连接与配置…', analyze: '正在理解目标、材料与约束…', recommend: '正在搜索来源、读取候选资料并推荐…', handoff: '正在连接选定工作区并准备未发送草稿…', feedback: '正在保存到本机…', reset: '正在保存并开始新需求…', history: '正在读取本机历史方案…', open: '正在打开所选方案与版本…', refine: '正在根据反馈重新理解需求…', import: '正在导入本机备份…', export: '正在导出任务备份…', continue: '正在核对原会话绑定…', 'handoff-save': '正在保存原会话关联…', 'telemetry-status': '正在读取同步状态…', 'telemetry-consent': '正在保存自动回传选择…', 'telemetry-delete': '正在停止回传并申请删除记录…' }[state.busy], button('取消', () => controller.cancel(), { className: 'pf_btn pf_text' })) : null,
       state.view === 'featured' ? renderFeaturedView({ h, state, controller, copyText, busy, mode: 'detail' }) : state.view === 'history' ? h('div', null, historyView, renderFeaturedView({ h, state, controller, copyText, busy, mode: 'drafts' })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, sections: { executionConversation: state.executionReference && SessionProvider && renderSlot ? h('div', { className: 'pf_execution_conversation', style: { minHeight: 400, height: 'min(68vh, 720px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.executionReference }, renderSlot('plugin-finder.execution', {}))) : null, workspacePicker: !state.workspaceId ? h('label', { className: 'pf_label' }, '在哪个工作区完成', h('select', { 'aria-label': '任务工作区', value: state.workspaceId, disabled: busy || state.workspacePhase !== 'ready', onChange: event => controller.selectWorkspace(event.target.value) }, h('option', { value: '' }, '选择任务材料所在的工作区'), ...state.workspaces.map(item => h('option', { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } }),
       state.telemetrySettingsOpen ? telemetryView : null,
       h('footer', { className: 'pf_footer' }, h('details', { className: 'pf_details' }, h('summary', null, '关于搜索、模型与本机记录'),

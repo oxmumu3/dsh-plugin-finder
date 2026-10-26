@@ -1,13 +1,13 @@
 {
   "name": "dsh-plugin-finder",
-  "version": "0.9.0-preview.10",
+  "version": "0.10.0-preview.4",
   "description": "Describe a need, find a usable plan, and run or create in the same DeepSeek Harness workspace",
   "author": "牛村木木山",
   "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22.13",
-    "dsh": "0.2.0-rc.2 || 0.2.1-rc.2"
+    "dsh": "0.2.0-rc.2 || 0.2.1-rc.2 || 0.2.1-rc.3"
   },
   "exports": {
     ".": "./index.js",
@@ -33,7 +33,9 @@
     "docs/single-flow-preview.md",
     "docs/experience-v2-preview.md",
     "docs/workspace-flow-preview.md",
-    "docs/community-browse-preview.md"
+    "docs/community-browse-preview.md",
+    "docs/proactive-discovery.md",
+    "docs/rc3-compatibility.md"
   ],
   "scripts": {
     "test": "node --test --test-concurrency=1 test/*.test.mjs",
@@ -76,8 +78,8 @@
     "zod": "4.6.5"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-app-boot": "0.2.0-rc.2 || 0.2.1-rc.2",
-    "@deepseek-ai/dsh-storage-domain": "0.2.0-rc.2 || 0.2.1-rc.2"
+    "@deepseek-ai/dsh-app-boot": "0.2.0-rc.2 || 0.2.1-rc.2 || 0.2.1-rc.3",
+    "@deepseek-ai/dsh-storage-domain": "0.2.0-rc.2 || 0.2.1-rc.2 || 0.2.1-rc.3"
   },
   "repository": {
     "type": "git",

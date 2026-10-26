@@ -12,6 +12,8 @@ import {withTelemetryApi} from './src/telemetry-api.js';
 import {COLLECTOR_URL,CLIENT_VERSION} from './src/telemetry-config.js';
 import {createRuntimeContextReader} from './src/runtime-context.js';
 import {createPluginInstaller} from './src/plugin-installation.js';
+import {withOpportunityApi} from './src/opportunity-api.js';
+import {createOpportunityContextReader} from './src/opportunity-context.js';
 export const name='plugin-finder';
 export const inject=['connection','storageDomain'];
 const feedback=z.object({id:z.string().uuid(),createdAt:z.string().datetime(),outcome:z.enum(['complete','partial','blocked']),pluginIds:z.array(z.string().max(200)).max(2),note:z.string().max(1500),stage:z.string().max(80)}).strict();
@@ -24,8 +26,9 @@ const historyPointer=z.object({activeTaskId:z.string().min(1).max(200).nullable(
 const historyDomain=defineDomain({name:'plugin_finder_history',version:1,global:{schema:historyPointer,initial:{activeTaskId:null,activeRevisionId:null}},tables:{tasks:domainTable(historyRow)}});
 const telemetryGlobal=z.object({serialized:z.string().max(2000000)}).strict();
 const telemetryDomain=defineDomain({name:'plugin_finder_telemetry',version:1,tables:{},global:{schema:telemetryGlobal,initial:{serialized:'null'}}});
+const opportunityDomain=defineDomain({name:'plugin_finder_opportunities',version:1,tables:{},global:{schema:telemetryGlobal,initial:{serialized:'null'}}});
 export async function apply(ctx){
-  return withOwnedDomains(ctx,[domain,historyDomain,telemetryDomain],async([store,historyStoreHandle,telemetryHandle])=>{
+  return withOwnedDomains(ctx,[domain,historyDomain,telemetryDomain,opportunityDomain],async([store,historyStoreHandle,telemetryHandle,opportunityHandle])=>{
   const table=store.table('feedback');
   const feedbackStore=createFeedbackStore({read:()=>table.get('entries'),write:row=>table.put('entries',state.parse(row))});
   const lifetime=new AbortController();
@@ -37,8 +40,10 @@ export async function apply(ctx){
   let core;
   const telemetryStore={read:async()=>JSON.parse((await telemetryHandle.global.get()).serialized),write:value=>telemetryHandle.global.set({serialized:JSON.stringify(value)})};
   const telemetry=createTelemetry({store:telemetryStore,endpoint:COLLECTOR_URL,listPending:epoch=>core.pendingTelemetry(epoch),clientVersion:CLIENT_VERSION,hostVersion:getDshRuntimeVersion()});
-  core=createFinderService({discovery,model:createHostModel(ctx),feedbackStore,workflowStore,historyStore,telemetry,hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal})});
-  const service=withTelemetryApi(core,telemetry);
+  const model=createHostModel(ctx);
+  core=createFinderService({discovery,model,feedbackStore,workflowStore,historyStore,telemetry,hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal})});
+  const opportunityStore={read:async()=>JSON.parse((await opportunityHandle.global.get()).serialized),write:value=>opportunityHandle.global.set({serialized:JSON.stringify(value)})};
+  const service=withOpportunityApi(withTelemetryApi(core,telemetry),{model,store:opportunityStore,historyStore,readWorkspaceContext:createOpportunityContextReader(ctx,{signal:lifetime.signal})});
   telemetry.committed();
   const stopRoutes=registerFinderRoutes(ctx,service);
   return()=>{stopRoutes();lifetime.abort();service.close();};

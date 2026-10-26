@@ -14,14 +14,14 @@ export const publicFiles = new Set([
   'dist/client.js', 'cordis.patch.yml', 'README.md', 'LICENSE', 'CHANGELOG.md',
   ...['install', 'verification', 'first-use-case', 'experiment', 'data-sharing',
     'creator-preview', 'featured-preview', 'single-flow-preview', 'experience-v2-preview',
-    'workspace-flow-preview', 'community-browse-preview'].map(name => `docs/${name}.md`),
+    'workspace-flow-preview', 'community-browse-preview', 'proactive-discovery', 'rc3-compatibility'].map(name => `docs/${name}.md`),
   ...['client-style', 'client', 'community-catalog-data', 'community-catalog',
     'community-presentation', 'community-selection', 'community-view', 'contracts',
     'creation-guide', 'creation', 'creator-feedback', 'creator-handoff', 'discovery',
     'eligibility', 'execution-conversation-view', 'execution-markdown', 'execution-preparation',
     'experience-style', 'experience-view', 'featured-catalog', 'featured-view', 'featured',
     'feedback', 'history', 'lifecycle', 'model', 'plugin-installation', 'provenance', 'routes',
-    'runtime-context', 'service', 'supply', 'telemetry-api', 'telemetry-config',
+    'runtime-context', 'service', 'brand-mark', 'opportunities', 'opportunity-api', 'opportunity-client', 'opportunity-context', 'opportunity-origin', 'opportunity-view', 'supply', 'telemetry-api', 'telemetry-config',
     'telemetry-contract', 'telemetry', 'workspace-execution'].map(name => `src/${name}.js`),
 ]);
 
@@ -75,7 +75,7 @@ async function verifyPayload(files, packageName) {
   const get = name => files.get(name)?.toString('utf8') ?? fail(`Missing package file: ${name}`);
   const pkg = JSON.parse(get('package.json'));
   if (pkg.name !== packageName) fail('Package name does not match requested identity');
-  if (pkg.version !== '0.9.0-preview.10') fail('Unexpected package version');
+  if (pkg.version !== '0.10.0-preview.4') fail('Unexpected package version');
   if (pkg.author !== '牛村木木山') fail('Incorrect package author identity');
   if (pkg.repository?.type !== 'git' || pkg.repository?.url !== 'https://github.com/oxmumu3/dsh-plugin-finder.git') fail('Incorrect canonical repository');
   if (pkg.publishConfig?.access !== 'public' || pkg.publishConfig?.tag !== 'next' || pkg.publishConfig?.registry !== 'https://registry.npmjs.org/') fail('Incorrect npm publishConfig');

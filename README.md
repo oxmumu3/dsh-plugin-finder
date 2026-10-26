@@ -2,9 +2,9 @@
 
 [安装说明](docs/install.md) · [当前工作区流程](docs/workspace-flow-preview.md) · [数据回传说明](docs/data-sharing.md) · [历史验证记录](docs/verification.md) · [反馈](https://github.com/oxmumu3/dsh-plugin-finder/issues/new?template=feedback.yml)
 
-**本次发布版本：`0.9.0-preview.10`，公开预览版。** 描述你要完成的事，Finder 分析需求、查找插件并组成方案。合适就点「使用这个方案」，直接在当前工作区执行；不满足就「创建自己的插件」，点「开始创建」后在原处启动创建。
+**本次发布版本：`0.10.0-preview.4`，公开预览版。** 描述你要完成的事，Finder 分析需求、查找插件并组成方案。合适就点「使用这个方案」，直接在当前工作区执行；不满足就「创建自己的插件」，点「开始创建」后在原处启动创建。
 
-执行功能要求官方 DSH `0.2.1-rc.2`。`0.2.0-rc.2` 可搜索和查看历史，不支持本版直接执行。Finder 沿用宿主模型，无需另填模型 Key。
+执行功能要求官方 DSH `0.2.1-rc.2` 或 `0.2.1-rc.3`。`0.2.0-rc.2` 可搜索和查看历史，不支持本版直接执行。Finder 沿用宿主模型，无需另填模型 Key。
 
 本版提供六类社区插件浏览、自然语言匹配、当前工作区使用和官方 Creator 创建。自动首次安装已用此前未安装的 `dsh-tool-qrcode@1.0.0` 实跑：真实搜索、点击「使用这个方案」、自动安装启用、调用插件并生成可独立解码的 SVG；未提前安装或手工补发执行指令。首次执行在 preview.9 完成，preview.10 补安装许可提示，并通过刷新恢复同一结果、不重复安装或执行验证。创建路径沿用 preview.8 的真实 Creator 创建、安装与操作证据，本轮没有重跑创建。全套回归 651 项通过；这些场景不代表已逐个验证全部社区插件。
 
@@ -32,15 +32,15 @@
 
 ## 安装公开预览版
 
-本次版本的 [Release](https://github.com/oxmumu3/dsh-plugin-finder/releases/tag/v0.9.0-preview.10)、[安装包](https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.9.0-preview.10/dsh-plugin-finder-0.9.0-preview.10.tgz)与 [SHA256SUMS](https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.9.0-preview.10/SHA256SUMS)使用固定版本地址。
+本次版本的 [Release](https://github.com/oxmumu3/dsh-plugin-finder/releases/tag/v0.10.0-preview.4)、[安装包](https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.10.0-preview.4/dsh-plugin-finder-0.10.0-preview.4.tgz)与 [SHA256SUMS](https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.10.0-preview.4/SHA256SUMS)使用固定版本地址。
 
 在正在使用的 DSH 原生「插件 → 添加插件」中，粘贴以下完整安装来源，按宿主提示安装／更新并启用：
 
 ```text
-https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.9.0-preview.10/dsh-plugin-finder-0.9.0-preview.10.tgz
+https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.10.0-preview.4/dsh-plugin-finder-0.10.0-preview.4.tgz
 ```
 
-确认实际版本为 `0.9.0-preview.10`，打开侧栏「发现好插件」。这一步只用于安装 Finder；此后使用方案中的所选插件由 Finder 自动安装和启用，无需再去插件管理器。包要求 Node `>=22.13`，宿主兼容与 CLI 安装见[安装说明](docs/install.md)。
+确认实际版本为 `0.10.0-preview.4`，打开侧栏「发现好插件」。这一步只用于安装 Finder；此后使用方案中的所选插件由 Finder 自动安装和启用，无需再去插件管理器。包要求 Node `>=22.13`，宿主兼容与 CLI 安装见[安装说明](docs/install.md)。
 
 **历史公开版本 `0.3.0-preview.2` 继续保留。** [历史 Release](https://github.com/oxmumu3/dsh-plugin-finder/releases/tag/v0.3.0-preview.2) 与 [历史安装包](https://github.com/oxmumu3/dsh-plugin-finder/releases/download/v0.3.0-preview.2/dsh-plugin-finder-0.3.0-preview.2.tgz) 保留用于追溯，不包含本页描述的当前工作区执行与分类浏览流程。旧版本的草稿接续方式不作为本版使用说明。
 
@@ -106,3 +106,7 @@ npm pack
 [版本记录](CHANGELOG.md)、[历史 V2 设计](docs/experience-v2-preview.md)、[历史首次实跑](docs/first-use-case.md)、[历史对照实验](docs/experiment.md)和[历史验证记录](docs/verification.md)保留原有证据边界，不能替代当前版本验收。
 
 项目作者为牛村木木山，正式代码项目归属为 `oxmumu3`，采用 [MIT License](LICENSE)。第三方索引、插件与作者文档遵循各自许可证。
+
+## 本次兼容维护
+
+本版承接已安装的 0.10.0-preview.3 插件专家与主动机会实现，补上官方 Harness 0.2.1-rc.3 的安装声明、实际执行与 Creator 入口；保留工作区 API 检查和旧版本降级。既有历史、草稿、授权和反馈的格式不变。详见 [兼容验收](docs/rc3-compatibility.md)。

@@ -4,19 +4,23 @@ import { createFinderController } from '../src/client.js';
 const intent={goal:'只读整理',input:'demo.md',output:'摘要',constraints:['不修改原文件'],capabilities:['读取'],queries:['read']};
 const plan={kind:'native',title:'用现成能力完成',rationale:'只需阅读',pluginIds:[],steps:[{capability:'读取',owner:'dsh',action:'读取当前文件',input:'demo.md',output:'摘要'}],limits:[],nextPrompt:'只读'};
 const workflow=(revisionId='r1',extra={})=>({taskId:'t1',revisionId,stage:'plan',request:'只读整理demo.md',intent,plan,candidates:[],revisions:[],...extra});
-function setup({initial=workflow(),routes={},execute}={}){
+function setup({initial=workflow(),routes={},execute,hostVersion='0.2.1-rc.2'}={}){
  const calls=[],storage=new Map();let current=initial;
  const ctx={workspaces:{list:{getSnapshot:()=>({phase:'ready',items:[{workspaceId:'w1',title:'当前项目',sessionIds:['original']}] }),subscribe:()=>()=>{}}},sessions:{list:{getSnapshot:()=>({phase:'ready',ids:['original'],byId:{original:{id:'original',retainedBy:{mainView:1}}}}),subscribe:()=>()=>{}}},uiSession:{sessionStatus:{getSnapshot:()=>new Map()}}};
  const c=createFinderController(ctx,{draftStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},waitForExecutionUI:async()=>{},executeInWorkspace:execute||(async()=>({dispose(){},cancel:async()=>true,completion:new Promise(()=>{})})),fetch:async(url,options)=>{
  const path=url.split('/').at(-1),body=options.body?JSON.parse(options.body):null;calls.push({path,body});
  if(routes[path])return routes[path](body);
  let value={};
- if(path==='bootstrap')value={model:{configured:true},hostVersion:'0.2.1-rc.2',workflow:current};
+ if(path==='bootstrap')value={model:{configured:true},hostVersion,workflow:current};
  if(path==='execution-claim')value={claim:'acquired',attempt:{...body,attemptId:'a1',requestId:'q1',status:'claimed',provenance:'local',sessionId:null,prompt:'服务器保存的明确执行请求'},workflow:current};
  if(path==='creation-update'){current=workflow('r2',{creation:{...current.creation,status:'ready',supply:{status:'current'}}});value={workflow:current};}
  return {ok:true,json:async()=>value};
  }});return {c,calls,storage};
 }
+test('official rc.3 can execute a saved plan with the required Host APIs',async()=>{
+ let executions=0;const {c}=setup({hostVersion:'0.2.1-rc.3',execute:async()=>{executions++;return{dispose(){},completion:new Promise(()=>{})};}});
+ await c.bootstrap();assert.equal(await c.runCurrentPlan(),true);assert.equal(executions,1);c.close();
+});
 test('one use action adopts current workspace and executes canonical prompt without a handoff call',async()=>{
  let seen;const {c,calls}=setup({execute:async(ctx,options)=>{seen=options;options.onStatus({phase:'submitted',terminal:false,summary:'已接收',sessionId:'s1'});return {dispose(){},completion:new Promise(()=>{})};}});
  await c.bootstrap();assert.equal(c.getSnapshot().workspaceId,'w1');assert.equal(await c.runCurrentPlan(),true);

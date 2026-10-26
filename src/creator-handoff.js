@@ -1,4 +1,4 @@
-const supportedHost = '0.2.1-rc.2';
+export const supportsCreatorHost = version => ['0.2.1-rc.2','0.2.1-rc.3'].includes(version);
 const localAttempts = new WeakMap();
 const identity = value => typeof value === 'string' && value.trim() ? value : undefined;
 const stopped = Symbol('cancelled');
@@ -56,7 +56,7 @@ export async function prepareCreatorDraft(ctx, options = {}) {
       return { ...base, status: 'blocked', sessionId, reason: 'navigation-failed' };
     }
   }
-  if (hostVersion !== supportedHost) return { ...base, status: 'unsupported', reason: 'host-version' };
+  if (!supportsCreatorHost(hostVersion)) return { ...base, status: 'unsupported', reason: 'host-version' };
   if (attempt.acquired !== true || attempt.status !== 'creating') {
     return { ...base, status: attempt.status === 'creating' ? 'in-progress' : 'indeterminate' };
   }
