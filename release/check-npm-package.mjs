@@ -75,7 +75,7 @@ async function verifyPayload(files, packageName) {
   const get = name => files.get(name)?.toString('utf8') ?? fail(`Missing package file: ${name}`);
   const pkg = JSON.parse(get('package.json'));
   if (pkg.name !== packageName) fail('Package name does not match requested identity');
-  if (pkg.version !== '0.10.0-preview.4') fail('Unexpected package version');
+  if (pkg.version !== '0.10.0-preview.5') fail('Unexpected package version');
   if (pkg.author !== '牛村木木山') fail('Incorrect package author identity');
   if (pkg.repository?.type !== 'git' || pkg.repository?.url !== 'https://github.com/oxmumu3/dsh-plugin-finder.git') fail('Incorrect canonical repository');
   if (pkg.publishConfig?.access !== 'public' || pkg.publishConfig?.tag !== 'latest' || pkg.publishConfig?.registry !== 'https://registry.npmjs.org/') fail('Incorrect npm publishConfig');
