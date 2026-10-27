@@ -1,6 +1,6 @@
 {
   "name": "@oxmumu3/dsh-plugin-finder",
-  "version": "0.10.0-preview.4",
+  "version": "0.10.0-preview.5",
   "description": "Describe a need, find a usable plan, and run or create in the same DeepSeek Harness workspace",
   "author": "牛村木木山",
   "license": "MIT",
