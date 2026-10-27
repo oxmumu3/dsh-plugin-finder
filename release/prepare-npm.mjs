@@ -52,7 +52,7 @@ export async function prepareNpm({ packageName, output, sourceRoot = defaultSour
     await mkdir(path.dirname(path.join(stageDirectory, name)), { recursive: true });
     await copyFile(path.join(source, name), path.join(stageDirectory, name));
   }
-  const pkg = { ...original, name: packageName, files: filenames.filter(name => name !== 'package.json'), publishConfig: { access: 'public', registry: 'https://registry.npmjs.org/', tag: 'next' } };
+  const pkg = { ...original, name: packageName, files: filenames.filter(name => name !== 'package.json'), publishConfig: { access: 'public', registry: 'https://registry.npmjs.org/', tag: 'latest' } };
   delete pkg.scripts; delete pkg.devDependencies;
   await writeFile(path.join(stageDirectory, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`);
   await writeFile(path.join(stageDirectory, 'cordis.patch.yml'), `- insert:\n    - id: plugin-finder\n      name: ${JSON.stringify(packageName)}\n`);

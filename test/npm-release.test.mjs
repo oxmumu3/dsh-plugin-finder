@@ -17,6 +17,16 @@ const sha = data => createHash('sha256').update(data).digest('hex');
 const prepareUrl = new URL('../release/prepare-npm.mjs', import.meta.url);
 const checkerUrl = new URL('../release/check-npm-package.mjs', import.meta.url);
 
+test('public source and default publication share the canonical scoped identity', async () => {
+  const pkg = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
+  const lock = JSON.parse(await readFile(path.join(root, 'package-lock.json'), 'utf8'));
+  assert.equal(pkg.name, '@oxmumu3/dsh-plugin-finder');
+  assert.equal(lock.name, pkg.name);
+  assert.equal(lock.packages[''].name, pkg.name);
+  assert.deepEqual(parseYaml(await readFile(path.join(root, 'cordis.patch.yml'), 'utf8')), [{ insert: [{ id: 'plugin-finder', name: pkg.name }] }]);
+  assert.deepEqual(pkg.publishConfig, { access: 'public', registry: 'https://registry.npmjs.org/', tag: 'latest' });
+});
+
 async function fixture(t) {
   const base = await mkdtemp(path.join(os.tmpdir(), 'finder-npm-test-'));
   t.after(() => rm(base, { recursive: true, force: true }));
@@ -68,7 +78,7 @@ for (const packageName of ['@actual-owner/dsh-plugin-finder', 'dsh-plugin-finder
     const checked = await checkNpmPackage({ tarball: f.result.tarball, packageName });
     assert.equal(checked.name, packageName); assert.equal(checked.version, JSON.parse(await readFile(path.join(root,'package.json'),'utf8')).version);
     const pkg = JSON.parse(await readFile(path.join(f.result.stageDirectory, 'package.json'), 'utf8'));
-    assert.equal(pkg.publishConfig.access, 'public'); assert.equal(pkg.publishConfig.tag, 'next');
+    assert.equal(pkg.publishConfig.access, 'public'); assert.equal(pkg.publishConfig.tag, 'latest');
     assert.equal(pkg.publishConfig.registry, 'https://registry.npmjs.org/');
     assert.equal(pkg.scripts, undefined); assert.equal(pkg.devDependencies, undefined);
     assert.equal(pkg.author, '牛村木木山');
@@ -129,6 +139,7 @@ test('checker rejects wrong identity, Cordis name, client module, exports, scrip
     [mutatePackage(pkg => { pkg.name = '@wrong/finder'; }), /package name|identity/i],
     [mutatePackage(pkg => { pkg.repository.url = 'https://github.com/piggy00544/dsh-plugin-finder.git'; }), /repository/i],
     [mutatePackage(pkg => { pkg.author = '奥克斯木木山'; }), /author|identity/i],
+    [mutatePackage(pkg => { pkg.publishConfig.tag = 'next'; }), /publishConfig/i],
     [async dir => writeFile(path.join(dir, 'cordis.patch.yml'), '- insert:\n    - id: plugin-finder\n      name: wrong-finder\n'), /Cordis/i],
     [async dir => writeFile(path.join(dir, 'cordis.patch.yml'), '- insert:\n    - id: plugin-finder\n      name: @actual-owner/dsh-plugin-finder\n'), /YAML|Cordis/i],
     [async dir => writeFile(path.join(dir, 'dist/client.js'), 'window.__ModuleLoader__.load({id:"wrong-finder", factory:()=>({})});\n'), /module/i],
@@ -174,7 +185,7 @@ test('workflow defaults to preparation and restricts publishing to the verified 
   assert.match(workflow, /needs: prepare/); assert.match(workflow, /id-token: write/);
   assert.equal(workflow.match(/id-token: write/g).length, 1);
   assert.doesNotMatch(workflow, /NPM_TOKEN|NODE_AUTH_TOKEN|registry-url|npm (?:login|config)/);
-  assert.match(workflow, /npm publish .*--access public --tag next --provenance/);
+  assert.match(workflow, /npm publish .*--access public --tag latest --provenance/);
   assert.match(workflow, /node-version: '24'/); assert.match(workflow, /11\.5\.1/);
   assert.match(workflow, /sha256sum --check SHA256SUMS/);
 });

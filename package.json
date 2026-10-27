@@ -1,5 +1,5 @@
 {
-  "name": "dsh-plugin-finder",
+  "name": "@oxmumu3/dsh-plugin-finder",
   "version": "0.10.0-preview.4",
   "description": "Describe a need, find a usable plan, and run or create in the same DeepSeek Harness workspace",
   "author": "牛村木木山",
@@ -75,7 +75,7 @@
     }
   },
   "dependencies": {
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   },
   "peerDependencies": {
     "@deepseek-ai/dsh-app-boot": "0.2.0-rc.2 || 0.2.1-rc.2 || 0.2.1-rc.3",
@@ -88,6 +88,11 @@
   "homepage": "https://github.com/oxmumu3/dsh-plugin-finder",
   "bugs": {
     "url": "https://github.com/oxmumu3/dsh-plugin-finder/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "tag": "latest"
   },
   "keywords": [
     "dsh-plugin",

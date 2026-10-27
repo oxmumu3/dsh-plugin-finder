@@ -1,10 +1,11 @@
 import { build } from 'esbuild';
-import { mkdir, realpath, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export async function buildClient({ sourceRoot = process.cwd(), packageName = 'dsh-plugin-finder', allowedFiles } = {}) {
+export async function buildClient({ sourceRoot = process.cwd(), packageName, allowedFiles } = {}) {
   const source = await realpath(sourceRoot);
+  packageName ??= JSON.parse(await readFile(path.join(source, 'package.json'), 'utf8')).name;
   const plugins = allowedFiles ? [{ name: 'public-source-boundary', setup(builder) {
     builder.onLoad({ filter: /.*/ }, async ({ path: filename }) => {
       const relative = path.relative(source, await realpath(filename)).split(path.sep).join('/');

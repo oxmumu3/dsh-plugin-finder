@@ -13,9 +13,11 @@ npm run build
 node release/prepare-npm.mjs --package-name @your-account/dsh-plugin-finder --output ../finder-npm-release
 ```
 
-示例中的 `@your-account` 必须换成自己已经取得发布权的 npm scope。输出目录必须在源码目录之外并且为空，已有制品不会被覆盖。`manifest.json`、`SHA256SUMS`与单个 tgz 一同生成；对该 tgz 运行 `release/check-npm-package.mjs --package-name <准确包名> --tarball <实际路径>`可独立检查。
+示例中的 `@your-account` 必须换成自己已经取得发布权的 npm scope。当前源码候选名为 `@oxmumu3/dsh-plugin-finder`，不代表 npm 同名账号或 scope 已确认。输出目录必须在源码目录之外并且为空，已有制品不会被覆盖。`manifest.json`、`SHA256SUMS`与单个 tgz 一同生成；对该 tgz 运行 `release/check-npm-package.mjs --package-name <准确包名> --tarball <实际路径>`可独立检查。
 
-发布使用预构建客户端，用户安装不需要执行构建脚本。原始源码包名保持 `dsh-plugin-finder`；暂存器会按目标包名重新编译客户端注册并改写 Cordis 模块引用，保留业务 domain、API、面板和草稿标识。
+发布使用预构建客户端，用户安装不需要执行构建脚本。公开源码的 `package.json`、lockfile 根包及 Cordis 模块名统一使用上述候选名；默认构建从源码 manifest 读取包名。暂存器仍可按显式目标名重新编译客户端注册并改写 Cordis 模块引用。业务 domain、API、面板和草稿标识保持原值，历史 GitHub Release 资产保留。
+
+社区 Discover 采集器从已收录 GitHub 路径的默认分支 `package.json.name` 查询 npm，并只读取 `dist-tags.latest` 的版本与发布时间。因此公开源码名和实际 npm 名必须一致，不能只在制品中改名。此候选默认发布到 `latest`，版本仍明确为 preview；标签不代表稳定版或已完成用户验收。只有 `next` 而没有 `latest` 的首包不会进入该索引。发布、社区采集与实际 profile 中 Discover 可见分别验收。
 
 ## GitHub Actions
 
@@ -27,11 +29,11 @@ node release/prepare-npm.mjs --package-name @your-account/dsh-plugin-finder --ou
 
 发布前，在 npm 账号中确认包名/发布权，建立首包，并在该包的 Trusted Publisher 设置中绑定 GitHub owner `oxmumu3`、repository `dsh-plugin-finder`、workflow filename `npm-release.yml`。明确允许 `npm publish`；只有 stage 权限仍需要每版人工审批。配置 repository variable `NPM_PACKAGE_NAME`，然后触发并核验第一次可信发布。npm 保存设置不等于发布已经成功。
 
-首次发布顺序必须区分版本：先由账号所有者完成首次认证，把经校验的 `0.9.0-preview.10` 制品发布到 `next`，核对注册表和 DSH 安装结果。该版本一经发布不能重新发布。后续验证 OIDC 时，先准备新的 `0.9.0-preview.11`：同步源码 `package.json`、lockfile、发布检查器的版本断言和相应测试，经复审和完整准备流程后，再绑定 Trusted Publisher 并触发发布。不能用已经手动发布的同一个版本重复跑自动发布验收。
+首次发布顺序必须区分版本：先完成源码与制品验证，由账号所有者完成首次认证，把经校验的 `0.10.0-preview.4` 制品发布到 `latest`，核对注册表和 DSH 安装结果。该 scoped 身份的版本一经发布不能重新发布。后续验证 OIDC 时，先准备一个尚未发布的新版本：同步源码 `package.json`、lockfile、发布检查器的版本断言和相应测试，经复审和完整准备流程后，再绑定 Trusted Publisher 并触发发布。不能用已经手动发布的同一个 name/version 重复跑自动发布验收。
 
 本轮可以先验证远端 `publish=false` 构建；它不依赖 npm 账号。首次人工发布和后续 OIDC 首发是两项独立验收，不能提前标记完成。
 
-工作流采用 GitHub 托管 runner、Node 24和符合要求的 npm CLI；只有发布 job 获得 `id-token: write`。不需要把 npm 长效写入 token 放进仓库。预览包发布到 `next`，不自动提升为稳定版。
+工作流采用 GitHub 托管 runner、Node 24和符合要求的 npm CLI；只有发布 job 获得 `id-token: write`。不需要把 npm 长效写入 token 放进仓库。显式发布标签与候选 `publishConfig` 均为 `latest`，不会改变 preview 版本的含义。
 
 当前 npm 要求新可信发布配置在两天内成功发布一次进行验证；账号、包名与制品准备好后再绑定并及时验收。账号登录、邮箱/passkey/双重验证等本人确认由账号所有者完成。
 

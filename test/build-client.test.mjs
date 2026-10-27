@@ -12,6 +12,7 @@ test('default build emits executable ModuleLoader registration and a working fac
   const directory = await mkdtemp(path.join(os.tmpdir(), 'finder-build-client-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   await mkdir(path.join(directory, 'src'));
+  await writeFile(path.join(directory, 'package.json'), JSON.stringify({ name: 'dsh-plugin-finder' }));
   await writeFile(path.join(directory, 'src/client.js'), 'import React from "react"; export const name = "finder-fixture"; export const apply = () => React.createElement("div");\n');
   await promisify(execFile)(process.execPath, [fileURLToPath(new URL('../scripts/build.mjs', import.meta.url))], { cwd: directory });
   const registrations = [];
@@ -21,6 +22,20 @@ test('default build emits executable ModuleLoader registration and a working fac
     assert.equal(name, 'react'); return { createElement: tag => ({ tag }) };
   });
   assert.equal(exports.name, 'finder-fixture'); assert.equal(exports.apply().tag, 'div');
+});
+
+test('default buildClient uses the source manifest package name', async t => {
+  const { buildClient } = await import(new URL('../scripts/build.mjs', import.meta.url));
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'finder-manifest-client-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  await mkdir(path.join(directory, 'src'));
+  await writeFile(path.join(directory, 'package.json'), JSON.stringify({ name: '@fixture-owner/finder' }));
+  await writeFile(path.join(directory, 'src/client.js'), 'export const value = 42;\n');
+  const registrations = [];
+  vm.runInNewContext(await buildClient({ sourceRoot: directory }), { window: { __ModuleLoader__: { load: entry => registrations.push(entry) } } });
+  assert.equal(registrations.length, 1);
+  assert.equal(registrations[0].id, '@fixture-owner/finder');
+  assert.equal(registrations[0].factory(() => assert.fail('fixture has no imports')).value, 42);
 });
 
 test('shared buildClient targets the scoped module without writing output', async t => {

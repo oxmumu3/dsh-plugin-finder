@@ -78,7 +78,7 @@ async function verifyPayload(files, packageName) {
   if (pkg.version !== '0.10.0-preview.4') fail('Unexpected package version');
   if (pkg.author !== '牛村木木山') fail('Incorrect package author identity');
   if (pkg.repository?.type !== 'git' || pkg.repository?.url !== 'https://github.com/oxmumu3/dsh-plugin-finder.git') fail('Incorrect canonical repository');
-  if (pkg.publishConfig?.access !== 'public' || pkg.publishConfig?.tag !== 'next' || pkg.publishConfig?.registry !== 'https://registry.npmjs.org/') fail('Incorrect npm publishConfig');
+  if (pkg.publishConfig?.access !== 'public' || pkg.publishConfig?.tag !== 'latest' || pkg.publishConfig?.registry !== 'https://registry.npmjs.org/') fail('Incorrect npm publishConfig');
   if (pkg.scripts && Object.keys(pkg.scripts).length || pkg.devDependencies || pkg.bin || pkg.workspaces || pkg.bundleDependencies || pkg.bundledDependencies) fail('Package must contain no lifecycle/build scripts, development dependencies, binaries, or bundled dependencies');
   if (pkg.type !== 'module' || pkg.exports?.['.'] !== './index.js' || pkg.exports?.['./client'] !== './dist/client.js' || pkg.exports?.['./package.json'] !== './package.json' || Object.keys(pkg.exports).length !== 3) fail('Incorrect package exports');
   if (!Array.isArray(pkg.files) || !pkg.files.length || new Set(pkg.files).size !== pkg.files.length || pkg.files.some(name => !publicFiles.has(name))) fail('Declared files violate the public payload allowlist');

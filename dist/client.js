@@ -1,5 +1,5 @@
 // DSH native client. React is provided by the host ModuleLoader.
-window.__ModuleLoader__.load({id:"dsh-plugin-finder",factory:require=>{const module={exports:{}};const exports=module.exports;
+window.__ModuleLoader__.load({id:"@oxmumu3/dsh-plugin-finder",factory:require=>{const module={exports:{}};const exports=module.exports;
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
