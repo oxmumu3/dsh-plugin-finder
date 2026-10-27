@@ -119,4 +119,4 @@ jobs:
           archives=("$ARTIFACT_DIR"/*.tgz)
           [[ ${#archives[@]} == 1 && -f "${archives[0]}" ]]
           node release/check-npm-package.mjs --package-name "$PACKAGE_NAME" --tarball "${archives[0]}"
-          npm publish "${archives[0]}" --access public --tag next --provenance --registry https://registry.npmjs.org/ --ignore-scripts
+          npm publish "${archives[0]}" --access public --tag latest --provenance --registry https://registry.npmjs.org/ --ignore-scripts
