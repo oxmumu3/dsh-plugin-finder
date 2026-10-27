@@ -190,6 +190,54 @@ test('workflow defaults to preparation and restricts publishing to the verified 
   assert.match(workflow, /sha256sum --check SHA256SUMS/);
 });
 
+test('OIDC job only consumes the prepared artifact and never checks out or runs product code', async () => {
+  const workflow = parseYaml(await readFile(new URL('../.github/workflows/npm-release.yml', import.meta.url), 'utf8'));
+  const publish = workflow.jobs.publish;
+  assert.equal(publish.permissions['id-token'], 'write');
+  assert.match(publish.if, /inputs\.package_name == '@oxmumu3\/dsh-plugin-finder'/);
+  assert.match(publish.if, /vars\.NPM_PACKAGE_NAME == inputs\.package_name/);
+  assert.ok(publish.steps.some(step => step.uses?.startsWith('actions/download-artifact@')));
+  assert.ok(!publish.steps.some(step => step.uses?.startsWith('actions/checkout@')));
+  const commands = publish.steps.map(step => step.run ?? '').join('\n');
+  assert.doesNotMatch(commands, /npm (?:ci|install|test|run)|release\/|buildClient|checkNpmPackage|runInNewContext|eval\(/);
+  assert.match(commands, /npm publish .*--ignore-scripts/);
+  const verifier = publish.steps.find(step => step.id === 'verify');
+  assert.ok(verifier, 'OIDC job needs a metadata-only artifact verifier');
+  assert.ok(publish.steps.findIndex(step => step.id === 'verify') < publish.steps.findIndex(step => /npm publish /.test(step.run ?? '')));
+});
+
+test('OIDC artifact metadata check binds identity and hashes without executing payload code', async t => {
+  const workflow = parseYaml(await readFile(new URL('../.github/workflows/npm-release.yml', import.meta.url), 'utf8'));
+  const verify = workflow.jobs.publish.steps.find(step => step.id === 'verify');
+  assert.ok(verify, 'metadata verifier must be present');
+  const f = await materialize(t, '@oxmumu3/dsh-plugin-finder');
+  const artifact = path.join(f.base, 'downloaded'); await mkdir(artifact);
+  for (const name of [path.basename(f.result.tarball), 'manifest.json', 'SHA256SUMS']) await cp(path.join(f.output, name), path.join(artifact, name));
+  const outputFile = path.join(f.base, 'github-output');
+  const execute = () => run(process.platform === 'darwin' ? '/bin/bash' : 'bash', ['-euo', 'pipefail', '-c', verify.run], { timeout: 15000, env: { ...process.env, ARTIFACT_DIR: artifact, PACKAGE_NAME: '@oxmumu3/dsh-plugin-finder', GITHUB_OUTPUT: outputFile } });
+  await execute();
+  assert.equal(await readFile(outputFile, 'utf8'), `tarball=${path.basename(f.result.tarball)}\n`);
+  const manifestFile = path.join(artifact, 'manifest.json'); const original = await readFile(manifestFile, 'utf8');
+  const manifest = JSON.parse(original); manifest.packageName = '@wrong/finder'; await writeFile(manifestFile, JSON.stringify(manifest));
+  await assert.rejects(execute(), /identity|name/i); await writeFile(manifestFile, original);
+  const tarball = path.join(artifact, path.basename(f.result.tarball)); const bytes = await readFile(tarball);
+  await writeFile(tarball, Buffer.concat([bytes, Buffer.from('tampered')]));
+  await assert.rejects(execute(), /hash|checksum|sha256/i); await writeFile(tarball, bytes);
+  const wrongPackage = await repack(f, async directory => {
+    const filename = path.join(directory, 'package.json'); const pkg = JSON.parse(await readFile(filename));
+    pkg.name = '@wrong/finder'; await writeFile(filename, JSON.stringify(pkg));
+  });
+  const wrongBytes = await readFile(wrongPackage); const wrongMetadata = JSON.parse(original); wrongMetadata.sha256 = sha(wrongBytes);
+  await writeFile(tarball, wrongBytes); await writeFile(manifestFile, JSON.stringify(wrongMetadata));
+  await writeFile(path.join(artifact, 'SHA256SUMS'), `${wrongMetadata.sha256}  ${wrongMetadata.tarball}\n`);
+  await assert.rejects(execute(), /name\/version|identity/i);
+  const forbidden = await repack(f, async directory => writeFile(path.join(directory, 'dist/client.js'), 'throw new Error("PAYLOAD_CODE_EXECUTED");'));
+  const metadata = JSON.parse(original); const altered = await readFile(forbidden); metadata.sha256 = sha(altered);
+  await writeFile(tarball, altered); await writeFile(manifestFile, JSON.stringify(metadata));
+  await writeFile(path.join(artifact, 'SHA256SUMS'), `${metadata.sha256}  ${metadata.tarball}\n`);
+  await execute(); // Only the package manifest is read; prepare's full checker owns code validation.
+});
+
 test('workflow resolves runner artifact directories at runtime before consuming them', async t => {
   const workflow = parseYaml(await readFile(new URL('../.github/workflows/npm-release.yml', import.meta.url), 'utf8'));
   const directory = await mkdtemp(path.join(os.tmpdir(), 'finder-workflow-env-'));
