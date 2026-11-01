@@ -1,4 +1,4 @@
-export const supportsCreatorHost = version => ['0.2.1-rc.2','0.2.1-rc.3'].includes(version);
+export const supportsCreatorHost = version => ['0.2.1-rc.2','0.2.1-rc.3','0.2.1-rc.4','0.2.1-rc.5'].includes(version);
 const localAttempts = new WeakMap();
 const identity = value => typeof value === 'string' && value.trim() ? value : undefined;
 const stopped = Symbol('cancelled');

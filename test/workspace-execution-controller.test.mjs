@@ -17,8 +17,8 @@ function setup({initial=workflow(),routes={},execute,hostVersion='0.2.1-rc.2'}={
  return {ok:true,json:async()=>value};
  }});return {c,calls,storage};
 }
-test('official rc.3 can execute a saved plan with the required Host APIs',async()=>{
- let executions=0;const {c}=setup({hostVersion:'0.2.1-rc.3',execute:async()=>{executions++;return{dispose(){},completion:new Promise(()=>{})};}});
+for (const hostVersion of ['0.2.1-rc.3','0.2.1-rc.4','0.2.1-rc.5']) test(`official ${hostVersion} can execute a saved plan with the required Host APIs`,async()=>{
+ let executions=0;const {c}=setup({hostVersion,execute:async()=>{executions++;return{dispose(){},completion:new Promise(()=>{})};}});
  await c.bootstrap();assert.equal(await c.runCurrentPlan(),true);assert.equal(executions,1);c.close();
 });
 test('one use action adopts current workspace and executes canonical prompt without a handoff call',async()=>{

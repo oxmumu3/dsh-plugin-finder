@@ -49,8 +49,8 @@ test('creates one fresh Creator session, saves its identity, verifies and prepar
   assert.deepEqual(f.calls.panels, [null]);
   assert.equal(f.calls.release, 1);
 });
-test('official rc.3 retains the verified Creator draft path',async()=>{
-  const f=fixture({hostVersion:'0.2.1-rc.3'}),result=await prepareCreatorDraft(f.ctx,f.options);
+for (const hostVersion of ['0.2.1-rc.3','0.2.1-rc.4','0.2.1-rc.5']) test(`official ${hostVersion} retains the verified Creator draft path`,async()=>{
+  const f=fixture({hostVersion}),result=await prepareCreatorDraft(f.ctx,f.options);
   assert.equal(result.status,'applied');assert.equal(f.calls.create.length,1);assert.equal(f.calls.draft.length,1);
 });
 

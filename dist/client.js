@@ -243,7 +243,7 @@ function createOpportunityClient({ getState, publish, fetchRequest = globalThis.
 }
 
 // src/creator-handoff.js
-var supportsCreatorHost = (version) => ["0.2.1-rc.2", "0.2.1-rc.3"].includes(version);
+var supportsCreatorHost = (version) => ["0.2.1-rc.2", "0.2.1-rc.3", "0.2.1-rc.4", "0.2.1-rc.5"].includes(version);
 var localAttempts = /* @__PURE__ */ new WeakMap();
 var identity = (value) => typeof value === "string" && value.trim() ? value : void 0;
 var stopped = Symbol("cancelled");
