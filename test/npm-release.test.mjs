@@ -251,6 +251,12 @@ test('workflow resolves runner artifact directories at runtime before consuming 
   const directory = await mkdtemp(path.join(os.tmpdir(), 'finder-workflow-env-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   for (const [name, job] of Object.entries(workflow.jobs)) {
+    if (job.uses) {
+      assert.equal(name, 'compatibility');
+      assert.equal(job.uses, './.github/workflows/sdk-compatibility.yml');
+      assert.equal(job.steps, undefined, 'reusable workflow calls do not execute artifact steps');
+      continue;
+    }
     for (const value of Object.values(job.env ?? {})) {
       assert.doesNotMatch(String(value), /\$\{\{\s*runner\./, `${name}: runner context is unavailable in job.env`);
     }

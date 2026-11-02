@@ -22,7 +22,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  compatibility:
+    if: github.repository == 'oxmumu3/dsh-plugin-finder'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/sdk-compatibility.yml
   prepare:
+    needs: compatibility
     if: github.repository == 'oxmumu3/dsh-plugin-finder'
     runs-on: ubuntu-latest
     outputs:
@@ -62,6 +68,8 @@ jobs:
       - run: npm ci --ignore-scripts --legacy-peer-deps
       - run: npm test
       - run: npm run build
+      - name: Recheck official latest immediately before packing
+        run: node scripts/compatibility.mjs --latest
       - name: Prepare and independently verify public package
         id: package
         shell: bash
