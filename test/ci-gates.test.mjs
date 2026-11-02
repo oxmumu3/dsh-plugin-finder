@@ -64,3 +64,20 @@ test('TAP acceptance requires substantive execution without failures, skips or c
   for (const invalid of ['', good.replace('# pass 10', '# pass 0'), good.replace('# skipped 0', '# skipped 10'), good.replace('# cancelled 0', '# cancelled 1'), good.replace('# fail 0', '# fail 1')]) assert.throws(() => validateTap(invalid, 10), /TAP/);
   assert.throws(() => validateTap(good, 11), /TAP/);
 });
+
+test('legacy operator admission and newer owner-peer admission both reject unauthenticated and foreign requests', async () => {
+  const { assertTransportAdmission } = await import('../scripts/ci-transport-contract.mjs');
+  for (const sdk of ['0.2.0-rc.2', '0.2.1-rc.5']) {
+    let authenticated = false;
+    const peer = sdk === '0.2.0-rc.2' ? {} : { principal: { kind: 'owner' } };
+    const connection = {
+      ...(sdk === '0.2.0-rc.2' ? { operator: peer } : { browserPeer: peer }),
+      requestRejection: request => request.headers.get('Host') !== '127.0.0.1' ? 403 : authenticated ? undefined : 401,
+      admit(request) { const rejection = this.requestRejection(request); return rejection === undefined ? { peer } : { rejection }; },
+    };
+    assert.equal(assertTransportAdmission(connection, sdk, value => { authenticated = value; }).peer, peer);
+    const bypass = { ...connection, requestRejection: () => undefined };
+    assert.throws(() => assertTransportAdmission(bypass, sdk, value => { authenticated = value; }));
+    assert.throws(() => assertTransportAdmission(connection, sdk === '0.2.0-rc.2' ? '0.2.1-rc.5' : '0.2.0-rc.2', value => { authenticated = value; }));
+  }
+});

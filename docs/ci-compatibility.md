@@ -11,3 +11,5 @@ The existing Trusted npm preparation job needs this reusable gate. Its explicit 
 TAP summaries must meet the retained substantive test minimum, pass every counted test and contain zero failures, skips, cancellations or todos. The reusable workflow rechecks latest after the matrix; the non-OIDC preparation job rechecks latest again immediately before packing. Publication continues to consume only the validated artifact.
 
 The macOS profile explicitly permits network-bind for compatibility. The verified boundary is non-loopback outbound denial, including custom-lookup and non-Node children; this does not claim that the bind-address predicate alone restricts every possible listener address.
+
+Official `dsh-client-connection@0.2.0-rc.2` exposes a single admitted `operator`, not the newer `browserPeer`/per-peer dispatcher contract. Its fixture checks the actual `requestRejection`/`admit` boundary (401 unauthenticated, 403 foreign Host) and dispatches only the admitted operator. Newer SDKs retain those transport checks plus the exact per-peer 403 assertion. This version-specific fixture does not add a compatibility exemption or alter product code.

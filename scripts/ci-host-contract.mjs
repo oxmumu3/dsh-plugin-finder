@@ -8,16 +8,19 @@ import { Storage } from '@deepseek-ai/dsh-storage';
 import { DomainFacility } from '@deepseek-ai/dsh-storage-domain';
 import { JsonStorageBackend } from '@deepseek-ai/dsh-storage-json';
 import * as plugin from '../index.js';
+import { assertTransportAdmission } from './ci-transport-contract.mjs';
 const metadata = JSON.parse(await readFile(new URL('../package.json', import.meta.url)));
 const finder = metadata.name.endsWith('finder');
 const directory = await realpath(await mkdtemp(join(tmpdir(), 'dsh-host-contract-')));
 const ctx = new Context();
 // No browser/account auth is created: the official service's same-process owner
 // peer exercises its real dispatcher. All state lives in this synthetic directory.
-const connection = new HostConnectionService(ctx, [], { isAuthenticated: () => false, authenticateApi: () => undefined });
+let authenticated = false;
+const connection = new HostConnectionService(ctx, [], { isAuthenticated: () => authenticated, authenticateApi: () => undefined });
 const dispatcher = connection.createSharedFetchHandler('/api');
 const request = (path, options) => new Request('http://127.0.0.1' + path, options);
-const dispatch = (path, peer = connection.browserPeer, options) => dispatcher.fetch(request(path, options), peer);
+let ownerPeer, admission;
+const dispatch = (path, peer = ownerPeer, options) => dispatcher.fetch(request(path, options), peer);
 let backend, facility, tools;
 try {
   assert.equal(globalThis.__dshCiNetwork?.nonLoopbackAllowed, false, 'Network denial preload is required');
@@ -35,6 +38,8 @@ try {
   }
   const path = finder ? '/api/plugin_finder/bootstrap' : '/api/agent_twin/status';
   for (let mount = 0; mount < 2; mount++) {
+    admission = assertTransportAdmission(connection, process.env.DSH_TEST_SDK_VERSION, value => { authenticated = value; });
+    ownerPeer = admission.peer;
     const fiber = ctx.plugin(plugin, finder ? {} : { stateDirectory: directory }); await fiber;
     if (!finder) {
       const children = [...ctx.registry.entries()].flatMap(([, runtime]) => [...runtime.fibers]).filter(child => child.parent.fiber.uid === fiber.uid);
@@ -51,11 +56,11 @@ try {
     } else {
       assert.equal(state.service.enabled, false); assert.equal(state.project, null); assert.ok(tools.get('agent_twin'));
     }
-    assert.equal((await dispatch(path, { principal: { kind: 'synthetic-non-owner' } })).status, 403);
-    assert.equal((await dispatch(path, connection.browserPeer, { method: 'DELETE' })).status, 404);
+    if (!admission.legacyOperator) assert.equal((await dispatch(path, { principal: { kind: 'synthetic-non-owner' } })).status, 403);
+    assert.equal((await dispatch(path, ownerPeer, { method: 'DELETE' })).status, 404);
     await fiber.dispose(); assert.equal((await dispatch(path)).status, 404);
     if (!finder) assert.equal(tools.get('agent_twin'), undefined);
   }
   assert.equal(globalThis.__dshCiNetwork.denied, 0);
-  console.log(JSON.stringify({ package: metadata.name, sdk: process.env.DSH_TEST_SDK_VERSION, actualCordis: true, actualHostConnectionDispatcher: true, actualJsonDomainPersistence: finder, actualToolRuntime: !finder, disposeAndReenable: true, ownerRoute: 200, otherPrincipal: 403, unsupportedMethod: 404, removedRoute: 404, realModelCalls: 0, realMessagesSent: 0, network: globalThis.__dshCiNetwork }));
+  console.log(JSON.stringify({ package: metadata.name, sdk: process.env.DSH_TEST_SDK_VERSION, actualCordis: true, actualHostConnectionDispatcher: true, actualJsonDomainPersistence: finder, actualToolRuntime: !finder, disposeAndReenable: true, ownerRoute: 200, authenticationBoundary: admission.legacyOperator ? 'legacy-operator-admission' : 'owner-peer-admission-and-route', unauthenticatedRequest: admission.unauthenticatedRequest, foreignAuthority: admission.foreignAuthority, otherPrincipal: admission.legacyOperator ? null : 403, unsupportedMethod: 404, removedRoute: 404, realModelCalls: 0, realMessagesSent: 0, network: globalThis.__dshCiNetwork }));
 } finally { await ctx.fiber.dispose(); await facility?.closeAll(); await backend?.close(); await rm(directory, { recursive: true, force: true }); }
