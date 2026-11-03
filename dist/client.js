@@ -2698,14 +2698,14 @@ function createExperienceView(React2) {
       return h(
         React2.Fragment,
         null,
-        h("div", { className: "pfv_outcome_intro" }, h("span", { className: "pfv_kind" }, kind), h("h2", null, uncertainGap ? "\u7EE7\u7EED\u6838\u5BF9\u53EF\u884C\u65B9\u6848" : text6(plan.title)), !execution ? paragraph(uncertainGap ? "\u672C\u6B21\u641C\u7D22\u8FD8\u4E0D\u8DB3\u4EE5\u5224\u65AD\u6709\u6CA1\u6709\u73B0\u6210\u65B9\u6848\u3002\u53EF\u4EE5\u91CD\u8BD5\uFF0C\u4E5F\u53EF\u4EE5\u76F4\u63A5\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6\u3002" : short(plan.rationale, 300)) : null),
-        capabilityMap(),
+        h("div", { className: "pfv_outcome_intro" }, h("span", { className: "pfv_kind" }, kind), h("h2", null, uncertainGap ? "\u7EE7\u7EED\u6838\u5BF9\u53EF\u884C\u65B9\u6848" : text6(plan.title)), !execution ? paragraph(uncertainGap ? "\u672C\u6B21\u641C\u7D22\u8FD8\u4E0D\u8DB3\u4EE5\u5224\u65AD\u6709\u6CA1\u6709\u73B0\u6210\u65B9\u6848\u3002\u53EF\u4EE5\u91CD\u8BD5\uFF0C\u4E5F\u53EF\u4EE5\u76F4\u63A5\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6\u3002" : short(plan.rationale, 140)) : null),
         showActions ? h(React2.Fragment, null, workspacePicker, !retry && plan.kind !== "gap" ? workspaceStatus : null, h(
           "div",
           { className: "pfv_outcome_actions" },
           primary(retry ? "\u91CD\u8BD5\u67E5\u627E" : plan.kind === "hybrid" ? "\u8865\u9F50\u5E76\u4F7F\u7528" : needsCreation ? "\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6" : "\u4F7F\u7528\u8FD9\u4E2A\u65B9\u6848", () => retry ? controller.recommend() : plan.kind === "hybrid" ? !workspacePending && (typeof controller.completeHybridPlan === "function" ? controller.completeHybridPlan() : controller.startCreation()) : needsCreation ? controller.startCreation() : !workspacePending && controller.runCurrentPlan(), { disabled: !canAct || !retry && (!needsCreation || plan.kind === "hybrid") && workspacePending }),
           !needsCreation || retry ? button2("\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6", () => controller.startCreation(), { disabled: !canAct, className: "pfv_button pfv_quiet" }) : null
         )) : null,
+        capabilityMap(),
         execution?.phase === "completed" && execution.kind === "use" ? h("div", { className: "pfv_outcome_actions" }, button2("\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6", () => controller.startCreation(), { disabled: locked || !modelReady, className: "pfv_button pfv_quiet" })) : null,
         steps.length && !execution ? disclosure("\u67E5\u770B\u6267\u884C\u5B89\u6392", h("section", { className: "pfv_plan_steps", "aria-label": "\u5B8C\u6210\u8DEF\u5F84" }, h("h3", null, "\u8FD9\u6B21\u4F1A\u505A\u4EC0\u4E48"), h("ol", null, ...steps.map((step, index) => h("li", { key: index }, h("span", { className: "pfv_step_number", "aria-hidden": true }, index + 1), h("div", null, h("h4", null, text6(step.capability)), paragraph(short(step.action, 220)), h("p", { className: "pfv_hint" }, ownerLabel(step.owner)))))))) : null,
         limits.length ? h("div", { className: "pfv_prerequisites" }, h("h3", null, "\u4F7F\u7528\u524D\u63D0"), list2(limits.slice(0, 2)), limits.length > 2 ? disclosure(`\u8FD8\u6709 ${limits.length - 2} \u9879\u9650\u5236`, list2(limits.slice(2))) : null) : null,
@@ -2755,7 +2755,8 @@ function createExperienceView(React2) {
       h(
         "section",
         { className: "pfv_request_summary", "aria-label": "\u672C\u6B21\u9700\u6C42" },
-        h("p", null, h("span", { className: "pfv_hint" }, "\u4F60\u60F3\u505A\u7684\u4E8B"), h("span", { className: "pfv_request_text" }, short(request, 180))),
+        h("p", null, h("span", { className: "pfv_hint" }, "\u4F60\u60F3\u505A\u7684\u4E8B"), h("span", { className: "pfv_request_text" }, short(request, 80))),
+        request.length > 80 ? disclosure("\u67E5\u770B\u5B8C\u6574\u9700\u6C42", paragraph(request)) : null,
         !startingNew && !execution && text6(state.intent?.goal) && state.intent.goal !== request ? h("p", null, h("span", { className: "pfv_hint" }, "\u6211\u7684\u7406\u89E3"), h("span", { className: "pfv_understanding_text" }, short(state.intent.goal, 160))) : null
       ),
       h(
@@ -2896,6 +2897,9 @@ var experienceCss = `
 .pfv_request_summary { padding: 0 0 19px; margin-bottom: 6px; border-bottom: 1px solid var(--pfv_line); }
 .pfv_request_summary > p { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); align-items: baseline; gap: 12px; margin: 0; font-size: 14px; line-height: 1.75; }
 .pfv_request_summary > p + p { margin-top: 5px; }
+.pfv_request_summary > .pfv_disclosure { margin: 0 0 4px 103px; border: 0; }
+.pfv_request_summary > .pfv_disclosure > summary { min-height: 26px; padding: 2px 0; font-size: 12px; color: var(--pfv_muted); }
+.pfv_request_summary > .pfv_disclosure > .pfv_disclosure_body { padding: 7px 0 10px; }
 .pfv_request_text, .pfv_understanding_text { min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
 .pfv_understanding_text { color: var(--pfv_muted); }
 .pfv_current_workspace .pfv_column_heading { min-height: 42px; margin-bottom: 8px; }
@@ -3064,6 +3068,7 @@ var experienceCss = `
   .pfv_workspace_nav > .pfv_hint { flex: 1; }
   .pfv_request_summary > p { grid-template-columns: 1fr; gap: 3px; }
   .pfv_request_summary > p + p { margin-top: 9px; }
+  .pfv_request_summary > .pfv_disclosure { margin-left: 0; }
   .pfv_creation_summary > div { grid-template-columns: 1fr; gap: 2px; }
   .pfv_workspace_grid { grid-template-columns: 1fr; gap: 29px; }
   .pfv_conversation { position: static; max-height: none; scroll-margin-top: 16px; }

@@ -239,11 +239,11 @@ export function createExperienceView(React) {
       const steps = records(plan.steps);
       const needsCreation = plan.kind === 'gap' || plan.kind === 'hybrid';
       return h(React.Fragment, null,
-        h('div', { className: 'pfv_outcome_intro' }, h('span', { className: 'pfv_kind' }, kind), h('h2', null, uncertainGap ? '继续核对可行方案' : text(plan.title)), !execution ? paragraph(uncertainGap ? '本次搜索还不足以判断有没有现成方案。可以重试，也可以直接创建自己的插件。' : short(plan.rationale, 300)) : null),
-        capabilityMap(),
+        h('div', { className: 'pfv_outcome_intro' }, h('span', { className: 'pfv_kind' }, kind), h('h2', null, uncertainGap ? '继续核对可行方案' : text(plan.title)), !execution ? paragraph(uncertainGap ? '本次搜索还不足以判断有没有现成方案。可以重试，也可以直接创建自己的插件。' : short(plan.rationale, 140)) : null),
         showActions ? h(React.Fragment, null, workspacePicker, !retry && plan.kind !== 'gap' ? workspaceStatus : null, h('div', { className: 'pfv_outcome_actions' },
           primary(retry ? '重试查找' : plan.kind === 'hybrid' ? '补齐并使用' : needsCreation ? '创建自己的插件' : '使用这个方案', () => retry ? controller.recommend() : plan.kind === 'hybrid' ? !workspacePending && (typeof controller.completeHybridPlan === 'function' ? controller.completeHybridPlan() : controller.startCreation()) : needsCreation ? controller.startCreation() : !workspacePending && controller.runCurrentPlan(), { disabled: !canAct || !retry && (!needsCreation || plan.kind === 'hybrid') && workspacePending }),
           !needsCreation || retry ? button('创建自己的插件', () => controller.startCreation(), { disabled: !canAct, className: 'pfv_button pfv_quiet' }) : null)) : null,
+        capabilityMap(),
         execution?.phase === 'completed' && execution.kind === 'use' ? h('div', { className: 'pfv_outcome_actions' }, button('创建自己的插件', () => controller.startCreation(), { disabled: locked || !modelReady, className: 'pfv_button pfv_quiet' })) : null,
         steps.length && !execution ? disclosure('查看执行安排', h('section', { className: 'pfv_plan_steps', 'aria-label': '完成路径' }, h('h3', null, '这次会做什么'), h('ol', null, ...steps.map((step, index) => h('li', { key: index }, h('span', { className: 'pfv_step_number', 'aria-hidden': true }, index + 1), h('div', null, h('h4', null, text(step.capability)), paragraph(short(step.action, 220)), h('p', { className: 'pfv_hint' }, ownerLabel(step.owner)))))))) : null,
         limits.length ? h('div', { className: 'pfv_prerequisites' }, h('h3', null, '使用前提'), list(limits.slice(0, 2)), limits.length > 2 ? disclosure(`还有 ${limits.length - 2} 项限制`, list(limits.slice(2))) : null) : null,
@@ -275,7 +275,8 @@ export function createExperienceView(React) {
 
     return h('div', { className: 'pfv_workspace pfv_current_workspace' },
       h('nav', { className: 'pfv_workspace_nav', 'aria-label': '当前任务导航' }, button('返回首页', () => controller.showHome(), { disabled: locked, className: 'pfv_button pfv_quiet' }), h('span', { className: 'pfv_hint' }, text(state.executionWorkspaceLabel) || '当前工作区')),
-      h('section', { className: 'pfv_request_summary', 'aria-label': '本次需求' }, h('p', null, h('span', { className: 'pfv_hint' }, '你想做的事'), h('span', { className: 'pfv_request_text' }, short(request, 180))),
+      h('section', { className: 'pfv_request_summary', 'aria-label': '本次需求' }, h('p', null, h('span', { className: 'pfv_hint' }, '你想做的事'), h('span', { className: 'pfv_request_text' }, short(request, 80))),
+        request.length > 80 ? disclosure('查看完整需求', paragraph(request)) : null,
         !startingNew && !execution && text(state.intent?.goal) && state.intent.goal !== request ? h('p', null, h('span', { className: 'pfv_hint' }, '我的理解'), h('span', { className: 'pfv_understanding_text' }, short(state.intent.goal, 160))) : null),
       h('section', { className: 'pfv_outcome', id: 'pfv_outcome', 'aria-labelledby': 'pfv_outcome_title', 'aria-busy': Boolean(followupBusy) },
         h('div', { className: 'pfv_column_heading' }, h('h2', { id: 'pfv_outcome_title' }, execution ? '本次运行' : isCreating ? '插件方案' : previousOutcome ? '上一版方案' : '当前方案'), startingNew ? null : h('span', { className: 'pfv_version' }, revisionLabel)),

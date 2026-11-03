@@ -122,6 +122,9 @@ export const experienceCss = `
 .pfv_request_summary { padding: 0 0 19px; margin-bottom: 6px; border-bottom: 1px solid var(--pfv_line); }
 .pfv_request_summary > p { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); align-items: baseline; gap: 12px; margin: 0; font-size: 14px; line-height: 1.75; }
 .pfv_request_summary > p + p { margin-top: 5px; }
+.pfv_request_summary > .pfv_disclosure { margin: 0 0 4px 103px; border: 0; }
+.pfv_request_summary > .pfv_disclosure > summary { min-height: 26px; padding: 2px 0; font-size: 12px; color: var(--pfv_muted); }
+.pfv_request_summary > .pfv_disclosure > .pfv_disclosure_body { padding: 7px 0 10px; }
 .pfv_request_text, .pfv_understanding_text { min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
 .pfv_understanding_text { color: var(--pfv_muted); }
 .pfv_current_workspace .pfv_column_heading { min-height: 42px; margin-bottom: 8px; }
@@ -290,6 +293,7 @@ export const experienceCss = `
   .pfv_workspace_nav > .pfv_hint { flex: 1; }
   .pfv_request_summary > p { grid-template-columns: 1fr; gap: 3px; }
   .pfv_request_summary > p + p { margin-top: 9px; }
+  .pfv_request_summary > .pfv_disclosure { margin-left: 0; }
   .pfv_creation_summary > div { grid-template-columns: 1fr; gap: 2px; }
   .pfv_workspace_grid { grid-template-columns: 1fr; gap: 29px; }
   .pfv_conversation { position: static; max-height: none; scroll-margin-top: 16px; }
