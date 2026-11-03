@@ -1,7 +1,7 @@
 import {readFile} from 'node:fs/promises';
 import {readFileSync} from 'node:fs';
 const matrixVersions=JSON.parse(readFileSync(new URL('../compatibility.json',import.meta.url),'utf8'));
-const sdkPeers=["@deepseek-ai/dsh-app-boot", "@deepseek-ai/dsh-storage-domain"];
+const sdkPeers=["@deepseek-ai/dsh-app-boot", "@deepseek-ai/dsh-storage-domain", "@deepseek-ai/dsh-tools", "@deepseek-ai/dsh-sandbox"];
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 // These contracts intentionally enumerate validated prereleases. Never bypass

@@ -13,6 +13,16 @@ const localized = value => typeof value === 'string' ? value : value?.zh ?? valu
 const unique = values => [...new Set(values.filter(Boolean))];
 const GENERIC_TERMS=new Set(['插件','需要','支持','生成','使用','进行','一个','相关','作者','自述','实际','验证','待核','信息','平台','来源','公开','日期','展示','条目']);
 
+function sourceIdentity(candidate){return JSON.stringify([candidate.install.packageName,candidate.install.version,candidate.install.type,candidate.install.spec]);}
+function distinctCandidateIds(candidates){
+  const counts=new Map();for(const candidate of candidates)counts.set(candidate.name,(counts.get(candidate.name)??0)+1);
+  const ids=new Set();return candidates.map(candidate=>{
+    const id=counts.get(candidate.name)>1?candidate.name.slice(0,175)+'~'+sha256(sourceIdentity(candidate)).slice(0,24):candidate.id;
+    if(ids.has(id))throw new Error('Distinct author source identities could not be separated');ids.add(id);
+    return id===candidate.id?candidate:{...candidate,id};
+  });
+}
+
 function abortIfNeeded(...signals) {
   if (signals.some(signal => signal?.aborted)) throw new DOMException('Discovery cancelled', 'AbortError');
 }
@@ -200,7 +210,7 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
     const hostCompatibility = assessCompatibility({ compatibility }, hostVersion);
     const nodeCompatibility = assessCompatibility({ compatibility: { dsh: compatibility.node, basis: 'engines.node' } }, nodeVersion ?? process.versions.node);
     if (hostCompatibility.status === 'incompatible' || nodeCompatibility.status === 'incompatible') throw new Error(`${manifest.name}: author-declared runtime incompatibility`);
-    if (platform && Array.isArray(manifest.os) && manifest.os.length && !manifest.os.includes(platform) && manifest.os.some(value => !value.startsWith('!'))) throw new Error(`${manifest.name}: author-declared platform incompatibility`);
+    if (platform && Array.isArray(manifest.os) && (manifest.os.includes('!'+platform) || manifest.os.length && !manifest.os.includes(platform) && manifest.os.some(value => !value.startsWith('!')))) throw new Error(`${manifest.name}: author-declared platform incompatibility`);
     const limitations = ['来自动态来源与作者资料的候选线索；尚未安装、运行或验证组合。',...(authorVersionWarning?[authorVersionWarning]:[])];
     let readiness = 'metadata-only'; const entrypoints = [];
     if (sourceType === 'git') {
@@ -244,7 +254,7 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
       repository: repo?.url ?? null, homepage: typeof manifest.homepage === 'string' && manifest.homepage.startsWith('https://') ? manifest.homepage : repo?.url ?? null,
       capabilities, keywords, inputs: [], outputs: [], firstUse: '', requirements: { extraApiKey, platforms: Array.isArray(manifest.os) ? manifest.os.filter(value => !value.startsWith('!')) : [], notes: ['账号、输入输出和首次使用前提来自作者资料；未知条件需在会话确认。'] }, limitations,
       compatibility, hostCompatibility, nodeCompatibility,
-      install: { type: sourceType, spec, version: manifest.version, ...(commit ? { commit } : {}), ...(registry ? { registry } : {}), readiness, entrypoints, lifecycleScripts: ['preinstall', 'install', 'postinstall', 'prepare'].filter(key => manifest.scripts?.[key]) },
+      install: { type: sourceType, packageName:manifest.name, spec, version: manifest.version, ...(commit ? { commit } : {}), ...(registry ? { registry } : {}), readiness, entrypoints, lifecycleScripts: ['preinstall', 'install', 'postinstall', 'prepare'].filter(key => manifest.scripts?.[key]) },
       sourceTags: [row.origin], documentation, match: { score: row.score, terms: row.terms ?? [], capabilities: [] },
       ...(context.communityEntryId?{communityEntryId:context.communityEntryId,communitySourceUrl:context.communitySourceUrl}:{}),
       evidence: { metadata: 'manifest-checked', installation: 'not-tested', task: 'not-tested', combination: 'not-tested', capabilityBasis: 'author-description/index-keywords as quoted functionality clues; README supplied for model interpretation; not execution proof', fetchedAt: iso(), sources: [
@@ -384,20 +394,23 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
           catch (error) { abortIfNeeded(signal, lifetimeSignal);excluded++;for(const origin of origins)counts(origin).excluded++;const reason=authorSignal.aborted?'author-read-timeout':'author-unresolved';excludedReasons[reason]=(excludedReasons[reason]??0)+1;warnings.push(authorSignal.aborted?`${row.entry.name}: 作者资料读取超时，保留其他已读候选。`:String(error.message).slice(0, 300)); return null; }
         }));
         for (const result of results.filter(Boolean)) {
-          const existing = candidates.find(entry => entry.name === result.name && entry.install.version === result.install.version);
-          if (existing && existing.install.spec !== result.install.spec) {
-            const conflict = `${result.name}@${result.install.version} 存在安装来源冲突：保留首项但未合并信任。来源 1：${existing.install.spec}；来源 2：${result.install.spec}。安装前需人工核对作者与精确来源。`;
-            warnings.push(conflict); existing.limitations.push(conflict);
-            existing.evidence.sourceConflicts ??= [];
-            existing.evidence.sourceConflicts.push({ retainedSpec: existing.install.spec, otherSpec: result.install.spec, otherRepository: result.repository, otherCommit: result.install.commit ?? null, sources: result.evidence.sources });
-          } else if (existing) existing.sourceTags.push(...result.sourceTags.filter(tag => !existing.sourceTags.some(old => old.id === tag.id)));
-          else candidates.push(result);
+          const sameSource=candidates.find(entry=>sourceIdentity(entry)===sourceIdentity(result));
+          if(sameSource){sameSource.sourceTags.push(...result.sourceTags.filter(tag=>!sameSource.sourceTags.some(old=>old.id===tag.id)));continue;}
+          for(const existing of candidates.filter(entry=>entry.name===result.name&&entry.install.version===result.install.version)){
+            const conflict=`${result.name}@${result.install.version} 存在安装来源冲突：分别保留候选，不合并作者证据或信任。来源 1：${existing.install.spec}；来源 2：${result.install.spec}。安装前需核对所选作者与精确来源。`;
+            warnings.push(conflict);existing.limitations.push(conflict);result.limitations.push(conflict);
+            for(const [own,other]of [[existing,result],[result,existing]]){
+              own.evidence.sourceConflicts??=[];
+              own.evidence.sourceConflicts.push({retainedSpec:own.install.spec,otherSpec:other.install.spec,otherRepository:other.repository,otherCommit:other.install.commit??null,sources:other.evidence.sources});
+            }
+          }
+          candidates.push(result);
         }
       }
       if (distinct.length > inspected) warnings.push(`本轮从来源匹配 ${distinct.length} 条候选，按相关性读取前 ${inspected} 条作者资料；尚未逐条核验全部候选。`);
       if(requiresNoApiKey&&excludedReasons['extra-key-unknown'])warnings.push(`${excludedReasons['extra-key-unknown']} 个候选的免额外 Key 前提未确认，未直接推荐；不代表这些插件一定需要 Key。`);
       const sourceCoverage=sources.map(source=>{const own=counts(source);return{sourceId:source.id,url:source.url,status:source.status,fetchedAt:source.fetchedAt,total:source.total,...('npmTotal'in source?{npmTotal:source.npmTotal,githubOnlyTotal:source.githubOnlyTotal,rejectedRows:source.rejectedRows}:{}),...own,uninspected:Math.max(0,own.matched-own.inspected),inspectionBudget};});
-      return { candidates: candidates.slice(0, 6), sources, warnings: unique(warnings), searchedAt: iso(),coverage:{matched:distinct.length,inspected,resolved,excluded,excludedReasons,uninspected:distinct.length-inspected,returned:Math.min(candidates.length,6),inspectionBudget},sourceCoverage };
+      return { candidates: distinctCandidateIds(candidates).slice(0, 6), sources, warnings: unique(warnings), searchedAt: iso(),coverage:{matched:distinct.length,inspected,resolved,excluded,excludedReasons,uninspected:distinct.length-inspected,returned:Math.min(candidates.length,6),inspectionBudget},sourceCoverage };
     },
   };
 }

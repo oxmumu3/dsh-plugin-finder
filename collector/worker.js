@@ -1,4 +1,4 @@
-import{POLICY_VERSION,validateTelemetryEvent,sanitizeTelemetryText}from'../src/telemetry-contract.js';
+import{POLICY_VERSION,TELEMETRY_PLAN_KINDS,validateTelemetryEvent,sanitizeTelemetryText}from'../src/telemetry-contract.js';
 const encoder=new TextEncoder(),DAY=86400000;
 class HttpError extends Error{constructor(status,code){super(code);this.status=status;}}
 const reject=(status,code)=>{throw new HttpError(status,code);};
@@ -45,7 +45,7 @@ export function createCollector({now=()=>new Date()}={}){return{
  async fetch(request,env){try{
   if(!env.DB||typeof env.ADMIN_TOKEN!=='string'||env.ADMIN_TOKEN.length<24)reject(503,'COLLECTOR_NOT_CONFIGURED');
   const url=new URL(request.url),path=url.pathname,time=now(),iso=time.toISOString(),day=iso.slice(0,10);
-  if(path==='/health'&&request.method==='GET')return json({ok:true,schemaVersion:1,policyVersion:POLICY_VERSION});
+  if(path==='/health'&&request.method==='GET')return json({ok:true,schemaVersion:1,policyVersion:POLICY_VERSION,build:'0.12.0-preview.1',supportedPlanKinds:TELEMETRY_PLAN_KINDS});
   if(path==='/v1/register'){
    if(request.method!=='POST')reject(405,'METHOD_NOT_ALLOWED');const body=await readJSON(request,1024);exact(body,['policyVersion','consentedAt','clientVersion','environment']);version(body.clientVersion);
    const consent=Date.parse(body.consentedAt);if(body.policyVersion!==POLICY_VERSION||!['production','test'].includes(body.environment)||typeof body.consentedAt!=='string'||!Number.isFinite(consent)||consent<time.getTime()-90*DAY||consent>time.getTime()+300000)throw new TypeError('Invalid consent');

@@ -1,4 +1,5 @@
 export const POLICY_VERSION='2026-10-20-v1';
+export const TELEMETRY_PLAN_KINDS=Object.freeze(['native','single','combo','gap','hybrid']);
 export const EVENT_TYPES=['intent_confirmed','plan_generated','plan_selected','feedback_submitted','refinement_submitted','handoff_prepared'];
 const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 function exact(value,keys){if(!object(value)||Object.keys(value).some(key=>!keys.includes(key)))throw new TypeError('Invalid telemetry object');}
@@ -37,7 +38,7 @@ export function validateTelemetryEvent(event){
  string(event.occurredAt,40);if(!Number.isFinite(Date.parse(event.occurredAt)))throw new TypeError('Invalid event time');string(event.clientVersion,80);string(event.hostVersion,80);
  const data=event.data;exact(data,['task','plan','plugins','feedback','draftStatus']);
  if(data.task!==undefined){exact(data.task,['summary','capabilities','constraints']);string(data.task.summary,500,true);list(data.task.capabilities,6,value=>string(value,150,true));list(data.task.constraints,6,value=>string(value,200,true));}
- if(data.plan!==undefined){exact(data.plan,['kind','title','rationale','steps']);enumValue(data.plan.kind,['native','single','combo','gap']);string(data.plan.title,160,true);string(data.plan.rationale,700,true);list(data.plan.steps,10,step=>{exact(step,['owner','action']);string(step.owner,200);string(step.action,160,true);});}
+ if(data.plan!==undefined){exact(data.plan,['kind','title','rationale','steps']);enumValue(data.plan.kind,TELEMETRY_PLAN_KINDS);string(data.plan.title,160,true);string(data.plan.rationale,700,true);list(data.plan.steps,10,step=>{exact(step,['owner','action']);string(step.owner,200);string(step.action,160,true);});}
  if(data.plugins!==undefined)list(data.plugins,8,plugin=>{exact(plugin,['name','version','commit','repository','sourceType','modelSelected','userSelected','installationStatus']);string(plugin.name,200);string(plugin.version,80,true);nullable(plugin.commit,value=>{if(!/^[a-f0-9]{40}$/i.test(value))throw new TypeError('Invalid commit');});nullable(plugin.repository,value=>{if(publicTelemetryRepository(value)!==value)throw new TypeError('Unsafe repository');});enumValue(plugin.sourceType,['npm','git','unknown']);bool(plugin.modelSelected);bool(plugin.userSelected);enumValue(plugin.installationStatus,['unknown']);});
  if(data.feedback!==undefined){exact(data.feedback,['outcome','note','stage','evidence']);enumValue(data.feedback.outcome,['complete','partial','blocked',null]);string(data.feedback.note,700,true);string(data.feedback.stage,80,true);enumValue(data.feedback.evidence,['user_reported']);}
  if(data.draftStatus!==undefined)enumValue(data.draftStatus,['applied','preserved','blocked']);

@@ -1,4 +1,5 @@
 import { featuredCatalog } from './featured-catalog.js';
+import { renderPluginDetailView } from './plugin-detail-view.js';
 import { featuredTopics, rankFeatured, safeFeaturedInstall } from './featured.js';
 
 const text = value => typeof value === 'string' ? value : '';
@@ -8,14 +9,6 @@ const dateLabel = value => {
   const time = Date.parse(value);
   return Number.isFinite(time) ? `${new Date(time).toISOString().slice(0, 16).replace('T', ' ')} UTC` : '时间待核对';
 };
-function publicSource(value) {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' && !url.username && !url.password && !url.port && ['github.com', 'raw.githubusercontent.com'].includes(url.hostname) ? url.href : null;
-  } catch { return null; }
-}
-const sourceLabel = url => url.endsWith('/SHA256SUMS') ? '发行校验文件' : url.includes('/releases/tag/') ? '精确版本发行说明' : '产品仓库与说明';
-
 /** Read-only rendering. User actions stay in the controller; no hooks or effects. */
 export function renderFeaturedView({ h, state, controller, copyText, busy = false, mode = 'home' }) {
   const preferences = state.featuredPreferences ?? {};
@@ -47,7 +40,7 @@ export function renderFeaturedView({ h, state, controller, copyText, busy = fals
   reason ? h('p', { className: 'pf_featured_reason' }, reason) : null,
   h('div', { className: 'pf_featured_card_actions' },
     status(entry),
-    button('查看详情', () => controller.showFeatured(entry.id), { className: 'pf_btn pf_text', 'aria-label': `查看${entry.title}的详情` })));
+    button('查看详情', event => controller.showCatalogPlugin('featured', entry.id, event?.currentTarget), { className: 'pf_btn pf_text', 'aria-label': `查看${entry.title}的详情` })));
 
   const draftItems = items(state.featuredDrafts).filter(draft => draft && typeof draft.id === 'string').slice(0, 20);
   const drafts = draftItems.length ? h('section', { className: 'pf_section pf_featured_drafts', 'aria-label': '保留的编辑草稿' },
@@ -67,33 +60,17 @@ export function renderFeaturedView({ h, state, controller, copyText, busy = fals
 
   let content;
   if (selected) {
-    const install = safeFeaturedInstall(selected);
-    const sources = selected.sourceUrls.map(publicSource).filter(Boolean);
-    content = h('div', { className: 'pf_featured_detail' },
-      button('返回首页', () => controller.showHome(), { className: 'pf_btn pf_text pf_flow_back' }),
-      h('section', { className: 'pf_section' },
-        h('div', { className: 'pf_featured_detail_heading' }, h('div', null, h('p', { className: 'pf_small pf_muted' }, selected.subtitle), h('h2', null, selected.title)), status(selected)),
-        h('p', { className: 'pf_featured_lead' }, selected.summary),
-        h('p', { className: 'pf_small pf_muted' }, selected.why),
-        h('div', { className: 'pf_actions' }, button('试试这个场景', () => controller.tryFeatured(selected.id), { className: 'pf_btn pf_primary', disabled: busy })),
-        h('p', { className: 'pf_small pf_muted pf_featured_action_note' }, '先准备可编辑的需求草稿，再由你发起查找。浏览和准备草稿不需要模型。')),
-      h('section', { className: 'pf_section' }, h('h3', null, '这个场景适合谁'), list(selected.audience), h('h3', { className: 'pf_featured_subheading' }, '可以从这句话开始'), h('blockquote', { className: 'pf_featured_scenario' }, selected.scenario)),
-      h('section', { className: 'pf_section pf_featured_requirements' },
-        h('div', null, h('h3', null, '使用前提'), list(selected.requirements)),
-        h('div', null, h('h3', null, '当前边界'), list(selected.limitations))),
-      h('section', { className: 'pf_section' }, h('h3', null, '产品与组件'), list(selected.components),
-        h('dl', { className: 'pf_featured_metadata' },
-          h('div', null, h('dt', null, '版本'), h('dd', null, selected.version)),
-          h('div', null, h('dt', null, '状态'), h('dd', null, statusLabels[selected.status])),
-          h('div', null, h('dt', null, '资料核对'), h('dd', null, h('time', { dateTime: selected.checkedAt }, dateLabel(selected.checkedAt))))),
-        h('p', { className: 'pf_small pf_muted' }, '主插件、桥接与管理组件按同一产品归组。平台依赖在使用前提中说明。')),
-      h('section', { className: 'pf_section' }, h('h3', null, '来源与起步方式'),
-        sources.length ? h('div', { className: 'pf_links' }, ...sources.map(source => h('a', { key: source, href: source, target: '_blank', rel: 'noopener noreferrer' }, sourceLabel(source)))) : h('p', { className: 'pf_small pf_muted pf_featured_source_note' }, '说明依据产品 README 与包版本。暂无已核对的公开产品入口，可先了解这里的场景、前提与限制。'),
-        install ? h('div', { className: 'pf_install pf_featured_install' }, h('p', { className: 'pf_small pf_muted' }, '已核对的精确安装来源'), h('code', null, install.spec),
-          h('p', { className: 'pf_small pf_muted' }, `版本 ${install.version} · 资产核对 ${dateLabel(install.verifiedAt)}`),
-          h('div', { className: 'pf_actions' }, button('复制安装来源', () => copyText(install.spec), { disabled: busy }), button('去 DSH 插件页核对', () => controller.openPluginManager(), { disabled: busy })),
-          h('p', { className: 'pf_small pf_muted' }, '在插件页核对宿主兼容性，按提示安装、启用，再进行实际使用验收。'))
-          : h('p', { className: 'pf_small pf_muted pf_featured_source_note' }, selected.status === 'available' ? '安装来源需要重新核对，暂不提供复制入口。仍可查看说明或准备场景草稿。' : '此项提供预览说明，当前没有可复制的公开安装来源。')));
+    // Legacy callers use the same detail surface. Catalog cards request the
+    // live server detail directly; this fallback never fabricates installability.
+    const preview = selected.status !== 'available' ? {
+      detailId: '', collection: 'featured', entryId: selected.id,
+      name: selected.subtitle.split(' · ')[0], title: selected.title,
+      summary: selected.summary, requirements: selected.requirements,
+      limitations: selected.limitations, version: selected.version,
+      installable: false, unavailableReason: selected.status === 'private' ? '此插件为私有接入，暂未提供公开安装版本。' : '此插件为本地预览，暂未提供公开安装版本。',
+      installation: { status: 'unavailable', installed: false, enabled: false, active: false },
+    } : null;
+    content = renderPluginDetailView({ h, state: { ...state, catalogSelection: { collection: 'featured', entryId: selected.id }, catalogDetail: state.catalogDetail || preview, catalogBusy: state.catalogBusy || (!preview ? 'detail' : '') }, controller: { ...controller, closeCatalogPlugin: () => controller.showHome(), refreshCatalogPlugin: () => controller.showCatalogPlugin('featured', selected.id) } });
   } else {
     const recommendedIds = new Set(recommendations.map(({ entry }) => entry.id));
     // A product has one place in the collection. Positive local signals change

@@ -231,9 +231,10 @@ test('same package and version from conflicting repositories or commits cannot b
     const result = await createDiscovery({ market, fetchImpl }).search({ intent });
     const firstSpec = `git+${firstRepo}.git#${SHA}`;
     const secondSpec = `git+${secondRepo}.git#${secondCommit}`;
-    assert.equal(result.candidates.length, 1);
+    assert.equal(result.candidates.length, 2);
+    assert.equal(new Set(result.candidates.map(candidate=>candidate.id)).size,2);
     assert.ok(result.warnings.some(warning => warning.includes('冲突') && warning.includes(firstSpec) && warning.includes(secondSpec)));
     assert.ok(result.candidates[0].limitations.some(note => note.includes('冲突') && note.includes(firstSpec) && note.includes(secondSpec)));
-    assert.equal(result.candidates[0].sourceTags.length, 1, 'conflicting sources must not be merged into a trust list');
+    for(const candidate of result.candidates)assert.equal(candidate.sourceTags.length, 1, 'conflicting sources must not be merged into a trust list');
   }
 });

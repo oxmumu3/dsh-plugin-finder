@@ -13,7 +13,7 @@ function authorUrl(value) {
 }
 const count = value => Number(value || 0).toLocaleString('en-US');
 
-/** A local, paginated browser. Selection is the only action delegated to Host. */
+/** A local, paginated browser. Details and installation never submit a search request. */
 export function createCommunityView(React) {
   const h = React.createElement;
   const overview = getCommunityOverview();
@@ -73,22 +73,7 @@ export function createCommunityView(React) {
             source ? h('a', { href: source, target: '_blank', rel: 'noopener noreferrer', 'aria-label': `${entry.name} 的作者页面` }, `作者 ${entry.owner}`) : h('span', null, `作者 ${entry.owner}`),
             presentation?.note ? h('span', { className: 'pfv_community_requirement' }, presentation.note) : null)),
         h('div', { className: 'pfv_community_entry_actions' },
-          button('查看方案', async event => {
-            if (busy || !modelReady) return;
-            const surface = event?.currentTarget?.closest?.('.pf_root');
-            const reveal = () => {
-              if (!surface?.isConnected) return;
-              const target = surface.querySelector('#pfv_outcome_title') || surface.querySelector('textarea[aria-label="任务描述"]');
-              if (!target) return;
-              if (target.tagName !== 'TEXTAREA') target.setAttribute('tabindex', '-1');
-              target.focus({ preventScroll: true });
-              (target.tagName === 'TEXTAREA' ? target.closest('.pfv_home_intro') || target : target).scrollIntoView({ block: 'start', behavior: 'auto' });
-            };
-            const pending = controller.startCommunityPlugin(entry.id);
-            if (typeof requestAnimationFrame === 'function') requestAnimationFrame(reveal);
-            await pending;
-            if (typeof requestAnimationFrame === 'function') requestAnimationFrame(reveal); else reveal();
-          }, { disabled: busy || !modelReady, 'aria-label': `查看 ${entry.name}（${entry.owner}）的使用方案` })));
+          button('查看详情', event => controller.showCatalogPlugin('community', entry.id, event?.currentTarget), { 'aria-label': `查看 ${entry.name}（${entry.owner}）的详情` })));
     };
     return h('section', { className: 'pfv_community', 'aria-labelledby': 'pfv_community_title' },
       h('div', { className: 'pfv_community_header' }, h('div', null,

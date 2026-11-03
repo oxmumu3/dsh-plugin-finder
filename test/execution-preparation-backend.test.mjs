@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {validatePreparation} from '../src/execution-preparation.js';
 import {createFinderService} from '../src/service.js';
 import {createPluginInstaller} from '../src/plugin-installation.js';
 
@@ -8,6 +9,18 @@ const intent={goal:'整理阅读材料',input:'当前工作区',output:'阅读�
 const candidate={id:'reading-tool',name:'reading-tool',capabilities:['检索'],install:{type:'npm',spec:'reading-tool@1.0.0',version:'1.0.0',readiness:'metadata-only'},evidence:{metadata:'manifest-checked'}};
 const plan={kind:'single',title:'阅读目录',rationale:'使用阅读工具',pluginIds:['reading-tool'],steps:[{capability:'检索',owner:'reading-tool',sourceCapability:'检索',action:'检索材料',input:'工作区',output:'目录'}],limits:[]};
 const receipt=(patch={})=>({candidateId:'reading-tool',packageName:'reading-tool',spec:'reading-tool@1.0.0',version:'1.0.0',requestId:'install-a',status:'ready',installed:true,enabled:true,active:true,application:'applied',...patch});
+
+test('a qualified Git candidate receipt validates against its manifest package identity, not the display or candidate id',()=>{
+ const id='reading-tool~'+'e'.repeat(24),spec='git+https://github.com/author/repo.git#'+'a'.repeat(40);
+ const workflow={candidates:[{id,name:'Display label',install:{type:'git',spec,version:'1.0.0',packageName:'reading-tool'}}],plan:{pluginIds:[id]}};
+ const value={status:'ready',updatedAt:'2026-10-26T12:00:00Z',plugins:[receipt({candidateId:id,spec})]};
+ assert.equal(validatePreparation(value,workflow,'use').plugins[0].packageName,'reading-tool');
+ for(const packageName of [id,'Display label','other-package'])assert.throws(()=>validatePreparation({...value,plugins:[{...value.plugins[0],packageName}]},workflow,'use'),error=>error.code==='INVALID_BACKUP');
+ const legacy={candidates:[{id:'reading-tool',install:{type:'git',spec,version:'1.0.0'}}],plan:{pluginIds:['reading-tool']}};
+ assert.equal(validatePreparation({...value,plugins:[receipt({spec})]},legacy,'use').plugins[0].packageName,'reading-tool');
+ const npm={candidates:[{id,install:{type:'npm',spec:'reading-tool@1.0.0',version:'1.0.0',packageName:'not-the-npm-spec'}}],plan:{pluginIds:[id]}};
+ assert.equal(validatePreparation({...value,plugins:[receipt({candidateId:id})]},npm,'use').plugins[0].packageName,'reading-tool');
+});
 function fixture({persist,preparePlugins,native=false}={}){
  const data=persist??{rows:new Map(),pointer:{activeTaskId:null,activeRevisionId:null},failWrite:false};
  data.store??={read:async id=>copy(data.rows.get(id)),write:async row=>{if(data.failWrite)throw Error('PRIVATE_STORAGE');data.rows.set(row.id,copy(row));},list:async()=>copy([...data.rows.values()]),readPointer:async()=>copy(data.pointer),writePointer:async value=>{data.pointer=copy(value);}};

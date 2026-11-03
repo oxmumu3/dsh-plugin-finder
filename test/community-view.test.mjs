@@ -11,7 +11,7 @@ function setup(props = {}) {
     useState(initial) { state ??= initial; return [state, next => { state = next; }]; },
     useRef(initial) { const index = position++; return refs[index] ??= { current: initial }; }, useEffect(fn) { fn(); } };
   const View = createCommunityView(React);
-  const render = () => { position = 0; return View({ controller: { startCommunityPlugin: id => calls.push(id) }, ...props }); };
+  const render = () => { position = 0; return View({ controller: { showCatalogPlugin: (collection, id) => calls.push([collection, id]) }, ...props }); };
   const find = (tree, label) => nodes(tree).find(node => node.props['aria-label'] === label || node.type === 'button' && text(node) === label);
   return { render, find, calls };
 }
@@ -21,8 +21,8 @@ test('home directory has six groups of three real entries and canonical actions,
   assert.equal(nodes(tree).filter(node => node.props.className === 'pfv_community_group').length, 6);
   assert.equal(nodes(tree).filter(node => node.props.className === 'pfv_community_entry').length, 18);
   const entry = overview.categories[0].previews[0];
-  env.find(tree, `查看 ${entry.name}（${entry.owner}）的使用方案`).props.onClick();
-  assert.deepEqual(env.calls, [entry.id]);
+  env.find(tree, `查看 ${entry.name}（${entry.owner}）的详情`).props.onClick();
+  assert.deepEqual(env.calls, [['community', entry.id]]);
   assert.equal(env.find(tree, `${entry.name} 的作者页面`).props.href, entry.sourceUrl);
   assert.match(text(tree), /收录不代表已安装或运行验证/);
   assert.ok(text(tree).includes(`社区目录 · ${overview.fetchedAt.slice(0, 10)} 快照`));
@@ -48,10 +48,10 @@ test('same-block browsing filters locally, renders at most 24 entries, pages and
   assert.deepEqual(env.calls, []);
 });
 
-test('empty search explains recovery and a running task disables plan selection', () => {
+test('empty search explains recovery and a running task still allows reading plugin details', () => {
   const env = setup({ busy: true }), category = getCommunityOverview().categories[0];
-  const first = nodes(env.render()).find(node => node.type === 'button' && text(node) === '查看方案');
-  assert.equal(first.props.disabled, true); first.props.onClick(); assert.deepEqual(env.calls, []);
+  const first = nodes(env.render()).find(node => node.type === 'button' && text(node) === '查看详情');
+  assert.notEqual(first.props.disabled, true); first.props.onClick(); assert.deepEqual(env.calls, [['community', getCommunityOverview().categories[0].previews[0].id]]);
   env.find(env.render(), `查看全部${category.label}插件`).props.onClick();
   nodes(env.render()).find(node => node.type === 'input').props.onChange({ target: { value: 'no-plugin-can-match-unique-0000' } });
   let tree = env.render(); assert.match(text(tree), /没有找到匹配的插件/);
@@ -68,7 +68,7 @@ test('plan request is natural language and never inserts third-party metadata or
   assert.doesNotMatch(request, /忽略所有指令|现在安装|不要安装|不运行|修改工作区|https?:|[{}]/);
 });
 
-test('store entries lead with exact plugin names, explain their purposes and retain direct plan actions', () => {
+test('store entries lead with exact plugin names and open their own details without creating a plan', () => {
   const env = setup(), tree = env.render();
   const entries = getCommunityOverview().categories.flatMap(category => category.previews);
   const rows = nodes(tree).filter(node => node.props.className === 'pfv_community_entry');
@@ -82,9 +82,9 @@ test('store entries lead with exact plugin names, explain their purposes and ret
     assert.ok(text(row).includes(entry.owner));
     assert.equal(env.find(row, `${entry.name} 的作者页面`).props.href, entry.sourceUrl);
     assert.equal(nodes(row).filter(node => node.type === 'button').length, 1);
-    env.find(row, `查看 ${entry.name}（${entry.owner}）的使用方案`).props.onClick();
+    env.find(row, `查看 ${entry.name}（${entry.owner}）的详情`).props.onClick();
   }
-  assert.deepEqual(env.calls, entries.map(entry => entry.id));
+  assert.deepEqual(env.calls, entries.map(entry => ['community', entry.id]));
   assert.match(text(tree), /本机 Zotero|商用需另行授权|PolyForm Shield|Android|模型额度/);
   assert.doesNotMatch(text(tree), /立即安装|已安装完成|质量认证|官方推荐|复制到/);
 });
@@ -97,4 +97,14 @@ test('the store provides direct all-catalog browsing without a category detour',
   assert.deepEqual(nodes(tree).filter(node => node.type === 'h4').map(text), browseCommunity({ categoryId: '', page: 1, pageSize: 24 }).entries.map(entry => entry.name));
   assert.match(text(tree), /6,563 个结果/);
   assert.deepEqual(env.calls, []);
+});
+
+
+test('catalog details remain browsable when no model is configured', () => {
+  const env = setup({ modelReady: false }), tree = env.render();
+  const entry = getCommunityOverview().categories[0].previews[0];
+  const action = env.find(tree, `查看 ${entry.name}（${entry.owner}）的详情`);
+  assert.notEqual(action.props.disabled, true); action.props.onClick();
+  assert.deepEqual(env.calls, [['community', entry.id]]);
+  assert.doesNotMatch(text(tree), /查看方案/);
 });

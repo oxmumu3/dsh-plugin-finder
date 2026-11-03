@@ -11,12 +11,21 @@ import {createTelemetry} from './src/telemetry.js';
 import {withTelemetryApi} from './src/telemetry-api.js';
 import {COLLECTOR_URL,CLIENT_VERSION} from './src/telemetry-config.js';
 import {createRuntimeContextReader} from './src/runtime-context.js';
-import {createPluginInstaller} from './src/plugin-installation.js';
+import {createPluginInstaller,createPluginInventoryReader} from './src/plugin-installation.js';
+import {createCatalogDetailResolver,catalogArchiveRoot,catalogEntryRevision} from './src/catalog-detail.js';
+import {createCatalogInventoryReader} from './src/catalog-inventory.js';
+import {createCatalogInstallService} from './src/catalog-install-service.js';
 import {withOpportunityApi} from './src/opportunity-api.js';
 import {createOpportunityContextReader} from './src/opportunity-context.js';
+import {defineTool} from '@deepseek-ai/dsh-tools';
+import {approveEscalation} from '@deepseek-ai/dsh-sandbox';
+import {createAgentFinderService} from './src/agent-finder-service.js';
+import {registerAgentTools} from './src/agent-tools.js';
+import {createGeneratedPluginInstaller,createGeneratedArtifactReviewer} from './src/agent-created-installation.js';
+import {createAgentModelAdapter} from './src/agent-model.js';
 export const name='plugin-finder';
-export const inject=['connection','storageDomain'];
-const feedback=z.object({id:z.string().uuid(),createdAt:z.string().datetime(),outcome:z.enum(['complete','partial','blocked']),pluginIds:z.array(z.string().max(200)).max(2),note:z.string().max(1500),stage:z.string().max(80)}).strict();
+export const inject=['connection','storageDomain','tools','systemPrompt','workspaceRegistry','workingDirectory','sandboxPolicy'];
+const feedback=z.object({id:z.string().uuid(),createdAt:z.string().datetime(),outcome:z.enum(['complete','partial','blocked']),pluginIds:z.array(z.string().max(200)).max(4),note:z.string().max(1500),stage:z.string().max(80)}).strict();
 const state=z.object({id:z.literal('entries'),rows:z.array(feedback).max(100)}).strict();
 const workflow=z.object({id:z.literal('current'),serialized:z.string().max(180000)}).strict();
 const domain=defineDomain({name:'plugin_finder',version:1,tables:{feedback:domainTable(state),workflow:domainTable(workflow)}});
@@ -27,8 +36,13 @@ const historyDomain=defineDomain({name:'plugin_finder_history',version:1,global:
 const telemetryGlobal=z.object({serialized:z.string().max(2000000)}).strict();
 const telemetryDomain=defineDomain({name:'plugin_finder_telemetry',version:1,tables:{},global:{schema:telemetryGlobal,initial:{serialized:'null'}}});
 const opportunityDomain=defineDomain({name:'plugin_finder_opportunities',version:1,tables:{},global:{schema:telemetryGlobal,initial:{serialized:'null'}}});
+// Agent requests never share the human workbench's active pointer or telemetry consent.
+const agentRequestRow=z.object({id:z.string().min(1).max(200),serialized:z.string().max(8000000)}).strict();
+const agentRequestDomain=defineDomain({name:'plugin_finder_agent_requests',version:1,tables:{requests:domainTable(agentRequestRow)}});
+const catalogInstallRow=z.object({id:z.string().min(1).max(200),serialized:z.string().max(256000)}).strict();
+const catalogInstallDomain=defineDomain({name:'plugin_finder_catalog_installs',version:1,tables:{installations:domainTable(catalogInstallRow)}});
 export async function apply(ctx){
-  return withOwnedDomains(ctx,[domain,historyDomain,telemetryDomain,opportunityDomain],async([store,historyStoreHandle,telemetryHandle,opportunityHandle])=>{
+  return withOwnedDomains(ctx,[domain,historyDomain,telemetryDomain,opportunityDomain,agentRequestDomain,catalogInstallDomain],async([store,historyStoreHandle,telemetryHandle,opportunityHandle,agentHandle,catalogHandle])=>{
   const table=store.table('feedback');
   const feedbackStore=createFeedbackStore({read:()=>table.get('entries'),write:row=>table.put('entries',state.parse(row))});
   const lifetime=new AbortController();
@@ -43,9 +57,39 @@ export async function apply(ctx){
   const model=createHostModel(ctx);
   core=createFinderService({discovery,model,feedbackStore,workflowStore,historyStore,telemetry,hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal})});
   const opportunityStore={read:async()=>JSON.parse((await opportunityHandle.global.get()).serialized),write:value=>opportunityHandle.global.set({serialized:JSON.stringify(value)})};
-  const service=withOpportunityApi(withTelemetryApi(core,telemetry),{model,store:opportunityStore,historyStore,readWorkspaceContext:createOpportunityContextReader(ctx,{signal:lifetime.signal})});
+  const archiveRoot=catalogArchiveRoot(ctx),installations=catalogHandle.table('installations');
+  const catalogService=createCatalogInstallService({
+    store:{read:id=>installations.get(id),write:row=>installations.put(row.id,catalogInstallRow.parse(row)),list:()=>[...installations.entries()].map(([,row])=>row)},
+    resolveDetail:createCatalogDetailResolver({discovery,hostVersion:getDshRuntimeVersion(),nodeVersion:process.versions.node,platform:process.platform,archiveRoot,archiveHome:archiveRoot?ctx.get('profileContext',false)?.home:undefined,signal:lifetime.signal}),
+    preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal,archiveRoot}),
+    readInstalled:createPluginInventoryReader(ctx,{archiveRoot}),
+    readEntryInstalled:createCatalogInventoryReader(ctx),entryRevision:catalogEntryRevision,
+  });
+  const service={...withOpportunityApi(withTelemetryApi(core,telemetry),{model,store:opportunityStore,historyStore,readWorkspaceContext:createOpportunityContextReader(ctx,{signal:lifetime.signal})}),
+    catalogDetail:body=>catalogService.detail(body),catalogInstall:body=>catalogService.install(body),catalogStatus:body=>catalogService.status(body)};
+  const requests=agentHandle.table('requests');
+  const agentModel=createAgentModelAdapter(model,{readRuntime:createRuntimeContextReader(ctx,{signal:lifetime.signal})});
+  const agentService=createAgentFinderService({
+    readInstalled:createPluginInventoryReader(ctx,{archiveRoot}),
+    store:{read:id=>requests.get(id),write:row=>requests.put(row.id,agentRequestRow.parse(row))},
+    createCore:({historyStore:requestHistory})=>createFinderService({
+      historyStore:requestHistory,
+      model:agentModel,
+      discovery:{search:request=>discovery.search(request),searchSelected:request=>discovery.searchSelected(request)},
+      hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),
+    }),
+    preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal}),
+    prepareGeneratedPlugins:createGeneratedPluginInstaller(ctx,{signal:lifetime.signal}),
+    reviewGeneratedArtifact:createGeneratedArtifactReviewer(ctx,{signal:lifetime.signal}),
+  });
+  const stopAgentTools=registerAgentTools(ctx,agentService,{defineTool,approveEscalation,signal:lifetime.signal});
   telemetry.committed();
   const stopRoutes=registerFinderRoutes(ctx,service);
-  return()=>{stopRoutes();lifetime.abort();service.close();};
+  return async()=>{
+    lifetime.abort();
+    try{stopRoutes();}finally{
+      try{await stopAgentTools();}finally{try{await catalogService.close();}finally{service.close();discovery.close();}}
+    }
+  };
   });
 }

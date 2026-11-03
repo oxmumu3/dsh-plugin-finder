@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { renderFeaturedView } from '../src/featured-view.js';
 import { featuredCatalog } from '../src/featured-catalog.js';
-import { safeFeaturedInstall } from '../src/featured.js';
 
 const h = (type, props, ...children) => ({ type, props: props ?? {}, children });
 const content = node => node == null ? '' : typeof node !== 'object' ? String(node) : Array.isArray(node) ? node.map(content).join(' ') : content(node.children);
@@ -41,28 +40,28 @@ test('recommendation controls remain available inside the collapsed adjustment a
   assert.deepEqual(calls, [['interest', 'twin'], ['dismiss', 'agent-twin']]);
 });
 
-test('detail returns home, preserves prerequisites, and keeps previews without installation actions', () => {
+test('an unavailable detail response stays explicit without assuming a particular product is forever private', () => {
   const calls = [];
-  const view = render({ featuredId: 'family-assistant', featuredDrafts: [draft] }, { mode: 'detail', controller: { showHome: () => calls.push('home'), tryFeatured: id => calls.push(id) } });
-  const buttons = nodes(view).filter(node => node.type === 'button');
-  buttons.find(node => content(node) === '返回首页').props.onClick();
-  buttons.find(node => content(node) === '试试这个场景').props.onClick();
-  assert.deepEqual(calls, ['home', 'family-assistant']);
-  assert.match(content(view), /使用前提/);
-  assert.match(content(view), /当前边界/);
-  assert.match(content(view), /产品与组件/);
-  assert.match(content(view), /来源与起步方式/);
-  assert.doesNotMatch(content(view), /复制安装来源|需要恢复的未提交输入|恢复草稿/);
+  const entry=featuredCatalog.find(entry=>entry.id==='dot-harness');
+  const unavailable={...entry,name:entry.components[0],installable:false,unavailableReason:'此插件为私有接入，暂未提供公开安装版本。',installation:{status:'unavailable',installed:false,enabled:false,active:false}};
+  const view = render({ featuredId: 'dot-harness', featuredDrafts: [draft],catalogDetail:unavailable }, { mode: 'detail', controller: { showHome: () => calls.push('home') } });
+  nodes(view).find(node => node.type === 'button' && content(node) === '返回插件列表').props.onClick();
+  assert.deepEqual(calls, ['home']);
+  assert.match(content(view), /使用前提/); assert.match(content(view), /需要了解/);
+  assert.match(content(view), /私有接入，暂未提供公开安装版本/);
+  assert.doesNotMatch(content(view), /复制安装来源|试试这个场景|需要恢复的未提交输入|恢复草稿/);
 });
 
-test('public detail uses the existing exact-version installation gate', () => {
-  const entry = featuredCatalog.find(item => item.id === 'agent-twin');
+test('featured cards open the bound product detail and public fallback does not promise an unchecked install', () => {
+  const calls = [];
+  const home = render({}, { controller: { showCatalogPlugin: (collection, id) => calls.push([collection, id]) } });
+  const entry = featuredCatalog[0];
+  nodes(home).find(node => node.props['aria-label'] === `查看${entry.title}的详情`).props.onClick();
+  assert.deepEqual(calls, [['featured', entry.id]]);
   const view = render({ featuredId: entry.id }, { mode: 'detail' });
-  const copyButton = nodes(view).find(node => node.type === 'button' && content(node) === '复制安装来源');
-  assert.equal(Boolean(copyButton), Boolean(safeFeaturedInstall(entry)));
-  const links = nodes(view).filter(node => node.type === 'a');
-  assert.ok(links.length > 0);
-  assert.ok(links.every(node => new URL(node.props.href).pathname.startsWith('/oxmumu3/')));
+  assert.equal(nodes(view).some(node => node.type === 'button' && content(node) === '复制安装来源'), false);
+  assert.ok(nodes(view).some(node => node.type === 'button' && content(node) === '正在读取详情…' && node.props.disabled));
+  assert.ok(nodes(view).filter(node => node.type === 'a').every(node => new URL(node.props.href).pathname.startsWith('/oxmumu3/')));
 });
 
 test('drafts mode is reserved for history and keeps the exact restore and remove actions', () => {

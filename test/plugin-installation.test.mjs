@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-const {createPluginInstaller}=await import('../src/plugin-installation.js').catch(()=>({}));
+const {createPluginInstaller,createPluginInventoryReader}=await import('../src/plugin-installation.js').catch(()=>({}));
 
 const copy=value=>structuredClone(value);
 const candidate=(name='dsh-example',version='1.2.3')=>({id:name,name:'A display title, never the install identity',install:{type:'npm',spec:`${name}@${version}`,version,registry:'https://registry.npmjs.org/'},evidence:{metadata:'manifest-checked'}});
@@ -49,6 +49,16 @@ test('a disabled matching bundle is enabled without reinstalling or touching oth
 test('conflicting version or source never removes or replaces an installed plugin',async()=>{
   for(const extra of [{version:'2.0.0'},{source:'file:/private/another-copy'}]){
     const f=fixture({bundles:[bundle('dsh-example',extra)],plugins:[runtime()]});await rejectCode(f.prepare(f.input),'PLUGIN_INSTALL_CONFLICT');assert.equal(f.calls.some(row=>['install','enable'].includes(row[0])),false);
+  }
+});
+
+test('a version or source conflict preserves actual enabled and active facts while refusing replacement',async()=>{
+  for(const extra of [{version:'2.0.0'},{source:'file:/private/another-copy'}]){
+    const f=fixture({bundles:[bundle('dsh-example',extra)],plugins:[runtime()]});
+    const read=createPluginInventoryReader({get:()=>f.manager});
+    assert.deepEqual(await read(candidate()),{installed:true,enabled:true,active:true,conflict:true,packageName:'dsh-example',version:extra.version??'1.2.3'});
+    await rejectCode(f.prepare(f.input),'PLUGIN_INSTALL_CONFLICT');
+    assert.equal(f.calls.some(row=>['install','enable'].includes(row[0])),false);
   }
 });
 
@@ -125,6 +135,97 @@ test('fixed Git source preserves the manifest identity and exact author commit',
   const git={...candidate(),name:'A marketing title',install:{type:'git',spec,version:'1.2.3',commit},evidence:{metadata:'manifest-checked',sources:[{kind:'manifest',url:`https://raw.githubusercontent.com/author/repo/${commit}/packages/tool/package.json`}]}};
   const f=fixture({inspect:()=>({status:'accepted',kind:'git',bundle:null}),install:(actual,options,{set})=>{assert.equal(actual,spec);set([bundle('dsh-example',{source:spec})],[runtime()]);return{application:'applied',bundle:'dsh-example',version:'1.2.3'};}});
   const result=await f.prepare({...f.input,candidates:[git]});assert.equal(result.plugins[0].source,spec);assert.equal(result.plugins[0].packageName,'dsh-example');
+});
+
+function immutableGit(subdir=''){
+  const commit='a'.repeat(40),suffix=subdir?'&path:/'+subdir:'';
+  return{...candidate(),install:{type:'git',spec:`git+https://github.com/author/repo.git#${commit}${suffix}`,version:'1.2.3',commit},evidence:{metadata:'manifest-checked',sources:[{kind:'manifest',url:`https://raw.githubusercontent.com/author/repo/${commit}/${subdir?subdir+'/':''}package.json`}]}};
+}
+
+test('a first Git installation accepts the manager GitHub shorthand readback without a second install',async()=>{
+  const value=immutableGit(),canonical=`github:author/repo#${value.install.commit}`;
+  const f=fixture({inspect:()=>({status:'accepted',kind:'git',bundle:null}),install:(spec,options,{set})=>{
+    assert.equal(spec,value.install.spec);set([bundle('dsh-example',{source:canonical})],[runtime()]);return{application:'applied',bundle:'dsh-example',version:'1.2.3'};
+  }});
+  const result=await f.prepare({...f.input,candidates:[value]});
+  assert.equal(result.status,'ready');assert.equal(result.plugins[0].source,value.install.spec);
+  assert.equal(f.calls.filter(row=>row[0]==='install').length,1);
+});
+
+test('immutable equivalent GitHub forms preserve the exact selected source and subdirectory',async()=>{
+  for(const subdir of ['','packages/tool']){
+    const value=immutableGit(subdir),suffix=subdir?'&path:/'+subdir:'';
+    for(const source of [value.install.spec,value.install.spec.slice(4),`github:author/repo#${value.install.commit}${suffix}`]){
+      const f=fixture({bundles:[bundle('dsh-example',{source})],plugins:[runtime()]});
+      const result=await f.prepare({...f.input,candidates:[value]});
+      assert.equal(result.plugins[0].spec,value.install.spec);assert.equal(result.plugins[0].source,value.install.spec);
+      assert.equal(f.calls.some(row=>['inspect','install','enable'].includes(row[0])),false);
+    }
+  }
+});
+
+test('GitHub source equivalence rejects mutable, foreign, malformed and credential-bearing sources without overwriting',async()=>{
+  const value=immutableGit('packages/tool'),sha=value.install.commit;
+  const sources=[
+    `github:other/repo#${sha}&path:/packages/tool`,`github:author/other#${sha}&path:/packages/tool`,
+    `github:author/repo#${'b'.repeat(40)}&path:/packages/tool`,`github:author/repo#${sha.slice(0,12)}&path:/packages/tool`,
+    'github:author/repo#main&path:/packages/tool',`github:author/repo#${sha}`,`github:author/repo#${sha}&path:/packages/other`,
+    `github:author/repo#${sha}&path:/packages/../tool`,`github:author/repo#${sha}&path:/packages//tool`,
+    `github:author/repo#${sha}&path:/packages/./tool`,`github:author/repo#${sha}&path:/packages/%74ool`,
+    `github:author/repo#${sha}&path:/packages/tool&path:/packages/tool`,`github:author/repo#${sha}&path:/packages/tool&other=1`,
+    `github:author/repo#${sha}&path:/packages/tool?token=secret`,
+    `git+https://gitlab.com/author/repo.git#${sha}&path:/packages/tool`,
+    `https://github.com.evil.invalid/author/repo.git#${sha}&path:/packages/tool`,
+    `https://github.com:443/author/repo.git#${sha}&path:/packages/tool`,
+    `https://user:secret@github.com/author/repo.git#${sha}&path:/packages/tool`,
+    `git+https://token@github.com/author/repo.git#${sha}&path:/packages/tool`,
+    `github:token@author/repo#${sha}&path:/packages/tool`,
+    `https://github.com/author/repo.git?token=secret#${sha}&path:/packages/tool`,
+    `git+ssh://git@github.com/author/repo.git#${sha}&path:/packages/tool`,
+    `github:author/repo-suffix#${sha}&path:/packages/tool`,
+  ];
+  for(const source of sources){
+    const original=bundle('dsh-example',{source}),f=fixture({bundles:[original],plugins:[runtime()]});
+    await rejectCode(f.prepare({...f.input,candidates:[value]}),'PLUGIN_INSTALL_CONFLICT');
+    assert.equal(f.calls.some(row=>['inspect','install','enable'].includes(row[0])),false);
+    assert.deepEqual(await f.manager.listBundles(),[original]);
+  }
+});
+
+test('a recovered immutable Git installation recognizes canonical inventory and retains its original request',async()=>{
+  const value=immutableGit('packages/tool'),source=`github:author/repo#${value.install.commit}&path:/packages/tool`;
+  const f=fixture({bundles:[bundle('dsh-example',{source})],plugins:[runtime()],wait:()=>({application:'applied'})});
+  const previous=[{candidateId:value.id,packageName:value.id,version:value.install.version,spec:value.install.spec,requestId:'original-git-install',status:'unknown'}];
+  const result=await f.prepare({...f.input,candidates:[value],previous});
+  assert.equal(result.status,'ready');assert.equal(result.plugins[0].requestId,'original-git-install');
+  assert.equal(f.calls.filter(row=>row[0]==='install').length,0);assert.deepEqual(f.calls.find(row=>row[0]==='wait'),['wait','original-git-install']);
+});
+
+test('a collision-qualified Git candidate id uses only the author manifest package name for installation',async()=>{
+  const value=immutableGit();value.id='library-preview~'+ 'c'.repeat(24);value.name='Misleading display name';value.install.packageName='dsh-example';
+  const source=`github:author/repo#${value.install.commit}`;
+  const f=fixture({bundles:[bundle('dsh-example',{source})],plugins:[runtime()]});
+  const result=await f.prepare({...f.input,candidates:[value]});
+  assert.equal(result.plugins[0].candidateId,value.id);assert.equal(result.plugins[0].packageName,'dsh-example');
+  assert.equal(result.plugins[0].source,value.install.spec);assert.equal(f.calls.some(row=>['inspect','install','enable'].includes(row[0])),false);
+});
+
+test('first installation of a qualified Git candidate compares the manager bundle with its checked manifest name',async()=>{
+  const value=immutableGit();value.id='library-preview~'+'f'.repeat(24);value.install.packageName='dsh-example';
+  const f=fixture({inspect:()=>({status:'accepted',kind:'git',bundle:null}),install:(spec,options,{set})=>{
+    assert.equal(spec,value.install.spec);set([bundle('dsh-example',{source:`github:author/repo#${value.install.commit}`})],[runtime()]);
+    return{application:'applied',bundle:'dsh-example',version:'1.2.3'};
+  }});
+  const result=await f.prepare({...f.input,candidates:[value]});
+  assert.equal(result.plugins[0].candidateId,value.id);assert.equal(result.plugins[0].packageName,'dsh-example');assert.equal(f.calls.filter(row=>row[0]==='install').length,1);
+});
+
+test('a qualified Git id without a valid manifest package name cannot use its display name as identity',async()=>{
+  for(const packageName of [undefined,'../bad',{name:'dsh-example'},'Misleading title']){
+    const value=immutableGit();value.id='library-preview~'+'d'.repeat(24);value.name='dsh-example';
+    if(packageName!==undefined)value.install.packageName=packageName;
+    const f=fixture();await rejectCode(f.prepare({...f.input,candidates:[value]}),'PLUGIN_INSTALL_INVALID');assert.equal(f.calls.length,0);
+  }
 });
 
 test('Git mutable refs or different manifest commits are rejected before a manager call',async()=>{

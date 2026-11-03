@@ -134,6 +134,13 @@ test('different owner, sibling package, exact-version mismatch and incompatibili
     assert.equal(result.candidates.length,0);assert.ok(['unresolved','incompatible'].includes(result.selected.status));assert.ok(result.warnings.length);
   }
 });
+test('negative author platform declarations block direct selected-plugin installation',async()=>{
+  for(const os of [['!darwin'],['darwin','!darwin'],['linux']]){
+    const f=authorFixture({manifestPatch:{os}}),discovery=createDiscovery({fetchImpl:f.fetchImpl});
+    const result=await discovery.searchSelected({communityEntryId:monorepo.id,hostVersion:'0.2.1-rc.3',nodeVersion:'24.0.0',platform:'darwin'});
+    assert.equal(result.candidates.length,0);assert.equal(result.selected.status,'incompatible');discovery.close();
+  }
+});
 
 test('npm author gitHead version drift is documented without falsely changing the exact published install identity',async()=>{
   const f=authorFixture({authorPatch:{version:'0.0.1'}}),result=await createDiscovery({fetchImpl:f.fetchImpl}).searchSelected({communityEntryId:monorepo.id,hostVersion:'0.2.1-rc.2',nodeVersion:'22.22.0'});

@@ -997,7 +997,7 @@ test('co-creation feedback stays local even when ordinary telemetry is enabled',
 });
 
 const readyCreationWorkflow = () => { const w = creationWorkflow(); w.creation.status = 'ready'; w.creation.questions = []; return w; };
-const readyBootstrap = workflow => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), hostVersion: '0.2.1-rc.2' });
+const readyBootstrap = workflow => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow), hostVersion: '0.2.1-rc.5' });
 
 test('ready blueprint uses official Creator claim and saves exact source before draft navigation', async () => {
   const { module } = await loadClient(); const h = host({ creator: true }); let workflow = readyCreationWorkflow(); let attempt;
@@ -1067,15 +1067,15 @@ test('editing accumulated constraints retains more than six accepted restriction
   const constraints = Array.from({ length: 12 }, (_, i) => '明确限制' + i); c.editIntent({ constraints }); assert.deepEqual(copy(c.getSnapshot().intent.constraints), constraints); c.close();
 });
 
-test('featured browsing preserves the active task and makes no extra request or draft write', async () => {
+test('featured browsing preserves the active task while requesting only bound details', async () => {
   const { module } = await loadClient(); const h = host();
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(savedWorkflow('plan')) }) });
   const c = module.createFinderController(h.ctx, { fetch: api.fetch }); await c.bootstrap();
   const before = copy(c.getSnapshot());
   assert.equal(typeof c.showFeatured, 'function'); c.showFeatured('agent-twin');
-  assert.equal(c.getSnapshot().view, 'featured'); assert.equal(c.getSnapshot().featuredId, 'agent-twin');
+  assert.equal(c.getSnapshot().catalogOpen, true); assert.equal(c.getSnapshot().catalogSelection.entryId, 'agent-twin');
   assert.equal(c.getSnapshot().taskId, before.taskId); assert.deepEqual(copy(c.getSnapshot().plan), before.plan);
-  assert.equal(api.calls.length, 1); assert.equal(h.drafts.length, 0); c.close();
+  assert.equal(api.calls.length, 2); assert.equal(api.calls.at(-1).url, '/api/plugin_finder/catalog-detail'); assert.equal(h.drafts.length, 0); c.close();
 });
 
 test('featured preferences persist locally without requests and dismissed recommendations can be restored', async () => {
@@ -1120,12 +1120,12 @@ test('featured scene rejects missing catalog ids and warns when preferences cann
 });
 
 test('featured cards are browsable without a model and preview entries have no install action', async () => {
-  const { module } = await loadClient(); const h = host(); const c = module.createFinderController(h.ctx, { fetch: server().fetch });
-  assert.equal(typeof c.showFeatured, 'function'); c.showFeatured('family-assistant');
+  const { module } = await loadClient(); const h = host(); const c = module.createFinderController(h.ctx, { fetch: async () => ({ ok: true, json: async () => ({ ...catalogDetailFixture('featured', 'family-assistant', 'unavailable'), installable: false, title: '微信家庭助手', unavailableReason: '本地预览，暂无公开安装版本' }) }) });
+  assert.equal(typeof c.showFeatured, 'function'); await c.showFeatured('family-assistant');
   const rendered = await renderWorkbench(c.getSnapshot());
   assert.match(rendered.text,/微信家庭|家人/); assert.match(rendered.text,/预览/);
   assert.ok(!rendered.nodes.some(n=>n.type==='button' && String(n.children).includes('复制安装来源')));
-  assert.ok(rendered.nodes.some(n=>n.type==='button' && String(n.children).includes('试试这个场景') && !n.props.disabled)); c.close();
+  assert.ok(rendered.nodes.some(n=>n.type==='button' && String(n.children).includes('暂未提供安装版本') && n.props.disabled)); c.close();
 });
 
 test('featured switching blocks on draft storage failure and keeps edited understanding', async () => {
@@ -1156,7 +1156,7 @@ test('featured retry does not replace input typed after failed reset',async()=>{
 
 test('featured view chosen while bootstrap is pending remains open',async()=>{
   const {module}=await loadClient();const h=host();let done;const api=server({bootstrap:()=>new Promise(resolve=>{done=()=>resolve({ok:true,json:async()=>restoredBootstrap(identifiedWorkflow())});})});
-  const c=module.createFinderController(h.ctx,{fetch:api.fetch});const pending=c.bootstrap();c.showFeatured('agent-twin');done();await pending;assert.equal(c.getSnapshot().view,'featured');assert.equal(c.getSnapshot().taskId,'task-a');c.close();
+  const c=module.createFinderController(h.ctx,{fetch:api.fetch});const pending=c.bootstrap();c.showFeatured('agent-twin');done();await pending;assert.equal(c.getSnapshot().catalogOpen,true);assert.equal(c.getSnapshot().catalogSelection.entryId,'agent-twin');assert.equal(c.getSnapshot().taskId,'task-a');c.close();
 });
 
 test('featured retry preserves understanding and blueprint edits made after reset failure',async()=>{
@@ -1472,4 +1472,162 @@ test('a full input archive permits searching from an unchanged saved task but pr
     }
     c.close();
   }
+});
+
+const catalogDetailFixture = (collection = 'community', entryId = getCommunityOverview().categories[0].previews[0].id, status = 'not-installed') => ({
+  detailId: `detail:${entryId}`, collection, entryId, name: 'exact-selected-plugin', title: '所选插件', summary: '这是所选插件的说明', description: '作者的功能说明', author: 'author', version: '1.0.0', sourceUrl: 'https://github.com/author/exact-selected-plugin', requirements: ['先授权选定文件'], limitations: ['不自动发送'], installable: true, unavailableReason: '',
+  installation: { status, installed: status === 'ready', enabled: status === 'ready', active: status === 'ready' },
+});
+
+test('catalog browsing without a model preserves current task, input, editor and drafts without searching', async () => {
+  const { module } = await loadClient(); const h = host(); const calls = [], storage = new Map();
+  const saved = savedWorkflow('plan');
+  const c = module.createFinderController(h.ctx, { draftStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) }, fetch: async (url, options) => {
+    calls.push({ url, options }); return { ok: true, json: async () => url.endsWith('/bootstrap') ? { ...restoredBootstrap(saved), model: { configured: false } } : catalogDetailFixture() };
+  }});
+  await c.bootstrap(); c.setHomeRequest('这份原始需求不能替换'); c.setFollowup('未发送的修改');
+  const before = copy(c.getSnapshot()), stored = [...storage];
+  const entry = getCommunityOverview().categories[0].previews[0];
+  assert.equal(await c.showCatalogPlugin('community', entry.id), true);
+  const after = c.getSnapshot();
+  assert.equal(after.catalogOpen, true); assert.equal(after.catalogDetail.entryId, entry.id);
+  for (const field of ['view', 'homeRequest', 'request', 'taskId', 'revisionId', 'plan', 'intent', 'followupText', 'featuredDrafts', 'creationForm']) assert.deepEqual(copy(after[field]), before[field], field);
+  assert.deepEqual([...storage], stored); assert.equal(h.created.length, 0); assert.equal(h.drafts.length, 0);
+  assert.deepEqual(calls.map(x => x.url), ['/api/plugin_finder/bootstrap', '/api/plugin_finder/catalog-detail']);
+  assert.deepEqual(JSON.parse(calls[1].options.body), { collection: 'community', entryId: entry.id });
+  c.closeCatalogPlugin(); assert.equal(c.getSnapshot().catalogOpen, false); assert.equal(c.getSnapshot().homeRequest, before.homeRequest); c.close();
+});
+
+test('catalog install uses only the bound detail identity and double clicks create one request', async () => {
+  const { module } = await loadClient(); const h = host(); const entry = getCommunityOverview().categories[0].previews[0]; const calls = []; let finish;
+  const c = module.createFinderController(h.ctx, { fetch: async (url, options) => {
+    calls.push({ url, options });
+    if (url.endsWith('/catalog-install')) return new Promise(resolve => { finish = () => resolve({ ok: true, json: async () => catalogDetailFixture('community', entry.id, 'ready') }); });
+    return { ok: true, json: async () => catalogDetailFixture() };
+  }});
+  await c.showCatalogPlugin('community', entry.id);
+  const first = c.installCatalogPlugin(), duplicate = c.installCatalogPlugin();
+  assert.equal(c.getSnapshot().catalogBusy, 'install'); assert.equal(c.getSnapshot().busy, null);
+  assert.equal(calls.filter(x => x.url.endsWith('/catalog-install')).length, 1);
+  finish(); assert.equal(await first, true); await duplicate;
+  assert.deepEqual(JSON.parse(calls.at(-1).options.body), { detailId: `detail:${entry.id}` });
+  assert.equal(c.getSnapshot().catalogDetail.installation.status, 'ready');
+  assert.equal(await c.installCatalogPlugin(), false); assert.equal(calls.length, 2); c.close();
+});
+
+test('late catalog detail responses cannot replace another selected plugin or reopen a closed detail', async () => {
+  const { module } = await loadClient(); const h = host(); const entries = getCommunityOverview().categories[0].previews; const pending = new Map();
+  const c = module.createFinderController(h.ctx, { fetch: (url, options) => new Promise(resolve => pending.set(JSON.parse(options.body).entryId, resolve)) });
+  const first = c.showCatalogPlugin('community', entries[0].id), second = c.showCatalogPlugin('community', entries[1].id);
+  pending.get(entries[1].id)({ ok: true, json: async () => catalogDetailFixture('community', entries[1].id) }); await second;
+  pending.get(entries[0].id)({ ok: true, json: async () => catalogDetailFixture('community', entries[0].id) }); await first;
+  assert.equal(c.getSnapshot().catalogDetail.entryId, entries[1].id);
+  const third = c.showCatalogPlugin('community', entries[2].id); c.closeCatalogPlugin();
+  pending.get(entries[2].id)({ ok: true, json: async () => catalogDetailFixture('community', entries[2].id) }); await third;
+  assert.equal(c.getSnapshot().catalogOpen, false); c.close();
+});
+
+test('catalog unknown installation offers status reconciliation without resubmitting installation', async () => {
+  const { module } = await loadClient(); const h = host(); const calls = []; const entry = getCommunityOverview().categories[0].previews[0];
+  const c = module.createFinderController(h.ctx, { fetch: async (url, options) => {
+    calls.push({ url, options }); return { ok: true, json: async () => catalogDetailFixture('community', entry.id, url.endsWith('/catalog-status') ? 'ready' : 'unknown') };
+  }});
+  await c.showCatalogPlugin('community', entry.id); assert.equal(await c.installCatalogPlugin(), false);
+  assert.equal(await c.refreshCatalogPlugin(), true);
+  assert.deepEqual(calls.map(x => x.url), ['/api/plugin_finder/catalog-detail', '/api/plugin_finder/catalog-status']);
+  assert.equal(c.getSnapshot().catalogDetail.installation.status, 'ready'); c.close();
+});
+
+test('catalog rejects unknown selections and mismatched responses without affecting the task error', async () => {
+  const { module } = await loadClient(); const h = host(); let calls = 0;
+  const c = module.createFinderController(h.ctx, { fetch: async () => { calls++; return { ok: true, json: async () => catalogDetailFixture('featured', 'agent-twin') }; } });
+  assert.equal(await c.showCatalogPlugin('community', 'not-in-catalog'), false); assert.equal(calls, 0);
+  c.reportError('原任务错误仍保留');
+  assert.equal(await c.showCatalogPlugin('community', getCommunityOverview().categories[0].previews[0].id), false);
+  assert.match(c.getSnapshot().catalogError, /所选插件|一致/); assert.equal(c.getSnapshot().error, '原任务错误仍保留'); c.close();
+});
+
+test('an interrupted catalog installation becomes uncertain and only reads status before another action', async () => {
+  const { module } = await loadClient(); const h = host(); const entry = getCommunityOverview().categories[0].previews[0]; const calls = [];
+  const c = module.createFinderController(h.ctx, { fetch: async (url, options) => {
+    calls.push({ url, options });
+    if (url.endsWith('/catalog-install')) throw new Error('network disconnected after dispatch');
+    return { ok: true, json: async () => catalogDetailFixture('community', entry.id, url.endsWith('/catalog-status') ? 'ready' : 'not-installed') };
+  }});
+  await c.showCatalogPlugin('community', entry.id); assert.equal(await c.installCatalogPlugin(), false);
+  assert.equal(c.getSnapshot().catalogDetail.installation.status, 'unknown');
+  assert.equal(await c.installCatalogPlugin(), false); await c.refreshCatalogPlugin();
+  assert.deepEqual(calls.map(x => x.url), ['/api/plugin_finder/catalog-detail', '/api/plugin_finder/catalog-install', '/api/plugin_finder/catalog-status']); c.close();
+});
+
+test('a completed installation cannot overwrite a different selected plugin', async () => {
+  const { module } = await loadClient(); const h = host(); const entries = getCommunityOverview().categories[0].previews; let finish;
+  const c = module.createFinderController(h.ctx, { fetch: async (url, options) => {
+    if (url.endsWith('/catalog-install')) return new Promise(resolve => { finish = () => resolve({ ok: true, json: async () => catalogDetailFixture('community', entries[0].id, 'ready') }); });
+    return { ok: true, json: async () => catalogDetailFixture('community', JSON.parse(options.body).entryId) };
+  }});
+  await c.showCatalogPlugin('community', entries[0].id); const installing = c.installCatalogPlugin();
+  await c.showCatalogPlugin('community', entries[1].id); finish(); assert.equal(await installing, false);
+  assert.equal(c.getSnapshot().catalogDetail.entryId, entries[1].id); assert.equal(c.getSnapshot().catalogDetail.installation.status, 'not-installed'); c.close();
+});
+
+test('catalog temporary source failures recheck the selected source but unknown installs only read status', async () => {
+  const { module } = await loadClient(); const h = host(); const entry = getCommunityOverview().categories[0].previews[0]; const calls = [];
+  let next = { ...catalogDetailFixture('community', entry.id, 'unavailable'), installable: false, unavailableReason: '临时无法核对作者来源，请稍后重试。' };
+  const c = module.createFinderController(h.ctx, { fetch: async (url, options) => {
+    calls.push({ url, options }); return { ok: true, json: async () => copy(next) };
+  }});
+  await c.showCatalogPlugin('community', entry.id);
+  next = { ...next, installation: { ...next.installation, status: 'unknown' } };
+  await c.refreshCatalogPlugin();
+  assert.deepEqual(calls.map(x => x.url), ['/api/plugin_finder/catalog-detail', '/api/plugin_finder/catalog-detail']);
+  assert.deepEqual(JSON.parse(calls.at(-1).options.body), { collection: 'community', entryId: entry.id });
+  await c.refreshCatalogPlugin(); assert.equal(calls.at(-1).url, '/api/plugin_finder/catalog-status');
+  assert.equal(await c.installCatalogPlugin(), false); c.close();
+});
+
+test('fixed catalog source recovery sends a bound boolean recheck without caller install metadata',async()=>{
+ const {module}=await loadClient(),h=host(),entry=getCommunityOverview().categories[0].previews[0],calls=[];
+ let next={...catalogDetailFixture('community',entry.id,'unavailable'),installable:false,sourceRecheckAllowed:true,unavailableReason:'固定安装包暂时无法读取，请重新核对原来源。'};
+ const c=module.createFinderController(h.ctx,{fetch:async(url,options)=>{calls.push({url,body:JSON.parse(options.body)});return{ok:true,json:async()=>copy(next)};}});
+ await c.showCatalogPlugin('community',entry.id);assert.equal(c.getSnapshot().catalogDetail.sourceRecheckAllowed,true);assert.equal(await c.installCatalogPlugin(),false);
+ next={...catalogDetailFixture('community',entry.id),sourceRecheckAllowed:false};
+ assert.equal(await c.refreshCatalogPlugin(),true);
+ assert.deepEqual(calls,[{url:'/api/plugin_finder/catalog-detail',body:{collection:'community',entryId:entry.id}},{url:'/api/plugin_finder/catalog-detail',body:{collection:'community',entryId:entry.id,recheck:true,detailId:next.detailId}}]);
+ assert.equal(c.getSnapshot().catalogDetail.installable,true);assert.equal(h.created.length,0);c.close();
+});
+test('server-blocked fixed-source recovery only reconciles the existing install status',async()=>{
+ const {module}=await loadClient(),h=host(),entry=getCommunityOverview().categories[0].previews[0],calls=[];
+ const shown={...catalogDetailFixture('community',entry.id,'installed-local'),installable:false,sourceRecheckAllowed:false,unavailableReason:'固定安装包暂时无法读取，请重新核对原来源。',installation:{status:'installed-local',installed:true,enabled:true,active:true}};
+ const c=module.createFinderController(h.ctx,{fetch:async(url,options)=>{calls.push({url,body:JSON.parse(options.body)});return{ok:true,json:async()=>copy(shown)};}});
+ await c.showCatalogPlugin('community',entry.id);await c.refreshCatalogPlugin();assert.equal(calls.at(-1).url,'/api/plugin_finder/catalog-status');assert.deepEqual(calls.at(-1).body,{detailId:shown.detailId});assert.equal(calls.length,2);c.close();
+});
+test('malformed fixed-source recovery flags cannot enable a new client request path',async()=>{
+ const {module}=await loadClient(),h=host(),entry=getCommunityOverview().categories[0].previews[0];
+ const shown={...catalogDetailFixture('community',entry.id,'unavailable'),installable:false,sourceRecheckAllowed:'true'};
+ const c=module.createFinderController(h.ctx,{fetch:async()=>({ok:true,json:async()=>shown})});
+ assert.equal(await c.showCatalogPlugin('community',entry.id),false);assert.equal(c.getSnapshot().catalogDetail,null);assert.match(c.getSnapshot().catalogError,/详情|一致/);c.close();
+});
+
+test('saving the first plan then returning home refreshes recent-plan count from zero to one without reload or a model grant',async()=>{
+ const {createOpportunityEngine}=await import('../src/opportunities.js');let stored;
+ const engine=createOpportunityEngine({historyStore:{list:async()=>stored?[stored]:[],read:async()=>{throw Error('status must not read selected content');}},store:{read:async()=>null,write:async()=>{throw Error('metadata refresh must not mutate consent');}},model:{call:async()=>{throw Error('metadata refresh must not call the model');}}});
+ const {module}=await loadClient();const h=host(),workflow=identifiedWorkflow('new-home-plan',2,'plan');workflow.request='保存第一个测试方案';workflow.updatedAt='2026-10-30T18:00:00Z';
+ const api=server({
+  bootstrap:async()=>({ok:true,json:async()=>({...restoredBootstrap(null),history:[],historyTotal:0,opportunity:await engine.status()})}),
+  analyze:async()=>({ok:true,json:async()=>({intent:fixtureIntent(),workflow:{...workflow,stage:'understand',plan:undefined,candidates:[],revisionNumber:1,revisionId:'new-home-plan-revision-1'}})}),
+  recommend:async()=>{stored={id:workflow.taskId,serialized:JSON.stringify({id:workflow.taskId,request:workflow.request,updatedAt:workflow.updatedAt,revisions:[{id:workflow.revisionId,workflow}]})};return{ok:true,json:async()=>({intent:fixtureIntent(),plan:fixturePlan(),candidates:[candidate],...historyEnvelope(workflow)})};},
+  'opportunity-status':async()=>({ok:true,json:async()=>({opportunity:await engine.status()})}),
+ });
+ const c=module.createFinderController(h.ctx,{fetch:api.fetch,draftStorage:memoryStorage()});
+ try{
+  await c.bootstrap();assert.equal(c.getSnapshot().opportunity.historyChoices.length,0);
+  c.setHomeRequest(workflow.request);assert.equal(await c.searchHome(),true);assert.equal(c.getSnapshot().historyTotal,1);assert.equal(c.getSnapshot().opportunity.historyChoices.length,0);
+  c.setHomeRequest('下一件还没提交的事');const saved=copy(c.getSnapshot().plan);await c.showHome();
+  assert.equal(c.getSnapshot().view,'home');assert.equal(c.getSnapshot().opportunity.historyChoices.length,1);assert.equal(c.getSnapshot().opportunity.historyChoices[0].taskId,workflow.taskId);
+  assert.equal(c.getSnapshot().homeRequest,'下一件还没提交的事');assert.equal(c.getSnapshot().taskId,workflow.taskId);assert.deepEqual(copy(c.getSnapshot().plan),saved);
+  const ui=await renderWorkbench(c.getSnapshot());assert.match(ui.visibleText,/参考最近1份方案推荐/);
+  const statusCalls=api.calls.filter(x=>x.url.endsWith('/opportunity-status'));assert.equal(statusCalls.length,1);assert.equal(statusCalls[0].options.method,'GET');
+  assert.ok(api.calls.every(x=>!/(opportunity-grant|opportunity-discover|opportunity-context)$/.test(x.url)));
+ }finally{c.close();engine.close();}
 });

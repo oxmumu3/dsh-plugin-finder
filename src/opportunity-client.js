@@ -2,14 +2,25 @@ const endpoint='/api/plugin_finder/';
 const string=(value,max=6000)=>typeof value==='string'?value.slice(0,max):'';
 const choices=value=>Array.isArray(value)?value:[];
 const executing=state=>['preparing','running','waiting'].includes(state.execution?.phase);
+// Selection metadata only. The server remains responsible for reading the
+// selected original requests and summaries after this explicit opt-in.
+export function recentOpportunityHistory(opportunity){
+ const seen=new Set();
+ return choices(opportunity?.historyChoices)
+  .filter(item=>item&&typeof item.taskId==='string'&&item.taskId.length>0&&item.taskId.length<=200&&!/[\u0000-\u001f\u007f]/.test(item.taskId)&&!item.unavailable&&typeof item.updatedAt==='string'&&Number.isFinite(Date.parse(item.updatedAt)))
+  .map((item,index)=>({item,index,at:Date.parse(item.updatedAt)}))
+  .sort((a,b)=>b.at-a.at||a.index-b.index)
+  .filter(({item})=>{if(seen.has(item.taskId))return false;seen.add(item.taskId);return true;})
+  .slice(0,3).map(({item})=>item);
+}
 export function createOpportunityClient({getState,publish,fetchRequest=globalThis.fetch,run,applyResult,preserve=()=>true,preferenceStore=globalThis.localStorage,onReveal=()=>{}}={}){
- let closed=false,sequence=0,pending=null,adopting=false;
+ let closed=false,sequence=0,pending=null,adopting=false,appliedRevision=0;
  const stopKey='dsh.plugin-finder.opportunity-stop.v1';
  const stopped=()=>{try{return preferenceStore?.getItem(stopKey)==='stopped';}catch{return true;}};
  const rememberStop=stop=>{try{if(stop)preferenceStore?.setItem(stopKey,'stopped');else preferenceStore?.removeItem(stopKey);}catch{}};
  const patch=value=>{if(!closed)publish(value);};
  const abort=()=>{sequence++;pending?.controller.abort();pending=null;patch({opportunityBusy:''});};
- const apply=value=>{if(value&&typeof value==='object'&&value.consent&&Array.isArray(value.opportunities))patch({opportunity:stopped()&&value.consent.enabled?{...value,consent:{...value.consent,enabled:false},opportunities:[],status:'idle'}:value});};
+ const apply=value=>{if(value&&typeof value==='object'&&value.consent&&Array.isArray(value.opportunities)){appliedRevision++;patch({opportunity:stopped()&&value.consent.enabled?{...value,consent:{...value.consent,enabled:false},opportunities:[],status:'idle'}:value});}};
  async function call(path,body,onValue,{replace=false}={}){
   if(closed||pending&&!replace)return false;
   if(replace)abort();
@@ -33,6 +44,28 @@ export function createOpportunityClient({getState,publish,fetchRequest=globalThi
   return call('opportunity-context',{workspaceId},value=>patch({opportunityFiles:choices(value.files).filter(f=>typeof f?.path==='string'),opportunityFilesTruncated:value.truncated===true}));
  }
  const methods={
+  async refreshOpportunityStatus(){
+   const state=getState();
+   if(closed||pending||state.busy||state.searching||executing(state)||state.opportunityEditing||!state.opportunity)return false;
+   const epoch=state.opportunity.consent?.epoch,revision=appliedRevision;let applied=false;
+   const ok=await call('opportunity-status',undefined,value=>{
+    if(getState().opportunity?.consent?.epoch!==epoch||appliedRevision!==revision)return;
+    if(!value?.opportunity?.consent||!Array.isArray(value.opportunity.opportunities)||!Array.isArray(value.opportunity.historyChoices))throw Error('Invalid opportunity metadata');
+    apply(value.opportunity);applied=true;
+   });
+   if(!ok||!applied)return false;
+   const current=getState().opportunity;
+   if(current?.consent?.enabled&&(current.status==='idle'||current.stale))void methods.discoverOpportunities();
+   return true;
+  },
+  async enableRecentOpportunityHistory(){
+   const state=getState();
+   if(closed||pending||state.busy||executing(state)||state.opportunity?.consent?.enabled)return false;
+   const historyTaskIds=recentOpportunityHistory(state.opportunity).map(item=>item.taskId);
+   if(!historyTaskIds.length)return false;
+   const ok=await call('opportunity-grant',{enabled:true,historyTaskIds},value=>{rememberStop(false);apply(value.opportunity);patch({opportunityEditing:false,opportunityAdoption:null});onReveal();});
+   return ok?methods.discoverOpportunities():false;
+  },
   async openOpportunitySettings(){
    const state=getState(),consent=state.opportunity?.consent||{};
    patch({opportunityEditing:true,opportunityError:'',opportunityDraft:{historyTaskIds:[...choices(consent.historyTaskIds)],workspaceId:consent.workspace?.workspaceId||state.workspaceId||'',paths:[...choices(consent.workspace?.paths)]},opportunityFiles:[]});

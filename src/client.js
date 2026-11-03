@@ -1,4 +1,5 @@
 import React from 'react';
+import {parsePlan} from './contracts.js';
 import { createOpportunityClient } from './opportunity-client.js';
 import { prepareCreatorDraft, supportsCreatorHost } from './creator-handoff.js';
 import { executeInWorkspace, inferWorkspace } from './workspace-execution.js';
@@ -14,6 +15,7 @@ import { finderCss } from './client-style.js';
 import { createExperienceView } from './experience-view.js';
 import { experienceCss } from './experience-style.js';
 import { createCreatorFeedbackDraft, renderCreatorFeedbackDraft } from './creator-feedback.js';
+import { canRecheckPluginSource, renderPluginDetailView } from './plugin-detail-view.js';
 
 export const inject = ['slots', 'layout', 'uiWorkspace', 'workspaces', 'sessions', 'uiSession', 'sidebarRightTabs'];
 const PANEL = 'dsh-plugin-finder';
@@ -42,9 +44,14 @@ function validSavedWorkflow(value) {
   if (!Array.isArray(value.candidates) || value.candidates.length > 20 || value.candidates.some(candidate => !candidate || typeof candidate.id !== 'string' || !candidate.id || !Array.isArray(candidate.capabilities) || candidate.capabilities.some(capability => typeof capability !== 'string'))) return false;
   if (value.stage !== 'plan') return true;
   const plan = value.plan;
-  if (!plan || !['native', 'single', 'combo', 'gap'].includes(plan.kind) || typeof plan.title !== 'string' || typeof plan.rationale !== 'string' || !Array.isArray(plan.pluginIds) || plan.pluginIds.length > 2 || plan.pluginIds.some(id => typeof id !== 'string' || !value.candidates.some(candidate => candidate.id === id))) return false;
+  if (!plan || !['native', 'single', 'combo', 'gap', 'hybrid'].includes(plan.kind) || typeof plan.title !== 'string' || typeof plan.rationale !== 'string' || !Array.isArray(plan.pluginIds) || plan.pluginIds.length > 4 || plan.pluginIds.some(id => typeof id !== 'string' || !value.candidates.some(candidate => candidate.id === id))) return false;
   if (new Set(plan.pluginIds).size !== plan.pluginIds.length || !Array.isArray(plan.limits) || plan.limits.some(limit => typeof limit !== 'string') || !Array.isArray(plan.steps) || plan.steps.length > 10) return false;
-  if (['native', 'gap'].includes(plan.kind) && plan.pluginIds.length || plan.kind === 'single' && plan.pluginIds.length !== 1 || plan.kind === 'combo' && plan.pluginIds.length !== 2) return false;
+  if (['native', 'gap'].includes(plan.kind) && plan.pluginIds.length || plan.kind === 'single' && plan.pluginIds.length !== 1 || plan.kind === 'combo' && plan.pluginIds.length < 2 || plan.kind === 'hybrid' && !plan.pluginIds.length) return false;
+  if (plan.kind === 'hybrid' || plan.pluginIds.length > 2 || plan.gaps !== undefined || plan.kind === 'gap' && plan.steps.some(step => step?.owner === 'create')) {
+    // New plans share the backend contract. Preserve legacy saved envelopes as-is.
+    try { parsePlan(Object.fromEntries(['kind','title','rationale','pluginIds','steps','limits',...(plan.gaps !== undefined ? ['gaps'] : [])].map(key => [key, plan[key]])), value.candidates, value.intent); return true; }
+    catch { return false; }
+  }
   return plan.steps.every(step => step && ['capability', 'owner', 'action', 'input', 'output'].every(key => typeof step[key] === 'string') && ['dsh', 'human', ...plan.pluginIds].includes(step.owner) && (step.sourceCapability == null || typeof step.sourceCapability === 'string'));
 }
 const abortError = () => { const error = new Error('cancelled'); error.name = 'AbortError'; return error; };
@@ -139,7 +146,13 @@ export function createFinderController(ctx, options = {}) {
   let executionSource = null;
   let executionMount = null;
   let executionStarting = false;
+  let catalogGeneration = 0;
+  let catalogRead = null;
+  let catalogReturnPoint = null;
+  const catalogControllers = new Set();
+  const catalogInstalls = new Map();
   let state = Object.freeze({
+    catalogOpen: false, catalogSelection: null, catalogDetail: null, catalogBusy: '', catalogError: '',
     opportunity: null, opportunityBusy: '', opportunityError: '', opportunityEditing: false, opportunityFiles: [], opportunityDraft: null, productIntroVisible: true,
     execution: null, executionReference: null, executions: [], executionWorkspaceLabel: '',
     creation: null, creationForm: null, creationDirty: false, localOnly: false, creatorAttempts: [], creatorHandoff: null, pendingCreatorRecord: null,
@@ -210,6 +223,52 @@ export function createFinderController(ctx, options = {}) {
       clearTimeout(timer);
       if (operation?.id === id) { operation = null; publish({ busy: null }); }
     }
+  };
+  const catalogCurrent = (generation, selection) => !closed && state.catalogOpen && generation === catalogGeneration && selection.collection === state.catalogSelection?.collection && selection.entryId === state.catalogSelection?.entryId;
+  const catalogValue = (value, selection, detailId) => {
+    const statuses = ['unavailable', 'not-installed', 'installed-disabled', 'installed-local', 'ready', 'conflict', 'installing', 'unknown', 'failed'];
+    const string = (input, max = 24000) => typeof input === 'string' && input.length <= max;
+    if (!value || value.collection !== selection.collection || value.entryId !== selection.entryId || !string(value.detailId, 2200) || !value.detailId || detailId && value.detailId !== detailId
+      || !['name', 'title', 'summary', 'description', 'author', 'version', 'sourceUrl', 'unavailableReason'].every(key => value[key] == null || string(value[key]))
+      || !['requirements', 'limitations'].every(key => Array.isArray(value[key]) && value[key].length <= 100 && value[key].every(item => string(item, 24000)))
+      || typeof value.installable !== 'boolean' || !statuses.includes(value.installation?.status)
+      || ['installed', 'enabled', 'active'].some(key => typeof value.installation[key] !== 'boolean')
+      || value.installation.version != null && !string(value.installation.version, 120) || value.installation.packageName != null && !string(value.installation.packageName, 214)
+      || value.installation.componentOnly != null && typeof value.installation.componentOnly !== 'boolean'
+      || value.sourceRecheckAllowed != null && typeof value.sourceRecheckAllowed !== 'boolean'
+      || value.installation.status === 'ready' && !['installed', 'enabled', 'active'].every(key => value.installation[key])) throw handoffFailure('返回的详情与所选插件不一致，请重新查看。');
+    return Object.fromEntries(['detailId', 'collection', 'entryId', 'name', 'title', 'summary', 'description', 'author', 'version', 'sourceUrl', 'requirements', 'limitations', 'installable', 'sourceRecheckAllowed', 'unavailableReason', 'installation'].map(key => [key, value[key]]));
+  };
+  const catalogRequest = async (path, body, { generation, selection, kind, detailId } = {}) => {
+    const controller = new AbortController(); catalogControllers.add(controller);
+    if (kind === 'detail') catalogRead = controller;
+    if (catalogCurrent(generation, selection)) publish({ catalogBusy: kind, catalogError: '' });
+    const timer = setTimeout(() => controller.abort('timeout'), kind === 'install' ? 300000 : 125000);
+    try {
+      const response = await fetchRequest(endpoint + path, { method: 'POST', credentials: 'same-origin', redirect: 'error', cache: 'no-store', signal: controller.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const value = await response.json();
+      if (closed || controller.signal.aborted || !catalogCurrent(generation, selection)) return false;
+      if (!response.ok) throw handoffFailure(typeof value?.error?.message === 'string' && value.error.message.length <= 600 ? value.error.message : '暂时无法读取插件状态，请稍后重试。');
+      const detail = catalogValue(value, selection, detailId);
+      publish({ catalogDetail: detail, catalogError: '' });
+      return true;
+    } catch (error) {
+      if (catalogCurrent(generation, selection)) publish({
+        ...(kind === 'install' && state.catalogDetail?.detailId === detailId ? { catalogDetail: { ...state.catalogDetail, installation: { ...state.catalogDetail.installation, status: 'unknown', active: false, message: '安装请求已发出，结果尚未确认。请核对同一次安装的状态。' } } } : {}),
+        catalogError: controller.signal.aborted ? kind === 'detail' ? '读取插件详情超时，请重新读取。' : '这次请求尚未确认。请核对安装状态，避免重复安装。' : error?.safeForUser ? error.message : '暂时无法读取插件详情或安装状态，请稍后重试。',
+      });
+      return false;
+    } finally {
+      clearTimeout(timer); catalogControllers.delete(controller);
+      if (catalogRead === controller) catalogRead = null;
+      if (catalogCurrent(generation, selection)) publish({ catalogBusy: '' });
+    }
+  };
+  const rememberCatalogReturnPoint = origin => {
+    const focus = origin || globalThis.document?.activeElement;
+    const positions = [];
+    for (let node = focus?.closest?.('.pf_root') || globalThis.document?.querySelector?.('[data-plugin-finder]'); node; node = node.parentElement) if (node.scrollHeight > node.clientHeight) positions.push([node, node.scrollTop]);
+    catalogReturnPoint = { focus, positions };
   };
   const historyPatch = value => ({
     ...(workflowWarning(value?.telemetryWarning) ? { telemetryWarning: workflowWarning(value.telemetryWarning) } : {}),
@@ -462,7 +521,7 @@ export function createFinderController(ctx, options = {}) {
   };
   const startExecution = async (kind, resumeAttempt = null, continueCreated = false) => {
     if (closed || operation || executionStarting || !state.taskId || !state.revisionId) return false;
-    if (kind === 'use' && (!state.plan || state.plan.kind === 'gap')) return false;
+    if (kind === 'use' && (!state.plan || ['gap', 'hybrid'].includes(state.plan.kind))) return false;
     syncWorkspaces();
     const workspaceId = resumeAttempt?.workspaceId || state.workspaceId;
     if (!workspaceId || !workspaceSnapshot()?.items?.some(item => item.workspaceId === workspaceId)) { publish({ error: resumeAttempt ? '原任务工作区暂时无法读取，执行记录仍保留。' : '请选择这次任务使用的工作区。' }); return false; }
@@ -632,7 +691,12 @@ export function createFinderController(ctx, options = {}) {
       if (closed || operation || state.searching || state.followupPending || !request.trim() || !parkHomeInput(request)) return false;
       saveHomeInput(request); publish({ error: '', notice: '' }); return true;
     },
-    showHome() { if (!closed && !operation && !state.searching) publish({ view: 'home', featuredId: null, notice: '' }); },
+    showHome() {
+      if (!closed && state.catalogOpen) this.closeCatalogPlugin();
+      if (closed || operation || state.searching) return Promise.resolve(false);
+      publish({ view: 'home', featuredId: null, notice: '' });
+      return opportunityClient.methods.refreshOpportunityStatus();
+    },
     showProductIntro() { if (closed || operation || state.searching) return; try { draftStorage?.setItem(introKey, 'visible'); } catch {} publish({ view: 'home', productIntroVisible: true }); },
     hideProductIntro() { try { draftStorage?.setItem(introKey, 'hidden'); } catch {} publish({ productIntroVisible: false }); },
     async searchHome() {
@@ -689,7 +753,8 @@ export function createFinderController(ctx, options = {}) {
       return run('recommend', 'recommend', { intent, ...identity() }, value => {
         if (value?.workflow) { ensureResponseIdentity(value); const warning = workflowWarning(value.workflowWarning); applyEnvelope(value, { view: 'find', feedbackSaved: false, handoffRequested: false, preservedTarget: null, pendingHandoff: null, storageWarning: warning, notice: warning }); return; }
         const plan = value?.plan;
-        if (!plan || !['native', 'single', 'combo', 'gap'].includes(plan.kind) || !Array.isArray(plan.pluginIds) || !Array.isArray(plan.steps) || !Array.isArray(value.candidates)) throw new Error('invalid recommendation');
+        if (!plan || !['native', 'single', 'combo', 'gap', 'hybrid'].includes(plan.kind) || !Array.isArray(plan.pluginIds) || !Array.isArray(plan.steps) || !Array.isArray(value.candidates)) throw new Error('invalid recommendation');
+        if ((plan.kind === 'hybrid' || plan.pluginIds.length > 2) && !validSavedWorkflow({stage:'plan',request:state.request || state.intent?.goal,intent:state.intent,candidates:value.candidates,plan})) throw new Error('invalid recommendation');
         const warning = workflowWarning(value.workflowWarning);
         publish({ stage: 'plan', plan, candidates: value.candidates, catalogUpdatedAt: text(value.catalogUpdatedAt), discovery: value.discovery && typeof value.discovery === 'object' ? value.discovery : null, warnings: strings(value.warnings), modelLabel: text(value.model?.label) || state.modelLabel, feedbackSaved: false, handoffRequested: false, preservedTarget: null, storageWarning: warning, notice: warning });
       });
@@ -700,6 +765,17 @@ export function createFinderController(ctx, options = {}) {
         ensureResponseIdentity(value); if (!value.workflow?.creation) throw handoffFailure('共创草案尚未生成，原方案仍已保存。');
         applyEnvelope(value, { view: 'create', notice: '' });
       });
+    },
+    async completeHybridPlan() {
+      if (closed || operation || executionStarting || state.plan?.kind !== 'hybrid' || !state.taskId || !state.revisionId) return false;
+      const taskId = state.taskId;
+      if (!await this.startCreation('保留这份需求中已选的现成能力，只补齐明确缺失部分，并在当前工作区完成原任务。')) return false;
+      if (closed || operation || state.taskId !== taskId || !state.creation) return false;
+      const answered = new Set((state.creation.answers || []).filter(answer => text(answer.answer).trim()).map(answer => answer.id));
+      if ((state.creation.questions || []).some(question => !answered.has(question.id))) {
+        publish({ view: 'create', notice: '还差一项会影响结果的信息，在这里补充即可。' }); return false;
+      }
+      return this.createInWorkspace({preferExisting:true});
     },
     showCreation() { if (!closed && !operation && state.creation) { publish({ view: 'create' }); void resumeSavedExecution(); } },
     showCreationGuide() { if (!closed && !operation && !state.searching && state.plan) publish({ view: 'creation-guide', notice: '' }); },
@@ -731,13 +807,14 @@ export function createFinderController(ctx, options = {}) {
       this.editCreation({ answers: [...state.creationForm.answers.filter(item => item.id !== id), { id, answer: text(answer), assumed: false }] });
       return this.updateCreation(false, false);
     },
-    async createInWorkspace() {
+    async createInWorkspace({preferExisting=false} = {}) {
       if (closed || operation || executionStarting || !state.creation) return false;
       // One user action performs the internal save and supply check. A truly
       // missing answer stays on this page and does not submit an incomplete plan.
       if (state.creationDirty || state.creation.status !== 'ready' || state.creation.supply?.status !== 'current') {
         if (!await this.updateCreation(true, false)) return false;
       }
+      if (preferExisting && ['native', 'single', 'combo'].includes(state.plan?.kind)) return startExecution('use');
       if (state.creation?.status !== 'ready' || state.creation.supply?.status !== 'current') {
         publish({ error: '还有影响创建的事项需要补充，请在这里回答。' }); return false;
       }
@@ -954,10 +1031,48 @@ export function createFinderController(ctx, options = {}) {
         publish(historyPatch(value)); finish();
       });
     },
+    showCatalogPlugin(collection, entryId, origin) {
+      const entry = collection === 'community' ? getCommunityEntry(entryId) : collection === 'featured' ? featuredCatalog.find(item => item.id === entryId) : null;
+      if (closed || !entry) return Promise.resolve(false);
+      if (!state.catalogOpen) rememberCatalogReturnPoint(origin);
+      catalogRead?.abort('selection-changed');
+      const selection = { collection, entryId }, generation = ++catalogGeneration;
+      publish({ catalogOpen: true, catalogSelection: selection, catalogDetail: null, catalogBusy: 'detail', catalogError: '' });
+      const pending = catalogRequest('catalog-detail', selection, { generation, selection, kind: 'detail' });
+      globalThis.requestAnimationFrame?.(() => { globalThis.document?.querySelector?.('.pfv_plugin_detail')?.scrollIntoView({ block: 'start', behavior: 'auto' }); globalThis.document?.querySelector?.('#pfv_plugin_detail_title')?.focus?.({ preventScroll: true }); });
+      return pending;
+    },
+    closeCatalogPlugin() {
+      if (closed) return false;
+      catalogGeneration += 1; catalogRead?.abort('detail-closed');
+      publish({ catalogOpen: false, catalogBusy: '', catalogError: '' });
+      const point = catalogReturnPoint; catalogReturnPoint = null;
+      globalThis.requestAnimationFrame?.(() => {
+        point?.focus?.isConnected && point.focus.focus?.({ preventScroll: true });
+        for (const [node, top] of point?.positions ?? []) if (node.isConnected) node.scrollTop = top;
+      });
+      return true;
+    },
+    installCatalogPlugin() {
+      const detail = state.catalogDetail, selection = state.catalogSelection;
+      if (closed || !state.catalogOpen || !detail?.installable || !selection || !['not-installed', 'installed-disabled', 'failed'].includes(detail.installation?.status)) return Promise.resolve(false);
+      if (catalogInstalls.has(detail.detailId)) return catalogInstalls.get(detail.detailId);
+      if (state.catalogBusy) return Promise.resolve(false);
+      const pending = catalogRequest('catalog-install', { detailId: detail.detailId }, { generation: catalogGeneration, selection, kind: 'install', detailId: detail.detailId });
+      catalogInstalls.set(detail.detailId, pending);
+      pending.finally(() => { if (catalogInstalls.get(detail.detailId) === pending) catalogInstalls.delete(detail.detailId); });
+      return pending;
+    },
+    refreshCatalogPlugin() {
+      const detail = state.catalogDetail, selection = state.catalogSelection;
+      if (closed || !state.catalogOpen || !selection || state.catalogBusy) return Promise.resolve(false);
+      if(detail?.sourceRecheckAllowed===true&&canRecheckPluginSource(detail))return catalogRequest('catalog-detail',{collection:selection.collection,entryId:selection.entryId,recheck:true,detailId:detail.detailId},{generation:catalogGeneration,selection,kind:'detail',detailId:detail.detailId});
+      if (!detail || canRecheckPluginSource(detail)) return this.showCatalogPlugin(selection.collection, selection.entryId);
+      return catalogRequest('catalog-status', { detailId: detail.detailId }, { generation: catalogGeneration, selection, kind: 'status', detailId: detail.detailId });
+    },
     showFeatured(id = null) {
-      if (closed || operation && operation.kind !== 'bootstrap') return false;
-      if (id !== null && !featuredCatalog.some(entry => entry.id === id)) return false;
-      publish({ view: id ? 'featured' : 'home', featuredId: id }); return true;
+      if (id === null) { this.showHome(); return !closed; }
+      return this.showCatalogPlugin('featured', id);
     },
     toggleFeaturedInterest(id) {
       if (closed || !featuredTopics.some(topic => topic.id === id)) return;
@@ -1080,6 +1195,7 @@ export function createFinderController(ctx, options = {}) {
     close() {
       if (closed) return;
       opportunityClient.close();
+      catalogGeneration += 1; for (const controller of catalogControllers) controller.abort('disposed'); catalogControllers.clear();
       closed = true; sequence += 1; searchGeneration += 1;
       executionMount?.reject(abortError()); executionMount = null;
       // Detach first: aborting a still-pending prompt wait must not mean Stop.
@@ -1371,14 +1487,15 @@ export function apply(ctx) {
           h('details', { className: 'pf_options pf_details' }, h('summary', null, '更多'), button('重新读取配置', () => controller.bootstrap(), { disabled: busy }), button('回传设置', openTelemetrySettings), button('导入本机备份', () => importInput.current?.click(), { disabled: busy })),
           h('input', { type: 'file', ref: importInput, accept: '.json,application/json', 'aria-label': '导入本机方案备份', style: { display: 'none' }, onChange: importFile }))),
       state.view === 'history' ? h('div', { className: 'pf_flow_back' }, button('返回首页', () => controller.showHome(), { className: 'pf_btn pf_text', disabled: busy })) : null,
-      state.error ? h('div', { className: 'pf_banner pf_error', role: 'alert' }, state.error) : null,
-      state.notice && !(state.view === 'home' && state.notice.startsWith('已恢复本机任务与方案')) ? h('div', { className: 'pf_banner', role: 'status' }, state.notice) : null,
-      state.telemetryWarning && !state.notice.includes(state.telemetryWarning) ? h('div', { className: 'pf_banner pf_small', role: 'status' }, `集中同步异常：${state.telemetryWarning}`) : null,
-      state.storageWarning && !state.notice.includes(state.storageWarning) ? h('div', { className: 'pf_banner pf_small', role: 'status' }, state.storageWarning) : null,
-      state.followupWarning ? h('p', { className: 'pf_banner pf_small', role: 'status' }, state.followupWarning) : null,
-      state.resetPending && state.busy !== 'reset' ? h('div', { className: 'pf_banner pf_small', role: 'status' }, '开始新需求尚未确认，已有方案仍保留。', button('重试开始新需求', () => controller.retryReset(), { disabled: busy })) : null,
-      busy && ['home', 'featured', 'history', 'creation-guide'].includes(state.view) && !state.searching ? h('div', { className: 'pf_status', role: 'status' }, h('span', { className: 'pf_spinner', 'aria-hidden': true }), { 'opportunity-adopt': '正在核对建议并查找方案…', 'creation-start': '正在评估复用机会并生成共创草案…', 'creation-update': '正在保存蓝图并按需重新核对供给…', 'creation-refine': '正在根据你的描述修改蓝图…', creator: '正在连接官方 Creator 并保留会话关联…', 'creator-save': '正在保存 Creator 原会话关联…', bootstrap: '正在读取连接与配置…', analyze: '正在理解目标、材料与约束…', recommend: '正在搜索来源、读取候选资料并推荐…', handoff: '正在连接选定工作区并准备未发送草稿…', feedback: '正在保存到本机…', reset: '正在保存并开始新需求…', history: '正在读取本机历史方案…', open: '正在打开所选方案与版本…', refine: '正在根据反馈重新理解需求…', import: '正在导入本机备份…', export: '正在导出任务备份…', continue: '正在核对原会话绑定…', 'handoff-save': '正在保存原会话关联…', 'telemetry-status': '正在读取同步状态…', 'telemetry-consent': '正在保存自动回传选择…', 'telemetry-delete': '正在停止回传并申请删除记录…' }[state.busy], button('取消', () => controller.cancel(), { className: 'pf_btn pf_text' })) : null,
-      state.view === 'featured' ? renderFeaturedView({ h, state, controller, copyText, busy, mode: 'detail' }) : state.view === 'history' ? h('div', null, historyView, renderFeaturedView({ h, state, controller, copyText, busy, mode: 'drafts' })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, sections: { executionConversation: state.executionReference && SessionProvider && renderSlot ? h('div', { className: 'pf_execution_conversation', style: { minHeight: 400, height: 'min(68vh, 720px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.executionReference }, renderSlot('plugin-finder.execution', {}))) : null, workspacePicker: !state.workspaceId ? h('label', { className: 'pf_label' }, '在哪个工作区完成', h('select', { 'aria-label': '任务工作区', value: state.workspaceId, disabled: busy || state.workspacePhase !== 'ready', onChange: event => controller.selectWorkspace(event.target.value) }, h('option', { value: '' }, '选择任务材料所在的工作区'), ...state.workspaces.map(item => h('option', { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } }),
+      !state.catalogOpen && state.error ? h('div', { className: 'pf_banner pf_error', role: 'alert' }, state.error) : null,
+      !state.catalogOpen && state.notice && !(state.view === 'home' && state.notice.startsWith('已恢复本机任务与方案')) ? h('div', { className: 'pf_banner', role: 'status' }, state.notice) : null,
+      !state.catalogOpen && state.telemetryWarning && !state.notice.includes(state.telemetryWarning) ? h('div', { className: 'pf_banner pf_small', role: 'status' }, `集中同步异常：${state.telemetryWarning}`) : null,
+      !state.catalogOpen && state.storageWarning && !state.notice.includes(state.storageWarning) ? h('div', { className: 'pf_banner pf_small', role: 'status' }, state.storageWarning) : null,
+      !state.catalogOpen && state.followupWarning ? h('p', { className: 'pf_banner pf_small', role: 'status' }, state.followupWarning) : null,
+      !state.catalogOpen && state.resetPending && state.busy !== 'reset' ? h('div', { className: 'pf_banner pf_small', role: 'status' }, '开始新需求尚未确认，已有方案仍保留。', button('重试开始新需求', () => controller.retryReset(), { disabled: busy })) : null,
+      !state.catalogOpen && busy && ['home', 'featured', 'history', 'creation-guide'].includes(state.view) && !state.searching ? h('div', { className: 'pf_status', role: 'status' }, h('span', { className: 'pf_spinner', 'aria-hidden': true }), { 'opportunity-adopt': '正在核对建议并查找方案…', 'creation-start': '正在评估复用机会并生成共创草案…', 'creation-update': '正在保存蓝图并按需重新核对供给…', 'creation-refine': '正在根据你的描述修改蓝图…', creator: '正在连接官方 Creator 并保留会话关联…', 'creator-save': '正在保存 Creator 原会话关联…', bootstrap: '正在读取连接与配置…', analyze: '正在理解目标、材料与约束…', recommend: '正在搜索来源、读取候选资料并推荐…', handoff: '正在连接选定工作区并准备未发送草稿…', feedback: '正在保存到本机…', reset: '正在保存并开始新需求…', history: '正在读取本机历史方案…', open: '正在打开所选方案与版本…', refine: '正在根据反馈重新理解需求…', import: '正在导入本机备份…', export: '正在导出任务备份…', continue: '正在核对原会话绑定…', 'handoff-save': '正在保存原会话关联…', 'telemetry-status': '正在读取同步状态…', 'telemetry-consent': '正在保存自动回传选择…', 'telemetry-delete': '正在停止回传并申请删除记录…' }[state.busy], button('取消', () => controller.cancel(), { className: 'pf_btn pf_text' })) : null,
+      h('div', { className: 'pfv_catalog_background', style: { display: state.catalogOpen ? 'none' : undefined }, 'aria-hidden': state.catalogOpen ? true : undefined }, state.view === 'featured' ? renderFeaturedView({ h, state, controller, copyText, busy, mode: 'detail' }) : state.view === 'history' ? h('div', null, historyView, renderFeaturedView({ h, state, controller, copyText, busy, mode: 'drafts' })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, sections: { executionConversation: state.executionReference && SessionProvider && renderSlot ? h('div', { className: 'pf_execution_conversation', style: { minHeight: 400, height: 'min(68vh, 720px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.executionReference }, renderSlot('plugin-finder.execution', {}))) : null, workspacePicker: !state.workspaceId ? h('label', { className: 'pf_label' }, '在哪个工作区完成', h('select', { 'aria-label': '任务工作区', value: state.workspaceId, disabled: busy || state.workspacePhase !== 'ready', onChange: event => controller.selectWorkspace(event.target.value) }, h('option', { value: '' }, '选择任务材料所在的工作区'), ...state.workspaces.map(item => h('option', { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } })),
+      state.catalogOpen ? renderPluginDetailView({ h, state, controller }) : null,
       state.telemetrySettingsOpen ? telemetryView : null,
       h('footer', { className: 'pf_footer' }, h('details', { className: 'pf_details' }, h('summary', null, '关于搜索、模型与本机记录'),
         h('p', null, '需求、方案和草稿保存在本机；历史方案可随时继续。自动回传默认关闭，可在「更多」中调整。'),

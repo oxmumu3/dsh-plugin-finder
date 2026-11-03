@@ -38,3 +38,12 @@ test('generation and refinement may ask nothing when product behavior is already
   assert.match(system,/只[^。\n]*影响[^。\n]*产品[^。\n]*输入输出[^。\n]*歧义/,stage);
  }
 });
+
+test('all blueprint stages require scoped entry checks and safe concurrent persistent storage',()=>{
+ for(const [stage,system] of stages){
+  assert.match(system,/每次[^。\n]*route[^。\n]*tool[^。\n]*session[^。\n]*workspace/u,stage);
+  assert.match(system,/读取[^。\n]*之前[^。\n]*目录[^。\n]*symlink/u,stage);
+  assert.match(system,/读改写[^。\n]*锁[^。\n]*并发/u,stage);
+  assert.match(system,/写入[^。\n]*之前[^。\n]*容量[^。\n]*不变/u,stage);
+ }
+});

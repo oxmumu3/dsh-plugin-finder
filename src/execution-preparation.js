@@ -3,9 +3,9 @@ import {publicSourceText} from './provenance.js';
 
 const packageSpec=/^(?:npm:)?((?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*)@\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 const stamp=value=>typeof value==='string'&&value.length<=40&&Number.isFinite(Date.parse(value));
-export function executionCandidates(workflow,kind){return kind==='use'?(workflow.candidates??[]).filter(candidate=>workflow.plan?.pluginIds.includes(candidate.id)):[];}
+export function executionCandidates(workflow,kind){return kind==='use'||kind==='create'&&workflow.plan?.kind==='hybrid'?(workflow.candidates??[]).filter(candidate=>workflow.plan?.pluginIds.includes(candidate.id)):[];}
 export function validatePreparation(value,workflow,kind,code='INVALID_BACKUP'){
- if(!record(value)||!['pending','ready'].includes(value.status)||!stamp(value.updatedAt)||!Array.isArray(value.plugins)||value.plugins.length>2)fail(code);
+ if(!record(value)||!['pending','ready'].includes(value.status)||!stamp(value.updatedAt)||!Array.isArray(value.plugins)||value.plugins.length>4)fail(code);
  const selected=executionCandidates(workflow,kind),seen=new Set();
  const plugins=value.plugins.map(row=>{
   if(!record(row)||!['installing','ready','failed','unknown'].includes(row.status))fail(code);
@@ -13,7 +13,7 @@ export function validatePreparation(value,workflow,kind,code='INVALID_BACKUP'){
   const exactSpec=value=>packageSpec.test(value??'')?String(value).replace(/^npm:/,''):value;
   if(!candidate||seen.has(candidateId)||exactSpec(row.spec)!==exactSpec(candidate.install?.spec)||row.version!==candidate.install?.version)fail(code);
   seen.add(candidateId);
-  const expectedName=packageSpec.exec(row.spec)?.[1]??candidate.id;
+  const expectedName=packageSpec.exec(row.spec)?.[1]??candidate.install?.packageName??candidate.id;
   if(row.packageName!==expectedName)fail(code);
   const result={candidateId,spec:text(row.spec,3000,code),packageName:text(row.packageName,214,code),version:text(row.version,200,code),requestId:text(row.requestId,200,code),status:row.status};
   for(const key of ['installed','enabled','active'])if(row[key]!==undefined){if(typeof row[key]!=='boolean')fail(code);result[key]=row[key];}

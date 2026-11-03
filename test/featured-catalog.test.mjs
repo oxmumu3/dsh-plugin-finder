@@ -70,26 +70,42 @@ test('scenario drafts describe needs without steering discovery to a brand or pa
 
 test('only a checked exact public release is installable and all preview or private cards have no install target', () => {
   const installable = featuredCatalog.filter(entry => entry.install !== null);
-  assert.deepEqual(installable.map(entry => entry.id), ['agent-twin']);
+  assert.deepEqual(installable.map(entry => entry.id), expectedIds);
   for (const entry of installable) {
     assert.equal(entry.status, 'available');
-    assert.deepEqual(Object.keys(entry.install).sort(), ['spec', 'verifiedAt', 'version']);
+    assert.deepEqual(Object.keys(entry.install).sort(), ['sha256', 'spec', 'verifiedAt', 'version']);
+    assert.match(entry.install.sha256,/^[a-f0-9]{64}$/);
     assert.equal(entry.install.version, entry.version);
     assertUtc(entry.install.verifiedAt);
     assertPublicHttps(entry.install.spec);
     const path = new URL(entry.install.spec).pathname;
-    assert.equal(path, `/oxmumu3/ai-twin-starter/releases/download/v${entry.version}/dsh-agent-twin-${entry.version}.tgz`);
-    assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/ai-twin-starter/releases/tag/v${entry.version}`));
-    assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/ai-twin-starter/releases/download/v${entry.version}/SHA256SUMS`));
+    const repo=entry.id==='agent-twin'?'ai-twin-starter':entry.id==='dsh-dot'?'dsh-project-companion':entry.id==='dot-harness'?'dot-dsh-connector':'dsh-family-assistant';
+    assert.equal(path, `/oxmumu3/${repo}/releases/download/v${entry.version}/${entry.components[0]}-${entry.version}.tgz`);
+    assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/tag/v${entry.version}`));
+    if(entry.id==='agent-twin')assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/download/v${entry.version}/SHA256SUMS`));
     assert.match(entry.limitations.join(' '), /预发布/);
     assert.match(entry.limitations.join(' '), /不等于.*验收/);
   }
-  for (const id of ['family-assistant', 'dsh-dot', 'dot-harness']) {
-    const entry = card(id);
-    assert.ok(['preview', 'private'].includes(entry.status));
-    assert.equal(entry.install, null);
-    assert.match(entry.limitations.join(' '), /未公开|没有.*公开|暂无.*公开/);
-  }
+});
+
+test('published DSH Dot offers a verified install while preserving the separate WeChat setup requirement', () => {
+  const entry = card('dsh-dot');
+  assert.equal(entry.status, 'available');
+  assert.ok(entry.install, 'published companion must not remain a local-only preview');
+  assert.doesNotMatch(entry.limitations.join(' '), /没有核对通过的同版本公开下载|本地预览/);
+  assert.match(entry.requirements.join(' '), /配套微信桥接/);
+  assert.match(entry.limitations.join(' '), /安装.*不等于.*微信/);
+});
+
+test('published Dot connection card installs the management plugin and keeps personal connection setup explicit', () => {
+  const entry = card('dot-harness');
+  assert.equal(entry.status, 'available');
+  assert.equal(entry.components[0], 'dot-dsh-management');
+  assert.ok(entry.install, 'a publicly released manager must not remain a private-only catalog item');
+  assert.match(entry.requirements.join(' '), /本人|单人/);
+  assert.match(entry.requirements.join(' '), /MCP/);
+  assert.match(entry.limitations.join(' '), /安装.*不等于.*连接/);
+  assert.doesNotMatch(entry.limitations.join(' '), /暂无.*公开发行入口/);
 });
 
 test('bundled sources are public HTTPS references without private paths or account material', () => {

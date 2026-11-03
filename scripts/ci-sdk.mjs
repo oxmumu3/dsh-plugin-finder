@@ -16,6 +16,9 @@ export async function planSdk(args) {
   for (const name of Object.keys(dependencies)) if (name.startsWith('@deepseek-ai/dsh-')) dependencies[name] = sdk;
   for (const name of Object.keys(metadata.peerDependencies ?? {})) if (name.startsWith('@deepseek-ai/dsh-')) dependencies[name] = sdk;
   for (const name of ['dsh-storage', 'dsh-storage-domain', 'dsh-storage-json', 'dsh-client-connection']) dependencies['@deepseek-ai/' + name] = sdk;
+  // The rc.5 Host contract imports Cordis directly; pin the official SDK's peer
+  // rather than relying on a transitive, automatically hoisted installation.
+  dependencies['@deepseek-ai/cordis'] = '4.0.5';
   // Retain Finder's measured VM-fixture suite baseline; all other Node processes stay at 128 MB.
   const suiteHeapMb = metadata.name === '@oxmumu3/dsh-plugin-finder' ? 512 : 128;
   const minimumTests = metadata.name === '@oxmumu3/dsh-plugin-finder' ? 768 : 260;
@@ -26,6 +29,20 @@ export function validateTap(text, minimumTests) {
   if (!Number.isSafeInteger(minimumTests) || minimumTests < 1 || !Number.isSafeInteger(counts.tests) || counts.tests < minimumTests
     || counts.pass !== counts.tests || ['fail', 'skipped', 'cancelled', 'todo'].some(key => counts[key] !== 0)) throw Error('TAP suite incomplete, skipped, cancelled or failed');
   return counts;
+}
+export function validateHostContract(proof, { finder = false } = {}) {
+  const tools = ['finder_lookup', 'finder_activate', 'finder_create', 'finder_status'];
+  if (proof?.actualCordis !== true || proof.actualHostConnectionDispatcher !== true
+    || proof.actualToolRuntime !== true || proof.disposeAndReenable !== true
+    || proof.network?.denied !== 0 || proof.realModelCalls !== 0 || proof.realMessagesSent !== 0
+    || proof.forbiddenInvocations !== 0
+    || finder && (proof.actualJsonDomainPersistence !== true || proof.fourCapabilityFeedback !== true
+      || !Array.isArray(proof.registeredFinderTools) || proof.registeredFinderTools.length !== tools.length
+      || new Set(proof.registeredFinderTools).size !== tools.length
+      || tools.some(name => !proof.registeredFinderTools.includes(name)))) {
+    throw Error('Real SDK Host contract did not provide complete evidence');
+  }
+  return proof;
 }
 async function main() {
   const plan = await planSdk(process.argv.slice(2));
@@ -65,8 +82,8 @@ async function main() {
   const suite = await run(process.execPath, ['--max-old-space-size=' + plan.suiteHeapMb, '--test', '--test-concurrency=1', ...tests], stage, runtime, 'suite.tap', 240000, true);
   const counts = validateTap(suite.stdout, plan.minimumTests);
   const contract = await run(process.execPath, ['--max-old-space-size=128', 'scripts/ci-host-contract.mjs'], stage, runtime, 'host-contract.log', 45000, true);
-  const hostContract = JSON.parse(contract.stdout);
-  if (!hostContract.actualCordis || !hostContract.actualHostConnectionDispatcher || !hostContract.disposeAndReenable || hostContract.network?.denied !== 0 || hostContract.realModelCalls !== 0 || hostContract.realMessagesSent !== 0) throw Error('Real SDK Host contract did not provide complete evidence');
+  const metadata = JSON.parse(await readFile(join(source, 'package.json')));
+  const hostContract = validateHostContract(JSON.parse(contract.stdout), { finder: metadata.name === '@oxmumu3/dsh-plugin-finder' });
   const summary = { sdk: plan.sdk, passed: true, exactSdkDependencies: true, testFiles: tests.length, osSandbox, hostContract, counts, minimumTests: plan.minimumTests, hooks: false, compatibilityOverride: false, syntheticHome: true, productionProfileUsed: false, realModelCalls: 0, realMessagesSent: 0, runtimeNonLoopbackAllowed: false, suiteMaxOldSpaceMb: plan.suiteHeapMb, otherNodeHeapMb: 128, suiteTimeoutMs: 240000, dependencyAcquisition: 'public npm registry, without hooks', output };
   await writeFile(join(output, 'summary.json'), JSON.stringify(summary, null, 2) + '\n'); console.log(JSON.stringify(summary));
 }

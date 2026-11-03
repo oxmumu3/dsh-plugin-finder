@@ -9,7 +9,7 @@ test('every declared SDK storage domain supplies its required tables object',()=
  const source=readFileSync(new URL('../index.js',import.meta.url),'utf8');
  const definitions=[...source.matchAll(/const\s+([A-Za-z_$][\w$]*)\s*=\s*defineDomain\(([\s\S]*?)\);/g)];
  assert.ok(definitions.length>=3,'legacy, history and telemetry domain declarations must be checked');
- const names=['state','workflow','historyPointer','historyRow','telemetryGlobal'];
+ const names=['state','workflow','historyPointer','historyRow','telemetryGlobal','agentRequestRow','catalogInstallRow'];
  const values=names.map(()=>({}));
  for(const[,name,literal]of definitions){
   const spec=new Function('domainTable',...names,`return (${literal});`)(schema=>({schema}),...values);

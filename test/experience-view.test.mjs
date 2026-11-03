@@ -27,7 +27,7 @@ function render(state = fixture(), extra = {}) {
 
 test('home has one demand composer, editable examples and four distinct products without navigation tabs', () => {
   const { view, calls } = render(fixture({ view: 'home', homeRequest: '', featuredPreferences: { interests: ['family'], dismissed: [] } }));
-  assert.match(content(view, true), /我是你的插件专家/);
+  assert.match(content(view, true), /你的插件专家/);
   assert.match(content(view, true), /告诉我你的目标/);
   assert.equal(visibleNodes(view).filter(node => node.type === 'textarea').length, 1);
   assert.equal(nodes(view).filter(node => node.props.role === 'tab' || node.props.role === 'tablist').length, 0);
@@ -396,7 +396,7 @@ test('one expert identity owns both direct demand and proactive advice without a
   const {view}=render(state);
   const identity=nodes(view).filter(n=>n.props.className==='pfv_expert_identity');
   assert.equal(identity.length,1);
-  assert.equal(nodes(view).filter(n=>n.type==='h1'&&content(n)==='我是你的插件专家').length,1);
+  assert.equal(nodes(view).filter(n=>n.type==='h1'&&content(n)==='一个需求，找到能用的办法。').length,1);
   const group=nodes(view).find(n=>n.props.role==='group'&&n.props['aria-labelledby']==='pfv_expert_title');
   assert.ok(group);
   assert.match(content(group),/告诉我你的目标/);assert.match(content(group),/我猜你可能需要/);
@@ -405,4 +405,62 @@ test('one expert identity owns both direct demand and proactive advice without a
   const aside=nodes(group).find(n=>n.type==='aside'&&n.props['aria-label']==='猜你喜欢');
   assert.equal(aside.children.length,3,'feedback controls remain outside the three shared grid rows');
   assert.equal(nodes(view).filter(n=>n.props.role==='tab').length,0);
+});
+
+test('persisted disabled opportunity state keeps a concrete startable recommendation instead of a material-selection placeholder',()=>{
+ for(const interests of [[],['family']]){
+  const state=fixture({view:'home',homeRequest:'保留当前输入',featuredPreferences:{interests,dismissed:[]},opportunity:{consent:{enabled:false},status:'idle',opportunities:[],historyChoices:[]}});
+  const {view,calls}=render(state);const aside=nodes(view).find(n=>n.type==='aside'&&n.props['aria-labelledby']==='pfv_opportunity_title');assert.ok(aside);
+  assert.match(content(aside),interests.length?/准备家人的日常小助手/:/把项目资料整理成知识库/);
+  assert.match(content(aside),interests.length?/本机线索/:/通用想法/);
+  assert.doesNotMatch(content(aside),/你选好资料|也许有更顺手的做法|选择参考资料/);
+  assert.equal(aside.children.length,3);button(aside,'试试这个想法').props.onClick();
+  assert.deepEqual(calls,[['startFeatured',interests.length?'family-assistant':'agent-twin']]);
+  assert.equal(byLabel(view,'任务描述').props.value,'保留当前输入');
+ }
+});
+
+test('hybrid keeps selected existing abilities and explicit gaps together before starting creation once', () => {
+  const state = fixture({ plan: { kind: 'hybrid', title: '项目简报与阻塞提醒', rationale: '现成能力覆盖展示，缺少持久提醒', pluginIds: ['board', 'docs'], gaps: [{ capability: '阻塞提醒', reason: '需要保留提醒状态' }], steps: [{ capability: '任务看板', owner: 'board', action: '展示待办' }, { capability: '简报文档', owner: 'docs', action: '渲染文档' }, { capability: '阻塞提醒', owner: 'create', action: '只补提醒能力' }], limits: [] }, candidates: [{ id: 'board', name: '现成看板', version: '1.0.0' }, { id: 'docs', name: '现成文档', version: '2.0.0' }] });
+  const { view, calls } = render(state);
+  assert.match(content(byLabel(view, '方案中的能力')), /计划复用.*现成看板.*1\.0\.0.*现成文档.*2\.0\.0.*待补齐.*阻塞提醒.*需要保留提醒状态/);
+  const action = button(view, '补齐并使用'); assert.ok(action); action.props.onClick();
+  assert.deepEqual(calls, [['startCreation']]);
+  assert.equal(button(view, '使用这个方案'), undefined);
+  assert.doesNotMatch(content(view, true), /已复用|已创建|创建成功|已解决/);
+});
+
+test('execution output leads the task surface while planned capability evidence stays secondary and truthful', () => {
+  const live = h('section', { 'aria-label': '真实执行对话' }, h('p', null, '实际生成的项目简报'));
+  const { view } = render(fixture({ execution: { phase: 'completed', kind: 'use', summary: '本轮处理了 2 个文件' } }), { sections: { executionConversation: live } });
+  const all = nodes(view), result = all.find(n => n.props.className === 'pfv_result_primary'), overview = byLabel(view, '本次能力方案');
+  assert.ok(result); assert.ok(overview); assert.ok(nodes(result).includes(live));
+  assert.ok(all.indexOf(live) < all.indexOf(overview));
+  assert.equal(all.filter(n => n === live).length, 1);
+  assert.match(content(result), /本次运行已结束.*本轮处理了 2 个文件.*实际生成的项目简报/);
+  assert.doesNotMatch(content(result), /需求已解决|创建成功|已验证/);
+});
+
+test('home has one strong task promise with an inline closable explanation and unchanged direct entry', () => {
+  const { view } = render(fixture({ view: 'home', productIntroVisible: true, homeRequest: '' }));
+  const headings = nodes(view).filter(n => n.type === 'h1');
+  assert.equal(headings.length, 1); assert.equal(content(headings[0]), '一个需求，找到能用的办法。');
+  const intro = nodes(view).find(n => n.props.className === 'pfv_product_intro');
+  assert.ok(intro); assert.equal(nodes(intro).filter(n => n.type === 'ol').length, 0);
+  assert.equal(nodes(intro).filter(n => n.props.role === 'dialog').length, 0);
+  assert.ok(button(view, '帮我找方案')); assert.equal(visibleNodes(view).filter(n => n.type === 'textarea').length, 1);
+});
+
+test('hybrid delegates one click to the complete controller path without a duplicate draft action', () => {
+  const calls = [], state = fixture({ plan: { kind: 'hybrid', title: '复用并补齐', pluginIds: ['one'], gaps: [{ capability: '缺口', reason: '需要持久状态' }], steps: [], limits: [] }, candidates: [{ id: 'one', name: '现成能力' }] });
+  const { view } = render(state, { controller: { completeHybridPlan: () => calls.push('complete'), startCreation: () => calls.push('draft') } });
+  button(view, '补齐并使用').props.onClick();
+  assert.deepEqual(calls, ['complete']);
+});
+
+test('hybrid completion waits for workspace readiness before calling the execution controller', () => {
+  const calls = [], state = fixture({ workspacePhase: 'pending', plan: { kind: 'hybrid', title: '组合与补齐', pluginIds: ['one'], gaps: [{ capability: '缺口', reason: '需持久状态' }], steps: [], limits: [] }, candidates: [{ id: 'one', name: '可复用插件' }] });
+  const { view } = render(state, { controller: { completeHybridPlan: () => calls.push('complete') } });
+  const action = button(view, '补齐并使用'); assert.equal(action.props.disabled, true); action.props.onClick();
+  assert.deepEqual(calls, []); assert.match(content(view), /正在读取工作区/);
 });

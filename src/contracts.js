@@ -30,15 +30,20 @@ export function parseAnalyzedIntent(raw,request){
   return{intent:{...intent,constraints},...(analysisWarning?{analysisWarning}:{})};
 }
 export function parsePlan(raw,candidates,intent){
-  const code='MODEL_INVALID_OUTPUT',v=jsonObject(raw,code);exact(v,['kind','title','rationale','pluginIds','steps','limits'],code);
-  if(!['native','single','combo','gap'].includes(v.kind))fail(code);
-  const ids=list(v.pluginIds,2,200,code),known=new Set(candidates.map(p=>p.id));
+  const code='MODEL_INVALID_OUTPUT',v=jsonObject(raw,code);exact(v,['kind','title','rationale','pluginIds','steps','limits','gaps'],code);
+  if(!['native','single','combo','gap','hybrid'].includes(v.kind))fail(code);
+  const ids=list(v.pluginIds,4,200,code),known=new Set(candidates.map(p=>p.id));
   if(new Set(ids).size!==ids.length||ids.some(id=>!known.has(id)))fail(code);
-  if((['native','gap'].includes(v.kind)&&ids.length)||(v.kind==='single'&&ids.length!==1)||(v.kind==='combo'&&ids.length!==2))fail(code);
+  if((['native','gap'].includes(v.kind)&&ids.length)||(v.kind==='single'&&ids.length!==1)||(v.kind==='combo'&&ids.length<2)||(v.kind==='hybrid'&&!ids.length))fail(code);
+  if(v.gaps!==undefined&&(!Array.isArray(v.gaps)||v.gaps.length>6))fail(code);
+  const gaps=(v.gaps??[]).map(value=>{if(!record(value))fail(code);exact(value,['capability','reason'],code);return{capability:text(value.capability,150,code),reason:text(value.reason,1000,code)};});
+  const missing=new Set(gaps.map(gap=>gap.capability));
+  if(gaps.length>6||missing.size!==gaps.length||gaps.some(gap=>!intent.capabilities.includes(gap.capability))||(v.kind==='hybrid'?!gaps.length:gaps.length))fail(code);
   if(!Array.isArray(v.steps)||v.steps.length>10)fail(code);
   const steps=v.steps.map(raw=>{
     const s=jsonObject(raw,code);exact(s,['capability','owner','sourceCapability','action','input','output'],code);
-    if(!['dsh','human',...ids].includes(s.owner)||!intent.capabilities.includes(s.capability))fail(code);
+    if(!['dsh','human',...(['gap','hybrid'].includes(v.kind)?['create']:[]),...ids].includes(s.owner)||!intent.capabilities.includes(s.capability))fail(code);
+    if(v.kind==='hybrid'&&(s.owner==='create')!==missing.has(s.capability))fail(code);
     if(ids.includes(s.owner)&&!candidates.find(p=>p.id===s.owner)?.capabilities?.includes(s.sourceCapability))fail(code);
     if(!ids.includes(s.owner)&&s.sourceCapability!=null)fail(code);
     return{capability:text(s.capability,150,code),owner:s.owner,sourceCapability:s.sourceCapability??null,action:text(s.action,600,code),input:text(s.input,400,code),output:text(s.output,400,code)};
@@ -47,5 +52,5 @@ export function parsePlan(raw,candidates,intent){
   if(ids.some(id=>!steps.some(step=>step.owner===id)))fail(code);
   const title=text(v.title,160,code),rationale=text(v.rationale,1600,code);
   if(/已(?:验证|实测)|已安装(?:成功|可用)|实测通过|保证(?:完成|可用)|完全免费|verified (?:working|installed)|tested successfully/i.test(title))fail(code);
-  return{kind:v.kind,title,rationale,pluginIds:ids,steps,limits:list(v.limits,8,500,code)};
+  return{kind:v.kind,title,rationale,pluginIds:ids,...(v.kind==='hybrid'?{gaps}:{}),steps,limits:list(v.limits,8,500,code)};
 }

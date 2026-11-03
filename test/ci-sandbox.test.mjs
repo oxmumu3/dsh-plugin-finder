@@ -39,7 +39,7 @@ async function exercise(mode){
  try{
   try{result=await runInSandbox(process.execPath,['--max-old-space-size=128','-e',program(file,mode)],{...context,timeout:mode==='timeout'?1000:4000,maxBuffer:mode==='overflow'?1024:65536});}catch(value){error=value;}
   const pids=await ownedProcesses(file);assert.ok(pids.parent>0&&pids.grandchild>0,'Both owned processes must have started: '+String(error)+' '+String(error?.stderr??''));
-  assert.equal(pids.ready,true,'Grandchild must install its SIGTERM handler');assert.equal(pids.pgid,result?.pid??error?.pid,'Controller must own a detached process group');
+  assert.equal(pids.ready,true,'Grandchild must install its SIGTERM handler: '+String(error)+' '+String(error?.stderr??''));assert.equal(pids.pgid,result?.pid??error?.pid,'Controller must own a detached process group');
   assert.ok(Date.now()-started<3300,'Controller must stop descendants within the deadline and one-second kill grace');
   await checkStopped(pids);
   if(mode.startsWith('exit')){assert.equal(error,undefined);assert.equal(result.stdout,'');}

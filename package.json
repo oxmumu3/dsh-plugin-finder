@@ -1,13 +1,13 @@
 {
   "name": "@oxmumu3/dsh-plugin-finder",
-  "version": "0.10.0-preview.6",
+  "version": "0.12.0-preview.1",
   "description": "Describe a need, find a usable plan, and run or create in the same DeepSeek Harness workspace",
   "author": "牛村木木山",
   "license": "MIT",
   "type": "module",
   "engines": {
-    "node": ">=22.13",
-    "dsh": "0.2.0-rc.2 || 0.2.1-rc.2 || 0.2.1-rc.3 || 0.2.1-rc.4 || 0.2.1-rc.5"
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": "0.2.1-rc.5"
   },
   "exports": {
     ".": "./index.js",
@@ -35,14 +35,14 @@
     "docs/workspace-flow-preview.md",
     "docs/community-browse-preview.md",
     "docs/proactive-discovery.md",
-    "docs/rc3-compatibility.md"
+    "docs/rc3-compatibility.md",
+    "docs/agent-entry.md"
   ],
   "scripts": {
     "test": "node --test --test-concurrency=1 test/*.test.mjs",
     "build": "node scripts/build.mjs",
     "catalog:refresh": "node scripts/refresh-catalog.mjs",
-    "community:build": "node scripts/build-community-catalog.mjs",
-    "compatibility:check": "node scripts/compatibility.mjs --latest"
+    "community:build": "node scripts/build-community-catalog.mjs"
   },
   "devDependencies": {
     "esbuild": "0.25.12",
@@ -76,11 +76,13 @@
     }
   },
   "dependencies": {
-    "zod": "4.6.7"
+    "zod": "4.6.5"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-app-boot": "0.2.0-rc.2 || 0.2.1-rc.2 || 0.2.1-rc.3 || 0.2.1-rc.4 || 0.2.1-rc.5",
-    "@deepseek-ai/dsh-storage-domain": "0.2.0-rc.2 || 0.2.1-rc.2 || 0.2.1-rc.3 || 0.2.1-rc.4 || 0.2.1-rc.5"
+    "@deepseek-ai/dsh-app-boot": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-storage-domain": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-sandbox": "0.2.1-rc.5"
   },
   "repository": {
     "type": "git",
@@ -90,15 +92,15 @@
   "bugs": {
     "url": "https://github.com/oxmumu3/dsh-plugin-finder/issues"
   },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/",
-    "tag": "latest"
-  },
   "keywords": [
     "dsh-plugin",
     "deepseek-harness",
     "plugin-discovery",
     "plugin-finder"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "tag": "latest"
+  }
 }

@@ -1,0 +1,41 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {build} from 'esbuild';
+import vm from 'node:vm';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+test('Host entry retains existing domains and UI routes while owning one independent Agent request domain',async()=>{
+  const registered=[],opened=[],closed=[],effects=[],tools=new Map(),routes=[];
+  const sdk={
+    '@deepseek-ai/dsh-storage-domain':{defineDomain:spec=>spec,domainTable:schema=>schema},
+    '@deepseek-ai/dsh-app-boot':{getDshRuntimeVersion:()=> '0.2.1-rc.5'},
+    '@deepseek-ai/dsh-tools':{defineTool:definition=>definition},
+    '@deepseek-ai/dsh-sandbox':{approveEscalation:async()=>{throw Error('must not install during setup');}},
+  };
+  const bundled=await build({entryPoints:[new URL('../index.js',import.meta.url).pathname],bundle:true,format:'cjs',platform:'node',external:['@deepseek-ai/*'],define:{'import.meta.url':JSON.stringify(new URL('../catalog/index.mjs',import.meta.url).href)},write:false});
+  const module={exports:{}};vm.runInNewContext(bundled.outputFiles[0].text,{module,exports:module.exports,require:id=>sdk[id]??require(id),Buffer,process:{versions:{node:process.versions.node},platform:process.platform},AbortController,AbortSignal,Response,Request,URL,TextDecoder,structuredClone,setTimeout,clearTimeout,console,fetch:()=>{throw Error('no network during setup');}});
+  const connection={fetch:{register:route=>{routes.push(route);return()=>{};}}};
+  const ctx={
+    connection,tools:{register:definition=>{tools.set(definition.name,definition);return()=>tools.delete(definition.name);},get:name=>tools.get(name),schemas:()=>[...tools.values()]},
+    systemPrompt:{section:spec=>{registered.push(spec);return()=>{};}},workspaceRegistry:{list:()=>[]},workingDirectory:{get:()=>undefined},sandboxPolicy:{resolve:()=>({mode:'workspace-write'})},
+    get(name){return this[name];},effect:fn=>{effects.push(fn());},
+    storageDomain:{async open(spec){opened.push(spec);const tables=new Map();return{table(name){if(!tables.has(name))tables.set(name,new Map());const table=tables.get(name);return{get:id=>table.get(id),put:(id,row)=>table.set(id,row),delete:id=>table.delete(id),entries:()=>table.entries()};},global:{get:()=>structuredClone(spec.global?.initial??null),set:()=>{}},async close(){closed.push(spec.name);}};}},
+  };
+  await module.exports.apply(ctx);
+  assert.deepEqual(opened.map(spec=>spec.name),['plugin_finder','plugin_finder_history','plugin_finder_telemetry','plugin_finder_opportunities','plugin_finder_agent_requests','plugin_finder_catalog_installs']);
+  for(const spec of opened)assert.equal(spec.version,1);
+  assert.equal(tools.size,4);assert.equal(registered[0].name,'finder:agent-routing');
+  assert.ok(routes.some(route=>route.path==='/api/plugin_finder/bootstrap'));
+  assert.ok(routes.some(route=>route.path==='/api/plugin_finder/opportunity-adopt'));
+  const detailRoute=routes.find(route=>route.path==='/api/plugin_finder/catalog-detail');
+  assert.ok(detailRoute,'browse details must have a separate non-model endpoint');
+  const response=await detailRoute.fetch(new Request('http://local/api/plugin_finder/catalog-detail',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({collection:'featured',entryId:'dot-harness'})}));
+  assert.equal(response.status,200);const detail=await response.json();
+  // This fixture has neither a source fetch nor a plugin manager. Unknown
+  // local state must not be presented as a confirmed absence.
+  assert.equal(detail.entryId,'dot-harness');assert.equal(detail.installable,false);assert.equal(detail.installation.status,'unknown');
+  assert.ok(routes.some(route=>route.path==='/api/plugin_finder/catalog-install'));
+  assert.ok(routes.some(route=>route.path==='/api/plugin_finder/catalog-status'));
+  for(const cleanup of effects.reverse())await cleanup?.();
+  assert.equal(tools.size,0);assert.equal(new Set(closed).size,6);
+});

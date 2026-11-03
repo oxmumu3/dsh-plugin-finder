@@ -28,7 +28,7 @@ function executionReady(workflow,kind,code='INVALID_INPUT'){
   if(!['use','create'].includes(kind))fail(code);
   if(kind==='create'){
     if(!workflow?.creation||workflow.creation.status!=='ready'||workflow.creation.supply.status!=='current')fail(code==='INVALID_INPUT'?'CREATION_NOT_READY':code);
-  }else {if(workflow?.stage!=='plan'||!workflow.plan||workflow.plan.kind==='gap')fail(code);assertCommunityPlan(workflow,code);}
+  }else {if(workflow?.stage!=='plan'||!workflow.plan||['gap','hybrid'].includes(workflow.plan.kind))fail(code);assertCommunityPlan(workflow,code);}
 }
 
 /** Validate imported snapshots as data, retaining the original user request. */
@@ -52,7 +52,7 @@ export function validateWorkflow(value){
   if(value.warnings!==undefined){workflow.warnings=array(value.warnings,100).map(item=>publicSourceText(text(item,4000,'INVALID_BACKUP')));}
   if(value.stage==='plan'){
     if(!record(value.plan)||!Array.isArray(value.plan.limits))fail('INVALID_BACKUP');
-    let parsed;try{parsed=parsePlan({kind:value.plan.kind,title:value.plan.title,rationale:value.plan.rationale,pluginIds:value.plan.pluginIds,steps:value.plan.steps,limits:value.plan.limits.slice(0,8)},candidates,intent);}catch{fail('INVALID_BACKUP');}
+    let parsed;try{parsed=parsePlan({kind:value.plan.kind,title:value.plan.title,rationale:value.plan.rationale,pluginIds:value.plan.pluginIds,...(value.plan.gaps!==undefined?{gaps:value.plan.gaps}:{}),steps:value.plan.steps,limits:value.plan.limits.slice(0,8)},candidates,intent);}catch{fail('INVALID_BACKUP');}
     workflow.plan={...parsed,limits:array(value.plan.limits,100).map(item=>publicSourceText(text(item,4000,'INVALID_BACKUP'))),nextPrompt:publicSourceText(typeof value.plan.nextPrompt==='string'?value.plan.nextPrompt:'')};
   }
   assertCommunityPlan(workflow);
@@ -98,7 +98,7 @@ function validateTask(value){
     if(!record(entry)||!revisionIds.has(entry.revisionId)||entry.taskId!==task.id||!stamp(entry.createdAt)||eventIds.has(entry.id))fail('INVALID_BACKUP');
     const type=entry.type??'result';if(!['result','refinement'].includes(type)||type==='result'&&!['complete','partial','blocked'].includes(entry.outcome)||type==='refinement'&&entry.outcome!==null)fail('INVALID_BACKUP');
     const revision=task.revisions.find(item=>item.id===entry.revisionId),allowed=new Set(revision.workflow.plan?.pluginIds??[]);
-    const pluginIds=array(entry.pluginIds??[],2).map(id);if(pluginIds.some(pluginId=>!allowed.has(pluginId)))fail('INVALID_BACKUP');
+    const pluginIds=array(entry.pluginIds??[],4).map(id);if(new Set(pluginIds).size!==pluginIds.length||pluginIds.some(pluginId=>!allowed.has(pluginId)))fail('INVALID_BACKUP');
     const cleaned={id:id(entry.id),taskId:task.id,revisionId:entry.revisionId,createdAt:entry.createdAt,type,outcome:entry.outcome,note:text(entry.note??'',1500,'INVALID_BACKUP',true),stage:text(entry.stage??'result',80,'INVALID_BACKUP'),pluginIds};
     eventIds.add(cleaned.id);task.feedback.push(cleaned);
   }

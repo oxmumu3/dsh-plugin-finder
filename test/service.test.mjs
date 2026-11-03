@@ -29,7 +29,7 @@ test('combination must have two distinct used candidates and cover requested cap
 test('service uses discovered source records and keeps execution in the workspace draft',async()=>{
   assert.equal(typeof createFinderService,'function');
   const calls=[];const model={status:()=>({configured:true,label:'configured-model'}),async call(arg){calls.push(arg);return{text:JSON.stringify(calls.length===1?intent:basePlan),model:{label:'configured-model'}};}};
-  const svc=createFinderService({discovery:discover(plugins),catalog:{generatedAt:'2026-10-20T00:00:00Z',plugins},model,search:()=>plugins,hostVersion:'0.2.1-rc.2'});
+  const svc=createFinderService({discovery:discover(plugins),catalog:{generatedAt:'2026-10-20T00:00:00Z',plugins},model,search:()=>plugins,hostVersion:'0.2.1-rc.5'});
   const understood=await svc.analyze({request:'按我的 CSV 做周报，不连接外部账号'});assert.deepEqual(understood.intent,intent);
   const result=await svc.recommend({intent:understood.intent});assert.deepEqual(result.candidates.map(p=>p.id),['quality','report']);
   assert.ok(result.plan.nextPrompt.includes('核对 CSV'));assert.ok(result.plan.nextPrompt.includes('quality@1.0.0'));
@@ -49,6 +49,15 @@ test('recommendation separates unknown installation from analysis-only restricti
   assert.match(call.system,/human[^。]*业务[^。]*判断/);
   assert.match(call.system,/安装[^。]*官方工具/);
   assert.deepEqual(result.plan.steps,basePlan.steps);
+});
+test('partial reuse recommendation advertises hybrid gaps in its JSON schema and retains existing providers',async()=>{
+  const hybrid={...basePlan,kind:'hybrid',pluginIds:['quality'],gaps:[{capability:'生成报告',reason:'现成候选仅覆盖核对数据，报告界面需补充'}],steps:[basePlan.steps[0],{...basePlan.steps[1],owner:'create',sourceCapability:null}]};
+  let call;const svc=createFinderService({discovery:discover([plugins[0]]),search:()=>[plugins[0]],model:{status:()=>({configured:true}),call:async args=>{call=args;return{text:JSON.stringify(hybrid)};}}});
+  const result=await svc.recommend({intent});
+  const advertised=JSON.parse(call.system.match(/仅允许 (\{.*\})。插件owner/u)[1]);
+  assert.ok(Array.isArray(advertised.gaps));assert.deepEqual(Object.keys(advertised.gaps[0]).sort(),['capability','reason']);
+  assert.match(call.system,/gaps[^。]*仅[^。]*hybrid[^。]*必需/u);
+  assert.deepEqual(result.plan.pluginIds,['quality']);assert.deepEqual(result.plan.gaps,hybrid.gaps);assert.deepEqual(result.plan.steps,hybrid.steps);
 });
 test('successful discovery with no matches supports a model-native or gap decision, without invented candidates',async()=>{
   let called=false;const svc=createFinderService({discovery:discover([]),catalog:{plugins:[]},model:{status:()=>({configured:true}),call:async()=>{called=true;return {text:JSON.stringify({...basePlan,kind:'gap',pluginIds:[],steps:[]}),model:{label:'configured'}};}},search:()=>[]});
