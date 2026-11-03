@@ -43,6 +43,25 @@ function ancestralFeedback(base){
   for(let revision=base.revision;revision;revision=byId.get(revision.parentRevisionId))if(revision.feedbackText)notes.push(revision.feedbackText);
   return notes.reverse();
 }
+function creationEditableChanged(prior,edited){
+  const editable=value=>({blueprint:value.blueprint,answers:value.answers,assumptions:value.assumptions});
+  return digest(editable(prior))!==digest(editable(edited));
+}
+function creationScopePending(base,prior){
+  if(prior.scopeEditPending!==undefined)return prior.scopeEditPending;
+  // Legacy drafts have no edit marker. Only actual ancestor feedback can
+  // establish a pending edit; model-generated blueprint differences cannot.
+  const byId=new Map(base.task.revisions.map(revision=>[revision.id,revision]));
+  for(let revision=base.revision;revision&&revision.id!==prior.source.revisionId;revision=byId.get(revision.parentRevisionId)){
+    const creation=revision.workflow.creation;
+    if(creation?.source.taskId===prior.source.taskId&&creation.source.revisionId===prior.source.revisionId){
+      if(creation.scopeEditPending!==undefined)return creation.scopeEditPending;
+      if(creation.status==='ready'&&creation.supply.status==='current')return false;
+    }
+    if(revision.feedbackText)return true;
+  }
+  return false;
+}
 function recommendationFeedback(base){
   const lineage=new Set();let revision=base.revision;
   while(revision){lineage.add(revision.id);revision=base.task.revisions.find(item=>item.id===revision.parentRevisionId);}
@@ -281,7 +300,7 @@ export function createFinderService(options={}){
       const result=await creationStage('creation.generate.model',()=>model.call({system:CREATION_SYSTEM,data:{...creationModelData(base),trigger,userFeedbackContext:recommendationFeedback(base)},signal:input.signal,maxTokens:12000}));ensure();
       base=await exactContext(input);const workflow={...base.revision.workflow,localOnly:true};
       const generated=await creationStage('creation.generate.parse',()=>parseGeneratedCreation(result.text,workflow.candidates));
-      const creation=await creationStage('creation.finalize',()=>finishCreation(workflow,{version:1,source:{taskId:base.task.id,revisionId:base.revision.id},trigger,...generated,answers:[],status:generated.questions.length?'clarify':'draft',supply:{status:'stale',intentHash:digest(workflow.intent),searchedAt:workflow.discovery?.searchedAt??null},userFeedbackContext:recommendationFeedback(base)}));
+      const creation=await creationStage('creation.finalize',()=>finishCreation(workflow,{version:1,source:{taskId:base.task.id,revisionId:base.revision.id},trigger,...generated,answers:[],status:generated.questions.length?'clarify':'draft',supply:{status:'stale',intentHash:digest(workflow.intent),searchedAt:workflow.discovery?.searchedAt??null},userFeedbackContext:recommendationFeedback(base),scopeEditPending:false}));
       const selected=await creationStage('creation.save',()=>history.append({...workflow,creation},base));return response(selected,{saved:true});
     }),
     creationRefine:(input={})=>run(async()=>{
@@ -299,7 +318,7 @@ export function createFinderService(options={}){
       const parsed=await creationStage('creation.refine.constraints',()=>parseAnalyzedIntent({...base.revision.workflow.intent,constraints},note));
       const intent=await creationStage('creation.refine.constraints',()=>preserveConstraints(parsed.intent,base));
       const answers=creation.answers.filter(answer=>generated.questions.some(question=>question.id===answer.id&&creation.questions.find(old=>old.id===question.id)?.question===question.question&&digest(creation.questions.find(old=>old.id===question.id)?.options)===digest(question.options)));
-      creation={...creation,...generated,answers,status:generated.questions.some(question=>!answers.some(answer=>answer.id===question.id))?'clarify':'draft',supply:{...prior.supply,status:'stale',intentHash:digest(intent)}};
+      creation={...creation,...generated,answers,status:generated.questions.some(question=>!answers.some(answer=>answer.id===question.id))?'clarify':'draft',supply:{...prior.supply,status:'stale',intentHash:digest(intent)},scopeEditPending:true};
       const workflow={...base.revision.workflow,intent,localOnly:true,...(parsed.analysisWarning?{analysisWarning:parsed.analysisWarning}:{})};
       creation=await creationStage('creation.refine.finalize',()=>finishCreation(workflow,creation,base.task.revisions.find(revision=>revision.id===creation.source.revisionId)?.workflow));
       base=await liveContext(input);
@@ -315,6 +334,9 @@ export function createFinderService(options={}){
       if(input.answers!==undefined)creation.answers=parseAnswers(input.answers,creation.questions);
       if(input.assumptions!==undefined){if(!Array.isArray(input.assumptions)||input.assumptions.length>20)fail();creation.assumptions=input.assumptions.map(value=>text(value,1000));}
       if(input.intent!==undefined)workflow.intent=preserveConstraints(parseIntent(input.intent),base);
+      // Read user changes before any model regeneration or confirmation can rewrite the blueprint.
+      if(creationEditableChanged(prior,creation))creation.scopeEditPending=true;
+      const scopeChanged=creationScopePending(base,creation);
       if(supplyChanged(prior,creation)||digest(workflow.intent)!==prior.supply.intentHash)creation.supply.status='stale';
       if(input.regenerate){
         const result=await creationStage('creation.generate.model',()=>model.call({system:CREATION_SYSTEM,data:{...creationModelData({...base,revision:{...base.revision,workflow}},creation),userFeedbackContext:recommendationFeedback(base)},signal:input.signal,maxTokens:12000}));ensure();base=await exactContext(input);
@@ -326,16 +348,20 @@ export function createFinderService(options={}){
         const result=await creationStage('creation.confirm.model',()=>model.call({system:CREATION_CONFIRM_SYSTEM,data:{request:base.task.originalRequest,priorIntent:workflow.intent,...(workflow.plan?.kind==='hybrid'?{hybrid:{gaps:workflow.plan.gaps,retainedCandidates:workflow.candidates.filter(candidate=>workflow.plan.pluginIds.includes(candidate.id))}}:{}),userFeedbackContext:recommendationFeedback(base),creation:{blueprint:creation.blueprint,questions:creation.questions,answers:creation.answers,assumptions:creation.assumptions}},signal:input.signal,maxTokens:12000}));ensure();base=await exactContext(input);
         const confirmed=await creationStage('creation.confirm.parse',()=>parseConfirmedCreation(result.text));creation.blueprint=confirmed.blueprint;
         const parsed=await creationStage('creation.confirm.intent',()=>parseAnalyzedIntent(confirmed.intent,[base.task.originalRequest,...workflow.intent.constraints,...ancestralFeedback(base),...creation.userFeedbackContext,...Object.values(creation.blueprint),...creation.answers.map(answer=>answer.answer)].join('\n')));
-        const fullIntent=workflow.plan?.kind==='hybrid'?{...parsed.intent,goal:workflow.intent.goal,input:workflow.intent.input,output:workflow.intent.output,capabilities:[...new Set([...workflow.intent.capabilities,...parsed.intent.capabilities])]}:parsed.intent;
+        // An automatic confirmation may restate labels, not expand the accepted task.
+        // Explicit edits instead establish one complete bounded scope, never a union of two model vocabularies.
+        const fullIntent=workflow.plan?.kind==='hybrid'?{...parsed.intent,goal:workflow.intent.goal,input:workflow.intent.input,output:workflow.intent.output,capabilities:scopeChanged?parsed.intent.capabilities:workflow.intent.capabilities}:parsed.intent;
         const intent=await creationStage('creation.confirm.constraints',()=>preserveConstraints(parseIntent(fullIntent,'MODEL_INVALID_OUTPUT'),{...base,revision:{...base.revision,workflow}}));
         const recommended=await creationStage('creation.confirm.search',()=>core.recommend({intent,signal:input.signal,communityEntryId:null,userFeedbackContext:recommendationFeedback(base),...(base.revision.workflow.localOnly?{sourceRequest:base.task.originalRequest}:{}),beforeModel:()=>exactContext(input)}));ensure();base=await exactContext(input);
         workflow={...workflow,...recommended};
         creation.supply={status:'current',intentHash:digest(intent),searchedAt:recommended.discovery?.searchedAt??null};
+        if(creation.scopeEditPending!==undefined)creation.scopeEditPending=false;
         // These are fresh recommendation/unknown assessments, not verified exclusions.
         creation.reuseAssessment='针对当前建造意图重新核对：'+recommended.plan.rationale;
         creation.candidateDecisions=recommended.candidates.map(candidate=>({pluginId:candidate.id,decision:recommended.plan.pluginIds.includes(candidate.id)?'reuse':'unknown',reason:recommended.plan.pluginIds.includes(candidate.id)?'本轮推荐候选，配置与实际适配仍待验收。':'本轮未选择；不能据此断言不支持。'}));
       }
       creation.status=creation.questions.some(question=>!creation.answers.some(answer=>answer.id===question.id))?'clarify':input.confirm&&creation.supply.status==='current'?'ready':'draft';
+      if(input.confirm&&creation.status==='ready'&&creation.scopeEditPending!==undefined)creation.scopeEditPending=false;
       base=await exactContext(input);creation=await creationStage('creation.finalize',()=>finishCreation(workflow,creation,base.task.revisions.find(revision=>revision.id===creation.source.revisionId)?.workflow));
       const selected=await creationStage('creation.save',()=>history.append({...workflow,localOnly:true,creation},base));return response(selected,{saved:true});
     }),
