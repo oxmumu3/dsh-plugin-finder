@@ -1,5 +1,7 @@
 # 发现好插件 · DSH Plugin Finder
 
+📖 设计思考与生态复盘：[《DeepSeek Harness 要走向极客玩具还是大众普惠？》](https://mp.weixin.qq.com/s/RIAYNqo8OsUVx2JpR8MPyA)
+
 [安装说明](docs/install.md) · [当前工作区流程](docs/workspace-flow-preview.md) · [数据回传说明](docs/data-sharing.md) · [历史验证记录](docs/verification.md) · [反馈](https://github.com/oxmumu3/dsh-plugin-finder/issues/new?template=feedback.yml)
 
 **本次发布版本：`0.10.0-preview.6`，公开预览版。** 描述你要完成的事，Finder 分析需求、查找插件并组成方案。合适就点「使用这个方案」，直接在当前工作区执行；不满足就「创建自己的插件」，点「开始创建」后在原处启动创建。
