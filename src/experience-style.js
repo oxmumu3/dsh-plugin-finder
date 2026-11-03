@@ -496,7 +496,18 @@ export const experienceCss = `
 .pf_v2 .pfv_capabilities_heading h3 { margin: 0; font-size: 14px; font-weight: 600; }
 .pfv_capabilities_heading .pfv_hint { font-size: 12px; }
 .pfv_capability_map { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); list-style: none; padding: 0; margin: 0; gap: 10px; }
+.pfv_capability_map_hybrid { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 16px; }
 .pfv_capability_item { min-width: 0; border: 1px solid var(--pfv_line); border-radius: 10px; padding: 14px 16px; background: var(--pfv_canvas); overflow-wrap: anywhere; }
+.pfv_reuse_list { list-style: none; padding: 0; margin: 0; }
+.pfv_reuse_list > li + li { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--pfv_line); }
+.pfv_gap_list { margin: 12px 0 0; padding-left: 17px; font-size: 13px; line-height: 1.8; color: var(--pfv_ink); }
+.pfv_gap_list > li + li { margin-top: 5px; }
+.pfv_capability_item > .pfv_disclosure { margin-top: 10px; border-color: color-mix(in srgb, var(--pfv_accent) 18%, transparent); }
+.pfv_capability_item > .pfv_disclosure > summary { padding: 9px 0; min-height: 36px; font-size: 12px; }
+.pfv_gap_evidence { margin: 0; font-size: 12px; line-height: 1.75; }
+.pfv_gap_evidence > div + div { margin-top: 12px; }
+.pfv_gap_evidence dt { color: var(--pfv_ink); font-weight: 600; }
+.pfv_gap_evidence dd { margin: 3px 0 0; color: var(--pfv_muted); }
 .pfv_capability_kind { display: block; font-size: 12px; line-height: 1.6; margin-bottom: 7px; color: var(--pfv_muted); }
 .pfv_capability_item strong { display: block; color: var(--pfv_ink); font-size: 15px; font-weight: 600; line-height: 1.6; }
 .pfv_capability_version { display: block; font-size: 12px; color: var(--pfv_muted); line-height: 1.6; margin-top: 3px; }
@@ -536,6 +547,7 @@ export const experienceCss = `
   .pfv_solution_overview .pfv_capability_gap { border-style: dashed; border-color: var(--pfv_accent); }
 }
 @container finder (max-width: 520px) {
+  .pfv_capability_map_hybrid { grid-template-columns: minmax(0, 1fr); }
   .pfv_result_primary .pfv_execution { padding: 16px; }
   .pfv_result_primary .pf_execution_conversation { min-height: 300px !important; height: min(64vh, 580px) !important; }
   .pf_v2 .pfv_expert_identity h1 { font-size: 25px; }

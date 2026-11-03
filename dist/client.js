@@ -62,6 +62,10 @@ function text(x, max = 6e3, code = "INVALID_INPUT", empty = false) {
   if (typeof x !== "string" || x.length > max || !empty && !x.trim() || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(x)) fail(code);
   return x.trim();
 }
+function list(x, max, each, code, empty = true) {
+  if (!Array.isArray(x) || x.length > max || !empty && !x.length) fail(code);
+  return x.map((v) => text(v, each, code));
+}
 function jsonObject(input, code = "MODEL_INVALID_OUTPUT") {
   if (typeof input === "string") {
     let s = input.trim();
@@ -171,6 +175,18 @@ function parsePlan(raw, candidates, intent) {
   const title = planText(v.title, 160, "plan.title"), rationale = planText(v.rationale, 1600, "plan.rationale");
   if (/已(?:验证|实测)|已安装(?:成功|可用)|实测通过|保证(?:完成|可用)|完全免费|verified (?:working|installed)|tested successfully/i.test(title)) planFail("plan.title", "unverified-claim");
   return { kind: v.kind, title, rationale, pluginIds: ids, ...v.kind === "hybrid" ? { gaps } : {}, steps, limits: planList(v.limits, 8, 500, "plan.limits") };
+}
+function parseStoredPlan(raw, candidates, intent) {
+  const code = "INVALID_BACKUP";
+  if (!record(raw) || !Array.isArray(raw.limits)) fail(code);
+  const limits = list(raw.limits, 100, 4e3, code);
+  let parsed;
+  try {
+    parsed = parsePlan({ kind: raw.kind, title: raw.title, rationale: raw.rationale, pluginIds: raw.pluginIds, ...raw.gaps !== void 0 ? { gaps: raw.gaps } : {}, steps: raw.steps, limits: raw.limits.slice(0, 8) }, candidates, intent);
+  } catch {
+    fail(code);
+  }
+  return { ...parsed, limits };
 }
 
 // src/opportunity-client.js
@@ -1922,7 +1938,7 @@ function renderPluginDetailView({ h, state, controller }) {
   const note = ready ? "\u5DF2\u5B89\u88C5\u5E76\u542F\u7528\uFF0C\u53EF\u4EE5\u5728 DeepSeek Harness \u4E2D\u4F7F\u7528\u3002" : primarySourceRetry ? `${text2(detail.unavailableReason) || "\u56FA\u5B9A\u5B89\u88C5\u5305\u9700\u8981\u91CD\u65B0\u6838\u5BF9\u539F\u6765\u6E90\u3002"}${phase === "unknown" ? " \u5F53\u524D\u5B89\u88C5\u72B6\u6001\u4ECD\u5F85\u6838\u5BF9\u3002" : ""}` : localInstalled ? `\u672C\u673A\u5DF2\u5B89\u88C5${installation.componentOnly ? "\u914D\u5957\u7EC4\u4EF6 " : " "}${text2(installation.packageName)}${actualVersion ? `@${actualVersion}` : ""}\uFF0C${localState}\u3002${text2(detail?.unavailableReason) || "\u672C\u9875\u5B89\u88C5\u6765\u6E90\u5C1A\u5F85\u6838\u5BF9\uFF0C\u4FDD\u7559\u5F53\u524D\u5B89\u88C5\u3002"}` : (conflictNote ? `${conflictNote} \u672C\u673A\u72B6\u6001\uFF1A${localState}\u3002` : "") || (["PLUGIN_INSTALL_APPROVAL_REQUIRED", "PLUGIN_INSTALL_RESTART_REQUIRED"].includes(installation?.code) ? problemMessages[installation.code] : "") || (phase === "unknown" ? text2(installation?.message) || problemMessages[installation?.code] : "") || text2(detail?.unavailableReason) || (phase === "conflict" && installation?.installed === false ? text2(installation.message) : "") || problemMessages[installation?.code] || text2(installation?.message) || (phase === "unknown" || phase === "installing" ? "\u5B89\u88C5\u7ED3\u679C\u5C1A\u672A\u786E\u8BA4\u3002\u6838\u5BF9\u72B6\u6001\u4F1A\u7EE7\u7EED\u67E5\u770B\u8FD9\u4E00\u6B21\u5B89\u88C5\uFF0C\u4E0D\u4F1A\u91CD\u590D\u5B89\u88C5\u3002" : phase === "installed-disabled" ? "\u63D2\u4EF6\u5DF2\u5B89\u88C5\uFF0C\u542F\u7528\u540E\u5373\u53EF\u4F7F\u7528\u3002" : phase === "conflict" ? "\u5F53\u524D\u5DF2\u6709\u4E0D\u540C\u7248\u672C\u6216\u6765\u6E90\u7684\u540C\u540D\u63D2\u4EF6\uFF0C\u672C\u6B21\u6CA1\u6709\u66FF\u6362\u3002" : phase === "failed" ? "\u8FD9\u6B21\u5B89\u88C5\u6CA1\u6709\u5B8C\u6210\uFF0C\u539F\u6709\u63D2\u4EF6\u672A\u88AB\u66FF\u6362\u3002" : detail?.installable ? "\u5B89\u88C5\u5E76\u542F\u7528\u5230\u5F53\u524D DeepSeek Harness\uFF0C\u65E0\u9700\u524D\u5F80\u63D2\u4EF6\u7BA1\u7406\u5668\u3002" : "\u6B63\u5728\u6838\u5BF9\u6240\u9009\u63D2\u4EF6\u7684\u6765\u6E90\u548C\u5B89\u88C5\u72B6\u6001\u3002");
   const requirements = strings(detail?.requirements ?? fallback?.requirements).map((value) => value === "\u8D26\u53F7\u3001\u8F93\u5165\u8F93\u51FA\u548C\u9996\u6B21\u4F7F\u7528\u524D\u63D0\u6765\u81EA\u4F5C\u8005\u8D44\u6599\uFF1B\u672A\u77E5\u6761\u4EF6\u9700\u5728\u4F1A\u8BDD\u786E\u8BA4\u3002" ? "\u5177\u4F53\u914D\u7F6E\u548C\u6388\u6743\u8981\u6C42\u4EE5\u4F5C\u8005\u8BF4\u660E\u4E3A\u51C6\u3002" : value);
   const limitations = strings(detail?.limitations ?? fallback?.limitations).filter((value) => !/^来自动态来源与作者资料的候选线索；|^已核对精确 npm 版本的 bundle 清单，/.test(value));
-  const list = (values) => h("ul", { className: "pfv_plugin_list" }, ...values.map((value, index) => h("li", { key: index }, value)));
+  const list2 = (values) => h("ul", { className: "pfv_plugin_list" }, ...values.map((value, index) => h("li", { key: index }, value)));
   return h(
     "article",
     { className: "pfv_plugin_detail", "aria-labelledby": "pfv_plugin_detail_title" },
@@ -1952,8 +1968,8 @@ function renderPluginDetailView({ h, state, controller }) {
     requirements.length || limitations.length ? h(
       "div",
       { className: "pfv_plugin_facts" },
-      requirements.length ? h("section", { className: "pfv_plugin_section" }, h("h2", null, "\u4F7F\u7528\u524D\u63D0"), list(requirements)) : null,
-      limitations.length ? h("section", { className: "pfv_plugin_section" }, h("h2", null, "\u9700\u8981\u4E86\u89E3"), list(limitations)) : null
+      requirements.length ? h("section", { className: "pfv_plugin_section" }, h("h2", null, "\u4F7F\u7528\u524D\u63D0"), list2(requirements)) : null,
+      limitations.length ? h("section", { className: "pfv_plugin_section" }, h("h2", null, "\u9700\u8981\u4E86\u89E3"), list2(limitations)) : null
     ) : null,
     source ? h("section", { className: "pfv_plugin_section pfv_plugin_sources" }, h("h2", null, "\u4F5C\u8005\u4E0E\u6765\u6E90"), h("a", { href: source, target: "_blank", rel: "noopener noreferrer" }, "\u67E5\u770B\u4F5C\u8005\u8BF4\u660E \u2197"), h("p", null, "\u63D2\u4EF6\u4ECB\u7ECD\u6765\u81EA\u4F5C\u8005\u8D44\u6599\uFF1B\u6536\u5F55\u4E0D\u4EE3\u8868\u5DF2\u9A8C\u8BC1\u6240\u6709\u529F\u80FD\u3002")) : null
   );
@@ -1977,7 +1993,7 @@ function renderFeaturedView({ h, state, controller, copyText, busy = false, mode
   });
   const selected = mode === "detail" ? featuredCatalog.find((entry) => entry.id === state.featuredId) : null;
   const button2 = (label, onClick, attrs = {}) => h("button", { type: "button", className: "pf_btn", onClick, ...attrs }, label);
-  const list = (values) => h("ul", { className: "pf_list" }, ...values.map((value, index) => h("li", { key: index }, value)));
+  const list2 = (values) => h("ul", { className: "pf_list" }, ...values.map((value, index) => h("li", { key: index }, value)));
   const status = (entry) => h("span", { className: "pf_tag pf_featured_status" }, entry.status === "available" && !safeFeaturedInstall(entry) ? "\u53D1\u884C\u6765\u6E90\u5F85\u590D\u6838" : statusLabels[entry.status]);
   const card = (entry, reason, group = "catalog") => h(
     "article",
@@ -2419,7 +2435,7 @@ function createExperienceView(React2) {
   const primary = (label, onClick, attrs = {}) => button2(label, onClick, { ...attrs, className: "pfv_button pfv_primary" });
   const disclosure = (label, content, attrs = {}) => content ? h("details", { className: "pfv_disclosure", ...attrs }, h("summary", null, label), h("div", { className: "pfv_disclosure_body" }, content)) : null;
   const paragraph = (value, attrs = {}) => text6(value) ? h("p", { className: "pfv_prose", ...attrs }, text6(value)) : null;
-  const list = (values) => values.length ? h("ul", { className: "pfv_list" }, ...values.map((value, index) => h("li", { key: index }, value))) : null;
+  const list2 = (values) => values.length ? h("ul", { className: "pfv_list" }, ...values.map((value, index) => h("li", { key: index }, value))) : null;
   const short = (value, limit = 210) => text6(value).length > limit ? `${text6(value).slice(0, limit).trim()}\u2026` : text6(value);
   const shortcut = (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && !event.nativeEvent?.isComposing && !event.isComposing) {
@@ -2577,7 +2593,7 @@ function createExperienceView(React2) {
         cancelled: "\u5DF2\u505C\u6B62"
       }[execution.phase] || "\u5F53\u524D\u72B6\u6001"), executionActive ? button2("\u505C\u6B62", () => controller.cancelExecution(), { className: "pfv_button pfv_quiet", "aria-label": "\u505C\u6B62\u5F53\u524D\u6267\u884C" }) : null),
       paragraph(execution.summary),
-      text6(execution.details) ? paragraph(execution.details, { className: "pfv_hint pfv_execution_details" }) : list(strings2(execution.details)),
+      text6(execution.details) ? paragraph(execution.details, { className: "pfv_hint pfv_execution_details" }) : list2(strings2(execution.details)),
       execution.canContinue ? primary("\u7EE7\u7EED\u6267\u884C", () => controller.continueExecution(), { disabled: busy }) : null,
       sections.executionConversation
     ) : null;
@@ -2631,27 +2647,32 @@ function createExperienceView(React2) {
         { className: "pfv_capabilities", "aria-label": "\u65B9\u6848\u4E2D\u7684\u80FD\u529B" },
         h("div", { className: "pfv_capabilities_heading" }, h("h3", null, "\u65B9\u6848\u4E2D\u7684\u80FD\u529B"), h("span", { className: "pfv_hint" }, gaps.length ? "\u4FDD\u7559\u73B0\u6210\u80FD\u529B\uFF0C\u53EA\u8865\u771F\u6B63\u7684\u7F3A\u53E3" : "\u6309\u8FD9\u6B21\u76EE\u6807\u5B89\u6392")),
         h(
-          "ul",
-          { className: "pfv_capability_map" },
-          ...selected.map((candidate) => {
-            const responsibilities = unique(records(plan.steps).filter((step) => step.owner === candidate.id).map((step) => text6(step.capability)));
-            return h(
-              "li",
-              { key: candidate.id, className: "pfv_capability_item", "data-capability-kind": "reuse" },
-              h("span", { className: "pfv_capability_kind" }, "\u8BA1\u5212\u590D\u7528"),
-              h("strong", null, text6(candidate.name) || candidate.id),
-              text6(candidate.install?.version || candidate.version) ? h("span", { className: "pfv_capability_version" }, text6(candidate.install?.version || candidate.version)) : null,
-              responsibilities.length ? paragraph(responsibilities.join("\u3001"), { className: "pfv_capability_purpose" }) : null
-            );
-          }),
-          ...gaps.map((gap, index) => h(
-            "li",
-            { key: `gap-${index}`, className: "pfv_capability_item pfv_capability_gap", "data-capability-kind": "gap" },
+          "div",
+          { className: `pfv_capability_map${gaps.length ? " pfv_capability_map_hybrid" : ""}` },
+          selected.length ? h(
+            "section",
+            { className: "pfv_capability_item pfv_capability_reuse", "data-capability-kind": "reuse" },
+            h("span", { className: "pfv_capability_kind" }, "\u8BA1\u5212\u590D\u7528"),
+            h("ul", { className: "pfv_reuse_list" }, ...selected.map((candidate) => {
+              const responsibilities = unique(records(plan.steps).filter((step) => step.owner === candidate.id).map((step) => text6(step.capability)));
+              return h(
+                "li",
+                { key: candidate.id },
+                h("strong", null, text6(candidate.name) || candidate.id),
+                text6(candidate.install?.version || candidate.version) ? h("span", { className: "pfv_capability_version" }, text6(candidate.install?.version || candidate.version)) : null,
+                responsibilities.length ? paragraph(short(responsibilities.join("\u3001"), 160), { className: "pfv_capability_purpose" }) : null
+              );
+            }))
+          ) : null,
+          gaps.length ? h(
+            "section",
+            { className: "pfv_capability_item pfv_capability_gap", "data-capability-kind": "gap" },
             h("span", { className: "pfv_capability_kind" }, "\u5F85\u8865\u9F50"),
-            h("strong", null, text6(gap.capability)),
-            paragraph(text6(gap.reason), { className: "pfv_capability_purpose" })
-          )),
-          plan.kind === "native" ? h("li", { className: "pfv_capability_item", "data-capability-kind": "native" }, h("span", { className: "pfv_capability_kind" }, "\u73B0\u6709\u80FD\u529B"), h("strong", null, "Harness \u5F53\u524D\u80FD\u529B"), paragraph("\u65E0\u9700\u989D\u5916\u5B89\u88C5\u63D2\u4EF6\u3002", { className: "pfv_capability_purpose" })) : null
+            h("strong", null, "\u53EA\u521B\u5EFA\u7F3A\u5931\u90E8\u5206"),
+            h("ul", { className: "pfv_gap_list" }, ...gaps.slice(0, execution ? 2 : gaps.length).map((gap, index) => h("li", { key: index }, text6(gap.capability)))),
+            disclosure(execution && gaps.length > 2 ? `\u67E5\u770B\u5168\u90E8 ${gaps.length} \u9879\u7F3A\u53E3\u4E0E\u4F9D\u636E` : "\u67E5\u770B\u7F3A\u53E3\u4F9D\u636E", h("dl", { className: "pfv_gap_evidence" }, ...gaps.map((gap, index) => h("div", { key: index }, h("dt", null, text6(gap.capability)), h("dd", null, text6(gap.reason))))))
+          ) : null,
+          plan.kind === "native" ? h("section", { className: "pfv_capability_item", "data-capability-kind": "native" }, h("span", { className: "pfv_capability_kind" }, "\u73B0\u6709\u80FD\u529B"), h("strong", null, "Harness \u5F53\u524D\u80FD\u529B"), paragraph("\u65E0\u9700\u989D\u5916\u5B89\u88C5\u63D2\u4EF6\u3002", { className: "pfv_capability_purpose" })) : null
         )
       );
     };
@@ -2686,8 +2707,8 @@ function createExperienceView(React2) {
           !needsCreation || retry ? button2("\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6", () => controller.startCreation(), { disabled: !canAct, className: "pfv_button pfv_quiet" }) : null
         )) : null,
         execution?.phase === "completed" && execution.kind === "use" ? h("div", { className: "pfv_outcome_actions" }, button2("\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6", () => controller.startCreation(), { disabled: locked || !modelReady, className: "pfv_button pfv_quiet" })) : null,
-        steps.length && !execution ? h("section", { className: "pfv_plan_steps", "aria-label": "\u5B8C\u6210\u8DEF\u5F84" }, h("h3", null, "\u8FD9\u6B21\u4F1A\u505A\u4EC0\u4E48"), h("ol", null, ...steps.map((step, index) => h("li", { key: index }, h("span", { className: "pfv_step_number", "aria-hidden": true }, index + 1), h("div", null, h("h4", null, text6(step.capability)), paragraph(short(step.action, 220)), h("p", { className: "pfv_hint" }, ownerLabel(step.owner))))))) : null,
-        limits.length ? h("div", { className: "pfv_prerequisites" }, h("h3", null, "\u4F7F\u7528\u524D\u63D0"), list(limits.slice(0, 2)), limits.length > 2 ? disclosure(`\u8FD8\u6709 ${limits.length - 2} \u9879\u9650\u5236`, list(limits.slice(2))) : null) : null,
+        steps.length && !execution ? disclosure("\u67E5\u770B\u6267\u884C\u5B89\u6392", h("section", { className: "pfv_plan_steps", "aria-label": "\u5B8C\u6210\u8DEF\u5F84" }, h("h3", null, "\u8FD9\u6B21\u4F1A\u505A\u4EC0\u4E48"), h("ol", null, ...steps.map((step, index) => h("li", { key: index }, h("span", { className: "pfv_step_number", "aria-hidden": true }, index + 1), h("div", null, h("h4", null, text6(step.capability)), paragraph(short(step.action, 220)), h("p", { className: "pfv_hint" }, ownerLabel(step.owner)))))))) : null,
+        limits.length ? h("div", { className: "pfv_prerequisites" }, h("h3", null, "\u4F7F\u7528\u524D\u63D0"), list2(limits.slice(0, 2)), limits.length > 2 ? disclosure(`\u8FD8\u6709 ${limits.length - 2} \u9879\u9650\u5236`, list2(limits.slice(2))) : null) : null,
         disclosure("\u67E5\u770B\u5B8C\u6574\u65B9\u6848", h(React2.Fragment, null, uncertainGap ? h("p", { className: "pfv_hint" }, "\u4EE5\u4E0B\u662F\u6765\u6E90\u5C1A\u672A\u5B8C\u6574\u6838\u5BF9\u65F6\u7684\u6682\u5B9A\u5224\u65AD\u3002") : null, paragraph(plan.title), paragraph(plan.rationale), ...steps.map((step, index) => h("section", { key: index }, h("h4", null, text6(step.capability)), paragraph(step.action), h("dl", { className: "pfv_io" }, h("dt", null, "\u8F93\u5165"), h("dd", null, text6(step.input)), h("dt", null, "\u4EA7\u51FA"), h("dd", null, text6(step.output))))))),
         previousOutcome ? h("p", { className: "pfv_hint pfv_previous_note" }, "\u8FD9\u662F\u4E0A\u4E00\u6B21\u4FDD\u5B58\u7684\u7ED3\u679C\uFF0C\u66F4\u65B0\u540E\u4F1A\u663E\u793A\u65B0\u65B9\u6848\u3002") : null
       );
@@ -2721,7 +2742,7 @@ function createExperienceView(React2) {
             disclosure(`\u7F16\u8F91${group.title}`, h("div", { className: "pfv_block_editor" }, ...group.fields.map(([key, label]) => h("label", { key, className: "pfv_field", htmlFor: `pfv_field_${key}` }, label, h("textarea", { id: `pfv_field_${key}`, "aria-label": label, value: text6(blueprint[key]), maxLength: 4e3, disabled: locked, onChange: (event) => controller.editCreation({ blueprint: { [key]: event.target.value } }) })))), { key: `edit-${index}`, className: "pfv_disclosure pfv_edit_block" })
           )),
           paragraph(creation.reuseAssessment),
-          list(records(creation.candidateDecisions).map((item) => `${records(state.candidates).find((candidate) => candidate.id === item.pluginId)?.name || item.pluginId}\uFF1A${text6(item.reason)}`)),
+          list2(records(creation.candidateDecisions).map((item) => `${records(state.candidates).find((candidate) => candidate.id === item.pluginId)?.name || item.pluginId}\uFF1A${text6(item.reason)}`)),
           h("label", { className: "pfv_field", htmlFor: "pfv_assumptions" }, "\u5047\u8BBE\uFF0C\u6BCF\u884C\u4E00\u9879", h("textarea", { id: "pfv_assumptions", value: items3(form?.assumptions || creation.assumptions).filter((item) => typeof item === "string").join("\n"), maxLength: 6e3, disabled: locked, onChange: (event) => controller.editCreation({ assumptions: event.target.value.split("\n") }) })),
           state.creationDirty ? button2("\u4FDD\u5B58\u8349\u7A3F", () => controller.updateCreation(), { disabled: locked }) : null
         ))
@@ -3249,7 +3270,18 @@ var experienceCss = `
 .pf_v2 .pfv_capabilities_heading h3 { margin: 0; font-size: 14px; font-weight: 600; }
 .pfv_capabilities_heading .pfv_hint { font-size: 12px; }
 .pfv_capability_map { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); list-style: none; padding: 0; margin: 0; gap: 10px; }
+.pfv_capability_map_hybrid { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 16px; }
 .pfv_capability_item { min-width: 0; border: 1px solid var(--pfv_line); border-radius: 10px; padding: 14px 16px; background: var(--pfv_canvas); overflow-wrap: anywhere; }
+.pfv_reuse_list { list-style: none; padding: 0; margin: 0; }
+.pfv_reuse_list > li + li { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--pfv_line); }
+.pfv_gap_list { margin: 12px 0 0; padding-left: 17px; font-size: 13px; line-height: 1.8; color: var(--pfv_ink); }
+.pfv_gap_list > li + li { margin-top: 5px; }
+.pfv_capability_item > .pfv_disclosure { margin-top: 10px; border-color: color-mix(in srgb, var(--pfv_accent) 18%, transparent); }
+.pfv_capability_item > .pfv_disclosure > summary { padding: 9px 0; min-height: 36px; font-size: 12px; }
+.pfv_gap_evidence { margin: 0; font-size: 12px; line-height: 1.75; }
+.pfv_gap_evidence > div + div { margin-top: 12px; }
+.pfv_gap_evidence dt { color: var(--pfv_ink); font-weight: 600; }
+.pfv_gap_evidence dd { margin: 3px 0 0; color: var(--pfv_muted); }
 .pfv_capability_kind { display: block; font-size: 12px; line-height: 1.6; margin-bottom: 7px; color: var(--pfv_muted); }
 .pfv_capability_item strong { display: block; color: var(--pfv_ink); font-size: 15px; font-weight: 600; line-height: 1.6; }
 .pfv_capability_version { display: block; font-size: 12px; color: var(--pfv_muted); line-height: 1.6; margin-top: 3px; }
@@ -3289,6 +3321,7 @@ var experienceCss = `
   .pfv_solution_overview .pfv_capability_gap { border-style: dashed; border-color: var(--pfv_accent); }
 }
 @container finder (max-width: 520px) {
+  .pfv_capability_map_hybrid { grid-template-columns: minmax(0, 1fr); }
   .pfv_result_primary .pfv_execution { padding: 16px; }
   .pfv_result_primary .pf_execution_conversation { min-height: 300px !important; height: min(64vh, 580px) !important; }
   .pf_v2 .pfv_expert_identity h1 { font-size: 25px; }
@@ -3406,7 +3439,7 @@ function validSavedWorkflow(value) {
   if (["native", "gap"].includes(plan.kind) && plan.pluginIds.length || plan.kind === "single" && plan.pluginIds.length !== 1 || plan.kind === "combo" && plan.pluginIds.length < 2 || plan.kind === "hybrid" && !plan.pluginIds.length) return false;
   if (plan.kind === "hybrid" || plan.pluginIds.length > 2 || plan.gaps !== void 0 || plan.kind === "gap" && plan.steps.some((step) => step?.owner === "create")) {
     try {
-      parsePlan(Object.fromEntries(["kind", "title", "rationale", "pluginIds", "steps", "limits", ...plan.gaps !== void 0 ? ["gaps"] : []].map((key) => [key, plan[key]])), value.candidates, value.intent);
+      parseStoredPlan(plan, value.candidates, value.intent);
       return true;
     } catch {
       return false;

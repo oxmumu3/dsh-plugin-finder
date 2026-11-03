@@ -81,3 +81,14 @@ export function parsePlan(raw,candidates,intent){
   if(/已(?:验证|实测)|已安装(?:成功|可用)|实测通过|保证(?:完成|可用)|完全免费|verified (?:working|installed)|tested successfully/i.test(title))planFail('plan.title','unverified-claim');
   return{kind:v.kind,title,rationale,pluginIds:ids,...(v.kind==='hybrid'?{gaps}:{}),steps,limits:planList(v.limits,8,500,'plan.limits')};
 }
+
+/** Stored plans also retain bounded source/eligibility notices appended after model validation. */
+export function parseStoredPlan(raw,candidates,intent){
+  const code='INVALID_BACKUP';
+  if(!record(raw)||!Array.isArray(raw.limits))fail(code);
+  const limits=list(raw.limits,100,4000,code);
+  let parsed;
+  try{parsed=parsePlan({kind:raw.kind,title:raw.title,rationale:raw.rationale,pluginIds:raw.pluginIds,...(raw.gaps!==undefined?{gaps:raw.gaps}:{}),steps:raw.steps,limits:raw.limits.slice(0,8)},candidates,intent);}
+  catch{fail(code);}
+  return{...parsed,limits};
+}

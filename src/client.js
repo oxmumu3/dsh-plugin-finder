@@ -1,5 +1,5 @@
 import React from 'react';
-import {parsePlan} from './contracts.js';
+import {parseStoredPlan} from './contracts.js';
 import { createOpportunityClient } from './opportunity-client.js';
 import { prepareCreatorDraft, supportsCreatorHost } from './creator-handoff.js';
 import { executeInWorkspace, inferWorkspace } from './workspace-execution.js';
@@ -48,8 +48,8 @@ function validSavedWorkflow(value) {
   if (new Set(plan.pluginIds).size !== plan.pluginIds.length || !Array.isArray(plan.limits) || plan.limits.some(limit => typeof limit !== 'string') || !Array.isArray(plan.steps) || plan.steps.length > 10) return false;
   if (['native', 'gap'].includes(plan.kind) && plan.pluginIds.length || plan.kind === 'single' && plan.pluginIds.length !== 1 || plan.kind === 'combo' && plan.pluginIds.length < 2 || plan.kind === 'hybrid' && !plan.pluginIds.length) return false;
   if (plan.kind === 'hybrid' || plan.pluginIds.length > 2 || plan.gaps !== undefined || plan.kind === 'gap' && plan.steps.some(step => step?.owner === 'create')) {
-    // New plans share the backend contract. Preserve legacy saved envelopes as-is.
-    try { parsePlan(Object.fromEntries(['kind','title','rationale','pluginIds','steps','limits',...(plan.gaps !== undefined ? ['gaps'] : [])].map(key => [key, plan[key]])), value.candidates, value.intent); return true; }
+    // Share history's persisted envelope, including source/eligibility notices added after model validation.
+    try { parseStoredPlan(plan, value.candidates, value.intent); return true; }
     catch { return false; }
   }
   return plan.steps.every(step => step && ['capability', 'owner', 'action', 'input', 'output'].every(key => typeof step[key] === 'string') && ['dsh', 'human', ...plan.pluginIds].includes(step.owner) && (step.sourceCapability == null || typeof step.sourceCapability === 'string'));

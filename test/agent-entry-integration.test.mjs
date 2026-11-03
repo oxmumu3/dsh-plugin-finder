@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import vm from 'node:vm';
 import {createRequire} from 'node:module';
+import {Context} from '@deepseek-ai/cordis';
 const require=createRequire(import.meta.url);
 test('Host entry retains existing domains and UI routes while owning one independent Agent request domain',async()=>{
   const registered=[],opened=[],closed=[],effects=[],tools=new Map(),routes=[];
@@ -40,8 +41,12 @@ test('Host entry retains existing domains and UI routes while owning one indepen
   assert.equal(tools.size,0);assert.equal(new Set(closed).size,6);
 });
 
-test('entry routes fixed plan issues from both factories to the existing local logger only',async()=>{
+test('entry routes fixed plan issues from both factories through the official default logger exporter and buffer',async t=>{
  const coreOptions=[],agentOptions=[],messages=[],effects=[];
+ const logging=new Context(),disposeExporter=logging.logger.exporter({export:message=>messages.push(message)});
+ t.after(async()=>{for(const cleanup of effects.reverse())await cleanup?.();await disposeExporter();await logging.fiber.dispose();});
+ logging.logger.warn('default-warn-is-filtered');
+ assert.equal(messages.length,0);assert.equal(logging.logger.buffer.length,0);
  const sdk={
   '@deepseek-ai/dsh-storage-domain':{defineDomain:spec=>spec,domainTable:schema=>schema},
   '@deepseek-ai/dsh-app-boot':{getDshRuntimeVersion:()=> '0.2.1-rc.5'},
@@ -53,12 +58,13 @@ test('entry routes fixed plan issues from both factories to the existing local l
   builder.onLoad({filter:/\/src\/agent-finder-service\.js$/},()=>({loader:'js',contents:'export class AgentFinderError extends Error {} export function createAgentFinderService(options){agentOptions.push(options);return {}}'}));
  }}]});
  const module={exports:{}};vm.runInNewContext(bundled.outputFiles[0].text,{module,exports:module.exports,coreOptions,agentOptions,require:id=>sdk[id]??require(id),Buffer,process:{versions:{node:process.versions.node},platform:process.platform},AbortController,AbortSignal,Response,Request,URL,TextDecoder,structuredClone,setTimeout,clearTimeout,console,fetch:()=>assert.fail('no network')});
- const ctx={logger:{warn:message=>messages.push(message)},connection:{fetch:{register:()=>()=>{}}},tools:{register:()=>()=>{},get:()=>undefined,schemas:()=>[]},systemPrompt:{section:()=>()=>{}},workspaceRegistry:{list:()=>[]},workingDirectory:{get:()=>undefined},sandboxPolicy:{resolve:()=>({mode:'workspace-write'})},get(name){return this[name];},effect:fn=>effects.push(fn()),storageDomain:{open:async spec=>{const rows=new Map();return{table(){return{get:id=>rows.get(id),put:(id,row)=>rows.set(id,row),entries:()=>rows.entries()};},global:{get:()=>structuredClone(spec.global?.initial??null),set:()=>{}},close:async()=>{}};}}};
+ const ctx={logger:logging.logger,connection:{fetch:{register:()=>()=>{}}},tools:{register:()=>()=>{},get:()=>undefined,schemas:()=>[]},systemPrompt:{section:()=>()=>{}},workspaceRegistry:{list:()=>[]},workingDirectory:{get:()=>undefined},sandboxPolicy:{resolve:()=>({mode:'workspace-write'})},get(name){return this[name];},effect:fn=>effects.push(fn()),storageDomain:{open:async spec=>{const rows=new Map();return{table(){return{get:id=>rows.get(id),put:(id,row)=>rows.set(id,row),entries:()=>rows.entries()};},global:{get:()=>structuredClone(spec.global?.initial??null),set:()=>{}},close:async()=>{}};}}};
  await module.exports.apply(ctx);assert.equal(coreOptions.length,1);assert.equal(agentOptions.length,1);
  agentOptions[0].createCore({historyStore:{}});assert.equal(coreOptions.length,2);
  const issue={stage:'recommend.parse',path:'plan.steps[0].sourceCapability',type:'unknown-capability',raw:'PRIVATE_NEVER_LOG',unknownKey:'PRIVATE_UNKNOWN_KEY'};
  for(const options of coreOptions){assert.equal(typeof options.onPlanValidationIssue,'function');options.onPlanValidationIssue(issue);options.onPlanValidationIssue({...issue,path:'plan.PRIVATE_UNKNOWN_KEY'});}
- assert.equal(messages.length,2);for(const message of messages){assert.ok(message.startsWith('finder.plan_validation_issue '));assert.deepEqual(JSON.parse(message.slice('finder.plan_validation_issue '.length)),{stage:issue.stage,path:issue.path,type:issue.type});assert.doesNotMatch(message,/PRIVATE_/u);}
+ assert.equal(messages.length,2);assert.equal(logging.logger.buffer.length,2);
+ assert.deepEqual(logging.logger.buffer.map(message=>message.args),messages.map(message=>message.args));
+ for(const record of messages){assert.equal(record.type,'info');assert.equal(record.level,1);assert.equal(record.args.length,1);const message=record.args[0];assert.ok(message.startsWith('finder.plan_validation_issue '));assert.deepEqual(JSON.parse(message.slice('finder.plan_validation_issue '.length)),{stage:issue.stage,path:issue.path,type:issue.type});assert.doesNotMatch(message,/PRIVATE_/u);}
  delete ctx.logger;assert.doesNotThrow(()=>coreOptions[0].onPlanValidationIssue(issue));
- for(const cleanup of effects.reverse())await cleanup?.();
 });

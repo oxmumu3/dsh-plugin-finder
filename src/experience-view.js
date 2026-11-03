@@ -209,17 +209,21 @@ export function createExperienceView(React) {
       if (!selected.length && !gaps.length && plan.kind !== 'native') return null;
       return h('section', { className: 'pfv_capabilities', 'aria-label': '方案中的能力' },
         h('div', { className: 'pfv_capabilities_heading' }, h('h3', null, '方案中的能力'), h('span', { className: 'pfv_hint' }, gaps.length ? '保留现成能力，只补真正的缺口' : '按这次目标安排')),
-        h('ul', { className: 'pfv_capability_map' },
-          ...selected.map(candidate => {
+        h('div', { className: `pfv_capability_map${gaps.length ? ' pfv_capability_map_hybrid' : ''}` },
+          selected.length ? h('section', { className: 'pfv_capability_item pfv_capability_reuse', 'data-capability-kind': 'reuse' },
+            h('span', { className: 'pfv_capability_kind' }, '计划复用'),
+            h('ul', { className: 'pfv_reuse_list' }, ...selected.map(candidate => {
             const responsibilities = unique(records(plan.steps).filter(step => step.owner === candidate.id).map(step => text(step.capability)));
-            return h('li', { key: candidate.id, className: 'pfv_capability_item', 'data-capability-kind': 'reuse' },
-              h('span', { className: 'pfv_capability_kind' }, '计划复用'), h('strong', null, text(candidate.name) || candidate.id),
+            return h('li', { key: candidate.id },
+              h('strong', null, text(candidate.name) || candidate.id),
               text(candidate.install?.version || candidate.version) ? h('span', { className: 'pfv_capability_version' }, text(candidate.install?.version || candidate.version)) : null,
-              responsibilities.length ? paragraph(responsibilities.join('、'), { className: 'pfv_capability_purpose' }) : null);
-          }),
-          ...gaps.map((gap, index) => h('li', { key: `gap-${index}`, className: 'pfv_capability_item pfv_capability_gap', 'data-capability-kind': 'gap' },
-            h('span', { className: 'pfv_capability_kind' }, '待补齐'), h('strong', null, text(gap.capability)), paragraph(text(gap.reason), { className: 'pfv_capability_purpose' }))),
-          plan.kind === 'native' ? h('li', { className: 'pfv_capability_item', 'data-capability-kind': 'native' }, h('span', { className: 'pfv_capability_kind' }, '现有能力'), h('strong', null, 'Harness 当前能力'), paragraph('无需额外安装插件。', { className: 'pfv_capability_purpose' })) : null));
+              responsibilities.length ? paragraph(short(responsibilities.join('、'), 160), { className: 'pfv_capability_purpose' }) : null);
+          }))) : null,
+          gaps.length ? h('section', { className: 'pfv_capability_item pfv_capability_gap', 'data-capability-kind': 'gap' },
+            h('span', { className: 'pfv_capability_kind' }, '待补齐'), h('strong', null, '只创建缺失部分'),
+            h('ul', { className: 'pfv_gap_list' }, ...gaps.slice(0, execution ? 2 : gaps.length).map((gap, index) => h('li', { key: index }, text(gap.capability)))),
+            disclosure(execution && gaps.length > 2 ? `查看全部 ${gaps.length} 项缺口与依据` : '查看缺口依据', h('dl', { className: 'pfv_gap_evidence' }, ...gaps.map((gap, index) => h('div', { key: index }, h('dt', null, text(gap.capability)), h('dd', null, text(gap.reason))))))) : null,
+          plan.kind === 'native' ? h('section', { className: 'pfv_capability_item', 'data-capability-kind': 'native' }, h('span', { className: 'pfv_capability_kind' }, '现有能力'), h('strong', null, 'Harness 当前能力'), paragraph('无需额外安装插件。', { className: 'pfv_capability_purpose' })) : null));
     };
 
     const planView = () => {
@@ -241,7 +245,7 @@ export function createExperienceView(React) {
           primary(retry ? '重试查找' : plan.kind === 'hybrid' ? '补齐并使用' : needsCreation ? '创建自己的插件' : '使用这个方案', () => retry ? controller.recommend() : plan.kind === 'hybrid' ? !workspacePending && (typeof controller.completeHybridPlan === 'function' ? controller.completeHybridPlan() : controller.startCreation()) : needsCreation ? controller.startCreation() : !workspacePending && controller.runCurrentPlan(), { disabled: !canAct || !retry && (!needsCreation || plan.kind === 'hybrid') && workspacePending }),
           !needsCreation || retry ? button('创建自己的插件', () => controller.startCreation(), { disabled: !canAct, className: 'pfv_button pfv_quiet' }) : null)) : null,
         execution?.phase === 'completed' && execution.kind === 'use' ? h('div', { className: 'pfv_outcome_actions' }, button('创建自己的插件', () => controller.startCreation(), { disabled: locked || !modelReady, className: 'pfv_button pfv_quiet' })) : null,
-        steps.length && !execution ? h('section', { className: 'pfv_plan_steps', 'aria-label': '完成路径' }, h('h3', null, '这次会做什么'), h('ol', null, ...steps.map((step, index) => h('li', { key: index }, h('span', { className: 'pfv_step_number', 'aria-hidden': true }, index + 1), h('div', null, h('h4', null, text(step.capability)), paragraph(short(step.action, 220)), h('p', { className: 'pfv_hint' }, ownerLabel(step.owner))))))) : null,
+        steps.length && !execution ? disclosure('查看执行安排', h('section', { className: 'pfv_plan_steps', 'aria-label': '完成路径' }, h('h3', null, '这次会做什么'), h('ol', null, ...steps.map((step, index) => h('li', { key: index }, h('span', { className: 'pfv_step_number', 'aria-hidden': true }, index + 1), h('div', null, h('h4', null, text(step.capability)), paragraph(short(step.action, 220)), h('p', { className: 'pfv_hint' }, ownerLabel(step.owner)))))))) : null,
         limits.length ? h('div', { className: 'pfv_prerequisites' }, h('h3', null, '使用前提'), list(limits.slice(0, 2)), limits.length > 2 ? disclosure(`还有 ${limits.length - 2} 项限制`, list(limits.slice(2))) : null) : null,
         disclosure('查看完整方案', h(React.Fragment, null, uncertainGap ? h('p', { className: 'pfv_hint' }, '以下是来源尚未完整核对时的暂定判断。') : null, paragraph(plan.title), paragraph(plan.rationale), ...steps.map((step, index) => h('section', { key: index }, h('h4', null, text(step.capability)), paragraph(step.action), h('dl', { className: 'pfv_io' }, h('dt', null, '输入'), h('dd', null, text(step.input)), h('dt', null, '产出'), h('dd', null, text(step.output))))))),
         previousOutcome ? h('p', { className: 'pfv_hint pfv_previous_note' }, '这是上一次保存的结果，更新后会显示新方案。') : null);

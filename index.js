@@ -56,7 +56,7 @@ export async function apply(ctx){
   const telemetryStore={read:async()=>JSON.parse((await telemetryHandle.global.get()).serialized),write:value=>telemetryHandle.global.set({serialized:JSON.stringify(value)})};
   const telemetry=createTelemetry({store:telemetryStore,endpoint:COLLECTOR_URL,listPending:epoch=>core.pendingTelemetry(epoch),clientVersion:CLIENT_VERSION,hostVersion:getDshRuntimeVersion()});
   const model=createHostModel(ctx);
-  const onPlanValidationIssue=issue=>{const safe=safePlanValidationIssue(issue);if(safe)try{ctx.logger?.warn?.('finder.plan_validation_issue '+JSON.stringify(safe));}catch{}};
+  const onPlanValidationIssue=issue=>{const safe=safePlanValidationIssue(issue);if(safe)try{ctx.logger?.info?.('finder.plan_validation_issue '+JSON.stringify(safe));}catch{}};
   core=createFinderService({discovery,model,feedbackStore,workflowStore,historyStore,telemetry,onPlanValidationIssue,hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal})});
   const opportunityStore={read:async()=>JSON.parse((await opportunityHandle.global.get()).serialized),write:value=>opportunityHandle.global.set({serialized:JSON.stringify(value)})};
   const archiveRoot=catalogArchiveRoot(ctx),installations=catalogHandle.table('installations');

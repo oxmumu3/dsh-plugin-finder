@@ -1,5 +1,5 @@
 import {createHash,randomUUID} from 'node:crypto';
-import {fail,FinderError,MAX_INTENT_CONSTRAINTS,MAX_MODEL_CONSTRAINTS,parseIntent,parsePlan,record,text} from './contracts.js';
+import {fail,FinderError,MAX_INTENT_CONSTRAINTS,MAX_MODEL_CONSTRAINTS,parseIntent,parseStoredPlan,record,text} from './contracts.js';
 import {publicSourceData,publicSourceText} from './provenance.js';
 import {validateTelemetryEvent} from './telemetry-contract.js';
 import {parseCreation,parseTrigger,creationContentHash,CREATOR_STATUSES} from './creation.js';
@@ -51,9 +51,8 @@ export function validateWorkflow(value){
   for(const key of ['model','eligibility','discovery','catalogUpdatedAt','analysisWarning'])if(value[key]!==undefined)workflow[key]=publicSourceData(copy(value[key]),key);
   if(value.warnings!==undefined){workflow.warnings=array(value.warnings,100).map(item=>publicSourceText(text(item,4000,'INVALID_BACKUP')));}
   if(value.stage==='plan'){
-    if(!record(value.plan)||!Array.isArray(value.plan.limits))fail('INVALID_BACKUP');
-    let parsed;try{parsed=parsePlan({kind:value.plan.kind,title:value.plan.title,rationale:value.plan.rationale,pluginIds:value.plan.pluginIds,...(value.plan.gaps!==undefined?{gaps:value.plan.gaps}:{}),steps:value.plan.steps,limits:value.plan.limits.slice(0,8)},candidates,intent);}catch{fail('INVALID_BACKUP');}
-    workflow.plan={...parsed,limits:array(value.plan.limits,100).map(item=>publicSourceText(text(item,4000,'INVALID_BACKUP'))),nextPrompt:publicSourceText(typeof value.plan.nextPrompt==='string'?value.plan.nextPrompt:'')};
+    const parsed=parseStoredPlan(value.plan,candidates,intent);
+    workflow.plan={...parsed,limits:parsed.limits.map(publicSourceText),nextPrompt:publicSourceText(typeof value.plan.nextPrompt==='string'?value.plan.nextPrompt:'')};
   }
   assertCommunityPlan(workflow);
   return workflow;
