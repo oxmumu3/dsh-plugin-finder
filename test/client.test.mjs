@@ -389,8 +389,11 @@ test('recommendation prioritizes direct use and creation while retaining folded 
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
   const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind();
   const rendered = await renderWorkbench(controller.getSnapshot());
-  const positions = ['当前方案', '使用这个方案', '创建自己的插件', '这次会做什么', '来源与备选方案'].map(label => rendered.visibleText.indexOf(label));
+  const positions = ['当前方案', '使用这个方案', '创建自己的插件', '查看执行安排', '来源与备选方案'].map(label => rendered.visibleText.indexOf(label));
   assert.ok(positions.every(index => index >= 0), positions.join(',')); assert.deepEqual([...positions].sort((a, b) => a - b), positions);
+  const arrangement = rendered.nodes.find(node => node.type === 'details' && node.children.some(child => child?.type === 'summary' && child.children.includes('查看执行安排')));
+  assert.ok(arrangement); assert.equal(Boolean(arrangement.props.open), false);
+  assert.match(rendered.text, /这次会做什么/); assert.ok(!rendered.visibleText.includes('这次会做什么'));
   assert.doesNotMatch(rendered.visibleText, /复制|粘贴|交接|去会话继续|Creator|下一步/);
   const history = rendered.nodes.find(node => node.type === 'details' && node.props['aria-label'] === '当前方案与历史版本');
   assert.ok(history); assert.equal(Boolean(history.props.open), false);

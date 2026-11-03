@@ -45,6 +45,7 @@
     "community:build": "node scripts/build-community-catalog.mjs"
   },
   "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.5",
     "esbuild": "0.25.12",
     "react": "19.2.0",
     "yaml": "2.9.1"
@@ -76,13 +77,13 @@
     }
   },
   "dependencies": {
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   },
   "peerDependencies": {
     "@deepseek-ai/dsh-app-boot": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-sandbox": "0.2.1-rc.5",
     "@deepseek-ai/dsh-storage-domain": "0.2.1-rc.5",
-    "@deepseek-ai/dsh-tools": "0.2.1-rc.5",
-    "@deepseek-ai/dsh-sandbox": "0.2.1-rc.5"
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.5"
   },
   "repository": {
     "type": "git",
