@@ -1,7 +1,7 @@
 import {createHash,randomUUID} from 'node:crypto';
 import {lstat,realpath} from 'node:fs/promises';
 import {isAbsolute,relative,resolve,sep} from 'node:path';
-import {FinderError} from './contracts.js';
+import {FinderError,safePlanValidationIssue} from './contracts.js';
 import {validatePreparation} from './execution-preparation.js';
 
 const MAX_BYTES=8_000_000;
@@ -42,7 +42,8 @@ const safeFailureHint=value=>object(value)&&Object.keys(value).every(key=>['kind
 const safeRetirement=value=>object(value)&&value.status==='blocked'&&value.code==='PLUGIN_RETIREMENT_PERSISTENCE_UNAVAILABLE'?{status:'blocked',code:'PLUGIN_RETIREMENT_PERSISTENCE_UNAVAILABLE'}:undefined;
 const safeError=error=>{
   const hint=safeFailureHint(error?.failureHint);
-  if(error instanceof FinderError||error instanceof AgentFinderError)return{code:error.code,message:error.message,...(hint?{failureHint:hint}:{})};
+  const issue=error?.code==='MODEL_INVALID_OUTPUT'?safePlanValidationIssue(error.details):undefined;
+  if(error instanceof FinderError||error instanceof AgentFinderError)return{code:error.code,message:error.message,...(hint?{failureHint:hint}:{}),...(issue?{details:issue}:{})};
   const known=['MODEL_TIMEOUT','MODEL_ABORTED','MODEL_REQUEST_FAILED','DISCOVERY_UNAVAILABLE','PLUGIN_INSTALL_PENDING','PLUGIN_INSTALL_FAILED','PLUGIN_INSTALL_APPROVAL_REQUIRED','PLUGIN_INSTALL_RESTART_REQUIRED','PLUGIN_INSTALL_CONFLICT','PLUGIN_INSTALL_NOT_ACTIVE'];
   const safe=new FinderError(known.includes(error?.code)?error.code:'MODEL_REQUEST_FAILED');return{code:safe.code,message:safe.message,...(hint?{failureHint:hint}:{})};
 };

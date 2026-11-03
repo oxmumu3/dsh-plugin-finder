@@ -23,6 +23,7 @@ import {createAgentFinderService} from './src/agent-finder-service.js';
 import {registerAgentTools} from './src/agent-tools.js';
 import {createGeneratedPluginInstaller,createGeneratedArtifactReviewer} from './src/agent-created-installation.js';
 import {createAgentModelAdapter} from './src/agent-model.js';
+import {safePlanValidationIssue} from './src/contracts.js';
 export const name='plugin-finder';
 export const inject=['connection','storageDomain','tools','systemPrompt','workspaceRegistry','workingDirectory','sandboxPolicy'];
 const feedback=z.object({id:z.string().uuid(),createdAt:z.string().datetime(),outcome:z.enum(['complete','partial','blocked']),pluginIds:z.array(z.string().max(200)).max(4),note:z.string().max(1500),stage:z.string().max(80)}).strict();
@@ -55,7 +56,8 @@ export async function apply(ctx){
   const telemetryStore={read:async()=>JSON.parse((await telemetryHandle.global.get()).serialized),write:value=>telemetryHandle.global.set({serialized:JSON.stringify(value)})};
   const telemetry=createTelemetry({store:telemetryStore,endpoint:COLLECTOR_URL,listPending:epoch=>core.pendingTelemetry(epoch),clientVersion:CLIENT_VERSION,hostVersion:getDshRuntimeVersion()});
   const model=createHostModel(ctx);
-  core=createFinderService({discovery,model,feedbackStore,workflowStore,historyStore,telemetry,hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal})});
+  const onPlanValidationIssue=issue=>{const safe=safePlanValidationIssue(issue);if(safe)try{ctx.logger?.warn?.('finder.plan_validation_issue '+JSON.stringify(safe));}catch{}};
+  core=createFinderService({discovery,model,feedbackStore,workflowStore,historyStore,telemetry,onPlanValidationIssue,hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal})});
   const opportunityStore={read:async()=>JSON.parse((await opportunityHandle.global.get()).serialized),write:value=>opportunityHandle.global.set({serialized:JSON.stringify(value)})};
   const archiveRoot=catalogArchiveRoot(ctx),installations=catalogHandle.table('installations');
   const catalogService=createCatalogInstallService({
@@ -75,6 +77,7 @@ export async function apply(ctx){
     createCore:({historyStore:requestHistory})=>createFinderService({
       historyStore:requestHistory,
       model:agentModel,
+      onPlanValidationIssue,
       discovery:{search:request=>discovery.search(request),searchSelected:request=>discovery.searchSelected(request)},
       hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),
     }),

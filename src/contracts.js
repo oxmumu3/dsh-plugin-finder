@@ -29,28 +29,55 @@ export function parseAnalyzedIntent(raw,request){
   const analysisWarning=constraints.length===intent.constraints.length?undefined:'已去掉原始需求中没有明确提出的约束，请核对目标、能力和限制。';
   return{intent:{...intent,constraints},...(analysisWarning?{analysisWarning}:{})};
 }
+const planIssueTypes=new Set(['json','type','required','length','unknown-field','value','duplicate','unknown-candidate','cardinality','unknown-capability','unknown-owner','gap-owner','coverage','unused-candidate','unverified-claim','selection']);
+const planIssuePath=/^plan(?:\.(?:kind|title|rationale|pluginIds|steps|limits|gaps))?$|^plan\.pluginIds\[[0-3]\]$|^plan\.steps\[[0-9]\](?:\.(?:capability|owner|sourceCapability|action|input|output))?$|^plan\.gaps\[[0-5]\](?:\.(?:capability|reason))?$|^plan\.limits\[[0-7]\]$/;
+/** Only fixed schema coordinates may leave the parser; never values or unknown property names. */
+export function safePlanValidationIssue(value){
+  try{
+    if(!record(value)||value.stage!=='recommend.parse'||typeof value.path!=='string'||value.path.length>80||!planIssuePath.test(value.path)||!planIssueTypes.has(value.type))return undefined;
+    return{stage:'recommend.parse',path:value.path,type:value.type};
+  }catch{return undefined;}
+}
+function planFail(path,type){const error=new FinderError('MODEL_INVALID_OUTPUT');error.details={stage:'recommend.parse',path,type};throw error;}
+function planObject(raw,path){try{return jsonObject(raw,'MODEL_INVALID_OUTPUT');}catch(error){if(error?.code==='MODEL_INVALID_OUTPUT')planFail(path,typeof raw==='string'?'json':'type');throw error;}}
+function planExact(value,keys,path){if(Object.keys(value).some(key=>!keys.includes(key)))planFail(path,'unknown-field');}
+function planText(value,max,path){
+  try{return text(value,max,'MODEL_INVALID_OUTPUT');}
+  catch(error){if(error?.code==='MODEL_INVALID_OUTPUT')planFail(path,value===undefined?'required':typeof value!=='string'?'type':value.length>max?'length':!value.trim()?'required':'value');throw error;}
+}
+function planList(value,max,each,path){
+  if(!Array.isArray(value))planFail(path,value===undefined?'required':'type');
+  if(value.length>max)planFail(path,'length');
+  return value.map((item,index)=>planText(item,each,path+'['+index+']'));
+}
 export function parsePlan(raw,candidates,intent){
-  const code='MODEL_INVALID_OUTPUT',v=jsonObject(raw,code);exact(v,['kind','title','rationale','pluginIds','steps','limits','gaps'],code);
-  if(!['native','single','combo','gap','hybrid'].includes(v.kind))fail(code);
-  const ids=list(v.pluginIds,4,200,code),known=new Set(candidates.map(p=>p.id));
-  if(new Set(ids).size!==ids.length||ids.some(id=>!known.has(id)))fail(code);
-  if((['native','gap'].includes(v.kind)&&ids.length)||(v.kind==='single'&&ids.length!==1)||(v.kind==='combo'&&ids.length<2)||(v.kind==='hybrid'&&!ids.length))fail(code);
-  if(v.gaps!==undefined&&(!Array.isArray(v.gaps)||v.gaps.length>6))fail(code);
-  const gaps=(v.gaps??[]).map(value=>{if(!record(value))fail(code);exact(value,['capability','reason'],code);return{capability:text(value.capability,150,code),reason:text(value.reason,1000,code)};});
+  const v=planObject(raw,'plan');planExact(v,['kind','title','rationale','pluginIds','steps','limits','gaps'],'plan');
+  if(!['native','single','combo','gap','hybrid'].includes(v.kind))planFail('plan.kind',v.kind===undefined?'required':typeof v.kind!=='string'?'type':'value');
+  const ids=planList(v.pluginIds,4,200,'plan.pluginIds'),known=new Set(candidates.map(p=>p.id));
+  if(new Set(ids).size!==ids.length){const seen=new Set();let duplicate=0;ids.some((id,index)=>{if(seen.has(id)){duplicate=index;return true;}seen.add(id);return false;});planFail('plan.pluginIds['+duplicate+']','duplicate');}
+  ids.forEach((id,index)=>{if(!known.has(id))planFail('plan.pluginIds['+index+']','unknown-candidate');});
+  if((['native','gap'].includes(v.kind)&&ids.length)||(v.kind==='single'&&ids.length!==1)||(v.kind==='combo'&&ids.length<2)||(v.kind==='hybrid'&&!ids.length))planFail('plan.pluginIds','cardinality');
+  if(v.gaps!==undefined&&!Array.isArray(v.gaps))planFail('plan.gaps','type');
+  if(v.gaps!==undefined&&v.gaps.length>6)planFail('plan.gaps','length');
+  const gaps=(v.gaps??[]).map((value,index)=>{const path='plan.gaps['+index+']';if(!record(value))planFail(path,'type');planExact(value,['capability','reason'],path);return{capability:planText(value.capability,150,path+'.capability'),reason:planText(value.reason,1000,path+'.reason')};});
   const missing=new Set(gaps.map(gap=>gap.capability));
-  if(gaps.length>6||missing.size!==gaps.length||gaps.some(gap=>!intent.capabilities.includes(gap.capability))||(v.kind==='hybrid'?!gaps.length:gaps.length))fail(code);
-  if(!Array.isArray(v.steps)||v.steps.length>10)fail(code);
-  const steps=v.steps.map(raw=>{
-    const s=jsonObject(raw,code);exact(s,['capability','owner','sourceCapability','action','input','output'],code);
-    if(!['dsh','human',...(['gap','hybrid'].includes(v.kind)?['create']:[]),...ids].includes(s.owner)||!intent.capabilities.includes(s.capability))fail(code);
-    if(v.kind==='hybrid'&&(s.owner==='create')!==missing.has(s.capability))fail(code);
-    if(ids.includes(s.owner)&&!candidates.find(p=>p.id===s.owner)?.capabilities?.includes(s.sourceCapability))fail(code);
-    if(!ids.includes(s.owner)&&s.sourceCapability!=null)fail(code);
-    return{capability:text(s.capability,150,code),owner:s.owner,sourceCapability:s.sourceCapability??null,action:text(s.action,600,code),input:text(s.input,400,code),output:text(s.output,400,code)};
+  if(missing.size!==gaps.length){const seen=new Set();let duplicate=0;gaps.some((gap,index)=>{if(seen.has(gap.capability)){duplicate=index;return true;}seen.add(gap.capability);return false;});planFail('plan.gaps['+duplicate+'].capability','duplicate');}
+  gaps.forEach((gap,index)=>{if(!intent.capabilities.includes(gap.capability))planFail('plan.gaps['+index+'].capability','unknown-capability');});
+  if(v.kind==='hybrid'?!gaps.length:gaps.length)planFail('plan.gaps','cardinality');
+  if(!Array.isArray(v.steps))planFail('plan.steps',v.steps===undefined?'required':'type');
+  if(v.steps.length>10)planFail('plan.steps','length');
+  const steps=v.steps.map((raw,index)=>{
+    const path='plan.steps['+index+']',s=planObject(raw,path);planExact(s,['capability','owner','sourceCapability','action','input','output'],path);
+    if(!['dsh','human',...(['gap','hybrid'].includes(v.kind)?['create']:[]),...ids].includes(s.owner))planFail(path+'.owner',s.owner===undefined?'required':typeof s.owner!=='string'?'type':'unknown-owner');
+    if(!intent.capabilities.includes(s.capability))planFail(path+'.capability',s.capability===undefined?'required':typeof s.capability!=='string'?'type':'unknown-capability');
+    if(v.kind==='hybrid'&&(s.owner==='create')!==missing.has(s.capability))planFail(path+'.owner','gap-owner');
+    if(ids.includes(s.owner)&&!candidates.find(p=>p.id===s.owner)?.capabilities?.includes(s.sourceCapability))planFail(path+'.sourceCapability','unknown-capability');
+    if(!ids.includes(s.owner)&&s.sourceCapability!=null)planFail(path+'.sourceCapability','value');
+    return{capability:planText(s.capability,150,path+'.capability'),owner:s.owner,sourceCapability:s.sourceCapability??null,action:planText(s.action,600,path+'.action'),input:planText(s.input,400,path+'.input'),output:planText(s.output,400,path+'.output')};
   });
-  if(v.kind!=='gap'&&intent.capabilities.some(cap=>!steps.some(step=>step.capability===cap)))fail(code);
-  if(ids.some(id=>!steps.some(step=>step.owner===id)))fail(code);
-  const title=text(v.title,160,code),rationale=text(v.rationale,1600,code);
-  if(/已(?:验证|实测)|已安装(?:成功|可用)|实测通过|保证(?:完成|可用)|完全免费|verified (?:working|installed)|tested successfully/i.test(title))fail(code);
-  return{kind:v.kind,title,rationale,pluginIds:ids,...(v.kind==='hybrid'?{gaps}:{}),steps,limits:list(v.limits,8,500,code)};
+  if(v.kind!=='gap'&&intent.capabilities.some(cap=>!steps.some(step=>step.capability===cap)))planFail('plan.steps','coverage');
+  ids.forEach((id,index)=>{if(!steps.some(step=>step.owner===id))planFail('plan.pluginIds['+index+']','unused-candidate');});
+  const title=planText(v.title,160,'plan.title'),rationale=planText(v.rationale,1600,'plan.rationale');
+  if(/已(?:验证|实测)|已安装(?:成功|可用)|实测通过|保证(?:完成|可用)|完全免费|verified (?:working|installed)|tested successfully/i.test(title))planFail('plan.title','unverified-claim');
+  return{kind:v.kind,title,rationale,pluginIds:ids,...(v.kind==='hybrid'?{gaps}:{}),steps,limits:planList(v.limits,8,500,'plan.limits')};
 }

@@ -62,10 +62,6 @@ function text(x, max = 6e3, code = "INVALID_INPUT", empty = false) {
   if (typeof x !== "string" || x.length > max || !empty && !x.trim() || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(x)) fail(code);
   return x.trim();
 }
-function list(x, max, each, code, empty = true) {
-  if (!Array.isArray(x) || x.length > max || !empty && !x.length) fail(code);
-  return x.map((v) => text(v, each, code));
-}
 function jsonObject(input, code = "MODEL_INVALID_OUTPUT") {
   if (typeof input === "string") {
     let s = input.trim();
@@ -79,39 +75,102 @@ function jsonObject(input, code = "MODEL_INVALID_OUTPUT") {
   if (!record(input)) fail(code);
   return input;
 }
-function exact(value, keys, code) {
-  if (Object.keys(value).some((key) => !keys.includes(key))) fail(code);
+function planFail(path, type) {
+  const error = new FinderError("MODEL_INVALID_OUTPUT");
+  error.details = { stage: "recommend.parse", path, type };
+  throw error;
+}
+function planObject(raw, path) {
+  try {
+    return jsonObject(raw, "MODEL_INVALID_OUTPUT");
+  } catch (error) {
+    if (error?.code === "MODEL_INVALID_OUTPUT") planFail(path, typeof raw === "string" ? "json" : "type");
+    throw error;
+  }
+}
+function planExact(value, keys, path) {
+  if (Object.keys(value).some((key) => !keys.includes(key))) planFail(path, "unknown-field");
+}
+function planText(value, max, path) {
+  try {
+    return text(value, max, "MODEL_INVALID_OUTPUT");
+  } catch (error) {
+    if (error?.code === "MODEL_INVALID_OUTPUT") planFail(path, value === void 0 ? "required" : typeof value !== "string" ? "type" : value.length > max ? "length" : !value.trim() ? "required" : "value");
+    throw error;
+  }
+}
+function planList(value, max, each, path) {
+  if (!Array.isArray(value)) planFail(path, value === void 0 ? "required" : "type");
+  if (value.length > max) planFail(path, "length");
+  return value.map((item, index) => planText(item, each, path + "[" + index + "]"));
 }
 function parsePlan(raw, candidates, intent) {
-  const code = "MODEL_INVALID_OUTPUT", v = jsonObject(raw, code);
-  exact(v, ["kind", "title", "rationale", "pluginIds", "steps", "limits", "gaps"], code);
-  if (!["native", "single", "combo", "gap", "hybrid"].includes(v.kind)) fail(code);
-  const ids = list(v.pluginIds, 4, 200, code), known = new Set(candidates.map((p) => p.id));
-  if (new Set(ids).size !== ids.length || ids.some((id) => !known.has(id))) fail(code);
-  if (["native", "gap"].includes(v.kind) && ids.length || v.kind === "single" && ids.length !== 1 || v.kind === "combo" && ids.length < 2 || v.kind === "hybrid" && !ids.length) fail(code);
-  if (v.gaps !== void 0 && (!Array.isArray(v.gaps) || v.gaps.length > 6)) fail(code);
-  const gaps = (v.gaps ?? []).map((value) => {
-    if (!record(value)) fail(code);
-    exact(value, ["capability", "reason"], code);
-    return { capability: text(value.capability, 150, code), reason: text(value.reason, 1e3, code) };
+  const v = planObject(raw, "plan");
+  planExact(v, ["kind", "title", "rationale", "pluginIds", "steps", "limits", "gaps"], "plan");
+  if (!["native", "single", "combo", "gap", "hybrid"].includes(v.kind)) planFail("plan.kind", v.kind === void 0 ? "required" : typeof v.kind !== "string" ? "type" : "value");
+  const ids = planList(v.pluginIds, 4, 200, "plan.pluginIds"), known = new Set(candidates.map((p) => p.id));
+  if (new Set(ids).size !== ids.length) {
+    const seen = /* @__PURE__ */ new Set();
+    let duplicate = 0;
+    ids.some((id, index) => {
+      if (seen.has(id)) {
+        duplicate = index;
+        return true;
+      }
+      seen.add(id);
+      return false;
+    });
+    planFail("plan.pluginIds[" + duplicate + "]", "duplicate");
+  }
+  ids.forEach((id, index) => {
+    if (!known.has(id)) planFail("plan.pluginIds[" + index + "]", "unknown-candidate");
+  });
+  if (["native", "gap"].includes(v.kind) && ids.length || v.kind === "single" && ids.length !== 1 || v.kind === "combo" && ids.length < 2 || v.kind === "hybrid" && !ids.length) planFail("plan.pluginIds", "cardinality");
+  if (v.gaps !== void 0 && !Array.isArray(v.gaps)) planFail("plan.gaps", "type");
+  if (v.gaps !== void 0 && v.gaps.length > 6) planFail("plan.gaps", "length");
+  const gaps = (v.gaps ?? []).map((value, index) => {
+    const path = "plan.gaps[" + index + "]";
+    if (!record(value)) planFail(path, "type");
+    planExact(value, ["capability", "reason"], path);
+    return { capability: planText(value.capability, 150, path + ".capability"), reason: planText(value.reason, 1e3, path + ".reason") };
   });
   const missing = new Set(gaps.map((gap) => gap.capability));
-  if (gaps.length > 6 || missing.size !== gaps.length || gaps.some((gap) => !intent.capabilities.includes(gap.capability)) || (v.kind === "hybrid" ? !gaps.length : gaps.length)) fail(code);
-  if (!Array.isArray(v.steps) || v.steps.length > 10) fail(code);
-  const steps = v.steps.map((raw2) => {
-    const s = jsonObject(raw2, code);
-    exact(s, ["capability", "owner", "sourceCapability", "action", "input", "output"], code);
-    if (!["dsh", "human", ...["gap", "hybrid"].includes(v.kind) ? ["create"] : [], ...ids].includes(s.owner) || !intent.capabilities.includes(s.capability)) fail(code);
-    if (v.kind === "hybrid" && s.owner === "create" !== missing.has(s.capability)) fail(code);
-    if (ids.includes(s.owner) && !candidates.find((p) => p.id === s.owner)?.capabilities?.includes(s.sourceCapability)) fail(code);
-    if (!ids.includes(s.owner) && s.sourceCapability != null) fail(code);
-    return { capability: text(s.capability, 150, code), owner: s.owner, sourceCapability: s.sourceCapability ?? null, action: text(s.action, 600, code), input: text(s.input, 400, code), output: text(s.output, 400, code) };
+  if (missing.size !== gaps.length) {
+    const seen = /* @__PURE__ */ new Set();
+    let duplicate = 0;
+    gaps.some((gap, index) => {
+      if (seen.has(gap.capability)) {
+        duplicate = index;
+        return true;
+      }
+      seen.add(gap.capability);
+      return false;
+    });
+    planFail("plan.gaps[" + duplicate + "].capability", "duplicate");
+  }
+  gaps.forEach((gap, index) => {
+    if (!intent.capabilities.includes(gap.capability)) planFail("plan.gaps[" + index + "].capability", "unknown-capability");
   });
-  if (v.kind !== "gap" && intent.capabilities.some((cap) => !steps.some((step) => step.capability === cap))) fail(code);
-  if (ids.some((id) => !steps.some((step) => step.owner === id))) fail(code);
-  const title = text(v.title, 160, code), rationale = text(v.rationale, 1600, code);
-  if (/已(?:验证|实测)|已安装(?:成功|可用)|实测通过|保证(?:完成|可用)|完全免费|verified (?:working|installed)|tested successfully/i.test(title)) fail(code);
-  return { kind: v.kind, title, rationale, pluginIds: ids, ...v.kind === "hybrid" ? { gaps } : {}, steps, limits: list(v.limits, 8, 500, code) };
+  if (v.kind === "hybrid" ? !gaps.length : gaps.length) planFail("plan.gaps", "cardinality");
+  if (!Array.isArray(v.steps)) planFail("plan.steps", v.steps === void 0 ? "required" : "type");
+  if (v.steps.length > 10) planFail("plan.steps", "length");
+  const steps = v.steps.map((raw2, index) => {
+    const path = "plan.steps[" + index + "]", s = planObject(raw2, path);
+    planExact(s, ["capability", "owner", "sourceCapability", "action", "input", "output"], path);
+    if (!["dsh", "human", ...["gap", "hybrid"].includes(v.kind) ? ["create"] : [], ...ids].includes(s.owner)) planFail(path + ".owner", s.owner === void 0 ? "required" : typeof s.owner !== "string" ? "type" : "unknown-owner");
+    if (!intent.capabilities.includes(s.capability)) planFail(path + ".capability", s.capability === void 0 ? "required" : typeof s.capability !== "string" ? "type" : "unknown-capability");
+    if (v.kind === "hybrid" && s.owner === "create" !== missing.has(s.capability)) planFail(path + ".owner", "gap-owner");
+    if (ids.includes(s.owner) && !candidates.find((p) => p.id === s.owner)?.capabilities?.includes(s.sourceCapability)) planFail(path + ".sourceCapability", "unknown-capability");
+    if (!ids.includes(s.owner) && s.sourceCapability != null) planFail(path + ".sourceCapability", "value");
+    return { capability: planText(s.capability, 150, path + ".capability"), owner: s.owner, sourceCapability: s.sourceCapability ?? null, action: planText(s.action, 600, path + ".action"), input: planText(s.input, 400, path + ".input"), output: planText(s.output, 400, path + ".output") };
+  });
+  if (v.kind !== "gap" && intent.capabilities.some((cap) => !steps.some((step) => step.capability === cap))) planFail("plan.steps", "coverage");
+  ids.forEach((id, index) => {
+    if (!steps.some((step) => step.owner === id)) planFail("plan.pluginIds[" + index + "]", "unused-candidate");
+  });
+  const title = planText(v.title, 160, "plan.title"), rationale = planText(v.rationale, 1600, "plan.rationale");
+  if (/已(?:验证|实测)|已安装(?:成功|可用)|实测通过|保证(?:完成|可用)|完全免费|verified (?:working|installed)|tested successfully/i.test(title)) planFail("plan.title", "unverified-claim");
+  return { kind: v.kind, title, rationale, pluginIds: ids, ...v.kind === "hybrid" ? { gaps } : {}, steps, limits: planList(v.limits, 8, 500, "plan.limits") };
 }
 
 // src/opportunity-client.js
@@ -659,7 +718,7 @@ async function executeInWorkspace(ctx, options = {}) {
     }
     if (state.terminal) finished.resolve(state);
   };
-  const exact2 = () => !disposed && binding?.sessionId === sessionId && ctx.sessions.binding(sessionId) === binding;
+  const exact = () => !disposed && binding?.sessionId === sessionId && ctx.sessions.binding(sessionId) === binding;
   const save = async (status, message) => {
     const row = { attemptId: attempt.attemptId, requestId: attempt.requestId, taskId: attempt.taskId, revisionId: attempt.revisionId, kind: attempt.kind, workspaceId: attempt.workspaceId, status, ...sessionId ? { sessionId } : {}, ...message ? { message } : {} };
     try {
@@ -695,13 +754,13 @@ async function executeInWorkspace(ctx, options = {}) {
   };
   const evidence = () => readEvidence(binding?.eventSource?.getSnapshot?.().entries, attempt.requestId);
   const recoverHistory = async () => {
-    for (let page = 0; page < 5 && exact2() && !state.terminal; page++) {
+    for (let page = 0; page < 5 && exact() && !state.terminal; page++) {
       const facts = evidence(), before = binding.eventSource.getSnapshot();
       if (facts.turn !== void 0 || facts.cancelledUnrun || !before.hasMore || typeof binding.session.loadOlder !== "function") break;
       const firstSeq = before.entries.find((entry) => entry.type === "event")?.event.seq;
       emit({ phase: cancelled ? "cancelling" : "preparing", summary: cancelled ? "\u6B63\u5728\u6838\u5BF9\u539F\u8BF7\u6C42\u4EE5\u505C\u6B62\u6267\u884C" : "\u6B63\u5728\u8BFB\u53D6\u539F\u6267\u884C\u8BB0\u5F55", historyPages: page });
       await binding.session.loadOlder();
-      if (!exact2()) return;
+      if (!exact()) return;
       const after = binding.eventSource.getSnapshot();
       const nextSeq = after.entries.find((entry) => entry.type === "event")?.event.seq;
       if (after.hasMore && (nextSeq === void 0 || firstSeq !== void 0 && nextSeq >= firstSeq)) break;
@@ -709,7 +768,7 @@ async function executeInWorkspace(ctx, options = {}) {
   };
   const observe = () => {
     if (disposed || state.terminal) return;
-    if (!exact2()) {
+    if (!exact()) {
       emit({ phase: "unknown", summary: "\u4F1A\u8BDD\u8FDE\u63A5\u5DF2\u53D8\u5316\uFF0C\u6B63\u5728\u7B49\u5F85\u91CD\u65B0\u8FDE\u63A5", details: "\u672A\u5411\u5176\u4ED6\u4F1A\u8BDD\u63D0\u4EA4\u3002" });
       return;
     }
@@ -739,7 +798,7 @@ async function executeInWorkspace(ctx, options = {}) {
     if (cancelled && !state.terminal) void cancelActivity();
   };
   const cancelActivity = async () => {
-    if (!exact2() || state.terminal) return { accepted: false, reason: "not-active" };
+    if (!exact() || state.terminal) return { accepted: false, reason: "not-active" };
     if (attempt.provenance !== "local") return { accepted: false, reason: "read-only-import" };
     if (cancellation) {
       cancellationDirty = true;
@@ -749,7 +808,7 @@ async function executeInWorkspace(ctx, options = {}) {
       let accepted = false;
       do {
         cancellationDirty = false;
-        if (!exact2() || state.terminal) break;
+        if (!exact() || state.terminal) break;
         for (const item of queued()) {
           if (!identity2(item.id) || removedQueueIds.has(item.id)) continue;
           if (typeof binding.session.updateQueue !== "function") {
@@ -788,7 +847,7 @@ async function executeInWorkspace(ctx, options = {}) {
       return await cancellation;
     } finally {
       cancellation = void 0;
-      if (cancellationDirty && exact2() && !state.terminal) void cancelActivity();
+      if (cancellationDirty && exact() && !state.terminal) void cancelActivity();
     }
   };
   const cancelPreparation = () => {
@@ -874,7 +933,7 @@ async function executeInWorkspace(ctx, options = {}) {
       if (stopped2.confirmed || stopped2.unknown) return true;
     }
     if (!submissionOwned) {
-      if (exact2()) {
+      if (exact()) {
         observe();
         await cancelActivity();
         return true;
@@ -935,7 +994,7 @@ async function executeInWorkspace(ctx, options = {}) {
       if (wantsSubmission && await cancelledBeforeSend()) return;
       if (disposed) return;
       binding = reference.binding;
-      if (!exact2()) {
+      if (!exact()) {
         emit({ phase: "blocked", summary: "\u6267\u884C\u4F1A\u8BDD\u7ED1\u5B9A\u5DF2\u53D8\u5316" });
         return;
       }
@@ -966,7 +1025,7 @@ async function executeInWorkspace(ctx, options = {}) {
       }
       await waitOrAbort(Promise.resolve(onReference(reference)), signal);
       if (wantsSubmission && await cancelledBeforeSend()) return;
-      if (!exact2()) {
+      if (!exact()) {
         emit({ phase: "blocked", summary: "\u6267\u884C\u4F1A\u8BDD\u7ED1\u5B9A\u5DF2\u53D8\u5316" });
         return;
       }
@@ -994,7 +1053,7 @@ async function executeInWorkspace(ctx, options = {}) {
         if (await cancelledBeforeSend() || disposed) return;
         const verified = prepared?.attempt;
         if (prepared?.ready !== true || !verified || Object.keys(row).some((key) => verified[key] !== row[key]) || verified.status !== "created" || verified.provenance !== "local") throw new Error("\u63D2\u4EF6\u51C6\u5907\u7ED3\u679C\u5C1A\u672A\u786E\u8BA4\uFF0C\u4EFB\u52A1\u6CA1\u6709\u53D1\u9001\u3002\u8BF7\u5728\u539F\u65B9\u6848\u91CD\u8BD5\u3002");
-        if (!exact2() || !mounted) throw new Error("\u6267\u884C\u754C\u9762\u8FDE\u63A5\u5DF2\u53D8\u5316\uFF0C\u4EFB\u52A1\u6CA1\u6709\u53D1\u9001\u3002");
+        if (!exact() || !mounted) throw new Error("\u6267\u884C\u754C\u9762\u8FDE\u63A5\u5DF2\u53D8\u5316\uFF0C\u4EFB\u52A1\u6CA1\u6709\u53D1\u9001\u3002");
       }
       let canonical;
       try {
@@ -1017,7 +1076,7 @@ async function executeInWorkspace(ctx, options = {}) {
         return;
       }
       if (await cancelledBeforeSend()) return;
-      if (!exact2() || !mounted) {
+      if (!exact() || !mounted) {
         emit({ phase: "blocked", summary: "\u6267\u884C\u754C\u9762\u5C1A\u672A\u5C31\u7EEA" });
         return;
       }
@@ -1044,7 +1103,7 @@ async function executeInWorkspace(ctx, options = {}) {
     } catch (error) {
       emit({ phase: promptAttempted ? "unknown" : "blocked", canContinue: !promptAttempted && recordStatus === "created" && attempt.provenance === "local", summary: promptAttempted ? "\u6267\u884C\u72B6\u6001\u5C1A\u672A\u786E\u8BA4" : "\u6682\u65F6\u65E0\u6CD5\u5F00\u59CB\u6267\u884C", details: messageOf(error) });
     } finally {
-      if (cancelled && promptAttempted && exact2() && !state.terminal) void cancelActivity();
+      if (cancelled && promptAttempted && exact() && !state.terminal) void cancelActivity();
     }
   })();
   onHandle?.(handle);
@@ -1203,7 +1262,7 @@ function createExecutionPreviewSurface({ reference, sessionId, sessions, sidebar
   let snapshot = null, controller, disposed = false, sequence = 0;
   const occurrenceId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
   const listeners = /* @__PURE__ */ new Set();
-  const exact2 = () => {
+  const exact = () => {
     const binding = reference?.binding;
     if (disposed || !sessionId || reference?.sessionId !== sessionId || binding?.sessionId !== sessionId || sessions?.binding?.(sessionId) !== binding) throw new Error("\u9884\u89C8\u4F1A\u8BDD\u8FDE\u63A5\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u6253\u5F00\u5F53\u524D\u8FD0\u884C\u3002");
   };
@@ -1217,7 +1276,7 @@ function createExecutionPreviewSurface({ reference, sessionId, sessions, sidebar
     notify();
   };
   const openResource = (address, options = {}) => {
-    exact2();
+    exact();
     const destination = typeof address === "string" && /^dsh-resource:\/\/file\/session\/([^/]+)\//.exec(address);
     if (!destination || decodeURIComponent(destination[1]) !== sessionId) throw new Error("\u53EA\u80FD\u5728\u5F53\u524D\u6267\u884C\u4F1A\u8BDD\u4E2D\u9884\u89C8\u6587\u4EF6\u3002");
     if (typeof sidebarRightTabs?.claim !== "function" || typeof sidebarRightTabs?.get !== "function") throw new Error("\u5BBF\u4E3B\u5B98\u65B9\u6587\u4EF6\u9884\u89C8\u5C1A\u672A\u5C31\u7EEA\u3002");
@@ -1863,7 +1922,7 @@ function renderPluginDetailView({ h, state, controller }) {
   const note = ready ? "\u5DF2\u5B89\u88C5\u5E76\u542F\u7528\uFF0C\u53EF\u4EE5\u5728 DeepSeek Harness \u4E2D\u4F7F\u7528\u3002" : primarySourceRetry ? `${text2(detail.unavailableReason) || "\u56FA\u5B9A\u5B89\u88C5\u5305\u9700\u8981\u91CD\u65B0\u6838\u5BF9\u539F\u6765\u6E90\u3002"}${phase === "unknown" ? " \u5F53\u524D\u5B89\u88C5\u72B6\u6001\u4ECD\u5F85\u6838\u5BF9\u3002" : ""}` : localInstalled ? `\u672C\u673A\u5DF2\u5B89\u88C5${installation.componentOnly ? "\u914D\u5957\u7EC4\u4EF6 " : " "}${text2(installation.packageName)}${actualVersion ? `@${actualVersion}` : ""}\uFF0C${localState}\u3002${text2(detail?.unavailableReason) || "\u672C\u9875\u5B89\u88C5\u6765\u6E90\u5C1A\u5F85\u6838\u5BF9\uFF0C\u4FDD\u7559\u5F53\u524D\u5B89\u88C5\u3002"}` : (conflictNote ? `${conflictNote} \u672C\u673A\u72B6\u6001\uFF1A${localState}\u3002` : "") || (["PLUGIN_INSTALL_APPROVAL_REQUIRED", "PLUGIN_INSTALL_RESTART_REQUIRED"].includes(installation?.code) ? problemMessages[installation.code] : "") || (phase === "unknown" ? text2(installation?.message) || problemMessages[installation?.code] : "") || text2(detail?.unavailableReason) || (phase === "conflict" && installation?.installed === false ? text2(installation.message) : "") || problemMessages[installation?.code] || text2(installation?.message) || (phase === "unknown" || phase === "installing" ? "\u5B89\u88C5\u7ED3\u679C\u5C1A\u672A\u786E\u8BA4\u3002\u6838\u5BF9\u72B6\u6001\u4F1A\u7EE7\u7EED\u67E5\u770B\u8FD9\u4E00\u6B21\u5B89\u88C5\uFF0C\u4E0D\u4F1A\u91CD\u590D\u5B89\u88C5\u3002" : phase === "installed-disabled" ? "\u63D2\u4EF6\u5DF2\u5B89\u88C5\uFF0C\u542F\u7528\u540E\u5373\u53EF\u4F7F\u7528\u3002" : phase === "conflict" ? "\u5F53\u524D\u5DF2\u6709\u4E0D\u540C\u7248\u672C\u6216\u6765\u6E90\u7684\u540C\u540D\u63D2\u4EF6\uFF0C\u672C\u6B21\u6CA1\u6709\u66FF\u6362\u3002" : phase === "failed" ? "\u8FD9\u6B21\u5B89\u88C5\u6CA1\u6709\u5B8C\u6210\uFF0C\u539F\u6709\u63D2\u4EF6\u672A\u88AB\u66FF\u6362\u3002" : detail?.installable ? "\u5B89\u88C5\u5E76\u542F\u7528\u5230\u5F53\u524D DeepSeek Harness\uFF0C\u65E0\u9700\u524D\u5F80\u63D2\u4EF6\u7BA1\u7406\u5668\u3002" : "\u6B63\u5728\u6838\u5BF9\u6240\u9009\u63D2\u4EF6\u7684\u6765\u6E90\u548C\u5B89\u88C5\u72B6\u6001\u3002");
   const requirements = strings(detail?.requirements ?? fallback?.requirements).map((value) => value === "\u8D26\u53F7\u3001\u8F93\u5165\u8F93\u51FA\u548C\u9996\u6B21\u4F7F\u7528\u524D\u63D0\u6765\u81EA\u4F5C\u8005\u8D44\u6599\uFF1B\u672A\u77E5\u6761\u4EF6\u9700\u5728\u4F1A\u8BDD\u786E\u8BA4\u3002" ? "\u5177\u4F53\u914D\u7F6E\u548C\u6388\u6743\u8981\u6C42\u4EE5\u4F5C\u8005\u8BF4\u660E\u4E3A\u51C6\u3002" : value);
   const limitations = strings(detail?.limitations ?? fallback?.limitations).filter((value) => !/^来自动态来源与作者资料的候选线索；|^已核对精确 npm 版本的 bundle 清单，/.test(value));
-  const list2 = (values) => h("ul", { className: "pfv_plugin_list" }, ...values.map((value, index) => h("li", { key: index }, value)));
+  const list = (values) => h("ul", { className: "pfv_plugin_list" }, ...values.map((value, index) => h("li", { key: index }, value)));
   return h(
     "article",
     { className: "pfv_plugin_detail", "aria-labelledby": "pfv_plugin_detail_title" },
@@ -1893,8 +1952,8 @@ function renderPluginDetailView({ h, state, controller }) {
     requirements.length || limitations.length ? h(
       "div",
       { className: "pfv_plugin_facts" },
-      requirements.length ? h("section", { className: "pfv_plugin_section" }, h("h2", null, "\u4F7F\u7528\u524D\u63D0"), list2(requirements)) : null,
-      limitations.length ? h("section", { className: "pfv_plugin_section" }, h("h2", null, "\u9700\u8981\u4E86\u89E3"), list2(limitations)) : null
+      requirements.length ? h("section", { className: "pfv_plugin_section" }, h("h2", null, "\u4F7F\u7528\u524D\u63D0"), list(requirements)) : null,
+      limitations.length ? h("section", { className: "pfv_plugin_section" }, h("h2", null, "\u9700\u8981\u4E86\u89E3"), list(limitations)) : null
     ) : null,
     source ? h("section", { className: "pfv_plugin_section pfv_plugin_sources" }, h("h2", null, "\u4F5C\u8005\u4E0E\u6765\u6E90"), h("a", { href: source, target: "_blank", rel: "noopener noreferrer" }, "\u67E5\u770B\u4F5C\u8005\u8BF4\u660E \u2197"), h("p", null, "\u63D2\u4EF6\u4ECB\u7ECD\u6765\u81EA\u4F5C\u8005\u8D44\u6599\uFF1B\u6536\u5F55\u4E0D\u4EE3\u8868\u5DF2\u9A8C\u8BC1\u6240\u6709\u529F\u80FD\u3002")) : null
   );
@@ -1918,7 +1977,7 @@ function renderFeaturedView({ h, state, controller, copyText, busy = false, mode
   });
   const selected = mode === "detail" ? featuredCatalog.find((entry) => entry.id === state.featuredId) : null;
   const button2 = (label, onClick, attrs = {}) => h("button", { type: "button", className: "pf_btn", onClick, ...attrs }, label);
-  const list2 = (values) => h("ul", { className: "pf_list" }, ...values.map((value, index) => h("li", { key: index }, value)));
+  const list = (values) => h("ul", { className: "pf_list" }, ...values.map((value, index) => h("li", { key: index }, value)));
   const status = (entry) => h("span", { className: "pf_tag pf_featured_status" }, entry.status === "available" && !safeFeaturedInstall(entry) ? "\u53D1\u884C\u6765\u6E90\u5F85\u590D\u6838" : statusLabels[entry.status]);
   const card = (entry, reason, group = "catalog") => h(
     "article",
@@ -2360,7 +2419,7 @@ function createExperienceView(React2) {
   const primary = (label, onClick, attrs = {}) => button2(label, onClick, { ...attrs, className: "pfv_button pfv_primary" });
   const disclosure = (label, content, attrs = {}) => content ? h("details", { className: "pfv_disclosure", ...attrs }, h("summary", null, label), h("div", { className: "pfv_disclosure_body" }, content)) : null;
   const paragraph = (value, attrs = {}) => text6(value) ? h("p", { className: "pfv_prose", ...attrs }, text6(value)) : null;
-  const list2 = (values) => values.length ? h("ul", { className: "pfv_list" }, ...values.map((value, index) => h("li", { key: index }, value))) : null;
+  const list = (values) => values.length ? h("ul", { className: "pfv_list" }, ...values.map((value, index) => h("li", { key: index }, value))) : null;
   const short = (value, limit = 210) => text6(value).length > limit ? `${text6(value).slice(0, limit).trim()}\u2026` : text6(value);
   const shortcut = (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && !event.nativeEvent?.isComposing && !event.isComposing) {
@@ -2518,7 +2577,7 @@ function createExperienceView(React2) {
         cancelled: "\u5DF2\u505C\u6B62"
       }[execution.phase] || "\u5F53\u524D\u72B6\u6001"), executionActive ? button2("\u505C\u6B62", () => controller.cancelExecution(), { className: "pfv_button pfv_quiet", "aria-label": "\u505C\u6B62\u5F53\u524D\u6267\u884C" }) : null),
       paragraph(execution.summary),
-      text6(execution.details) ? paragraph(execution.details, { className: "pfv_hint pfv_execution_details" }) : list2(strings2(execution.details)),
+      text6(execution.details) ? paragraph(execution.details, { className: "pfv_hint pfv_execution_details" }) : list(strings2(execution.details)),
       execution.canContinue ? primary("\u7EE7\u7EED\u6267\u884C", () => controller.continueExecution(), { disabled: busy }) : null,
       sections.executionConversation
     ) : null;
@@ -2628,7 +2687,7 @@ function createExperienceView(React2) {
         )) : null,
         execution?.phase === "completed" && execution.kind === "use" ? h("div", { className: "pfv_outcome_actions" }, button2("\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6", () => controller.startCreation(), { disabled: locked || !modelReady, className: "pfv_button pfv_quiet" })) : null,
         steps.length && !execution ? h("section", { className: "pfv_plan_steps", "aria-label": "\u5B8C\u6210\u8DEF\u5F84" }, h("h3", null, "\u8FD9\u6B21\u4F1A\u505A\u4EC0\u4E48"), h("ol", null, ...steps.map((step, index) => h("li", { key: index }, h("span", { className: "pfv_step_number", "aria-hidden": true }, index + 1), h("div", null, h("h4", null, text6(step.capability)), paragraph(short(step.action, 220)), h("p", { className: "pfv_hint" }, ownerLabel(step.owner))))))) : null,
-        limits.length ? h("div", { className: "pfv_prerequisites" }, h("h3", null, "\u4F7F\u7528\u524D\u63D0"), list2(limits.slice(0, 2)), limits.length > 2 ? disclosure(`\u8FD8\u6709 ${limits.length - 2} \u9879\u9650\u5236`, list2(limits.slice(2))) : null) : null,
+        limits.length ? h("div", { className: "pfv_prerequisites" }, h("h3", null, "\u4F7F\u7528\u524D\u63D0"), list(limits.slice(0, 2)), limits.length > 2 ? disclosure(`\u8FD8\u6709 ${limits.length - 2} \u9879\u9650\u5236`, list(limits.slice(2))) : null) : null,
         disclosure("\u67E5\u770B\u5B8C\u6574\u65B9\u6848", h(React2.Fragment, null, uncertainGap ? h("p", { className: "pfv_hint" }, "\u4EE5\u4E0B\u662F\u6765\u6E90\u5C1A\u672A\u5B8C\u6574\u6838\u5BF9\u65F6\u7684\u6682\u5B9A\u5224\u65AD\u3002") : null, paragraph(plan.title), paragraph(plan.rationale), ...steps.map((step, index) => h("section", { key: index }, h("h4", null, text6(step.capability)), paragraph(step.action), h("dl", { className: "pfv_io" }, h("dt", null, "\u8F93\u5165"), h("dd", null, text6(step.input)), h("dt", null, "\u4EA7\u51FA"), h("dd", null, text6(step.output))))))),
         previousOutcome ? h("p", { className: "pfv_hint pfv_previous_note" }, "\u8FD9\u662F\u4E0A\u4E00\u6B21\u4FDD\u5B58\u7684\u7ED3\u679C\uFF0C\u66F4\u65B0\u540E\u4F1A\u663E\u793A\u65B0\u65B9\u6848\u3002") : null
       );
@@ -2662,7 +2721,7 @@ function createExperienceView(React2) {
             disclosure(`\u7F16\u8F91${group.title}`, h("div", { className: "pfv_block_editor" }, ...group.fields.map(([key, label]) => h("label", { key, className: "pfv_field", htmlFor: `pfv_field_${key}` }, label, h("textarea", { id: `pfv_field_${key}`, "aria-label": label, value: text6(blueprint[key]), maxLength: 4e3, disabled: locked, onChange: (event) => controller.editCreation({ blueprint: { [key]: event.target.value } }) })))), { key: `edit-${index}`, className: "pfv_disclosure pfv_edit_block" })
           )),
           paragraph(creation.reuseAssessment),
-          list2(records(creation.candidateDecisions).map((item) => `${records(state.candidates).find((candidate) => candidate.id === item.pluginId)?.name || item.pluginId}\uFF1A${text6(item.reason)}`)),
+          list(records(creation.candidateDecisions).map((item) => `${records(state.candidates).find((candidate) => candidate.id === item.pluginId)?.name || item.pluginId}\uFF1A${text6(item.reason)}`)),
           h("label", { className: "pfv_field", htmlFor: "pfv_assumptions" }, "\u5047\u8BBE\uFF0C\u6BCF\u884C\u4E00\u9879", h("textarea", { id: "pfv_assumptions", value: items3(form?.assumptions || creation.assumptions).filter((item) => typeof item === "string").join("\n"), maxLength: 6e3, disabled: locked, onChange: (event) => controller.editCreation({ assumptions: event.target.value.split("\n") }) })),
           state.creationDirty ? button2("\u4FDD\u5B58\u8349\u7A3F", () => controller.updateCreation(), { disabled: locked }) : null
         ))

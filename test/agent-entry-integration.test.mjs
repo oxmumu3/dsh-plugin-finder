@@ -39,3 +39,26 @@ test('Host entry retains existing domains and UI routes while owning one indepen
   for(const cleanup of effects.reverse())await cleanup?.();
   assert.equal(tools.size,0);assert.equal(new Set(closed).size,6);
 });
+
+test('entry routes fixed plan issues from both factories to the existing local logger only',async()=>{
+ const coreOptions=[],agentOptions=[],messages=[],effects=[];
+ const sdk={
+  '@deepseek-ai/dsh-storage-domain':{defineDomain:spec=>spec,domainTable:schema=>schema},
+  '@deepseek-ai/dsh-app-boot':{getDshRuntimeVersion:()=> '0.2.1-rc.5'},
+  '@deepseek-ai/dsh-tools':{defineTool:definition=>definition},
+  '@deepseek-ai/dsh-sandbox':{approveEscalation:async()=>assert.fail('no installation')},
+ };
+ const bundled=await build({entryPoints:[new URL('../index.js',import.meta.url).pathname],bundle:true,format:'cjs',platform:'node',external:['@deepseek-ai/*'],define:{'import.meta.url':JSON.stringify(new URL('../catalog/index.mjs',import.meta.url).href)},write:false,plugins:[{name:'capture-planning-factories',setup(builder){
+  builder.onLoad({filter:/\/src\/service\.js$/},()=>({loader:'js',contents:'export function createFinderService(options){coreOptions.push(options);return {close(){},pendingTelemetry(){return []}}}'}));
+  builder.onLoad({filter:/\/src\/agent-finder-service\.js$/},()=>({loader:'js',contents:'export class AgentFinderError extends Error {} export function createAgentFinderService(options){agentOptions.push(options);return {}}'}));
+ }}]});
+ const module={exports:{}};vm.runInNewContext(bundled.outputFiles[0].text,{module,exports:module.exports,coreOptions,agentOptions,require:id=>sdk[id]??require(id),Buffer,process:{versions:{node:process.versions.node},platform:process.platform},AbortController,AbortSignal,Response,Request,URL,TextDecoder,structuredClone,setTimeout,clearTimeout,console,fetch:()=>assert.fail('no network')});
+ const ctx={logger:{warn:message=>messages.push(message)},connection:{fetch:{register:()=>()=>{}}},tools:{register:()=>()=>{},get:()=>undefined,schemas:()=>[]},systemPrompt:{section:()=>()=>{}},workspaceRegistry:{list:()=>[]},workingDirectory:{get:()=>undefined},sandboxPolicy:{resolve:()=>({mode:'workspace-write'})},get(name){return this[name];},effect:fn=>effects.push(fn()),storageDomain:{open:async spec=>{const rows=new Map();return{table(){return{get:id=>rows.get(id),put:(id,row)=>rows.set(id,row),entries:()=>rows.entries()};},global:{get:()=>structuredClone(spec.global?.initial??null),set:()=>{}},close:async()=>{}};}}};
+ await module.exports.apply(ctx);assert.equal(coreOptions.length,1);assert.equal(agentOptions.length,1);
+ agentOptions[0].createCore({historyStore:{}});assert.equal(coreOptions.length,2);
+ const issue={stage:'recommend.parse',path:'plan.steps[0].sourceCapability',type:'unknown-capability',raw:'PRIVATE_NEVER_LOG',unknownKey:'PRIVATE_UNKNOWN_KEY'};
+ for(const options of coreOptions){assert.equal(typeof options.onPlanValidationIssue,'function');options.onPlanValidationIssue(issue);options.onPlanValidationIssue({...issue,path:'plan.PRIVATE_UNKNOWN_KEY'});}
+ assert.equal(messages.length,2);for(const message of messages){assert.ok(message.startsWith('finder.plan_validation_issue '));assert.deepEqual(JSON.parse(message.slice('finder.plan_validation_issue '.length)),{stage:issue.stage,path:issue.path,type:issue.type});assert.doesNotMatch(message,/PRIVATE_/u);}
+ delete ctx.logger;assert.doesNotThrow(()=>coreOptions[0].onPlanValidationIssue(issue));
+ for(const cleanup of effects.reverse())await cleanup?.();
+});
