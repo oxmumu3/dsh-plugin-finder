@@ -1,3 +1,4 @@
+import {readFile} from 'node:fs/promises';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
@@ -46,7 +47,8 @@ test('entry routes fixed plan issues from both factories through the official de
  const logging=new Context(),disposeExporter=logging.logger.exporter({export:message=>messages.push(message)});
  t.after(async()=>{for(const cleanup of effects.reverse())await cleanup?.();await disposeExporter();await logging.fiber.dispose();});
  logging.logger.warn('default-warn-is-filtered');
- assert.equal(messages.length,0);assert.equal(logging.logger.buffer.length,0);
+ const warningCount=JSON.parse(await readFile(new URL('../node_modules/@deepseek-ai/cordis/package.json',import.meta.url),'utf8')).version==='4.1.0'?1:0;
+ assert.equal(messages.length,warningCount);assert.equal(logging.logger.buffer.length,warningCount);
  const sdk={
   '@deepseek-ai/dsh-storage-domain':{defineDomain:spec=>spec,domainTable:schema=>schema},
   '@deepseek-ai/dsh-app-boot':{getDshRuntimeVersion:()=> '0.2.1-rc.5'},
@@ -63,8 +65,8 @@ test('entry routes fixed plan issues from both factories through the official de
  agentOptions[0].createCore({historyStore:{}});assert.equal(coreOptions.length,2);
  const issue={stage:'recommend.parse',path:'plan.steps[0].sourceCapability',type:'unknown-capability',raw:'PRIVATE_NEVER_LOG',unknownKey:'PRIVATE_UNKNOWN_KEY'};
  for(const options of coreOptions){assert.equal(typeof options.onPlanValidationIssue,'function');options.onPlanValidationIssue(issue);options.onPlanValidationIssue({...issue,path:'plan.PRIVATE_UNKNOWN_KEY'});}
- assert.equal(messages.length,2);assert.equal(logging.logger.buffer.length,2);
+ assert.equal(messages.length,warningCount+2);assert.equal(logging.logger.buffer.length,warningCount+2);
  assert.deepEqual(logging.logger.buffer.map(message=>message.args),messages.map(message=>message.args));
- for(const record of messages){assert.equal(record.type,'info');assert.equal(record.level,1);assert.equal(record.args.length,1);const message=record.args[0];assert.ok(message.startsWith('finder.plan_validation_issue '));assert.deepEqual(JSON.parse(message.slice('finder.plan_validation_issue '.length)),{stage:issue.stage,path:issue.path,type:issue.type});assert.doesNotMatch(message,/PRIVATE_/u);}
+ for(const record of messages.slice(warningCount)){assert.equal(record.type,'info');assert.equal(record.level,warningCount?2:1);assert.equal(record.args.length,1);const message=record.args[0];assert.ok(message.startsWith('finder.plan_validation_issue '));assert.deepEqual(JSON.parse(message.slice('finder.plan_validation_issue '.length)),{stage:issue.stage,path:issue.path,type:issue.type});assert.doesNotMatch(message,/PRIVATE_/u);}
  delete ctx.logger;assert.doesNotThrow(()=>coreOptions[0].onPlanValidationIssue(issue));
 });

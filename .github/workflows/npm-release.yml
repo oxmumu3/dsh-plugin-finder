@@ -64,7 +64,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v5
         with:
-          node-version: '24'
+          node-version: 24.22.1
       - name: Check Node and npm versions
         run: |
           node --input-type=module <<'NODE'
@@ -125,7 +125,7 @@ jobs:
         run: echo "ARTIFACT_DIR=$RUNNER_TEMP/finder-npm" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v5
         with:
-          node-version: '24'
+          node-version: 24.22.1
       - name: Check Node and npm versions for OIDC
         run: |
           node --input-type=module <<'NODE'

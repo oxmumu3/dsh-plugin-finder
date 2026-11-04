@@ -1,3 +1,9 @@
+# 0.12.0-preview.3
+
+- Add exact official 0.2.2-rc.1 support while retaining 0.2.1-rc.5, including Creator gating and SDK guidance.
+- Bind compatibility CI to both the current Desktop feed and npm latest, with Node 24.22.1, exact Cordis peers, and explicit TAP output.
+- Keep permissions, storage identities and runtime network boundaries unchanged.
+
 # 0.12.0-preview.2（2026-11-04）
 
 以下记录本版实现范围；实际公开发布、市场索引与可安装状态以精确发行回执为准。

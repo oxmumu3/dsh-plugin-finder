@@ -186,7 +186,7 @@ test('workflow defaults to preparation and restricts publishing to the verified 
   assert.equal(workflow.match(/id-token: write/g).length, 1);
   assert.doesNotMatch(workflow, /NPM_TOKEN|NODE_AUTH_TOKEN|registry-url|npm (?:login|config)/);
   assert.match(workflow, /npm publish .*--access public --tag latest --provenance/);
-  assert.match(workflow, /node-version: '24'/); assert.match(workflow, /11\.5\.1/);
+  assert.match(workflow, /node-version: 24\.22\.1/); assert.match(workflow, /11\.5\.1/);
   assert.match(workflow, /sha256sum --check SHA256SUMS/);
 });
 

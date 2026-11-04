@@ -1,13 +1,13 @@
 {
   "name": "@oxmumu3/dsh-plugin-finder",
-  "version": "0.12.0-preview.2",
+  "version": "0.12.0-preview.3",
   "description": "Describe a need, find a usable plan, and run or create in the same DeepSeek Harness workspace",
   "author": "牛村木木山",
   "license": "MIT",
   "type": "module",
   "engines": {
     "node": "^22.19.0 || >=24.0.0",
-    "dsh": "0.2.1-rc.5"
+    "dsh": "0.2.1-rc.5 || 0.2.2-rc.1"
   },
   "exports": {
     ".": "./index.js",
@@ -100,7 +100,7 @@
     "community:build": "node scripts/build-community-catalog.mjs"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/cordis": "4.1.0",
     "esbuild": "0.25.12",
     "react": "19.2.0",
     "yaml": "2.9.1"
@@ -135,10 +135,10 @@
     "zod": "4.6.7"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-app-boot": "0.2.1-rc.5",
-    "@deepseek-ai/dsh-sandbox": "0.2.1-rc.5",
-    "@deepseek-ai/dsh-storage-domain": "0.2.1-rc.5",
-    "@deepseek-ai/dsh-tools": "0.2.1-rc.5"
+    "@deepseek-ai/dsh-app-boot": "0.2.1-rc.5 || 0.2.2-rc.1",
+    "@deepseek-ai/dsh-sandbox": "0.2.1-rc.5 || 0.2.2-rc.1",
+    "@deepseek-ai/dsh-storage-domain": "0.2.1-rc.5 || 0.2.2-rc.1",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.5 || 0.2.2-rc.1"
   },
   "repository": {
     "type": "git",

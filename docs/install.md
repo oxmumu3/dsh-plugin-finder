@@ -1,6 +1,6 @@
 # 安装、首次使用与卸载
 
-本说明对应 `@oxmumu3/dsh-plugin-finder@0.12.0-preview.2`。精确发布状态以 npm 与 GitHub Release 为准；尚未同步时保留当前安装，不用其他版本或本地路径冒充公开包。
+本说明对应 `@oxmumu3/dsh-plugin-finder@0.12.0-preview.3`。精确发布状态以 npm 与 GitHub Release 为准；尚未同步时保留当前安装，不用其他版本或本地路径冒充公开包。
 
 正式发行记录见 [GitHub Releases](https://github.com/oxmumu3/dsh-plugin-finder/releases)。新版本附件及哈希确认存在前，不提供推测的下载地址。
 
@@ -22,7 +22,7 @@
 公开发布并回读精确 npm 版本后，在正在使用的官方 Harness 原生「插件 → 添加插件」中填入：
 
 ```text
-@oxmumu3/dsh-plugin-finder@0.12.0-preview.2
+@oxmumu3/dsh-plugin-finder@0.12.0-preview.3
 ```
 
 这是本版的精确 npm 安装身份。若注册表尚未返回该版本，请查看正式 Release 并保留当前安装。通过本地 TGZ 安装时，应核对发行哈希；绝对路径必须位于目标宿主机器，不能使用另一台机器的路径。
@@ -63,3 +63,5 @@
 ## 历史
 
 [重写前的安装说明原文](history/pre-0.12-20261103/install.md)保留旧版本下载、当时 CLI 用法与验证范围，只供追溯。它们不构成本版的当前兼容或发布声明。项目作者为牛村木木山；正式仓库为 [oxmumu3/dsh-plugin-finder](https://github.com/oxmumu3/dsh-plugin-finder)。
+
+本版本仅支持准确的官方 `0.2.1-rc.5` 与 `0.2.2-rc.1`；rc.1 宿主要求 Node `>=24.9.0`。未知 RC、next 或 alpha 不自动获得兼容。
