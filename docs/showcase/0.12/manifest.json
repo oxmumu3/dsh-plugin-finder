@@ -1,0 +1,67 @@
+{
+  "product": "发现好插件",
+  "author": "牛村木木山",
+  "npm": "@oxmumu3/dsh-plugin-finder@0.12.0-preview.1",
+  "host": "0.2.1-rc.5",
+  "artifactSha256": "25b7a32bba101608e1b1c9047331955f09482cfb332f3933c3a4e37ed655eec2",
+  "capture": "真实官方隔离 Host 的浏览器截图；无 DOM、样式、内容替换，无生成图片或拼接。",
+  "scope": "合成资料实机演示；两个生成样例保留在私有验收工作区，不随 Finder 包预装、不公开发布。首次安装遵循宿主审批。",
+  "images": [
+    {
+      "file": "01-home.png",
+      "title": "首页：同一位插件专家，接目标，也给有依据的建议。",
+      "note": "当前 C8 真实首页；输入框为同一合成尺寸任务的未发送简述。右侧是已授权最近一条合成方案摘要后，真实模型生成并缓存的建议，未采纳执行。",
+      "sha256": "57fcd4ed2483bf720cc10fb11b5cf4833fedd81e5031be5899ea04d2217c82db",
+      "bytes": 161762,
+      "pixels": [
+        1600,
+        1060
+      ],
+      "capturedAt": "2026-11-04T01:48:07.414319+00:00",
+      "requestedDeviceScaleFactor": 2,
+      "pixelsNote": "实际 PNG 像素尺寸；浏览器截图 API 按可见视口输出。"
+    },
+    {
+      "file": "02-hybrid-plan.png",
+      "title": "方案：保留现成换算，只补记录能力。",
+      "note": "当前 C8 只读打开同一任务的历史版本 2；沿用当时真实搜索结果，没有重新搜索或重发创建。候选覆盖不完整的提示原样保留。",
+      "sha256": "53a33942dd8dbd3cac3e49327f3771605172a55a500e721cfb4032f3ed659038",
+      "bytes": 196370,
+      "pixels": [
+        1600,
+        1060
+      ],
+      "capturedAt": "2026-11-04T01:49:09.935344+00:00",
+      "requestedDeviceScaleFactor": 2,
+      "pixelsNote": "实际 PNG 像素尺寸；浏览器截图 API 按可见视口输出。"
+    },
+    {
+      "file": "03-created-size-book.png",
+      "title": "成果：尺寸对照本，换算继续复用 convert。",
+      "note": "当前 C8 官方隔离 Host，Creator 生成的私有样例已首次安装并经过一次会话关联修正；新增、编辑、刷新、切换与删除实测通过。截图恢复为原两条合成记录。",
+      "sha256": "d936bba22f9e99641eb1511e51f7edf7b208227e2fbce5a5323ffaacfa2a1d22",
+      "bytes": 75420,
+      "pixels": [
+        1280,
+        760
+      ],
+      "capturedAt": "2026-11-04T01:47:48.411850+00:00",
+      "requestedDeviceScaleFactor": 2,
+      "pixelsNote": "实际 PNG 像素尺寸；浏览器截图 API 按可见视口输出。"
+    },
+    {
+      "file": "04-agent-running-journal.png",
+      "title": "成果：主 Agent 复用配速与换算，只创建手账。",
+      "note": "样例在早期候选完成创建、首次安装和操作验证；当前 C8 实界面读回 7 km、42 分钟、2 条记录。不是 C8 从零重新生成的证据。",
+      "sha256": "322332036f296f34cd40fdf634c4d524b09fad4117b9cc0cca68b2062060b5e1",
+      "bytes": 115319,
+      "pixels": [
+        1450,
+        840
+      ],
+      "capturedAt": "2026-11-04T01:49:31.249780+00:00",
+      "requestedDeviceScaleFactor": 2,
+      "pixelsNote": "实际 PNG 像素尺寸；浏览器截图 API 按可见视口输出。"
+    }
+  ]
+}
