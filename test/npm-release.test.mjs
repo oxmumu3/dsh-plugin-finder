@@ -204,6 +204,11 @@ test('OIDC job only consumes the prepared artifact and never checks out or runs 
   assert.equal(workflow.jobs.prepare.outputs.sha256, '${{ steps.package.outputs.sha256 }}');
   assert.equal(workflow.jobs.prepare.outputs.artifact_id, '${{ steps.upload.outputs.artifact-id }}');
   assert.equal(publish.env.VALIDATED_SHA256, '${{ needs.prepare.outputs.sha256 }}');
+  assert.equal(workflow.on.workflow_dispatch.inputs.expected_sha256.type, 'string');
+  assert.equal(workflow.on.workflow_dispatch.inputs.expected_sha256.required, false);
+  assert.equal(workflow.on.workflow_dispatch.inputs.expected_sha256.default, '');
+  assert.equal(workflow.jobs.prepare.env.EXPECTED_SHA256, '${{ inputs.expected_sha256 }}');
+  assert.equal(publish.env.EXPECTED_SHA256, '${{ inputs.expected_sha256 }}');
   assert.ok(!publish.steps.some(step => step.uses?.startsWith('actions/checkout@')));
   const commands = publish.steps.map(step => step.run ?? '').join('\n');
   assert.doesNotMatch(commands, /npm (?:ci|install|test|run)|release\/|buildClient|checkNpmPackage|runInNewContext|eval\(/);
@@ -221,8 +226,10 @@ test('OIDC artifact metadata check binds identity and hashes without executing p
   const artifact = path.join(f.base, 'downloaded'); await mkdir(artifact);
   for (const name of [path.basename(f.result.tarball), 'manifest.json', 'SHA256SUMS']) await cp(path.join(f.output, name), path.join(artifact, name));
   const outputFile = path.join(f.base, 'github-output');
-  const execute = (validatedSha256 = f.result.sha256) => run(process.platform === 'darwin' ? '/bin/bash' : 'bash', ['-euo', 'pipefail', '-c', verify.run], { timeout: 15000, env: { ...process.env, ARTIFACT_DIR: artifact, PACKAGE_NAME: '@oxmumu3/dsh-plugin-finder', VALIDATED_SHA256: validatedSha256, GITHUB_OUTPUT: outputFile } });
+  const execute = (validatedSha256 = f.result.sha256, expectedSha256 = f.result.sha256) => run(process.platform === 'darwin' ? '/bin/bash' : 'bash', ['-euo', 'pipefail', '-c', verify.run], { timeout: 15000, env: { ...process.env, ARTIFACT_DIR: artifact, PACKAGE_NAME: '@oxmumu3/dsh-plugin-finder', VALIDATED_SHA256: validatedSha256, EXPECTED_SHA256: expectedSha256, GITHUB_OUTPUT: outputFile } });
   await execute();
+  await assert.rejects(execute(f.result.sha256, ''), /reviewed publication input/i, 'publication must reject a missing reviewed digest');
+  await assert.rejects(execute(f.result.sha256, '0'.repeat(64)), /reviewed publication input/i, 'an independent prepare digest cannot override the reviewed publication digest');
   assert.equal(await readFile(outputFile, 'utf8'), `tarball=${path.basename(f.result.tarball)}\n`);
   const manifestFile = path.join(artifact, 'manifest.json'); const original = await readFile(manifestFile, 'utf8');
   const manifest = JSON.parse(original); manifest.packageName = '@wrong/finder'; await writeFile(manifestFile, JSON.stringify(manifest));
@@ -237,13 +244,13 @@ test('OIDC artifact metadata check binds identity and hashes without executing p
   const wrongBytes = await readFile(wrongPackage); const wrongMetadata = JSON.parse(original); wrongMetadata.sha256 = sha(wrongBytes);
   await writeFile(tarball, wrongBytes); await writeFile(manifestFile, JSON.stringify(wrongMetadata));
   await writeFile(path.join(artifact, 'SHA256SUMS'), `${wrongMetadata.sha256}  ${wrongMetadata.tarball}\n`);
-  await assert.rejects(execute(wrongMetadata.sha256), /name\/version|identity/i);
+  await assert.rejects(execute(wrongMetadata.sha256, wrongMetadata.sha256), /name\/version|identity/i);
   const forbidden = await repack(f, async directory => writeFile(path.join(directory, 'dist/client.js'), 'throw new Error("PAYLOAD_CODE_EXECUTED");'));
   const metadata = JSON.parse(original); const altered = await readFile(forbidden); metadata.sha256 = sha(altered);
   await writeFile(tarball, altered); await writeFile(manifestFile, JSON.stringify(metadata));
   await writeFile(path.join(artifact, 'SHA256SUMS'), `${metadata.sha256}  ${metadata.tarball}\n`);
   await assert.rejects(execute(), /independent|validated|preparation/i, 'self-consistent replacement bytes must not override the prepare job digest');
-  await execute(metadata.sha256); // Only metadata is read once an independent preparation digest matches.
+  await execute(metadata.sha256, metadata.sha256); // Only metadata is read once both independently reviewed digests match.
 });
 
 test('workflow resolves runner artifact directories at runtime before consuming them', async t => {
