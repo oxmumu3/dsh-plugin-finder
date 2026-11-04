@@ -712,13 +712,14 @@ export function createFinderController(ctx, options = {}) {
       const current = () => !closed && generation === searchGeneration;
       publish({ searching: true, error: '', notice: '', searchingSince: Date.now(), clock: Date.now(), searchProgress: null });
       const pollProgress = async () => { try { const response = await fetch(endpoint + 'search-progress', { headers: { accept: 'application/json' } }); if (!response.ok || !current()) return; const data = await response.json(); if (data && current()) publish({ searchProgress: data }); } catch {} };
-      const clockTimer = setInterval(() => { if (!current()) return; publish({ clock: Date.now() }); void pollProgress(); }, 1000);
+      const scheduleClock = typeof globalThis.setInterval === 'function' ? globalThis.setInterval : null;
+      const clockTimer = scheduleClock ? scheduleClock(() => { if (!current()) return; publish({ clock: Date.now() }); void pollProgress(); }, 1000) : 0;
       try {
         if (!current() || !await this.newRequest() || !current()) return false;
         if (!await this.analyze(request, { communityEntryId }) || !current()) return false;
         if (!await this.recommend() || !current()) return false;
         saveHomeInput(''); return true;
-      } finally { clearInterval(clockTimer); if (current()) publish({ searching: false, searchingSince: 0, searchProgress: null }); }
+      } finally { if (clockTimer && typeof globalThis.clearInterval === 'function') globalThis.clearInterval(clockTimer); if (current()) publish({ searching: false, searchingSince: 0, searchProgress: null }); }
     },
     async analyze(request = state.request, selection = {}) {
       if (closed || operation) return false;

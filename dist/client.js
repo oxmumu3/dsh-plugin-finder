@@ -4419,11 +4419,12 @@ function createFinderController(ctx, options = {}) {
         } catch {
         }
       };
-      const clockTimer = setInterval(() => {
+      const scheduleClock = typeof globalThis.setInterval === "function" ? globalThis.setInterval : null;
+      const clockTimer = scheduleClock ? scheduleClock(() => {
         if (!current()) return;
         publish({ clock: Date.now() });
         void pollProgress();
-      }, 1e3);
+      }, 1e3) : 0;
       try {
         if (!current() || !await this.newRequest() || !current()) return false;
         if (!await this.analyze(request, { communityEntryId }) || !current()) return false;
@@ -4431,7 +4432,7 @@ function createFinderController(ctx, options = {}) {
         saveHomeInput("");
         return true;
       } finally {
-        clearInterval(clockTimer);
+        if (clockTimer && typeof globalThis.clearInterval === "function") globalThis.clearInterval(clockTimer);
         if (current()) publish({ searching: false, searchingSince: 0, searchProgress: null });
       }
     },
