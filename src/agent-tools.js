@@ -126,7 +126,7 @@ export function registerAgentTools(ctx,service,{defineTool,approveEscalation,sig
       },'查看方案进度'),
       definition(names[4],'只读检索公开插件来源：只搜索候选，不调用模型、不生成方案、不改工作区、不安装、不发布，也不写任务历史。需要先看看有哪些候选、暂不确定交付形态时使用。返回候选及每个来源的读取状态；候选能力来自作者自述与索引，未经安装或运行核实，不代表可用，也不构成供给结论。',{
         need:{type:'string',required:true,description:'要查找的能力或需求描述，1—6000字。'},
-        limit:{type:'number',required:false,description:'最多返回1—6条候选，默认6条。'},
+        limit:{type:'number',description:'最多返回1—6条候选，默认6条。'},
       },async(args,exec)=>{
         input(args,['need','limit']);
         if(!clean(args.need,6000))throw error('INVALID_INPUT');
