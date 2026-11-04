@@ -12,7 +12,7 @@ export function renderOpportunityCard({h,state,controller,disabled=false,modelRe
  const title=adopting?'正在查找可用的方案':discovering?'我在找更好的办法':entry?text(entry.title):idea?text(idea.title):op.status==='empty'?'这次我先不勉强推荐':op.status==='failed'?'这次还没看完':'看看还有什么更好的办法';
  const body=adopting?'建议和资料已保留。先核对现成能力，缺口再在当前工作区创建。':entry?text(entry.expectedResult):idea?text(idea.benefit):discovering?'我只参考你选定的信息，建议会保留依据。':text(op.emptyReason)||text(op.lastError?.message)||text(op.lastError)||'可以更新参考资料，再让模型看一次。';
  const error=text(state.opportunityError);
- return h('div',{key:'opportunity',className:'pfv_home_scenario pfv_opportunity_column'},[h('aside',{key:'opportunity',className:'pfv_opportunity','aria-label':entry||idea?.basis==='本机线索'?'猜你喜欢':idea?'试试这个':'推荐状态','aria-labelledby':'pfv_opportunity_title'},
+ return [h('aside',{key:'opportunity',className:'pfv_home_scenario pfv_opportunity','aria-label':entry||idea?.basis==='本机线索'?'猜你喜欢':idea?'试试这个':'推荐状态','aria-labelledby':'pfv_opportunity_title'},
   h('h2',{id:'pfv_opportunity_title',className:'pfv_home_heading'},entry||idea?.basis==='本机线索'?'我猜你可能需要':idea?'我先给你一个想法':'看看有没有更好的办法'),
   h('p',{className:'pfv_home_lead'},entry?'这是我基于参考资料想到的。':idea?'也可以从这个具体想法开始聊。':'仅参考你已授权的信息。'),
   h('div',{className:'pfv_home_card pfv_scenario_card'},
@@ -21,12 +21,12 @@ export function renderOpportunityCard({h,state,controller,disabled=false,modelRe
    entry?h('details',{className:'pfv_opportunity_evidence'},h('summary',null,'为什么推荐'),h('p',null,text(entry.observation)),h('p',null,'预期结果：'+text(entry.expectedResult)),h('p',null,'这是我的改善建议，是否适合仍需你核对。'),h('p',null,'采纳后会查找：'+text(entry.suggestedRequest)),
     ...items(entry.evidenceRefs).map(ref=>h('div',{key:ref.id},h('strong',null,text(ref.label)),h('p',null,text(ref.excerpt))))):null,
    error?h('p',{className:'pfv_warning',role:'status'},error):null,
-   h('div',{className:'pfv_composer_bottom'},discovering?button(h,'停止查找',()=>controller.cancelOpportunityDiscovery?.(),{className:'pfv_button pfv_scenario_start'}):entry?button(h,adopting?'正在找方案':'试试这个办法',()=>controller.adoptOpportunity?.(entry.id),{className:'pfv_button pfv_scenario_start',disabled:blocked}):idea?button(h,'用这个想法开始',()=>controller.startFeatured?.(idea.id),{className:'pfv_button pfv_quiet',disabled:blocked}):button(h,op.status==='failed'?'重新找机会':'更新参考资料',()=>op.status==='failed'?controller.discoverOpportunities?.(true):controller.openOpportunitySettings?.(),{className:'pfv_button pfv_scenario_start',disabled:blocked})))),
+   h('div',{className:'pfv_composer_bottom'},discovering?button(h,'停止查找',()=>controller.cancelOpportunityDiscovery?.(),{className:'pfv_button pfv_scenario_start'}):entry?button(h,adopting?'正在找方案':'试试这个办法',()=>controller.adoptOpportunity?.(entry.id),{className:'pfv_button pfv_scenario_start',disabled:blocked}):idea?button(h,'试试这个想法',()=>controller.startFeatured?.(idea.id),{className:'pfv_button pfv_scenario_start',disabled:blocked}):button(h,op.status==='failed'?'重新找机会':'更新参考资料',()=>op.status==='failed'?controller.discoverOpportunities?.(true):controller.openOpportunitySettings?.(),{className:'pfv_button pfv_scenario_start',disabled:blocked})))),
   enabled?h('div',{key:'opportunity-controls',className:'pfv_opportunity_controls'},entry?h('details',null,h('summary',null,'暂时不需要'),...[["irrelevant","不相关"],["known","这个我已经会了"],["later","以后再说"]].map(([feedback,label])=>button(h,label,()=>controller.feedbackOpportunity?.(entry.id,feedback),{key:feedback,disabled:blocked}))):null,
    op.restorableFeedbackCount>0?button(h,'恢复已处理建议',()=>controller.restoreOpportunityFeedback?.(),{disabled:busy}):null,button(h,'参考信息',()=>controller.openOpportunitySettings?.(),{disabled:busy}),button(h,'停止个性化',()=>controller.disableOpportunities?.(),{disabled:disabled&&state.busy==='opportunity-adopt'})):
    h('div',{key:'opportunity-opt-in',className:'pfv_opportunity_controls'},
     h('p',{className:'pfv_hint'},recent.length?`仅将最近${recent.length}份 Finder 需求与方案摘要交给当前模型，不读取其他文件。`:'想要更贴合当前工作的建议，可以选择允许参考的信息。'),
-    recent.length?button(h,state.opportunityBusy==='opportunity-grant'?'正在开启推荐…':`参考最近${recent.length}份方案推荐`,()=>controller.enableRecentOpportunityHistory?.(),{disabled:blocked}):button(h,'选择可参考的信息',()=>controller.openOpportunitySettings?.(),{disabled:blocked}))]);
+    recent.length?button(h,state.opportunityBusy==='opportunity-grant'?'正在开启推荐…':`参考最近${recent.length}份方案推荐`,()=>controller.enableRecentOpportunityHistory?.(),{disabled:blocked}):button(h,'选择可参考的信息',()=>controller.openOpportunitySettings?.(),{disabled:blocked}))];
 }
 
 export function renderOpportunitySettings({h,state,controller,modelReady=false}){

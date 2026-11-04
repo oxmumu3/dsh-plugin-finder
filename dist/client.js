@@ -2284,10 +2284,10 @@ function renderOpportunityCard({ h, state, controller, disabled = false, modelRe
   const title = adopting ? "\u6B63\u5728\u67E5\u627E\u53EF\u7528\u7684\u65B9\u6848" : discovering ? "\u6211\u5728\u627E\u66F4\u597D\u7684\u529E\u6CD5" : entry ? text5(entry.title) : idea ? text5(idea.title) : op.status === "empty" ? "\u8FD9\u6B21\u6211\u5148\u4E0D\u52C9\u5F3A\u63A8\u8350" : op.status === "failed" ? "\u8FD9\u6B21\u8FD8\u6CA1\u770B\u5B8C" : "\u770B\u770B\u8FD8\u6709\u4EC0\u4E48\u66F4\u597D\u7684\u529E\u6CD5";
   const body = adopting ? "\u5EFA\u8BAE\u548C\u8D44\u6599\u5DF2\u4FDD\u7559\u3002\u5148\u6838\u5BF9\u73B0\u6210\u80FD\u529B\uFF0C\u7F3A\u53E3\u518D\u5728\u5F53\u524D\u5DE5\u4F5C\u533A\u521B\u5EFA\u3002" : entry ? text5(entry.expectedResult) : idea ? text5(idea.benefit) : discovering ? "\u6211\u53EA\u53C2\u8003\u4F60\u9009\u5B9A\u7684\u4FE1\u606F\uFF0C\u5EFA\u8BAE\u4F1A\u4FDD\u7559\u4F9D\u636E\u3002" : text5(op.emptyReason) || text5(op.lastError?.message) || text5(op.lastError) || "\u53EF\u4EE5\u66F4\u65B0\u53C2\u8003\u8D44\u6599\uFF0C\u518D\u8BA9\u6A21\u578B\u770B\u4E00\u6B21\u3002";
   const error = text5(state.opportunityError);
-  return h("div", { key: "opportunity", className: "pfv_home_scenario pfv_opportunity_column" }, [
+  return [
     h(
       "aside",
-      { key: "opportunity", className: "pfv_opportunity", "aria-label": entry || idea?.basis === "\u672C\u673A\u7EBF\u7D22" ? "\u731C\u4F60\u559C\u6B22" : idea ? "\u8BD5\u8BD5\u8FD9\u4E2A" : "\u63A8\u8350\u72B6\u6001", "aria-labelledby": "pfv_opportunity_title" },
+      { key: "opportunity", className: "pfv_home_scenario pfv_opportunity", "aria-label": entry || idea?.basis === "\u672C\u673A\u7EBF\u7D22" ? "\u731C\u4F60\u559C\u6B22" : idea ? "\u8BD5\u8BD5\u8FD9\u4E2A" : "\u63A8\u8350\u72B6\u6001", "aria-labelledby": "pfv_opportunity_title" },
       h("h2", { id: "pfv_opportunity_title", className: "pfv_home_heading" }, entry || idea?.basis === "\u672C\u673A\u7EBF\u7D22" ? "\u6211\u731C\u4F60\u53EF\u80FD\u9700\u8981" : idea ? "\u6211\u5148\u7ED9\u4F60\u4E00\u4E2A\u60F3\u6CD5" : "\u770B\u770B\u6709\u6CA1\u6709\u66F4\u597D\u7684\u529E\u6CD5"),
       h("p", { className: "pfv_home_lead" }, entry ? "\u8FD9\u662F\u6211\u57FA\u4E8E\u53C2\u8003\u8D44\u6599\u60F3\u5230\u7684\u3002" : idea ? "\u4E5F\u53EF\u4EE5\u4ECE\u8FD9\u4E2A\u5177\u4F53\u60F3\u6CD5\u5F00\u59CB\u804A\u3002" : "\u4EC5\u53C2\u8003\u4F60\u5DF2\u6388\u6743\u7684\u4FE1\u606F\u3002"),
       h(
@@ -2307,7 +2307,7 @@ function renderOpportunityCard({ h, state, controller, disabled = false, modelRe
           ...items2(entry.evidenceRefs).map((ref) => h("div", { key: ref.id }, h("strong", null, text5(ref.label)), h("p", null, text5(ref.excerpt))))
         ) : null,
         error ? h("p", { className: "pfv_warning", role: "status" }, error) : null,
-        h("div", { className: "pfv_composer_bottom" }, discovering ? button(h, "\u505C\u6B62\u67E5\u627E", () => controller.cancelOpportunityDiscovery?.(), { className: "pfv_button pfv_scenario_start" }) : entry ? button(h, adopting ? "\u6B63\u5728\u627E\u65B9\u6848" : "\u8BD5\u8BD5\u8FD9\u4E2A\u529E\u6CD5", () => controller.adoptOpportunity?.(entry.id), { className: "pfv_button pfv_scenario_start", disabled: blocked }) : idea ? button(h, "\u7528\u8FD9\u4E2A\u60F3\u6CD5\u5F00\u59CB", () => controller.startFeatured?.(idea.id), { className: "pfv_button pfv_quiet", disabled: blocked }) : button(h, op.status === "failed" ? "\u91CD\u65B0\u627E\u673A\u4F1A" : "\u66F4\u65B0\u53C2\u8003\u8D44\u6599", () => op.status === "failed" ? controller.discoverOpportunities?.(true) : controller.openOpportunitySettings?.(), { className: "pfv_button pfv_scenario_start", disabled: blocked }))
+        h("div", { className: "pfv_composer_bottom" }, discovering ? button(h, "\u505C\u6B62\u67E5\u627E", () => controller.cancelOpportunityDiscovery?.(), { className: "pfv_button pfv_scenario_start" }) : entry ? button(h, adopting ? "\u6B63\u5728\u627E\u65B9\u6848" : "\u8BD5\u8BD5\u8FD9\u4E2A\u529E\u6CD5", () => controller.adoptOpportunity?.(entry.id), { className: "pfv_button pfv_scenario_start", disabled: blocked }) : idea ? button(h, "\u8BD5\u8BD5\u8FD9\u4E2A\u60F3\u6CD5", () => controller.startFeatured?.(idea.id), { className: "pfv_button pfv_scenario_start", disabled: blocked }) : button(h, op.status === "failed" ? "\u91CD\u65B0\u627E\u673A\u4F1A" : "\u66F4\u65B0\u53C2\u8003\u8D44\u6599", () => op.status === "failed" ? controller.discoverOpportunities?.(true) : controller.openOpportunitySettings?.(), { className: "pfv_button pfv_scenario_start", disabled: blocked }))
       )
     ),
     enabled ? h(
@@ -2323,7 +2323,7 @@ function renderOpportunityCard({ h, state, controller, disabled = false, modelRe
       h("p", { className: "pfv_hint" }, recent.length ? `\u4EC5\u5C06\u6700\u8FD1${recent.length}\u4EFD Finder \u9700\u6C42\u4E0E\u65B9\u6848\u6458\u8981\u4EA4\u7ED9\u5F53\u524D\u6A21\u578B\uFF0C\u4E0D\u8BFB\u53D6\u5176\u4ED6\u6587\u4EF6\u3002` : "\u60F3\u8981\u66F4\u8D34\u5408\u5F53\u524D\u5DE5\u4F5C\u7684\u5EFA\u8BAE\uFF0C\u53EF\u4EE5\u9009\u62E9\u5141\u8BB8\u53C2\u8003\u7684\u4FE1\u606F\u3002"),
       recent.length ? button(h, state.opportunityBusy === "opportunity-grant" ? "\u6B63\u5728\u5F00\u542F\u63A8\u8350\u2026" : `\u53C2\u8003\u6700\u8FD1${recent.length}\u4EFD\u65B9\u6848\u63A8\u8350`, () => controller.enableRecentOpportunityHistory?.(), { disabled: blocked }) : button(h, "\u9009\u62E9\u53EF\u53C2\u8003\u7684\u4FE1\u606F", () => controller.openOpportunitySettings?.(), { disabled: blocked })
     )
-  ]);
+  ];
 }
 function renderOpportunitySettings({ h, state, controller, modelReady = false }) {
   if (!state.opportunityEditing) return null;
@@ -2479,7 +2479,7 @@ function createExperienceView(React2) {
     }[state.busy] || (state.searching ? "\u6B63\u5728\u67E5\u627E\u53EF\u884C\u8DEF\u5F84" : state.followupPending ? "\u6B63\u5728\u66F4\u65B0\u8FD9\u4EFD\u65B9\u6848" : "\u6B63\u5728\u5904\u7406");
     const waited = state.searchingSince && state.clock ? Math.max(0, Math.round((state.clock - state.searchingSince) / 1e3)) : 0;
     const liveEvents = busy && Array.isArray(state.searchProgress?.events) ? state.searchProgress.events.filter((item) => item && typeof item.text === "string" && item.text).slice(-4) : [];
-    const statusText = waited >= 30 ? `${progress} \xB7 \u5DF2\u7B49\u5F85 ${waited} \u79D2\uFF0C\u6BD4\u5E73\u65F6\u4E45\uFF1B\u53EF\u4EE5\u7EE7\u7EED\u7B49\uFF0C\u6216\u70B9\u4E0A\u9762\u7684\u300C\u505C\u6B62\u300D\u3002` : `${progress} \xB7 \u5DF2\u7528\u65F6 ${waited} \u79D2`;
+    const clockSuffix = waited >= 30 ? ` \u5DF2\u7B49\u5F85 ${waited} \u79D2\uFF0C\u6BD4\u5E73\u65F6\u4E45\uFF1B\u53EF\u4EE5\u7EE7\u7EED\u7B49\uFF0C\u6216\u70B9\u4E0A\u9762\u7684\u300C\u505C\u6B62\u300D\u3002` : waited >= 3 ? ` \u5DF2\u7528\u65F6 ${waited} \u79D2\u3002` : "";
     const submitFollowup = (event) => {
       event.preventDefault();
       if (!followupBusy && modelReady && text6(state.followupText).trim()) void controller.submitFollowup();
@@ -2683,8 +2683,8 @@ function createExperienceView(React2) {
       if (!plan) return h(
         "div",
         { className: "pfv_outcome_empty" },
-        h("h2", null, busy ? "\u6B63\u5728\u6574\u7406\u65B9\u6848" : "\u7EE7\u7EED\u67E5\u627E\u65B9\u6848"),
-        h("p", { className: "pfv_hint" }, busy ? statusText : "\u4E0A\u6B21\u67E5\u627E\u5C1A\u672A\u5B8C\u6210\uFF0C\u4F60\u53EF\u4EE5\u4ECE\u8FD9\u91CC\u7EE7\u7EED\u3002"),
+        h("h2", null, busy ? "\u65B9\u6848\u6B63\u5728\u5F62\u6210" : "\u7EE7\u7EED\u67E5\u627E\u65B9\u6848"),
+        h("p", { className: "pfv_hint" }, busy ? `\u9700\u6C42\u5DF2\u4FDD\u7559\uFF0C\u627E\u5230\u7684\u65B9\u6848\u4F1A\u663E\u793A\u5728\u8FD9\u91CC\u3002${clockSuffix}` : "\u4E0A\u6B21\u67E5\u627E\u5C1A\u672A\u5B8C\u6210\uFF0C\u4F60\u53EF\u4EE5\u4ECE\u8FD9\u91CC\u7EE7\u7EED\u3002"),
         liveEvents.length ? h("ul", { className: "pfv_hint", "aria-live": "polite" }, liveEvents.map((item, index) => h("li", { key: `${item.seq || index}` }, item.text))) : null,
         !busy && state.intent ? primary("\u91CD\u8BD5\u67E5\u627E", () => controller.recommend(), { disabled: !modelReady }) : null,
         !busy && !state.intent && request ? primary("\u91CD\u8BD5\u67E5\u627E", () => {
