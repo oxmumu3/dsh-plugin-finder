@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import vm from 'node:vm';
 import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
 import {Context} from '@deepseek-ai/cordis';
 const require=createRequire(import.meta.url);
 test('Host entry retains existing domains and UI routes while owning one independent Agent request domain',async()=>{
@@ -14,7 +15,7 @@ test('Host entry retains existing domains and UI routes while owning one indepen
     '@deepseek-ai/dsh-tools':{defineTool:definition=>definition},
     '@deepseek-ai/dsh-sandbox':{approveEscalation:async()=>{throw Error('must not install during setup');}},
   };
-  const bundled=await build({entryPoints:[new URL('../index.js',import.meta.url).pathname],bundle:true,format:'cjs',platform:'node',external:['@deepseek-ai/*'],define:{'import.meta.url':JSON.stringify(new URL('../catalog/index.mjs',import.meta.url).href)},write:false});
+  const bundled=await build({entryPoints:[fileURLToPath(new URL('../index.js',import.meta.url))],bundle:true,format:'cjs',platform:'node',external:['@deepseek-ai/*'],define:{'import.meta.url':JSON.stringify(new URL('../catalog/index.mjs',import.meta.url).href)},write:false});
   const module={exports:{}};vm.runInNewContext(bundled.outputFiles[0].text,{module,exports:module.exports,require:id=>sdk[id]??require(id),Buffer,process:{versions:{node:process.versions.node},platform:process.platform},AbortController,AbortSignal,Response,Request,URL,TextDecoder,structuredClone,setTimeout,clearTimeout,console,fetch:()=>{throw Error('no network during setup');}});
   const connection={fetch:{register:route=>{routes.push(route);return()=>{};}}};
   const ctx={
@@ -24,10 +25,11 @@ test('Host entry retains existing domains and UI routes while owning one indepen
     storageDomain:{async open(spec){opened.push(spec);const tables=new Map();return{table(name){if(!tables.has(name))tables.set(name,new Map());const table=tables.get(name);return{get:id=>table.get(id),put:(id,row)=>table.set(id,row),delete:id=>table.delete(id),entries:()=>table.entries()};},global:{get:()=>structuredClone(spec.global?.initial??null),set:()=>{}},async close(){closed.push(spec.name);}};}},
   };
   await module.exports.apply(ctx);
-  assert.deepEqual(opened.map(spec=>spec.name),['plugin_finder','plugin_finder_history','plugin_finder_telemetry','plugin_finder_opportunities','plugin_finder_agent_requests','plugin_finder_catalog_installs']);
+  assert.deepEqual(opened.map(spec=>spec.name),['plugin_finder','plugin_finder_history','plugin_finder_telemetry','plugin_finder_opportunities','plugin_finder_agent_requests','plugin_finder_catalog_installs','plugin_finder_search']);
   for(const spec of opened)assert.equal(spec.version,1);
-  assert.equal(tools.size,4);assert.equal(registered[0].name,'finder:agent-routing');
+  assert.equal(tools.size,5);assert.equal(registered[0].name,'finder:agent-routing');
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/bootstrap'));
+  assert.ok(routes.some(route=>route.path==='/api/plugin_finder/search-history'));
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/opportunity-adopt'));
   const detailRoute=routes.find(route=>route.path==='/api/plugin_finder/catalog-detail');
   assert.ok(detailRoute,'browse details must have a separate non-model endpoint');
@@ -39,7 +41,7 @@ test('Host entry retains existing domains and UI routes while owning one indepen
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/catalog-install'));
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/catalog-status'));
   for(const cleanup of effects.reverse())await cleanup?.();
-  assert.equal(tools.size,0);assert.equal(new Set(closed).size,6);
+  assert.equal(tools.size,0);assert.equal(new Set(closed).size,7);
 });
 
 test('entry routes fixed plan issues from both factories through the official default logger exporter and buffer',async t=>{
@@ -55,7 +57,7 @@ test('entry routes fixed plan issues from both factories through the official de
   '@deepseek-ai/dsh-tools':{defineTool:definition=>definition},
   '@deepseek-ai/dsh-sandbox':{approveEscalation:async()=>assert.fail('no installation')},
  };
- const bundled=await build({entryPoints:[new URL('../index.js',import.meta.url).pathname],bundle:true,format:'cjs',platform:'node',external:['@deepseek-ai/*'],define:{'import.meta.url':JSON.stringify(new URL('../catalog/index.mjs',import.meta.url).href)},write:false,plugins:[{name:'capture-planning-factories',setup(builder){
+ const bundled=await build({entryPoints:[fileURLToPath(new URL('../index.js',import.meta.url))],bundle:true,format:'cjs',platform:'node',external:['@deepseek-ai/*'],define:{'import.meta.url':JSON.stringify(new URL('../catalog/index.mjs',import.meta.url).href)},write:false,plugins:[{name:'capture-planning-factories',setup(builder){
   builder.onLoad({filter:/\/src\/service\.js$/},()=>({loader:'js',contents:'export function createFinderService(options){coreOptions.push(options);return {close(){},pendingTelemetry(){return []}}}'}));
   builder.onLoad({filter:/\/src\/agent-finder-service\.js$/},()=>({loader:'js',contents:'export class AgentFinderError extends Error {} export function createAgentFinderService(options){agentOptions.push(options);return {}}'}));
  }}]});

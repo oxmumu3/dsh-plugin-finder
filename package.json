@@ -1,7 +1,8 @@
 {
   "name": "@oxmumu3/dsh-plugin-finder",
-  "version": "0.12.0-preview.3",
+  "version": "0.12.0-preview.4",
   "description": "Describe a need, find a usable plan, and run or create in the same DeepSeek Harness workspace",
+  "icon": "./icon.svg",
   "author": "牛村木木山",
   "license": "MIT",
   "type": "module",
@@ -12,6 +13,7 @@
   "exports": {
     ".": "./index.js",
     "./client": "./dist/client.js",
+    "./locale/*.json": "./locale/*.json",
     "./package.json": "./package.json"
   },
   "files": [
@@ -22,6 +24,9 @@
     "catalog/index.mjs",
     "cordis.patch.yml",
     "dist/client.js",
+    "icon.svg",
+    "locale/en.json",
+    "locale/zh.json",
     "docs/agent-entry.md",
     "docs/community-browse-preview.md",
     "docs/creator-preview.md",
@@ -85,6 +90,7 @@
     "src/provenance.js",
     "src/routes.js",
     "src/runtime-context.js",
+    "src/search-history.js",
     "src/service.js",
     "src/supply.js",
     "src/telemetry-api.js",

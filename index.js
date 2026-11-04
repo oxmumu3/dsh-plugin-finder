@@ -21,6 +21,7 @@ import {defineTool} from '@deepseek-ai/dsh-tools';
 import {approveEscalation} from '@deepseek-ai/dsh-sandbox';
 import {createAgentFinderService} from './src/agent-finder-service.js';
 import {registerAgentTools} from './src/agent-tools.js';
+import {mergeRecent} from './src/search-history.js';
 import {createGeneratedPluginInstaller,createGeneratedArtifactReviewer} from './src/agent-created-installation.js';
 import {createAgentModelAdapter} from './src/agent-model.js';
 import {safePlanValidationIssue} from './src/contracts.js';
@@ -42,8 +43,12 @@ const agentRequestRow=z.object({id:z.string().min(1).max(200),serialized:z.strin
 const agentRequestDomain=defineDomain({name:'plugin_finder_agent_requests',version:1,tables:{requests:domainTable(agentRequestRow)}});
 const catalogInstallRow=z.object({id:z.string().min(1).max(200),serialized:z.string().max(256000)}).strict();
 const catalogInstallDomain=defineDomain({name:'plugin_finder_catalog_installs',version:1,tables:{installations:domainTable(catalogInstallRow)}});
+const searchSource=z.object({id:z.string().min(1).max(200),title:z.string().max(300),status:z.string().max(40),total:z.number().int().nonnegative(),used:z.number().int().nonnegative()}).strict();
+const searchRecord=z.object({id:z.string().min(1).max(200),request:z.string().max(6000),searchedAt:z.string().datetime(),sources:z.array(searchSource).max(16),totals:z.object({read:z.number().int().nonnegative(),used:z.number().int().nonnegative(),failed:z.number().int().nonnegative()}).strict(),planKind:z.enum(['native','single','combo','gap','hybrid']),planTitle:z.string().max(500),recordVersion:z.literal(1)}).strict();
+// 检索留痕单独成域：只保存压平后的摘要，不触碰任务历史或遥测指针。
+const searchHistoryDomain=defineDomain({name:'plugin_finder_search',version:1,tables:{records:domainTable(searchRecord)}});
 export async function apply(ctx){
-  return withOwnedDomains(ctx,[domain,historyDomain,telemetryDomain,opportunityDomain,agentRequestDomain,catalogInstallDomain],async([store,historyStoreHandle,telemetryHandle,opportunityHandle,agentHandle,catalogHandle])=>{
+  return withOwnedDomains(ctx,[domain,historyDomain,telemetryDomain,opportunityDomain,agentRequestDomain,catalogInstallDomain,searchHistoryDomain],async([store,historyStoreHandle,telemetryHandle,opportunityHandle,agentHandle,catalogHandle,searchHistoryHandle])=>{
   const table=store.table('feedback');
   const feedbackStore=createFeedbackStore({read:()=>table.get('entries'),write:row=>table.put('entries',state.parse(row))});
   const lifetime=new AbortController();
@@ -52,12 +57,22 @@ export async function apply(ctx){
   const workflowStore={read:()=>workflowTable.get('current'),write:row=>workflowTable.put('current',workflow.parse(row)),clear:()=>workflowTable.delete('current')};
   const tasks=historyStoreHandle.table('tasks');
   const historyStore={read:id=>tasks.get(id),write:row=>tasks.put(row.id,historyRow.parse(row)),list:()=>[...tasks.entries()].map(([,row])=>row),readPointer:()=>historyStoreHandle.global.get(),writePointer:value=>historyStoreHandle.global.set(historyPointer.parse(value))};
+  const searchRecords=searchHistoryHandle.table('records');
+  const searchHistoryStore={
+    list:()=>[...searchRecords.entries()].map(([,row])=>row),
+    async save(record){
+      const rows=mergeRecent(searchHistoryStore.list(),record);
+      const keep=new Set(rows.map(row=>row.id));
+      for(const row of rows)searchRecords.put(row.id,searchRecord.parse(row));
+      for(const [id] of [...searchRecords.entries()])if(!keep.has(id))searchRecords.delete(id);
+    },
+  };
   let core;
   const telemetryStore={read:async()=>JSON.parse((await telemetryHandle.global.get()).serialized),write:value=>telemetryHandle.global.set({serialized:JSON.stringify(value)})};
   const telemetry=createTelemetry({store:telemetryStore,endpoint:COLLECTOR_URL,listPending:epoch=>core.pendingTelemetry(epoch),clientVersion:CLIENT_VERSION,hostVersion:getDshRuntimeVersion()});
   const model=createHostModel(ctx);
   const onPlanValidationIssue=issue=>{const safe=safePlanValidationIssue(issue);if(safe)try{ctx.logger?.info?.('finder.plan_validation_issue '+JSON.stringify(safe));}catch{}};
-  core=createFinderService({discovery,model,feedbackStore,workflowStore,historyStore,telemetry,onPlanValidationIssue,hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal})});
+  core=createFinderService({discovery,model,feedbackStore,workflowStore,historyStore,searchHistoryStore,telemetry,onPlanValidationIssue,hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal})});
   const opportunityStore={read:async()=>JSON.parse((await opportunityHandle.global.get()).serialized),write:value=>opportunityHandle.global.set({serialized:JSON.stringify(value)})};
   const archiveRoot=catalogArchiveRoot(ctx),installations=catalogHandle.table('installations');
   const catalogService=createCatalogInstallService({
@@ -76,11 +91,13 @@ export async function apply(ctx){
     store:{read:id=>requests.get(id),write:row=>requests.put(row.id,agentRequestRow.parse(row))},
     createCore:({historyStore:requestHistory})=>createFinderService({
       historyStore:requestHistory,
+      searchHistoryStore,
       model:agentModel,
       onPlanValidationIssue,
       discovery:{search:request=>discovery.search(request),searchSelected:request=>discovery.searchSelected(request)},
       hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),
     }),
+    searchOnly:(input,searchOptions)=>core.searchOnly(input,searchOptions),
     preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal}),
     prepareGeneratedPlugins:createGeneratedPluginInstaller(ctx,{signal:lifetime.signal}),
     reviewGeneratedArtifact:createGeneratedArtifactReviewer(ctx,{signal:lifetime.signal}),

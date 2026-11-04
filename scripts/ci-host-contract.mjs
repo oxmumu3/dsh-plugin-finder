@@ -24,6 +24,9 @@ let ownerPeer, admission;
 const dispatch = (path, peer = ownerPeer, options) => dispatcher.fetch(request(path, options), peer);
 let backend, facility, tools;
 const finderToolNames = ['finder_lookup', 'finder_activate', 'finder_create', 'finder_status'];
+// The four capability tools are the verified feedback contract; finder_search is
+// a read-only auxiliary registration that must still be present and disposed.
+const allFinderToolNames = [...finderToolNames, 'finder_search'];
 const promptSections = new Map();
 let forbiddenInvocations = 0;
 const forbidden = operation => () => { forbiddenInvocations++; assert.fail('No ' + operation + ' in compatibility CI'); };
@@ -66,8 +69,8 @@ try {
     if (finder) {
       assert.equal(state.hostVersion, process.env.DSH_TEST_SDK_VERSION);
       assert.equal(state.telemetry.enabled, false); assert.equal(state.workflow ?? null, null);
-      for (const name of finderToolNames) assert.ok(tools.get(name), 'Missing official ToolRuntime registration: ' + name);
-      assert.deepEqual(tools.schemas().map(tool => tool.name).sort(), [...finderToolNames].sort());
+      for (const name of allFinderToolNames) assert.ok(tools.get(name), 'Missing official ToolRuntime registration: ' + name);
+      assert.deepEqual(tools.schemas().map(tool => tool.name).sort(), [...allFinderToolNames].sort());
       assert.match(promptSections.get('finder:agent-routing')?.text({ scope: undefined }) ?? '', /finder_lookup/);
       const domain = facility.get('plugin_finder'); assert.ok(domain);
       if (mount === 0) await domain.table('feedback').put('entries', feedbackRow);
@@ -79,7 +82,7 @@ try {
     assert.equal((await dispatch(path, ownerPeer, { method: 'DELETE' })).status, 404);
     await fiber.dispose(); assert.equal((await dispatch(path)).status, 404);
     if (finder) {
-      for (const name of finderToolNames) assert.equal(tools.get(name), undefined, 'Disposed Finder tool remains callable: ' + name);
+      for (const name of allFinderToolNames) assert.equal(tools.get(name), undefined, 'Disposed Finder tool remains callable: ' + name);
       assert.equal(promptSections.has('finder:agent-routing'), false);
     } else assert.equal(tools.get('agent_twin'), undefined);
   }

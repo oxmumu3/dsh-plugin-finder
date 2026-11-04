@@ -4,7 +4,7 @@
 
 Finder 把需求理解、现成能力选择、插件组合和缺口创造接在同一个工作区。能用现有能力完成，就直接用；现成插件只覆盖一部分，就保留这些能力，只为缺失部分创建插件。首页、精选和插件商店都是这位插件专家的入口。
 
-**版本：`@oxmumu3/dsh-plugin-finder@0.12.0-preview.3`。** 准确目标为官方 Harness `0.2.1-rc.5` 与 `0.2.2-rc.1`（后者要求宿主 Node `>=24.9.0`），Node `^22.19.0 || >=24.0.0`。正式安装状态以 [Release 列表](https://github.com/oxmumu3/dsh-plugin-finder/releases)、npm 精确版本和最终验收记录为准。
+**版本：`@oxmumu3/dsh-plugin-finder@0.12.0-preview.4`。** 准确目标为官方 Harness `0.2.1-rc.5` 与 `0.2.2-rc.1`（后者要求宿主 Node `>=24.9.0`），Node `^22.19.0 || >=24.0.0`。正式安装状态以 [Release 列表](https://github.com/oxmumu3/dsh-plugin-finder/releases)、npm 精确版本和最终验收记录为准。
 
 [安装说明](docs/install.md) · [当前工作区流程](docs/workspace-flow-preview.md) · [主 Agent 调用](docs/agent-entry.md) · [数据与回传](docs/data-sharing.md) · [反馈](https://github.com/oxmumu3/dsh-plugin-finder/issues)
 
@@ -46,7 +46,7 @@ Finder 把需求理解、现成能力选择、插件组合和缺口创造接在�
 
 ## 安装与兼容
 
-通过当前官方 Harness 原生「插件 → 添加插件」安装精确 npm 来源 `@oxmumu3/dsh-plugin-finder@0.12.0-preview.3`。发布状态以 npm 精确版本与 Release 回读为准；尚未同步时保留当前安装。已有预览包不得仅因版本号较大就覆盖另一条有效修复线。
+通过当前官方 Harness 原生「插件 → 添加插件」安装精确 npm 来源 `@oxmumu3/dsh-plugin-finder@0.12.0-preview.4`。发布状态以 npm 精确版本与 Release 回读为准；尚未同步时保留当前安装。已有预览包不得仅因版本号较大就覆盖另一条有效修复线。
 
 本版目标为官方 `0.2.1-rc.5`；四个官方 SDK peer 均固定同一版本：`@deepseek-ai/dsh-app-boot`、`@deepseek-ai/dsh-storage-domain`、`@deepseek-ai/dsh-tools`、`@deepseek-ai/dsh-sandbox`。Node 要求为 `^22.19.0 || >=24.0.0`。其他 RC、next 或实验 alpha 不据此推断兼容；安装、启用、卸载/重启与最终包的真实验证范围，以对应发行版的验收记录为准。
 

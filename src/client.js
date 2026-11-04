@@ -162,7 +162,7 @@ export function createFinderController(ctx, options = {}) {
     busy: null, error: '', notice: '', workspaceId: '', workspaces: [],
     workspacePhase: 'pending', feedbackSaved: false, handoffRequested: false, preservedTarget: null,
     modelLabel: '', resetPending: false, storageWarning: '', telemetryWarning: '',
-    view: 'home', homeRequest: '', homeWarning: '', searching: false, featuredId: null, featuredPreferences: normalizeFeaturedPreferences(null), featuredHistory: [], featuredDrafts: [], featuredWarning: '', scenarioSeed: '', history: [], historyTotal: 0, historyOffset: 0, unlinkedFeedback: [],
+    view: 'home', homeRequest: '', homeWarning: '', searching: false, featuredId: null, featuredPreferences: normalizeFeaturedPreferences(null), featuredHistory: [], featuredDrafts: [], featuredWarning: '', scenarioSeed: '', history: [], historyTotal: 0, historyOffset: 0, unlinkedFeedback: [], searchHistory: [],
     taskId: null, revisionId: null, revisionNumber: null, revisions: [], feedback: [], handoff: null, origin: null, restoredFrom: '', pendingHandoff: null, telemetry: null, telemetrySettingsOpen: false, telemetrySuggestionVisible: false,
   });
   const publish = patch => {
@@ -271,6 +271,7 @@ export function createFinderController(ctx, options = {}) {
     catalogReturnPoint = { focus, positions };
   };
   const historyPatch = value => ({
+    ...(Array.isArray(value?.searchHistory) ? { searchHistory: value.searchHistory.filter(item => item && typeof item.id === 'string').slice(0, 20) } : {}),
     ...(workflowWarning(value?.telemetryWarning) ? { telemetryWarning: workflowWarning(value.telemetryWarning) } : {}),
     ...(normalizeTelemetryStatus(value?.telemetry) ? { telemetry: normalizeTelemetryStatus(value.telemetry) } : {}),
     ...(Array.isArray(value?.history) ? { history: value.history.filter(item => item && typeof item.taskId === 'string').slice(0, 100), historyOffset: 0, featuredHistory: value.historyTotal === 0 ? [] : [...new Map([...value.history, ...state.featuredHistory].filter(item => item && typeof item.taskId === 'string').map(item => [item.taskId, item]).reverse()).values()].reverse().slice(0, 100) } : {}),

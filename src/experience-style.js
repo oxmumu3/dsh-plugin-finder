@@ -569,6 +569,25 @@ export const experienceCss = `
   .pf_v2 .pfv_expert_identity h1 { font-size: 25px; }
 }
 
+/* One compact recap of the latest searches, visible on the home page. */
+.pfv_last_search { display: grid; gap: 10px; margin: 0 0 18px; padding: 16px 18px; background: var(--pfv_paper); border: 1px solid var(--pfv_line); border-radius: 14px; }
+.pfv_last_search_heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.pf_v2 .pfv_last_search_heading h2 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .01em; }
+.pfv_last_search_item { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--pfv_line); }
+.pfv_last_search_item:first-of-type { padding-top: 0; border-top: 0; }
+.pfv_last_search_meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; color: var(--pfv_muted); }
+.pfv_last_search_kind { padding: 1px 8px; border: 1px solid var(--pfv_strong_line); border-radius: 999px; background: var(--pfv_tint); color: var(--pfv_muted); }
+.pfv_last_search_request { margin: 0 !important; font-size: 13.5px; line-height: 1.7; overflow-wrap: anywhere; }
+.pfv_last_search_sources { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; list-style: none; font-size: 12px; color: var(--pfv_muted); }
+.pfv_last_search_source { display: inline-flex; align-items: baseline; gap: 6px; }
+.pfv_last_search_source_title { color: var(--pfv_ink); }
+.pfv_last_search_source_failed .pfv_last_search_source_title,
+.pfv_last_search_source_failed .pfv_last_search_source_count { color: var(--dsw-alias-state-error-primary, #b42318); }
+@container finder (max-width: 520px) {
+  .pfv_last_search { padding: 14px; }
+  .pfv_last_search_heading { align-items: flex-start; flex-direction: column; gap: 2px; }
+}
+
 /* Catalog browsing keeps its list mounted; the selected plugin owns this page. */
 .pfv_plugin_detail { padding: 0 0 24px; }
 .pfv_plugin_back { margin: 0 0 26px -10px; }

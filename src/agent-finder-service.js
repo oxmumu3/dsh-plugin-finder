@@ -143,7 +143,7 @@ function reusedReady(record,value){
  * Persist per-caller requests without touching Finder's human-facing history or pointer.
  * createCore receives one request's private history adapter; installation adapters own source validation.
  */
-export function createAgentFinderService({store,createCore,preparePlugins,prepareGeneratedPlugins,reviewGeneratedArtifact,readInstalled,clock=()=>new Date()}={}){
+export function createAgentFinderService({store,createCore,preparePlugins,prepareGeneratedPlugins,reviewGeneratedArtifact,readInstalled,searchOnly:searchOnlyAdapter,clock=()=>new Date()}={}){
   if(!store||typeof store.read!=='function'||typeof store.write!=='function'||typeof createCore!=='function')throw new TypeError('Agent Finder adapters are incomplete');
   let queues=queuesByStore.get(store);if(!queues){queues=new Map();queuesByStore.set(store,queues);}
   const now=()=>clock().toISOString();
@@ -199,6 +199,13 @@ export function createAgentFinderService({store,createCore,preparePlugins,prepar
   const preparedCreation=slot=>{const value=workflow(slot.value);if(slot.value.status!=='creation_ready'||!['gap','hybrid'].includes(value?.plan?.kind)||!value.creation||value.creation.status!=='ready'||value.creation.supply.status!=='current'||!reusedReady(slot.value,value))fail('AGENT_CREATION_NOT_READY');return value;};
 
   return{
+    async searchOnly(input,{signal}={}){
+      if(typeof searchOnlyAdapter!=='function')throw new FinderError('DISCOVERY_UNAVAILABLE');
+      abort(signal);
+      const result=await searchOnlyAdapter(input,{signal});
+      abort(signal);
+      return result;
+    },
     async find(raw,rawCaller,{callId,signal}={}){
       const caller=scope(rawCaller),{input,request}=parseInput(raw),call=text(callId,200),id=requestIdentity(caller.sessionId,call),inputHash=digest(input);
       return run(id,async()=>{

@@ -4,6 +4,7 @@ import{searchCatalog}from'../catalog/index.mjs';
 import{fail,FinderError,MAX_INTENT_CONSTRAINTS,text,parseIntent,parseAnalyzedIntent,parsePlan,safePlanValidationIssue}from'./contracts.js';
 import{publicSourceData,publicSourceText}from'./provenance.js';
 import{createHistoryRepository}from'./history.js';
+import{buildSearchRecord,mergeRecent,SEARCH_HISTORY_LIMIT}from'./search-history.js';
 import{CREATION_SYSTEM,CREATION_REFINE_SYSTEM,CREATION_CONFIRM_SYSTEM,parseConfirmedCreation,parseGeneratedCreation,parseRefinedCreation,parseTrigger,parseBlueprint,parseAnswers,finishCreation,supplyChanged,digest,creationModelData,creatorDraft}from'./creation.js';
 import {CLIENT_VERSION} from './telemetry-config.js';
 import {getCommunityEntry} from './community-catalog.js';
@@ -100,7 +101,7 @@ function executionPrompt(base,kind,trustedRuntime){
   const fileOutput='\n本页已有文件展示通道：需要展示已有本地文件时，先核对本地文件存在、访问范围与实际绝对路径，再直接回复 Markdown 链接，格式为 [打开文件](</实际绝对路径/文件.md>)，路径必须替换为已核对的真实路径，不使用 file://。用户点击该链接即可在本页打开原生文档预览；适用的已启用插件可在该预览中提供渲染。不得仅为打开文件而研究或修改宿主 ASAR、UI API 或内部实现，也不需要浏览器自动化或另外生成 HTML 来展示已有文件。文件读取验证与界面渲染观察分别说明；没有实际观察时，不得声称已打开或已看到渲染结果。';
   return common+'\n\n'+USE_SCOPE+'\n\n现在按方案使用、配置或组合现有能力，实际完成用户要求的结果。先核对工具和插件安装状态、来源与材料访问范围；需要额外权限时通过宿主正常权限请求处理。'+fallback+fileOutput+'\n\n'+JSON.stringify({...feedback,intent:workflow.intent,plan:executionPlan,candidates:selected,...(selectedCommunityEntry?{selectedCommunityEntry}:{}),trustedRuntime},null,2);
 }
-function createLegacyFinderService({catalog={plugins:[]},discovery,model,feedbackStore,workflowStore,hostVersion,search=searchCatalog,clock=()=>new Date(),discoveryTimeoutMs=60000,onPlanValidationIssue}={}){
+function createLegacyFinderService({catalog={plugins:[]},discovery,model,feedbackStore,workflowStore,hostVersion,search=searchCatalog,clock=()=>new Date(),discoveryTimeoutMs=60000,onPlanValidationIssue,recordSearch}={}){
   let closed=false,inflight=false,lastRequest='',lastCommunityEntryId;const ensure=()=>{if(closed)fail('CLOSED');};
   const knownIds=new Set(catalog.plugins.map(plugin=>plugin.id));
   const run=async fn=>{ensure();if(inflight)fail('BUSY');inflight=true;try{const result=await fn();ensure();return result;}finally{inflight=false;}};
@@ -195,8 +196,35 @@ function createLegacyFinderService({catalog={plugins:[]},discovery,model,feedbac
       plan.limits=[...new Set([...plan.limits,...sourceWarnings,...eligibility.filters.map(f=>f.label+'：'+f.note),...(eligibility.unresolvedConstraints.length?['以下条件尚未由程序核验，请在会话确认：'+eligibility.unresolvedConstraints.join('；')]:[]),'候选来自本次来源搜索及作者资料；收录、清单核对均不代表已安装或完成任务。',...(['combo','hybrid'].includes(plan.kind)?['组合的输入输出衔接尚未实跑验证。']:[])])];
       plan.nextPrompt=promptFor(intent,plan,candidates.filter(p=>plan.pluginIds.includes(p.id)));
       const result={intent,plan,candidates,...(selectedCommunityEntry?{communityEntryId:selectedCommunityEntry.id}:{}),eligibility,discovery:discoveryResult,warnings:sourceWarnings,catalogUpdatedAt:discovered.searchedAt||null,model:response.model};
+      if(typeof recordSearch==='function'){
+        // 留痕失败不影响已经产生的方案；记录只保存摘要，不保存候选正文。
+        try{await recordSearch(buildSearchRecord({request:lastRequest||intent.goal,searchedAt:discovered.searchedAt||clock().toISOString(),sources:discovered.sources,plan,candidates}));}catch{}
+      }
       return{...result,...await saveWorkflow({stage:'plan',request:lastRequest||intent.goal,...result})};
     }),
+    async searchOnly(input={},options={}){
+      ensure();
+      const need=text(input?.need,6000),limit=input?.limit===undefined?6:input.limit;
+      if(!Number.isInteger(limit)||limit<1||limit>6)fail('INVALID_INPUT');
+      if(typeof discovery?.search!=='function')fail('DISCOVERY_UNAVAILABLE');
+      const signal=options?.signal;
+      const searchSignal=AbortSignal.any([...(signal?[signal]:[]),AbortSignal.timeout(discoveryTimeoutMs)]);
+      let discovered;
+      try{
+        // 只读检索：不调模型、不生成方案、不安装，也不写任务历史。
+        discovered=await discovery.search({intent:{goal:need,input:'',output:'',constraints:[],capabilities:[need.slice(0,150)],queries:[need.slice(0,120)]},hostVersion,nodeVersion:process.versions.node,platform:process.platform,signal:searchSignal});
+      }catch{if(signal?.aborted)fail('MODEL_ABORTED');fail('DISCOVERY_UNAVAILABLE');}
+      ensure();
+      const allSources=Array.isArray(discovered?.sources)?discovered.sources:[];
+      const sources=allSources.slice(0,16).map(source=>({id:typeof source?.id==='string'?source.id:'',title:typeof source?.title==='string'?source.title:'',status:typeof source?.status==='string'?source.status:'unknown',total:Number.isSafeInteger(source?.total)?source.total:0}));
+      const candidates=(Array.isArray(discovered?.candidates)?discovered.candidates:[]).slice(0,limit).map(candidate=>{
+        const origin=Array.isArray(candidate?.sourceTags)?candidate.sourceTags.find(item=>item&&typeof item.id==='string'&&item.id):undefined;
+        const source={...(origin?{id:origin.id.slice(0,200)}:{id:'unknown'}),title:typeof origin?.title==='string'?origin.title.slice(0,300):'来源未记录'};
+        return{id:candidate.id,title:candidate.title||candidate.name||candidate.id,...(typeof candidate.summary==='string'&&candidate.summary?{summary:candidate.summary}:{}),source};
+      });
+      const warnings=(Array.isArray(discovered?.warnings)?discovered.warnings:[]).filter(value=>typeof value==='string').slice(0,8);
+      return{candidates,sources,searchedAt:typeof discovered?.searchedAt==='string'?discovered.searchedAt:clock().toISOString(),limits:[...new Set([...warnings,'只读检索结果来自作者自述与公开索引，未安装、未运行，也不代表能力已经核实。'])].slice(0,10)};
+    },
     reset:()=>run(async()=>{try{if(workflowStore?.clear)await workflowStore.clear();else if(workflowStore)throw Error();}catch{fail('WORKFLOW_STORAGE_FAILED');}lastRequest='';lastCommunityEntryId=undefined;knownIds.clear();return{cleared:true};}),
     async feedback(input){ensure();if(!['complete','partial','blocked'].includes(input?.outcome)||!Array.isArray(input.pluginIds)||input.pluginIds.length>4||input.pluginIds.some(id=>!knownIds.has(id)))fail();const note=text(input.note??'',1500,'INVALID_INPUT',true),stage=text(input.stage??'result',80);if(!feedbackStore?.append)fail('STORAGE_FAILED');try{await feedbackStore.append({id:randomUUID(),createdAt:clock().toISOString(),outcome:input.outcome,pluginIds:[...new Set(input.pluginIds)],note,stage});}catch{fail('STORAGE_FAILED');}ensure();return{saved:true};},
     close(){closed=true;discovery?.close?.();model.close?.();}
@@ -208,7 +236,9 @@ export function createFinderService(options={}){
   if(!options.historyStore)return createLegacyFinderService(options);
   const {historyStore,workflowStore,feedbackStore,model,telemetry,clock=()=>new Date()}=options;
   // Reuse discovery/model boundaries, without ever replacing legacy current.
-  const core=createLegacyFinderService({...options,workflowStore:undefined,feedbackStore:undefined});
+  const core=createLegacyFinderService({...options,workflowStore:undefined,feedbackStore:undefined,recordSearch:undefined});
+  const readSearchHistory=async()=>{try{return mergeRecent(await options.searchHistoryStore?.list?.()??[],null,SEARCH_HISTORY_LIMIT);}catch{return[];}};
+  const recordSearch=async record=>{try{await options.searchHistoryStore?.save?.(record);}catch{}};
   const history=createHistoryRepository({store:historyStore,clock,telemetry});
   let initialized,closed=false,legacyWarning='',telemetryWarning='';
   const ensure=()=>{if(closed)fail('CLOSED');};
@@ -255,7 +285,9 @@ export function createFinderService(options={}){
   };
   const unlinked=async()=>{if(!feedbackStore?.list)return[];try{const rows=await feedbackStore.list();return Array.isArray(rows)?rows.filter(row=>!row.taskId&&!row.revisionId):[];}catch{return[];}};
   return{
-    async bootstrap(){await initialize();return response(undefined,{...await core.bootstrap(),unlinkedFeedback:await unlinked()});},
+    async bootstrap(){await initialize();return response(undefined,{...await core.bootstrap(),unlinkedFeedback:await unlinked(),searchHistory:await readSearchHistory()});},
+    async searchHistory(){await initialize();return{records:await readSearchHistory()};},
+    searchOnly:(input,searchOptions)=>core.searchOnly(input,searchOptions),
     async history(input={}){await initialize();return{...await response(),...await history.list(input)};},
     open:input=>run(async()=>response(await history.open(input))),
     analyze:({request,taskId,revisionId,signal,communityEntryId,localOnly=false,opportunityOrigin}={})=>run(async()=>{
@@ -278,7 +310,8 @@ export function createFinderService(options={}){
       const result=await core.recommend({intent,signal,communityEntryId:base.revision.workflow.communityEntryId??null,userFeedbackContext:recommendationFeedback(base),...(base.revision.workflow.localOnly?{sourceRequest:base.task.originalRequest}:{}),beforeModel:()=>exactContext({taskId,revisionId})});ensure();
       base=await exactContext({taskId,revisionId});
       const selected=await history.append({stage:'plan',request:base?.task.originalRequest??intent.goal,...result},base,{telemetryContext:context});
-      return response(selected,result);
+      await recordSearch(buildSearchRecord({request:base?.task.originalRequest??intent.goal,searchedAt:result.discovery?.searchedAt??clock().toISOString(),sources:result.discovery?.sources??[],plan:result.plan,candidates:result.candidates}));
+      return response(selected,{...result,searchHistory:await readSearchHistory()});
     }),
     refine:({taskId,revisionId,feedback,signal}={})=>run(async context=>{
       let base=await exactContext({taskId,revisionId});if(!base)fail('WORKFLOW_NOT_FOUND');

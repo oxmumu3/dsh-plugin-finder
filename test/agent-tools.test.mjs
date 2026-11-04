@@ -36,7 +36,7 @@ async function fixture(t, overrides={}) {
 
 test('tools bind caller to runtime agent and scoped visible capability list',async t=>{
   const f=await fixture(t);
-  assert.deepEqual([...f.definitions.keys()],['finder_lookup','finder_activate','finder_create','finder_status']);
+  assert.deepEqual([...f.definitions.keys()],['finder_lookup','finder_activate','finder_create','finder_status','finder_search']);
   const input={goal:'产生可核对成果',acceptance:'文件可打开',constraints:['只用工作区'],knownCapabilities:['已有读取工具']};
   assert.equal(JSON.parse(await f.definitions.get('finder_lookup').execute(input,f.exec)).status,'planned');
   assert.deepEqual(f.calls[0].caller,{sessionId:f.agent.id,workspaceId:f.workspace.id,directory:f.directory});

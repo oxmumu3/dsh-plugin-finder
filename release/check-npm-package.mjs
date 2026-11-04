@@ -12,6 +12,7 @@ import { parseDocument } from 'yaml';
 export const publicFiles = new Set([
   'package.json', 'index.js', 'catalog/index.mjs', 'catalog/README.md',
   'dist/client.js', 'cordis.patch.yml', 'README.md', 'LICENSE', 'CHANGELOG.md',
+  'icon.svg', 'locale/en.json', 'locale/zh.json',
   ...['install', 'verification', 'first-use-case', 'experiment', 'data-sharing',
     'creator-preview', 'featured-preview', 'single-flow-preview', 'experience-v2-preview',
     'workspace-flow-preview', 'community-browse-preview', 'proactive-discovery', 'rc3-compatibility', 'agent-entry'].map(name => `docs/${name}.md`),
@@ -21,7 +22,7 @@ export const publicFiles = new Set([
     'eligibility', 'execution-conversation-view', 'execution-markdown', 'execution-preparation',
     'experience-style', 'experience-view', 'featured-catalog', 'featured-view', 'featured',
     'feedback', 'history', 'lifecycle', 'model', 'plugin-installation', 'agent-finder-service', 'agent-tools', 'agent-creator', 'agent-created-installation', 'agent-model', 'provenance', 'routes', 'progress',
-    'runtime-context', 'service', 'brand-mark', 'opportunities', 'opportunity-api', 'opportunity-client', 'opportunity-context', 'opportunity-origin', 'opportunity-view', 'supply', 'telemetry-api', 'telemetry-config',
+    'runtime-context', 'service', 'brand-mark', 'search-history', 'opportunities', 'opportunity-api', 'opportunity-client', 'opportunity-context', 'opportunity-origin', 'opportunity-view', 'supply', 'telemetry-api', 'telemetry-config',
     'telemetry-contract', 'telemetry', 'workspace-execution'].map(name => `src/${name}.js`),
 ]);
 
@@ -60,7 +61,7 @@ function readTarball(bytes) {
     if (offset + size > tar.length) fail('Truncated package archive');
     const relative = name.slice('package/'.length);
     if (type === '5') {
-      if (size || !['', 'src/', 'docs/', 'catalog/', 'dist/'].includes(relative)) fail('Forbidden package archive directory');
+      if (size || !['', 'src/', 'docs/', 'catalog/', 'dist/', 'locale/'].includes(relative)) fail('Forbidden package archive directory');
     } else {
       if (!publicFiles.has(relative)) fail(`File is outside the public payload allowlist: ${relative}`);
       files.set(relative, tar.subarray(offset, offset + size));
@@ -71,16 +72,26 @@ function readTarball(bytes) {
   return files;
 }
 
+async function expectedVersion() {
+  let manifest;
+  try { manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')); }
+  catch { fail('Source package.json could not be read'); }
+  if (typeof manifest.version !== 'string' || !manifest.version) fail('Source package.json has no version');
+  return manifest.version;
+}
+
 async function verifyPayload(files, packageName) {
   const get = name => files.get(name)?.toString('utf8') ?? fail(`Missing package file: ${name}`);
   const pkg = JSON.parse(get('package.json'));
   if (pkg.name !== packageName) fail('Package name does not match requested identity');
-  if (pkg.version !== '0.12.0-preview.3') fail('Unexpected package version');
+  if (pkg.version !== await expectedVersion()) fail('Package version does not match the source package.json');
   if (pkg.author !== '牛村木木山') fail('Incorrect package author identity');
   if (pkg.repository?.type !== 'git' || pkg.repository?.url !== 'https://github.com/oxmumu3/dsh-plugin-finder.git') fail('Incorrect canonical repository');
   if (pkg.publishConfig?.access !== 'public' || pkg.publishConfig?.tag !== 'latest' || pkg.publishConfig?.registry !== 'https://registry.npmjs.org/') fail('Incorrect npm publishConfig');
   if (pkg.scripts && Object.keys(pkg.scripts).length || pkg.devDependencies || pkg.bin || pkg.workspaces || pkg.bundleDependencies || pkg.bundledDependencies) fail('Package must contain no lifecycle/build scripts, development dependencies, binaries, or bundled dependencies');
-  if (pkg.type !== 'module' || pkg.exports?.['.'] !== './index.js' || pkg.exports?.['./client'] !== './dist/client.js' || pkg.exports?.['./package.json'] !== './package.json' || Object.keys(pkg.exports).length !== 3) fail('Incorrect package exports');
+  const exports = pkg.exports;
+  const localeExports = exports && Object.keys(exports).filter(name => name.startsWith('./locale/'));
+  if (pkg.type !== 'module' || exports?.['.'] !== './index.js' || exports?.['./client'] !== './dist/client.js' || exports?.['./package.json'] !== './package.json' || Object.keys(exports ?? {}).length !== 4 || localeExports.length !== 1 || exports[localeExports[0]] !== './locale/*.json') fail('Incorrect package exports');
   if (!Array.isArray(pkg.files) || !pkg.files.length || new Set(pkg.files).size !== pkg.files.length || pkg.files.some(name => !publicFiles.has(name))) fail('Declared files violate the public payload allowlist');
   const declared = new Set(['package.json', ...pkg.files]);
   for (const name of declared) get(name);
@@ -116,7 +127,7 @@ async function verifyPayload(files, packageName) {
   } catch { fail('Client module wrapper is invalid'); }
   if (registrations.length !== 1 || registrations[0]?.id !== packageName || typeof registrations[0]?.factory !== 'function') fail('Client module registration does not match requested package');
   const backend = get('index.js');
-  for (const stable of ["name='plugin-finder'", "name:'plugin_finder'", "name:'plugin_finder_history'", "name:'plugin_finder_telemetry'"]) if (!backend.includes(stable)) fail('Stable plugin/storage identity was changed');
+  for (const stable of ["name='plugin-finder'", "name:'plugin_finder'", "name:'plugin_finder_history'", "name:'plugin_finder_telemetry'", "name:'plugin_finder_search'"]) if (!backend.includes(stable)) fail('Stable plugin/storage identity was changed');
   if (!/(?:const|var) PANEL = ["']dsh-plugin-finder["']/.test(get('dist/client.js'))) fail('Stable client panel identity was changed');
   return pkg;
 }

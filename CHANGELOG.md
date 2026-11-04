@@ -1,3 +1,11 @@
+# 0.12.0-preview.4（2026-11-04）
+
+- 检索留痕：每次完整检索存一条小记录（需求、时间、各来源读到/采用条数、失败项与方案概要），首页可回看「上次查找」，不再随会话结束丢失。
+- 新增只读工具 finder_search：只检索、不调模型、不安装、不创建，供其他 Agent 查询现成供给；结果含未核实的作者自述与来源归属。
+- 来源命中率：每个来源同时显示「读到 N 条 · 采用 M 条」，采用 0 条也如实显示，不隐藏难看的数据。
+- 插件元数据：新增图标与中英文案（顶层 icon 与 locale/en.json、zh.json）。
+- 发布校验不再硬编码期望版本，改为读取被测 package.json 后校验；测试构造入口改用 fileURLToPath，修复路径含空格时的构造失败。
+
 # 0.12.0-preview.3
 
 - Add exact official 0.2.2-rc.1 support while retaining 0.2.1-rc.5, including Creator gating and SDK guidance.

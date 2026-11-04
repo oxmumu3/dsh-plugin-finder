@@ -2400,6 +2400,14 @@ var scenarioBenefits = {
   "dsh-dot": "\u628A\u9879\u76EE\u8FDB\u5C55\u3001\u5361\u70B9\u548C\u4E0B\u4E00\u6B65\u6574\u7406\u6210\u4E00\u4EFD\u624B\u673A\u4E0A\u80FD\u770B\u7684\u7B80\u62A5\u3002",
   "dot-harness": "\u8BA9\u5DF2\u6709\u52A9\u624B\u67E5\u5230\u53E6\u4E00\u7AEF\u7684\u9879\u76EE\u8D44\u6599\uFF0C\u5C11\u6765\u56DE\u590D\u5236\u548C\u8865\u80CC\u666F\u3002"
 };
+var safeCount = (value) => Number.isSafeInteger(value) && value >= 0 ? value : 0;
+var searchKind = (kind) => ({ native: "\u73B0\u6709\u80FD\u529B", single: "\u73B0\u6210\u63D2\u4EF6", combo: "\u7EC4\u5408\u65B9\u6848", hybrid: "\u7EC4\u5408\uFF0B\u8865\u9F50", gap: "\u81EA\u5EFA\u63D2\u4EF6" })[kind] || "\u68C0\u7D22";
+var searchTime = (value) => {
+  const milliseconds = Date.parse(value);
+  if (!Number.isFinite(milliseconds)) return "";
+  const date = new Date(milliseconds), pad = (number) => String(number).padStart(2, "0");
+  return `${date.getMonth() + 1}\u6708${date.getDate()}\u65E5 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
 function experienceSourceHealth(discovery) {
   if (!discovery) return null;
   const sources = [...records(discovery.sources), ...records(discovery.sourceCoverage)];
@@ -2494,6 +2502,43 @@ function createExperienceView(React2) {
     const suggested = rankFeatured(featuredCatalog, { history: Array.isArray(state.featuredHistory) ? state.featuredHistory : state.history, preferences: state.featuredPreferences })[0];
     const scenario = suggested?.entry || featuredCatalog.find((entry) => !items3(state.featuredPreferences?.dismissed).includes(entry.id)) || featuredCatalog[0];
     const homeCommunityEntry = getCommunityEntry(state.homeCommunityEntryId);
+    const lastSearchView = (() => {
+      const rows = records(state.searchHistory).filter((record2) => text6(record2.request) || records(record2.sources).length).slice(0, 2);
+      if (!rows.length) return null;
+      return h(
+        "section",
+        { className: "pfv_last_search", "aria-labelledby": "pfv_last_search_title" },
+        h(
+          "div",
+          { className: "pfv_last_search_heading" },
+          h("h2", { id: "pfv_last_search_title" }, "\u4E0A\u6B21\u67E5\u627E"),
+          h("span", { className: "pfv_hint" }, "\u672C\u673A\u7559\u4E0B\u7684\u6700\u8FD1\u68C0\u7D22\uFF0C\u53EA\u6709\u6458\u8981")
+        ),
+        ...rows.map((record2, index) => {
+          const sources = records(record2.sources).slice(0, 8);
+          return h(
+            "div",
+            { key: text6(record2.id) || index, className: "pfv_last_search_item" },
+            h(
+              "div",
+              { className: "pfv_last_search_meta" },
+              h("span", { className: "pfv_last_search_time" }, searchTime(record2.searchedAt) || "\u65F6\u95F4\u672A\u8BB0\u5F55"),
+              h("span", { className: "pfv_last_search_kind" }, searchKind(record2.planKind))
+            ),
+            h("p", { className: "pfv_last_search_request" }, short(record2.request, 120) || "\u9700\u6C42\u6458\u8981\u672A\u8BB0\u5F55"),
+            sources.length ? h("ul", { className: "pfv_last_search_sources" }, ...sources.map((source) => h(
+              "li",
+              {
+                key: text6(source.id) || text6(source.title),
+                className: `pfv_last_search_source${source.status === "failed" ? " pfv_last_search_source_failed" : ""}`
+              },
+              h("span", { className: "pfv_last_search_source_title" }, text6(source.title) || text6(source.id) || "\u672A\u547D\u540D\u6765\u6E90"),
+              h("span", { className: "pfv_last_search_source_count" }, source.status === "failed" ? `\u8BFB\u53D6\u5931\u8D25 \xB7 \u91C7\u7528 ${safeCount(source.used)} \u6761` : `\u8BFB\u5230 ${safeCount(source.total)} \u6761 \xB7 \u91C7\u7528 ${safeCount(source.used)} \u6761`)
+            ))) : h("p", { className: "pfv_hint" }, "\u8FD9\u6B21\u6CA1\u6709\u7559\u4E0B\u53EF\u5C55\u793A\u7684\u6765\u6E90\u8BB0\u5F55\u3002")
+          );
+        })
+      );
+    })();
     const home = () => h(
       "div",
       { className: "pfv_home" },
@@ -2548,6 +2593,7 @@ function createExperienceView(React2) {
         h(
           "div",
           { className: "pfv_home_extras" },
+          lastSearchView,
           h(
             "div",
             { className: "pfv_examples", "aria-label": "\u53EF\u7F16\u8F91\u7684\u9700\u6C42\u793A\u4F8B" },
@@ -3348,6 +3394,25 @@ var experienceCss = `
   .pf_v2 .pfv_expert_identity h1 { font-size: 25px; }
 }
 
+/* One compact recap of the latest searches, visible on the home page. */
+.pfv_last_search { display: grid; gap: 10px; margin: 0 0 18px; padding: 16px 18px; background: var(--pfv_paper); border: 1px solid var(--pfv_line); border-radius: 14px; }
+.pfv_last_search_heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.pf_v2 .pfv_last_search_heading h2 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .01em; }
+.pfv_last_search_item { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--pfv_line); }
+.pfv_last_search_item:first-of-type { padding-top: 0; border-top: 0; }
+.pfv_last_search_meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; color: var(--pfv_muted); }
+.pfv_last_search_kind { padding: 1px 8px; border: 1px solid var(--pfv_strong_line); border-radius: 999px; background: var(--pfv_tint); color: var(--pfv_muted); }
+.pfv_last_search_request { margin: 0 !important; font-size: 13.5px; line-height: 1.7; overflow-wrap: anywhere; }
+.pfv_last_search_sources { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; list-style: none; font-size: 12px; color: var(--pfv_muted); }
+.pfv_last_search_source { display: inline-flex; align-items: baseline; gap: 6px; }
+.pfv_last_search_source_title { color: var(--pfv_ink); }
+.pfv_last_search_source_failed .pfv_last_search_source_title,
+.pfv_last_search_source_failed .pfv_last_search_source_count { color: var(--dsw-alias-state-error-primary, #b42318); }
+@container finder (max-width: 520px) {
+  .pfv_last_search { padding: 14px; }
+  .pfv_last_search_heading { align-items: flex-start; flex-direction: column; gap: 2px; }
+}
+
 /* Catalog browsing keeps its list mounted; the selected plugin owns this page. */
 .pfv_plugin_detail { padding: 0 0 24px; }
 .pfv_plugin_back { margin: 0 0 26px -10px; }
@@ -3645,6 +3710,7 @@ function createFinderController(ctx, options = {}) {
     historyTotal: 0,
     historyOffset: 0,
     unlinkedFeedback: [],
+    searchHistory: [],
     taskId: null,
     revisionId: null,
     revisionNumber: null,
@@ -3776,6 +3842,7 @@ function createFinderController(ctx, options = {}) {
     catalogReturnPoint = { focus, positions };
   };
   const historyPatch = (value) => ({
+    ...Array.isArray(value?.searchHistory) ? { searchHistory: value.searchHistory.filter((item) => item && typeof item.id === "string").slice(0, 20) } : {},
     ...workflowWarning(value?.telemetryWarning) ? { telemetryWarning: workflowWarning(value.telemetryWarning) } : {},
     ...normalizeTelemetryStatus(value?.telemetry) ? { telemetry: normalizeTelemetryStatus(value.telemetry) } : {},
     ...Array.isArray(value?.history) ? { history: value.history.filter((item) => item && typeof item.taskId === "string").slice(0, 100), historyOffset: 0, featuredHistory: value.historyTotal === 0 ? [] : [...new Map([...value.history, ...state.featuredHistory].filter((item) => item && typeof item.taskId === "string").map((item) => [item.taskId, item]).reverse()).values()].reverse().slice(0, 100) } : {},

@@ -35,6 +35,14 @@ const scenarioBenefits = {
   'dsh-dot': '把项目进展、卡点和下一步整理成一份手机上能看的简报。',
   'dot-harness': '让已有助手查到另一端的项目资料，少来回复制和补背景。',
 };
+const safeCount = value => Number.isSafeInteger(value) && value >= 0 ? value : 0;
+const searchKind = kind => ({ native: '现有能力', single: '现成插件', combo: '组合方案', hybrid: '组合＋补齐', gap: '自建插件' })[kind] || '检索';
+const searchTime = value => {
+  const milliseconds = Date.parse(value);
+  if (!Number.isFinite(milliseconds)) return '';
+  const date = new Date(milliseconds), pad = number => String(number).padStart(2, '0');
+  return `${date.getMonth() + 1}月${date.getDate()}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
 
 export function experienceSourceHealth(discovery) {
   if (!discovery) return null;
@@ -130,6 +138,31 @@ export function createExperienceView(React) {
     const scenario = suggested?.entry || featuredCatalog.find(entry => !items(state.featuredPreferences?.dismissed).includes(entry.id)) || featuredCatalog[0];
     const homeCommunityEntry = getCommunityEntry(state.homeCommunityEntryId);
 
+    const lastSearchView = (() => {
+      const rows = records(state.searchHistory).filter(record => text(record.request) || records(record.sources).length).slice(0, 2);
+      if (!rows.length) return null;
+      return h('section', { className: 'pfv_last_search', 'aria-labelledby': 'pfv_last_search_title' },
+        h('div', { className: 'pfv_last_search_heading' },
+          h('h2', { id: 'pfv_last_search_title' }, '上次查找'),
+          h('span', { className: 'pfv_hint' }, '本机留下的最近检索，只有摘要')),
+        ...rows.map((record, index) => {
+          const sources = records(record.sources).slice(0, 8);
+          return h('div', { key: text(record.id) || index, className: 'pfv_last_search_item' },
+            h('div', { className: 'pfv_last_search_meta' },
+              h('span', { className: 'pfv_last_search_time' }, searchTime(record.searchedAt) || '时间未记录'),
+              h('span', { className: 'pfv_last_search_kind' }, searchKind(record.planKind))),
+            h('p', { className: 'pfv_last_search_request' }, short(record.request, 120) || '需求摘要未记录'),
+            sources.length ? h('ul', { className: 'pfv_last_search_sources' }, ...sources.map(source => h('li', {
+              key: text(source.id) || text(source.title),
+              className: `pfv_last_search_source${source.status === 'failed' ? ' pfv_last_search_source_failed' : ''}`,
+            },
+            h('span', { className: 'pfv_last_search_source_title' }, text(source.title) || text(source.id) || '未命名来源'),
+            h('span', { className: 'pfv_last_search_source_count' }, source.status === 'failed'
+              ? `读取失败 · 采用 ${safeCount(source.used)} 条`
+              : `读到 ${safeCount(source.total)} 条 · 采用 ${safeCount(source.used)} 条`)))) : h('p', { className: 'pfv_hint' }, '这次没有留下可展示的来源记录。'));
+        }));
+    })();
+
     const home = () => h('div', { className: 'pfv_home' },
       h('header', { className: 'pfv_expert_identity', 'aria-labelledby': 'pfv_expert_title' },
         h('span', { className: 'pfv_expert_mark', 'aria-hidden': true, dangerouslySetInnerHTML: { __html: expertWhaleSvg } }),
@@ -150,6 +183,7 @@ export function createExperienceView(React) {
           h('textarea', { ref: homeInput, id: 'pfv_home_input', 'aria-label': '任务描述', value: text(state.homeRequest), maxLength: 6000, disabled: taskInputBusy, placeholder: '例如：把会议记录整理成待办，再给我一份项目简报。', onChange: event => controller.setHomeRequest(event.target.value), onKeyDown: shortcut }),
           h('div', { className: 'pfv_composer_bottom' }, h('button', { type: 'submit', className: 'pfv_button pfv_primary', disabled: busy || !modelReady || !text(state.homeRequest).trim() }, '帮我找方案')))),
       h('div', { className: 'pfv_home_extras' },
+        lastSearchView,
         h('div', { className: 'pfv_examples', 'aria-label': '可编辑的需求示例' }, h('span', { className: 'pfv_hint' }, '例如'), ...examples.map(([label, value]) => button(label, () => {
           if (controller.prepareHomeExample) controller.prepareHomeExample(value);
           else if (!text(state.homeRequest).trim()) controller.setHomeRequest(value);
