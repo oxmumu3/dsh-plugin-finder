@@ -20,7 +20,7 @@ export const publicFiles = new Set([
     'creation-guide', 'creation', 'creator-feedback', 'creator-handoff', 'discovery',
     'eligibility', 'execution-conversation-view', 'execution-markdown', 'execution-preparation',
     'experience-style', 'experience-view', 'featured-catalog', 'featured-view', 'featured',
-    'feedback', 'history', 'lifecycle', 'model', 'plugin-installation', 'agent-finder-service', 'agent-tools', 'agent-creator', 'agent-created-installation', 'agent-model', 'provenance', 'routes',
+    'feedback', 'history', 'lifecycle', 'model', 'plugin-installation', 'agent-finder-service', 'agent-tools', 'agent-creator', 'agent-created-installation', 'agent-model', 'provenance', 'routes', 'progress',
     'runtime-context', 'service', 'brand-mark', 'opportunities', 'opportunity-api', 'opportunity-client', 'opportunity-context', 'opportunity-origin', 'opportunity-view', 'supply', 'telemetry-api', 'telemetry-config',
     'telemetry-contract', 'telemetry', 'workspace-execution'].map(name => `src/${name}.js`),
 ]);
@@ -75,7 +75,7 @@ async function verifyPayload(files, packageName) {
   const get = name => files.get(name)?.toString('utf8') ?? fail(`Missing package file: ${name}`);
   const pkg = JSON.parse(get('package.json'));
   if (pkg.name !== packageName) fail('Package name does not match requested identity');
-  if (pkg.version !== '0.12.0-preview.1') fail('Unexpected package version');
+  if (pkg.version !== '0.12.0-preview.2') fail('Unexpected package version');
   if (pkg.author !== '牛村木木山') fail('Incorrect package author identity');
   if (pkg.repository?.type !== 'git' || pkg.repository?.url !== 'https://github.com/oxmumu3/dsh-plugin-finder.git') fail('Incorrect canonical repository');
   if (pkg.publishConfig?.access !== 'public' || pkg.publishConfig?.tag !== 'latest' || pkg.publishConfig?.registry !== 'https://registry.npmjs.org/') fail('Incorrect npm publishConfig');

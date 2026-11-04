@@ -153,7 +153,7 @@ export function createFinderController(ctx, options = {}) {
   const catalogInstalls = new Map();
   let state = Object.freeze({
     catalogOpen: false, catalogSelection: null, catalogDetail: null, catalogBusy: '', catalogError: '',
-    opportunity: null, opportunityBusy: '', opportunityError: '', opportunityEditing: false, opportunityFiles: [], opportunityDraft: null, productIntroVisible: true,
+    opportunity: null, opportunityBusy: '', opportunityError: '', opportunityEditing: false, opportunityFiles: [], opportunityDraft: null, productIntroVisible: false,
     execution: null, executionReference: null, executions: [], executionWorkspaceLabel: '',
     creation: null, creationForm: null, creationDirty: false, localOnly: false, creatorAttempts: [], creatorHandoff: null, pendingCreatorRecord: null,
     conversation: [], followupText: '', followupWarning: '', followupPending: false, followupRetry: null, pendingOutcome: null,
@@ -281,7 +281,7 @@ export function createFinderController(ctx, options = {}) {
   const editorCache = new Map();
   const draftStorage = options.draftStorage ?? globalThis.localStorage;
   const introKey = 'dsh.plugin-finder.product-intro.v1';
-  try { publish({ productIntroVisible: draftStorage?.getItem(introKey) !== 'hidden' }); } catch {}
+  try { publish({ productIntroVisible: draftStorage?.getItem(introKey) === 'visible' }); } catch {}
   const followupCache = new Map();
   const followupRecovery = new Map();
   const followupKey = (taskId, revisionId) => taskId && revisionId ? `dsh.plugin-finder.followup.${taskId}.${revisionId}` : null;
@@ -697,7 +697,7 @@ export function createFinderController(ctx, options = {}) {
       publish({ view: 'home', featuredId: null, notice: '' });
       return opportunityClient.methods.refreshOpportunityStatus();
     },
-    showProductIntro() { if (closed || operation || state.searching) return; try { draftStorage?.setItem(introKey, 'visible'); } catch {} publish({ view: 'home', productIntroVisible: true }); },
+    showProductIntro() { if (closed || operation || state.searching) return; try { draftStorage?.setItem(introKey, 'visible'); } catch {} publish({ view: 'home', productIntroVisible: false }); },
     hideProductIntro() { try { draftStorage?.setItem(introKey, 'hidden'); } catch {} publish({ productIntroVisible: false }); },
     async searchHome() {
       if (closed || operation || state.searching) return false;
@@ -710,13 +710,15 @@ export function createFinderController(ctx, options = {}) {
       if (!savedWithoutEdits && !parkFeaturedDraft()) return false;
       const generation = ++searchGeneration;
       const current = () => !closed && generation === searchGeneration;
-      publish({ searching: true, error: '', notice: '' });
+      publish({ searching: true, error: '', notice: '', searchingSince: Date.now(), clock: Date.now(), searchProgress: null });
+      const pollProgress = async () => { try { const response = await fetch(endpoint + 'search-progress', { headers: { accept: 'application/json' } }); if (!response.ok || !current()) return; const data = await response.json(); if (data && current()) publish({ searchProgress: data }); } catch {} };
+      const clockTimer = setInterval(() => { if (!current()) return; publish({ clock: Date.now() }); void pollProgress(); }, 1000);
       try {
         if (!current() || !await this.newRequest() || !current()) return false;
         if (!await this.analyze(request, { communityEntryId }) || !current()) return false;
         if (!await this.recommend() || !current()) return false;
         saveHomeInput(''); return true;
-      } finally { if (current()) publish({ searching: false }); }
+      } finally { clearInterval(clockTimer); if (current()) publish({ searching: false, searchingSince: 0, searchProgress: null }); }
     },
     async analyze(request = state.request, selection = {}) {
       if (closed || operation) return false;
@@ -1188,7 +1190,7 @@ export function createFinderController(ctx, options = {}) {
       sequence += 1; searchGeneration += 1;
       if (operation) operation.controller.abort('cancelled');
       operation = null;
-      publish({ busy: null, searching: false, followupPending: false, notice: cancelledKind === 'reset' ? '开始新需求尚未确认，原内容仍保留，可重试。' : '已取消这一步。已填写的内容仍保留。', error: '' });
+      publish({ busy: null, searching: false, searchingSince: 0, searchProgress: null, followupPending: false, notice: cancelledKind === 'reset' ? '开始新需求尚未确认，原内容仍保留，可重试。' : '已取消这一步。已填写的内容仍保留。', error: '' });
     },
     notify(message) { publish({ notice: text(message), error: '' }); },
     reportError(message) { publish({ error: text(message).slice(0, 600), notice: '' }); },

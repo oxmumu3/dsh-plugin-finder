@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { assessCompatibility, inferCapabilities } from '../catalog/index.mjs';
 import {fullCatalog,repositoryOf,safeRepositoryPath as safePath} from './supply.js';
 import {getCommunityEntry} from './community-catalog.js';
+import {recordProgress, currentProgressId} from './progress.js';
 
 const INDEX_URL = 'https://awesome-dsh-plugin.com/index.json';
 const FULL_URL = 'https://awesome-dsh-plugin.com/plugins.json';
@@ -300,6 +301,9 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
       const queryGroups=unique((intent?.queries??[]).map(value=>termsFor({queries:[value]}).sort().join('\n'))).slice(0,8).map(value=>value.split('\n'));
       const primaryTerms=termsFor({queries:intent?.queries??[]});const secondaryTerms=termsFor({capabilities:intent?.capabilities??[]});const terms=unique([...primaryTerms,...secondaryTerms]); const query = String((intent?.queries ?? []).find(value => /[a-z]/i.test(value)) ?? intent?.queries?.[0] ?? intent?.goal ?? '').slice(0, 80);
       const rows = []; const sources = []; const warnings = [];const sourceCounts=new Map();
+      // 绑定发起这次搜索时的进度代数：旧请求的迟到事件不会写进新一代。
+      const progressId = currentProgressId();
+      sources.push = function (item) { try { const count = Number(item?.total) || 0; recordProgress({ text: `${item?.title || '来源'}：${item?.status === 'failed' ? '读取失败' : `读到 ${count} 条`}` }, progressId); } catch {} return Array.prototype.push.call(this, item); };
       const counts=source=>{if(!sourceCounts.has(source))sourceCounts.set(source,{matched:0,inspected:0,resolved:0,excluded:0});return sourceCounts.get(source);};
       const addRows = (entries, origin, forced = false) => {
         for (const entry of entries) {

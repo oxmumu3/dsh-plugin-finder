@@ -40,11 +40,22 @@ export const experienceCss = `
 .pf_root.pf_v2:has(.pfv_home) { background: var(--pfv_canvas); }
 .pf_v2:has(.pfv_home) .pf_header { margin-bottom: 20px; border-bottom: 0; padding-bottom: 0; }
 .pfv_home { max-width: 1120px; margin: 0 auto; }
-.pfv_home_start { display: grid; grid-template-columns: minmax(0, 2fr) minmax(250px, .85fr); gap: 0 28px; align-items: stretch; padding: 22px 0 34px; }
+.pfv_home_start { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 0; align-items: stretch; padding: 22px 0 34px; }
 .pfv_home_intro, .pfv_home_scenario { display: grid; grid-template-rows: subgrid; grid-row: 1 / 4; min-width: 0; padding: 0; margin: 0; }
 .pfv_home_intro { grid-column: 1; }
 .pfv_home_scenario { grid-column: 2; }
-.pfv_home_extras { grid-area: 4 / 1; min-width: 0; padding-bottom: 4px; }
+.pfv_home_extras { grid-area: auto; min-width: 0; padding-bottom: 4px; }
+.pfv_opportunity_column { grid-column: 1; grid-row: auto; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.pfv_opportunity .pfv_home_lead, .pfv_opportunity .pfv_scenario_reason { display: none; }
+.pfv_opportunity .pfv_home_heading { font-size: 12px; font-weight: 500; color: var(--pfv_muted); margin: 0; }
+.pfv_opportunity .pfv_scenario_card { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-radius: 10px; }
+.pfv_opportunity .pfv_scenario_card h3 { margin: 0; font-size: 13px; }
+.pfv_opportunity .pfv_scenario_card > p { margin: 0; font-size: 12.5px; color: var(--pfv_muted); flex: 1 1 240px; }
+.pfv_opportunity .pfv_scenario_card .pfv_composer_bottom { margin: 0 0 0 auto; }
+.pf_v2 .pfv_opportunity .pfv_home_card { min-height: 0; padding: 10px 14px; border-radius: 10px; flex-direction: row; align-items: center; gap: 14px; }
+.pf_v2 .pfv_opportunity .pfv_scenario_card h3 { font-size: 13px; }
+.pf_v2 .pfv_opportunity .pfv_scenario_card .pfv_prose { font-size: 12.5px; line-height: 1.6; margin: 0; }
+.pf_v2 .pfv_opportunity .pfv_home_card .pfv_composer_bottom { padding-top: 0; }
 .pf_v2 .pfv_home_heading { margin: 0; font-size: 32px; line-height: 1.35; letter-spacing: -.8px; font-weight: 650; }
 .pf_v2 .pfv_home_lead { font-size: 14px; color: var(--pfv_muted); margin: 8px 0 22px; line-height: 1.75; }
 .pf_v2 .pfv_scenario_card h3 { margin: 0; font-size: 20px; line-height: 1.55; letter-spacing: -.3px; font-weight: 600; text-wrap: balance; }
@@ -271,6 +282,7 @@ export const experienceCss = `
   .pfv_home_intro, .pfv_home_scenario { display: block; grid-area: auto; }
   .pfv_home_extras { grid-area: auto; }
   .pfv_home_scenario { margin-top: 28px; }
+  .pfv_opportunity_column { grid-area: auto; }
   .pf_v2 .pfv_home_heading { font-size: 28px; letter-spacing: -.6px; }
   .pf_v2 .pfv_home_lead { margin: 8px 0 16px; }
   .pfv_home_card { padding: 20px; }

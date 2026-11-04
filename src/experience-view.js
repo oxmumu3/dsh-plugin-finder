@@ -117,6 +117,11 @@ export function createExperienceView(React) {
       'creation-start': '正在整理要创建的插件', 'creation-update': '正在更新插件方案',
       'creation-refine': '正在根据你的补充修改方案', reset: '正在保留原任务并开始新需求',
     }[state.busy] || (state.searching ? '正在查找可行路径' : state.followupPending ? '正在更新这份方案' : '正在处理');
+    const waited = state.searchingSince && state.clock ? Math.max(0, Math.round((state.clock - state.searchingSince) / 1000)) : 0;
+    const liveEvents = busy && Array.isArray(state.searchProgress?.events) ? state.searchProgress.events.filter(item => item && typeof item.text === 'string' && item.text).slice(-4) : [];
+    const statusText = waited >= 30
+      ? `${progress} · 已等待 ${waited} 秒，比平时久；可以继续等，或点上面的「停止」。`
+      : `${progress} · 已用时 ${waited} 秒`;
     const submitFollowup = event => { event.preventDefault(); if (!followupBusy && modelReady && text(state.followupText).trim()) void controller.submitFollowup(); };
     const statusLine = followupBusy && !execution ? h('div', { className: 'pfv_progress', role: 'status' },
       h('span', { className: 'pfv_progress_dot', 'aria-hidden': true }), h('span', null, progress),
@@ -227,8 +232,9 @@ export function createExperienceView(React) {
     };
 
     const planView = () => {
-      if (!plan) return h('div', { className: 'pfv_outcome_empty' }, h('h2', null, busy ? '方案正在形成' : '继续查找方案'),
-        h('p', { className: 'pfv_hint' }, busy ? '需求已保留，找到的方案会显示在这里。' : '上次查找尚未完成，你可以从这里继续。'),
+      if (!plan) return h('div', { className: 'pfv_outcome_empty' }, h('h2', null, busy ? '正在整理方案' : '继续查找方案'),
+        h('p', { className: 'pfv_hint' }, busy ? statusText : '上次查找尚未完成，你可以从这里继续。'),
+        liveEvents.length ? h('ul', { className: 'pfv_hint', 'aria-live': 'polite' }, liveEvents.map((item, index) => h('li', { key: `${item.seq || index}` }, item.text))) : null,
         !busy && state.intent ? primary('重试查找', () => controller.recommend(), { disabled: !modelReady }) : null,
         !busy && !state.intent && request ? primary('重试查找', () => { controller.setHomeRequest(request); void controller.searchHome(); }, { disabled: !modelReady }) : null);
       const limits = prerequisites(plan, outcome.candidates);
