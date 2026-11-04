@@ -347,7 +347,7 @@ export async function executeInWorkspace(ctx, options = {}) {
         if (!state.terminal && !submitted && !evidence().admitted && recordStatus !== 'created') emit({ phase: 'unknown', summary: '原执行结果尚未确认', details: '正在观察已关联的会话，不会重复创建或发送。' });
         return;
       }
-      if (attempt.kind === 'use') {
+      if (['use', 'create'].includes(attempt.kind)) {
         if (typeof prepareExecution !== 'function') throw new Error('插件准备服务不可用，请重新打开原方案。');
         emit({ phase: 'preparing', summary: '正在准备方案需要的插件', details: '自动安装并启用，准备好后继续当前工作区的任务。' });
         const row = { attemptId: attempt.attemptId, requestId: attempt.requestId, taskId: attempt.taskId, revisionId: attempt.revisionId, kind: attempt.kind, workspaceId: attempt.workspaceId, sessionId };

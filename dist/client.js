@@ -1052,7 +1052,7 @@ async function executeInWorkspace(ctx, options = {}) {
         if (!state.terminal && !submitted && !evidence().admitted && recordStatus !== "created") emit({ phase: "unknown", summary: "\u539F\u6267\u884C\u7ED3\u679C\u5C1A\u672A\u786E\u8BA4", details: "\u6B63\u5728\u89C2\u5BDF\u5DF2\u5173\u8054\u7684\u4F1A\u8BDD\uFF0C\u4E0D\u4F1A\u91CD\u590D\u521B\u5EFA\u6216\u53D1\u9001\u3002" });
         return;
       }
-      if (attempt.kind === "use") {
+      if (["use", "create"].includes(attempt.kind)) {
         if (typeof prepareExecution !== "function") throw new Error("\u63D2\u4EF6\u51C6\u5907\u670D\u52A1\u4E0D\u53EF\u7528\uFF0C\u8BF7\u91CD\u65B0\u6253\u5F00\u539F\u65B9\u6848\u3002");
         emit({ phase: "preparing", summary: "\u6B63\u5728\u51C6\u5907\u65B9\u6848\u9700\u8981\u7684\u63D2\u4EF6", details: "\u81EA\u52A8\u5B89\u88C5\u5E76\u542F\u7528\uFF0C\u51C6\u5907\u597D\u540E\u7EE7\u7EED\u5F53\u524D\u5DE5\u4F5C\u533A\u7684\u4EFB\u52A1\u3002" });
         const row = { attemptId: attempt.attemptId, requestId: attempt.requestId, taskId: attempt.taskId, revisionId: attempt.revisionId, kind: attempt.kind, workspaceId: attempt.workspaceId, sessionId };
