@@ -40,7 +40,7 @@ export const experienceCss = `
 .pf_root.pf_v2:has(.pfv_home) { background: var(--pfv_canvas); }
 .pf_v2:has(.pfv_home) .pf_header { margin-bottom: 20px; border-bottom: 0; padding-bottom: 0; }
 .pfv_home { max-width: 1120px; margin: 0 auto; }
-.pfv_home_start { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-items: stretch; padding: 24px 0 44px; }
+.pfv_home_start { display: block; padding: 24px 0 44px; }
 .pfv_home_intro, .pfv_home_scenario { display: block; grid-column: 1; grid-row: auto; min-width: 0; padding: 0; margin: 0; }
 .pfv_home_scenario { border-top: 1px solid var(--pfv_line); padding-top: 18px; }
 .pfv_home_scenario .pfv_home_heading { font-size: 14px; margin: 0 0 4px; }
@@ -49,7 +49,7 @@ export const experienceCss = `
 .pfv_home_scenario .pfv_scenario_card h3 { margin: 0; font-size: 15px; }
 .pfv_home_scenario .pfv_scenario_card > p { margin: 0; flex: 1 1 auto; min-width: 0; }
 .pfv_home_scenario .pfv_composer_bottom { flex: none; margin: 0; }
-.pfv_home_extras { grid-area: auto; min-width: 0; padding-bottom: 4px; }
+.pfv_home_extras { min-width: 0; margin-top: 18px; padding-bottom: 4px; }
 .pfv_opportunity_column { grid-column: 1; grid-row: auto; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .pfv_opportunity .pfv_home_lead, .pfv_opportunity .pfv_scenario_reason { display: none; }
 .pfv_opportunity .pfv_home_heading { font-size: 12px; font-weight: 500; color: var(--pfv_muted); margin: 0; }
@@ -79,7 +79,7 @@ export const experienceCss = `
 .pfv_home_selection > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .pfv_home_selection > .pfv_button { flex: none; margin-left: auto; padding-inline: 8px; font-size: 13px; }
 .pf_v2 .pfv_composer textarea { display: block; width: 100%; min-height: 103px; padding: 1px 0 10px; border: 0; box-shadow: none; outline: none; resize: vertical; border-radius: 0; background: transparent; color: var(--pfv_ink); font: inherit; line-height: 1.8; }
-.pf_v2 .pfv_home_composer textarea { flex: 1 1 auto; min-height: 100px; font-size: 16px; }
+.pf_v2 .pfv_home_composer textarea { flex: 1 1 auto; min-height: 84px; font-size: 16px; }
 .pf_v2 .pfv_composer textarea::placeholder, .pfv_field textarea::placeholder { color: var(--pfv_muted); opacity: .85; }
 .pf_v2 .pfv_composer textarea:focus { box-shadow: none; outline: none; border: 0; }
 .pfv_composer_bottom { display: flex; gap: 16px; justify-content: space-between; align-items: center; }
@@ -97,8 +97,8 @@ export const experienceCss = `
 .pfv_store_jump:hover { text-decoration: underline; text-underline-offset: 4px; }
 .pfv_example { color: var(--pfv_muted); background: transparent; border: 0; font-size: 13px; padding-inline: 10px; font-weight: 450; }
 .pfv_example:hover:not(:disabled) { color: var(--pfv_accent); background: var(--pfv_tint); }
-.pfv_resume { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 12px 14px; margin: 0 0 18px; border: 1px solid var(--pfv_line); border-radius: 12px; background: var(--pfv_paper); }
-.pfv_resume > div { min-width: 0; }
+.pfv_resume { display: flex; justify-content: flex-start; align-items: center; gap: 16px; padding: 12px 14px; margin: 0 0 18px; border: 1px solid var(--pfv_line); border-radius: 12px; background: var(--pfv_paper); }
+.pfv_resume > div { min-width: 0; flex: 0 1 auto; }
 .pfv_resume .pfv_prose { font-size: 14px; margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .pfv_resume > .pfv_button { flex: none; }
 .pf_v2 .pf_featured_home { margin-top: 0; padding-top: 34px; border-top: 1px solid var(--pfv_line); }
