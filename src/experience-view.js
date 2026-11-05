@@ -137,6 +137,7 @@ export function createExperienceView(React) {
     const suggested = rankFeatured(featuredCatalog, { history: Array.isArray(state.featuredHistory) ? state.featuredHistory : state.history, preferences: state.featuredPreferences })[0];
     const scenario = suggested?.entry || featuredCatalog.find(entry => !items(state.featuredPreferences?.dismissed).includes(entry.id)) || featuredCatalog[0];
     const homeCommunityEntry = getCommunityEntry(state.homeCommunityEntryId);
+    const resumeView = state.taskId || state.request ? h('div', { className: 'pfv_resume' }, h('div', null, h('span', { className: 'pfv_hint' }, '上次进行到这里'), paragraph(text(state.creation?.blueprint?.name) || text(state.plan?.title) || text(state.intent?.goal) || text(state.request))), button('继续上次方案', () => state.creation ? controller.showCreation() : controller.showFind(), { disabled: busy })) : null;
 
     const lastSearchView = (() => {
       const rows = records(state.searchHistory).filter(record => text(record.request) || records(record.sources).length).slice(0, 2);
@@ -173,6 +174,7 @@ export function createExperienceView(React) {
         button('×', () => { controller.hideProductIntro?.(); globalThis.document?.getElementById('pfv_intro_toggle')?.focus(); }, { className: 'pfv_button pfv_quiet pfv_intro_close', 'aria-label': '关闭产品介绍' })) : null,
       h('div', { className: 'pfv_home_start', role: 'group', 'aria-labelledby': 'pfv_expert_title', 'aria-describedby': 'pfv_expert_opening' },
       h('section', { className: 'pfv_home_intro', 'aria-labelledby': 'pfv_home_title' },
+        resumeView,
         h('h2', { id: 'pfv_home_title', className: 'pfv_home_heading' }, '告诉我你的目标'),
         h('p', { className: 'pfv_home_lead' }, '一句话就好，之后我们接着聊。'),
         h('form', { className: 'pfv_composer pfv_home_composer pfv_home_card', onSubmit: event => { event.preventDefault(); if (!busy && modelReady && text(state.homeRequest).trim()) void controller.searchHome(); } },
@@ -191,8 +193,7 @@ export function createExperienceView(React) {
         }, { key: label, className: 'pfv_button pfv_example', disabled: taskInputBusy, 'aria-label': `填入${label}的示例，之后可以修改` })),
           h('a', { href: '#pfv_community_title', className: 'pfv_store_jump' }, '逛逛插件商店 →')),
         state.homeWarning ? h('p', { className: 'pfv_warning', role: 'status' }, text(state.homeWarning)) : null,
-        state.bootstrapLoaded && !modelReady ? h('div', { className: 'pfv_warning' }, h('p', null, '先在 DSH 设置中配置默认模型，再开始查找。'), button('重新读取配置', () => controller.bootstrap(), { disabled: busy })) : null,
-        state.taskId || state.request ? h('div', { className: 'pfv_resume' }, h('div', null, h('span', { className: 'pfv_hint' }, '上次进行到这里'), paragraph(text(state.creation?.blueprint?.name) || text(state.plan?.title) || text(state.intent?.goal) || text(state.request))), button('继续上次方案', () => state.creation ? controller.showCreation() : controller.showFind(), { disabled: busy })) : null),
+        state.bootstrapLoaded && !modelReady ? h('div', { className: 'pfv_warning' }, h('p', null, '先在 DSH 设置中配置默认模型，再开始查找。'), button('重新读取配置', () => controller.bootstrap(), { disabled: busy })) : null),
       state.opportunity ? renderOpportunityCard({h,state,controller,disabled:locked,modelReady,fallback:{id:scenario.id,title:scenarioTitles[scenario.id],benefit:scenarioBenefits[scenario.id],basis:suggested?'本机线索':'通用想法',reason:suggested?.reason||''}}) : h('aside', { className: 'pfv_home_scenario', 'aria-label': suggested ? '猜你喜欢' : '试试这个' },
         h('h2', { className: 'pfv_home_heading' }, suggested ? '我猜你可能需要' : '我先给你一个想法'),
         h('p', { className: 'pfv_home_lead' }, '也可以从这个想法开始聊。'),

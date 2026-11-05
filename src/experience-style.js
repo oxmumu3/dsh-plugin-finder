@@ -40,10 +40,15 @@ export const experienceCss = `
 .pf_root.pf_v2:has(.pfv_home) { background: var(--pfv_canvas); }
 .pf_v2:has(.pfv_home) .pf_header { margin-bottom: 20px; border-bottom: 0; padding-bottom: 0; }
 .pfv_home { max-width: 1120px; margin: 0 auto; }
-.pfv_home_start { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 0; align-items: stretch; padding: 22px 0 34px; }
-.pfv_home_intro, .pfv_home_scenario { display: grid; grid-template-rows: subgrid; grid-row: 1 / 4; min-width: 0; padding: 0; margin: 0; }
-.pfv_home_intro { grid-column: 1; }
-.pfv_home_scenario { grid-column: 2; }
+.pfv_home_start { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-items: stretch; padding: 24px 0 44px; }
+.pfv_home_intro, .pfv_home_scenario { display: block; grid-column: 1; grid-row: auto; min-width: 0; padding: 0; margin: 0; }
+.pfv_home_scenario { border-top: 1px solid var(--pfv_line); padding-top: 18px; }
+.pfv_home_scenario .pfv_home_heading { font-size: 14px; margin: 0 0 4px; }
+.pfv_home_scenario .pfv_home_lead { margin: 0 0 10px; font-size: 13px; }
+.pfv_home_scenario .pfv_scenario_card { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; }
+.pfv_home_scenario .pfv_scenario_card h3 { margin: 0; font-size: 15px; }
+.pfv_home_scenario .pfv_scenario_card > p { margin: 0; flex: 1 1 auto; min-width: 0; }
+.pfv_home_scenario .pfv_composer_bottom { flex: none; margin: 0; }
 .pfv_home_extras { grid-area: auto; min-width: 0; padding-bottom: 4px; }
 .pfv_opportunity_column { grid-column: 1; grid-row: auto; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .pfv_opportunity .pfv_home_lead, .pfv_opportunity .pfv_scenario_reason { display: none; }
@@ -88,11 +93,11 @@ export const experienceCss = `
 .pfv_button:focus-visible, .pf_v2 summary:focus-visible, .pfv_mobile_jump:focus-visible, .pfv_field textarea:focus-visible, .pf_v2 .pf_btn:focus-visible { outline: 3px solid var(--pfv_accent); outline-offset: 3px; }
 .pfv_examples { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; margin-top: 10px; }
 .pfv_examples > .pfv_hint { margin-right: 4px; }
-.pfv_store_jump { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 0 8px 12px; margin-left: auto; color: var(--pfv_accent); text-decoration: none; font-size: 13px; white-space: nowrap; }
+.pfv_store_jump { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 0 8px 12px; margin-left: 8px; color: var(--pfv_accent); text-decoration: none; font-size: 13px; white-space: nowrap; }
 .pfv_store_jump:hover { text-decoration: underline; text-underline-offset: 4px; }
 .pfv_example { color: var(--pfv_muted); background: transparent; border: 0; font-size: 13px; padding-inline: 10px; font-weight: 450; }
 .pfv_example:hover:not(:disabled) { color: var(--pfv_accent); background: var(--pfv_tint); }
-.pfv_resume { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 12px 0; margin-top: 8px; border-top: 1px solid var(--pfv_line); }
+.pfv_resume { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 12px 14px; margin: 0 0 18px; border: 1px solid var(--pfv_line); border-radius: 12px; background: var(--pfv_paper); }
 .pfv_resume > div { min-width: 0; }
 .pfv_resume .pfv_prose { font-size: 14px; margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .pfv_resume > .pfv_button { flex: none; }
@@ -260,7 +265,7 @@ export const experienceCss = `
 @keyframes pfv_pulse { 50% { opacity: .4; } }
 @container finder (max-width: 940px) {
   .pf_v2 .pf_inner { padding-inline: 26px; }
-  .pfv_home_start { gap: 0 28px; grid-template-columns: minmax(0, 1.6fr) minmax(230px, 1fr); }
+  .pfv_home_start { gap: 20px; }
   .pf_v2 .pf_featured_grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pfv_home_card { padding-inline: 20px; }
   .pfv_workspace_grid { gap: 22px; grid-template-columns: minmax(260px, .85fr) minmax(0, 1.15fr); }

@@ -2502,6 +2502,7 @@ function createExperienceView(React2) {
     const suggested = rankFeatured(featuredCatalog, { history: Array.isArray(state.featuredHistory) ? state.featuredHistory : state.history, preferences: state.featuredPreferences })[0];
     const scenario = suggested?.entry || featuredCatalog.find((entry) => !items3(state.featuredPreferences?.dismissed).includes(entry.id)) || featuredCatalog[0];
     const homeCommunityEntry = getCommunityEntry(state.homeCommunityEntryId);
+    const resumeView = state.taskId || state.request ? h("div", { className: "pfv_resume" }, h("div", null, h("span", { className: "pfv_hint" }, "\u4E0A\u6B21\u8FDB\u884C\u5230\u8FD9\u91CC"), paragraph(text6(state.creation?.blueprint?.name) || text6(state.plan?.title) || text6(state.intent?.goal) || text6(state.request))), button2("\u7EE7\u7EED\u4E0A\u6B21\u65B9\u6848", () => state.creation ? controller.showCreation() : controller.showFind(), { disabled: busy })) : null;
     const lastSearchView = (() => {
       const rows = records(state.searchHistory).filter((record2) => text6(record2.request) || records(record2.sources).length).slice(0, 2);
       if (!rows.length) return null;
@@ -2569,6 +2570,7 @@ function createExperienceView(React2) {
         h(
           "section",
           { className: "pfv_home_intro", "aria-labelledby": "pfv_home_title" },
+          resumeView,
           h("h2", { id: "pfv_home_title", className: "pfv_home_heading" }, "\u544A\u8BC9\u6211\u4F60\u7684\u76EE\u6807"),
           h("p", { className: "pfv_home_lead" }, "\u4E00\u53E5\u8BDD\u5C31\u597D\uFF0C\u4E4B\u540E\u6211\u4EEC\u63A5\u7740\u804A\u3002"),
           h(
@@ -2606,8 +2608,7 @@ function createExperienceView(React2) {
             h("a", { href: "#pfv_community_title", className: "pfv_store_jump" }, "\u901B\u901B\u63D2\u4EF6\u5546\u5E97 \u2192")
           ),
           state.homeWarning ? h("p", { className: "pfv_warning", role: "status" }, text6(state.homeWarning)) : null,
-          state.bootstrapLoaded && !modelReady ? h("div", { className: "pfv_warning" }, h("p", null, "\u5148\u5728 DSH \u8BBE\u7F6E\u4E2D\u914D\u7F6E\u9ED8\u8BA4\u6A21\u578B\uFF0C\u518D\u5F00\u59CB\u67E5\u627E\u3002"), button2("\u91CD\u65B0\u8BFB\u53D6\u914D\u7F6E", () => controller.bootstrap(), { disabled: busy })) : null,
-          state.taskId || state.request ? h("div", { className: "pfv_resume" }, h("div", null, h("span", { className: "pfv_hint" }, "\u4E0A\u6B21\u8FDB\u884C\u5230\u8FD9\u91CC"), paragraph(text6(state.creation?.blueprint?.name) || text6(state.plan?.title) || text6(state.intent?.goal) || text6(state.request))), button2("\u7EE7\u7EED\u4E0A\u6B21\u65B9\u6848", () => state.creation ? controller.showCreation() : controller.showFind(), { disabled: busy })) : null
+          state.bootstrapLoaded && !modelReady ? h("div", { className: "pfv_warning" }, h("p", null, "\u5148\u5728 DSH \u8BBE\u7F6E\u4E2D\u914D\u7F6E\u9ED8\u8BA4\u6A21\u578B\uFF0C\u518D\u5F00\u59CB\u67E5\u627E\u3002"), button2("\u91CD\u65B0\u8BFB\u53D6\u914D\u7F6E", () => controller.bootstrap(), { disabled: busy })) : null
         ),
         state.opportunity ? renderOpportunityCard({ h, state, controller, disabled: locked, modelReady, fallback: { id: scenario.id, title: scenarioTitles[scenario.id], benefit: scenarioBenefits[scenario.id], basis: suggested ? "\u672C\u673A\u7EBF\u7D22" : "\u901A\u7528\u60F3\u6CD5", reason: suggested?.reason || "" } }) : h(
           "aside",
@@ -2865,10 +2866,15 @@ var experienceCss = `
 .pf_root.pf_v2:has(.pfv_home) { background: var(--pfv_canvas); }
 .pf_v2:has(.pfv_home) .pf_header { margin-bottom: 20px; border-bottom: 0; padding-bottom: 0; }
 .pfv_home { max-width: 1120px; margin: 0 auto; }
-.pfv_home_start { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 0; align-items: stretch; padding: 22px 0 34px; }
-.pfv_home_intro, .pfv_home_scenario { display: grid; grid-template-rows: subgrid; grid-row: 1 / 4; min-width: 0; padding: 0; margin: 0; }
-.pfv_home_intro { grid-column: 1; }
-.pfv_home_scenario { grid-column: 2; }
+.pfv_home_start { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-items: stretch; padding: 24px 0 44px; }
+.pfv_home_intro, .pfv_home_scenario { display: block; grid-column: 1; grid-row: auto; min-width: 0; padding: 0; margin: 0; }
+.pfv_home_scenario { border-top: 1px solid var(--pfv_line); padding-top: 18px; }
+.pfv_home_scenario .pfv_home_heading { font-size: 14px; margin: 0 0 4px; }
+.pfv_home_scenario .pfv_home_lead { margin: 0 0 10px; font-size: 13px; }
+.pfv_home_scenario .pfv_scenario_card { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; }
+.pfv_home_scenario .pfv_scenario_card h3 { margin: 0; font-size: 15px; }
+.pfv_home_scenario .pfv_scenario_card > p { margin: 0; flex: 1 1 auto; min-width: 0; }
+.pfv_home_scenario .pfv_composer_bottom { flex: none; margin: 0; }
 .pfv_home_extras { grid-area: auto; min-width: 0; padding-bottom: 4px; }
 .pfv_opportunity_column { grid-column: 1; grid-row: auto; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .pfv_opportunity .pfv_home_lead, .pfv_opportunity .pfv_scenario_reason { display: none; }
@@ -2913,11 +2919,11 @@ var experienceCss = `
 .pfv_button:focus-visible, .pf_v2 summary:focus-visible, .pfv_mobile_jump:focus-visible, .pfv_field textarea:focus-visible, .pf_v2 .pf_btn:focus-visible { outline: 3px solid var(--pfv_accent); outline-offset: 3px; }
 .pfv_examples { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; margin-top: 10px; }
 .pfv_examples > .pfv_hint { margin-right: 4px; }
-.pfv_store_jump { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 0 8px 12px; margin-left: auto; color: var(--pfv_accent); text-decoration: none; font-size: 13px; white-space: nowrap; }
+.pfv_store_jump { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 0 8px 12px; margin-left: 8px; color: var(--pfv_accent); text-decoration: none; font-size: 13px; white-space: nowrap; }
 .pfv_store_jump:hover { text-decoration: underline; text-underline-offset: 4px; }
 .pfv_example { color: var(--pfv_muted); background: transparent; border: 0; font-size: 13px; padding-inline: 10px; font-weight: 450; }
 .pfv_example:hover:not(:disabled) { color: var(--pfv_accent); background: var(--pfv_tint); }
-.pfv_resume { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 12px 0; margin-top: 8px; border-top: 1px solid var(--pfv_line); }
+.pfv_resume { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 12px 14px; margin: 0 0 18px; border: 1px solid var(--pfv_line); border-radius: 12px; background: var(--pfv_paper); }
 .pfv_resume > div { min-width: 0; }
 .pfv_resume .pfv_prose { font-size: 14px; margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .pfv_resume > .pfv_button { flex: none; }
@@ -3085,7 +3091,7 @@ var experienceCss = `
 @keyframes pfv_pulse { 50% { opacity: .4; } }
 @container finder (max-width: 940px) {
   .pf_v2 .pf_inner { padding-inline: 26px; }
-  .pfv_home_start { gap: 0 28px; grid-template-columns: minmax(0, 1.6fr) minmax(230px, 1fr); }
+  .pfv_home_start { gap: 20px; }
   .pf_v2 .pf_featured_grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pfv_home_card { padding-inline: 20px; }
   .pfv_workspace_grid { gap: 22px; grid-template-columns: minmax(260px, .85fr) minmax(0, 1.15fr); }
