@@ -763,6 +763,7 @@ export function createFinderController(ctx, options = {}) {
       publish({ expertPhase: 'opening', expertError: '', error: '', notice: '' });
       try {
         let expert = state.expert?.taskId === source.taskId ? state.expert : await refreshExpert(source.taskId).catch(() => null);
+        let created = false;
         if (!expert) {
           const workspaceId = state.workspaceId;
           if (!workspaceId || !workspaceSnapshot()?.items?.some(item => item.workspaceId === workspaceId)) throw handoffFailure('请先选择这项任务所在的工作区，专家会话会在那里打开。');
@@ -776,10 +777,16 @@ export function createFinderController(ctx, options = {}) {
           expert = attached?.expert;
           if (!expert?.sessionId) throw handoffFailure('专家会话关联尚未保存，没有发送。');
           publish({ expert, expertVerification: attached.verification ?? null });
+          created = attached.attached === true && attached.conflict !== true;
         }
         const reference = await bindExpert(expert);
         if (!reference || closed || state.taskId !== source.taskId) return false;
         const binding = reference.binding;
+        // A user-sourced title pins the session, so the sidebar shows the task instead of the first words typed.
+        if (created && typeof binding.session?.rename === 'function') {
+          const label = (text(state.plan?.title) || text(state.intent?.goal) || text(state.request)).replace(/\s+/g, ' ').trim().slice(0, 28);
+          try { await binding.session.rename(label ? `插件专家 · ${label}` : '插件专家'); } catch { /* the title is cosmetic; sending continues */ }
+        }
         const preset = binding.session?.projections?.faceOf?.('agentPreset')?.getSnapshot?.();
         if (preset !== undefined && preset !== null && preset !== 'standard') throw handoffFailure('专家会话类型未核实，没有发送。');
         if (typeof binding.session?.prompt !== 'function') throw handoffFailure('当前宿主无法向会话发送消息，你的补充已保留。');

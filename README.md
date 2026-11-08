@@ -51,7 +51,7 @@ dsh plugin --profile web add @oxmumu3/dsh-plugin-finder
 
 ## 版本与兼容
 
-当前 `@oxmumu3/dsh-plugin-finder@0.12.0-preview.8`，目标官方 Harness `0.2.1-rc.5` 与 `0.2.2-rc.1`（后者要求宿主 Node `>=24.9.0`），Node `^22.19.0 || >=24.0.0`。其他 RC、next 或实验 alpha 不据此推断兼容；安装状态以 npm 精确版本、Release 和最终验收记录为准。
+当前 `@oxmumu3/dsh-plugin-finder@0.12.0-preview.9`，目标官方 Harness `0.2.1-rc.5` 与 `0.2.2-rc.1`（后者要求宿主 Node `>=24.9.0`），Node `^22.19.0 || >=24.0.0`。其他 RC、next 或实验 alpha 不据此推断兼容；安装状态以 npm 精确版本、Release 和最终验收记录为准。
 
 Finder 沿用宿主配置的模型与账户，无需另填模型 Key；理解需求、检索、补齐和执行会使用相应额度。第三方插件可能另有服务、授权与费用。
 
