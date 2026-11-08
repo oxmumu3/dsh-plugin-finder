@@ -152,13 +152,20 @@ export function createExpertSessions({store, readTask, now = () => new Date()} =
   });
 }
 
+/** 宿主能否按会话判断工具是否可见（0.2.2 起的 when 条件）。不支持时，作用域工具一律不注册，避免漏给所有会话。 */
+export function supportsScopedTools(ctx) {
+  return typeof ctx?.tools?.resolve === 'function';
+}
+const withoutLine = (text, needle) => text.split('\n').filter(line => !line.includes(needle)).join('\n');
+
 /** 注册专家提示词段与方案回写工具；两者都只对已绑定的专家会话生效。 */
 export function registerExpertSession(ctx, experts, {defineTool} = {}) {
   if (typeof defineTool !== 'function' || typeof ctx?.tools?.register !== 'function' || typeof ctx?.systemPrompt?.section !== 'function') throw new TypeError('expert session host unavailable');
   const disposers = [];
   const release = () => { for (const dispose of disposers.splice(0).reverse()) try { dispose(); } catch { /* 其余注册仍须释放 */ } };
   try {
-    disposers.push(ctx.systemPrompt.section({name: EXPERT_SECTION, order: 5100, interpolate: false, text: context => experts.sectionText(context)}));
+    const scoped = supportsScopedTools(ctx);
+    disposers.push(ctx.systemPrompt.section({name: EXPERT_SECTION, order: 5100, interpolate: false, text: context => scoped ? experts.sectionText(context) : withoutLine(experts.sectionText(context), EXPERT_TOOL)}));
     const tool = defineTool({
       name: EXPERT_TOOL,
       description: '只在 Finder 插件专家会话中可用：把与用户聊定的最新方案写回「发现好插件」面板的方案卡片。方案有实质变化时调用；只写有依据的内容，未核实的不要写成已验证。不会安装、创建或修改任何文件。',
@@ -178,7 +185,7 @@ export function registerExpertSession(ctx, experts, {defineTool} = {}) {
       },
       presentCall: args => ({card: 'generic', title: '更新方案卡片', kind: 'other', rawInput: args}),
     });
-    disposers.push(ctx.tools.register(tool, {when: ({agent} = {}) => experts.isExpertAgent(agent)}));
+    if (scoped) disposers.push(ctx.tools.register(tool, {when: ({agent} = {}) => experts.isExpertAgent(agent)}));
   } catch (cause) { release(); throw cause; }
   ctx.effect?.(() => release);
   return release;

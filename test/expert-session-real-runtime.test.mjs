@@ -13,6 +13,7 @@ test('real SystemPrompt and ToolRuntime scope the expert prompt and tool to the 
   t.after(() => ctx.fiber?.dispose?.());
   const systemPrompt = new SystemPrompt(ctx, {});
   const tools = new ToolRuntime(ctx);
+  if (typeof tools.setExecutor !== 'function' || typeof tools.resolve !== 'function') { t.skip('this SDK has no per-step tool conditions; scoped tools are not registered there'); return; }
   tools.setExecutor({ describe: definitions => ({ schemas: definitions.map(item => ({ name: item.name, description: item.description, parameters: { type: 'object', properties: {} } })) }), execute: async () => [] });
   const task = { id: 'task-a', originalRequest: '把 Markdown 笔记整理成待办 {{cwd}}', revisions: [{ id: 'rev-1', workflow: { intent: { goal: '笔记转待办' }, plan: { kind: 'single', title: '待办插件', pluginIds: [] }, candidates: [] } }] };
   const experts = createExpertSessions({ store: { list: () => [], write: () => {} }, readTask: async () => task });

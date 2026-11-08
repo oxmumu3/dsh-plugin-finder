@@ -19,7 +19,7 @@ test('Host entry retains existing domains and UI routes while owning one indepen
   const module={exports:{}};vm.runInNewContext(bundled.outputFiles[0].text,{module,exports:module.exports,require:id=>sdk[id]??require(id),Buffer,process:{versions:{node:process.versions.node},platform:process.platform},AbortController,AbortSignal,Response,Request,URL,TextDecoder,structuredClone,setTimeout,clearTimeout,console,fetch:()=>{throw Error('no network during setup');}});
   const connection={fetch:{register:route=>{routes.push(route);return()=>{};}}};
   const ctx={
-    connection,tools:{register:(definition,options)=>{tools.set(definition.name,definition);if(options)toolOptions.set(definition.name,options);return()=>tools.delete(definition.name);},get:name=>tools.get(name),schemas:()=>[...tools.values()]},
+    connection,tools:{resolve:async()=>({dispose(){}}),register:(definition,options)=>{tools.set(definition.name,definition);if(options)toolOptions.set(definition.name,options);return()=>tools.delete(definition.name);},get:name=>tools.get(name),schemas:()=>[...tools.values()]},
     systemPrompt:{section:spec=>{registered.push(spec);return()=>{};}},workspaceRegistry:{list:()=>[]},workingDirectory:{get:()=>undefined},sandboxPolicy:{resolve:()=>({mode:'workspace-write'})},
     get(name){return this[name];},effect:fn=>{effects.push(fn());},
     storageDomain:{async open(spec){opened.push(spec);const tables=new Map();return{table(name){if(!tables.has(name))tables.set(name,new Map());const table=tables.get(name);return{get:id=>table.get(id),put:(id,row)=>table.set(id,row),delete:id=>table.delete(id),entries:()=>table.entries()};},global:{get:()=>structuredClone(spec.global?.initial??null),set:()=>{}},async close(){closed.push(spec.name);}};}},

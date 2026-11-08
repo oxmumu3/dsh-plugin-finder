@@ -6,6 +6,7 @@
 //   3. 保存开关、用户经验和每个会话的阶段记录，供面板和输入框上方的进度条读取。
 // 不改官方创造模式本身，不加审批、不拦截工具；用户可随时在面板或进度条上关闭。
 import {FinderError} from './contracts.js';
+import {supportsScopedTools} from './expert-session.js';
 
 export const CREATOR_PRESET = 'cordis';
 export const CREATOR_SECTION = 'finder:creator-assist';
@@ -22,7 +23,17 @@ const clean = (value, max) => typeof value === 'string' ? value.replace(CONTROL,
 const fail = code => { throw new FinderError(code); };
 
 /** 写进每个创造模式请求的经验提示：保持短、文字固定（只随已存经验条数变化），以便命中请求缓存。 */
-export function renderCreatorPrompt(noteCount = 0) {
+export function renderCreatorPrompt(noteCount = 0, {tools = true} = {}) {
+  if (!tools) return [
+    `${CREATOR_MARKER}这是创造模式会话，用户装了「发现好插件」并开启了创造经验。按下面的顺序做，能少走弯路、少花 Token：`,
+    '1. 先查现成：用户说出需求后，先用 finder_search 查社区现成插件。有合适的先推荐给用户选；用户说要自己做，再继续。',
+    '2. 先对齐设计：写代码前，用三五句大白话说清准备挂在哪个位置、分几个文件、数据存在哪，等用户确认。',
+    '3. 先查再写：用 cordis_inspect 查清展位和接口，找一个最接近的现成插件照着改，不凭记忆猜接口名。',
+    '4. 先跑空架子：第一版只做能点开、不白屏的最小入口；之后每轮只加一个功能。',
+    '5. 说清怎么看效果：只改了界面，告诉用户按 Cmd+R 刷新；加了工具、改了后台或重装同名插件，告诉用户彻底退出再打开 DSH。',
+    '6. 卡住就止损：同一个问题连续改 3 轮还没好，停下来总结试过什么、卡在哪里，建议用户带着总结开新窗口继续。',
+    '这些是建议做法，用户的明确要求优先。',
+  ].join('\n');
   return [
     `${CREATOR_MARKER}这是创造模式会话，用户装了「发现好插件」并开启了创造经验。按下面的顺序做，能少走弯路、少花 Token：`,
     '1. 先查现成：用户说出需求后，先用 finder_search 查社区现成插件。有合适的先推荐给用户选；用户说要自己做，再继续。',
@@ -83,6 +94,7 @@ export function createCreatorAssist({store, presetOf, now = () => new Date(), ne
     try { const value = JSON.parse(row.serialized); if (record(value) && ID.test(value.sessionId) && Array.isArray(value.steps)) steps.set(value.sessionId, value); } catch { /* 跳过损坏记录 */ }
   }
   let prompt = renderCreatorPrompt(notes.size);
+  const plainPrompt = renderCreatorPrompt(0, {tools: false});
   const refreshPrompt = () => { prompt = renderCreatorPrompt(notes.size); };
   const isCreator = agent => {
     if (!enabled || typeof agent?.id !== 'string') return false;
@@ -97,9 +109,9 @@ export function createCreatorAssist({store, presetOf, now = () => new Date(), ne
   return Object.freeze({
     isEnabled: () => enabled,
     isCreator,
-    sectionText(context) {
+    sectionText(context, {tools = true} = {}) {
       const agent = context?.agent ?? context?.scope;
-      return isCreator(agent) ? prompt : '';
+      return isCreator(agent) ? (tools ? prompt : plainPrompt) : '';
     },
     guideText() {
       const saved = noteList();
@@ -157,7 +169,10 @@ export function registerCreatorAssist(ctx, assist, {defineTool} = {}) {
   const guard = exec => { if (!assist.isCreator(exec?.agent)) throw new Error('这个工具只在开启了「发现好插件」创造经验的创造模式会话中可用，未执行。'); };
   const text = {schema: {type: 'string'}, render: (_args, value) => [{type: 'text', text: value}]};
   try {
-    disposers.push(ctx.systemPrompt.section({name: CREATOR_SECTION, order: 5120, interpolate: false, text: context => assist.sectionText(context)}));
+    const scoped = supportsScopedTools(ctx);
+    disposers.push(ctx.systemPrompt.section({name: CREATOR_SECTION, order: 5120, interpolate: false, text: context => assist.sectionText(context, {tools: scoped})}));
+    // Without per-step conditions the tools would be visible to every session; keep only the prompt.
+    if (!scoped) { ctx.effect?.(() => release); return release; }
     disposers.push(ctx.tools.register(defineTool({
       name: CREATOR_TOOLS.guide,
       description: '读取「发现好插件」整理的创造模式完整避坑清单，以及用户以前记下的插件经验。开始写插件前调用一次即可。只读。',

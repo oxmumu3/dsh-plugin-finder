@@ -77,7 +77,7 @@ test('registration scopes the tool with when() and rejects calls from other sess
   const { experts } = make();
   await experts.attach(attachInput);
   const registered = [], sections = [];
-  const ctx = { tools: { register: (definition, options) => { registered.push({ definition, options }); return () => {}; } }, systemPrompt: { section: section => { sections.push(section); return () => {}; } } };
+  const ctx = { tools: { resolve: async () => ({ dispose() {} }), register: (definition, options) => { registered.push({ definition, options }); return () => {}; } }, systemPrompt: { section: section => { sections.push(section); return () => {}; } } };
   const release = registerExpertSession(ctx, experts, { defineTool: definition => definition });
   assert.equal(sections.length, 1);
   assert.equal(sections[0].name, EXPERT_SECTION);
@@ -96,6 +96,18 @@ test('registration scopes the tool with when() and rejects calls from other sess
   assert.equal(output.updated, true);
   assert.equal(experts.state({ taskId: 'task-a' }).expert.plan.title, '新方案');
   release();
+});
+
+test('hosts without per-step tool conditions get the prompt without the tool line and no tool', async () => {
+  const { experts } = make();
+  await experts.attach(attachInput);
+  const registered = [], sections = [];
+  const ctx = { tools: { register: definition => { registered.push(definition); return () => {}; } }, systemPrompt: { section: section => { sections.push(section); return () => {}; } } };
+  registerExpertSession(ctx, experts, { defineTool: definition => definition });
+  assert.equal(registered.length, 0);
+  const text = sections[0].text({ scope: { id: 'session-expert' } });
+  assert.ok(text.startsWith(EXPERT_MARKER));
+  assert.doesNotMatch(text, new RegExp(EXPERT_TOOL));
 });
 
 test('verification reports live assembly facts without claiming model behavior', async () => {

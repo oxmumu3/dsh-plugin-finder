@@ -101,7 +101,7 @@ test('steps are validated, kept per session, capped at 20 and survive a restart'
 test('registration scopes three tools with when() and guards execution', async () => {
   const { assist } = make();
   const tools = new Map(), sections = [];
-  const ctx = { tools: { register: (definition, options) => { tools.set(definition.name, { definition, options }); return () => tools.delete(definition.name); } }, systemPrompt: { section: section => { sections.push(section); return () => {}; } } };
+  const ctx = { tools: { resolve: async () => ({ dispose() {} }), register: (definition, options) => { tools.set(definition.name, { definition, options }); return () => tools.delete(definition.name); } }, systemPrompt: { section: section => { sections.push(section); return () => {}; } } };
   const release = registerCreatorAssist(ctx, assist, { defineTool });
   assert.equal(sections[0].name, CREATOR_SECTION);
   assert.equal(sections[0].interpolate, false);
@@ -120,6 +120,19 @@ test('registration scopes three tools with when() and guards execution', async (
   assert.equal(tools.size, 0);
 });
 
+test('hosts without per-step tool conditions keep the prompt but register no creator tools', async () => {
+  const { assist } = make();
+  const registered = [], sections = [];
+  const ctx = { tools: { register: definition => { registered.push(definition); return () => {}; } }, systemPrompt: { section: section => { sections.push(section); return () => {}; } } };
+  registerCreatorAssist(ctx, assist, { defineTool });
+  assert.equal(registered.length, 0);
+  const text = sections[0].text({ agent: creatorAgent });
+  assert.equal(text.split(CREATOR_MARKER).length - 1, 1);
+  for (const name of Object.values(CREATOR_TOOLS)) assert.doesNotMatch(text, new RegExp(name));
+  assert.match(text, /finder_search/);
+  assert.equal(sections[0].text({ agent: standardAgent }), '');
+});
+
 test('host preset reader uses agentPresets.presetForSession and never guesses', () => {
   const session = { id: 's' };
   const read = hostPresetReader({ get: name => name === 'agentPresets' ? { presetForSession: value => value === session ? 'cordis' : null } : undefined });
@@ -133,6 +146,7 @@ test('real SystemPrompt and ToolRuntime: creator session gets one section and th
   t.after(() => ctx.fiber?.dispose?.());
   const systemPrompt = new SystemPrompt(ctx, {});
   const tools = new ToolRuntime(ctx);
+  if (typeof tools.setExecutor !== 'function' || typeof tools.resolve !== 'function') { t.skip('this SDK has no per-step tool conditions; scoped tools are not registered there'); return; }
   tools.setExecutor({ describe: definitions => ({ schemas: definitions.map(item => ({ name: item.name, description: item.description, parameters: { type: 'object', properties: {} } })) }), execute: async () => [] });
   const { assist } = make();
   registerCreatorAssist({ tools, systemPrompt, effect: () => {} }, assist, { defineTool });

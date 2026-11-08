@@ -29,7 +29,7 @@ const finderToolNames = ['finder_lookup', 'finder_activate', 'finder_create', 'f
 // Session-scoped tools are registered globally with a when() condition: the expert
 // card writer and the creator-mode experience tools resolve only inside their sessions.
 const scopedFinderToolNames = ['finder_plan_update', 'finder_creator_guide', 'finder_creator_note', 'finder_creator_step'];
-const allFinderToolNames = [...finderToolNames, 'finder_search', ...scopedFinderToolNames];
+let allFinderToolNames = [...finderToolNames, 'finder_search'];
 const promptSections = new Map();
 let forbiddenInvocations = 0;
 const forbidden = operation => () => { forbiddenInvocations++; assert.fail('No ' + operation + ' in compatibility CI'); };
@@ -48,6 +48,8 @@ try {
     getSectionOrder: () => 0,
   });
   tools = new ToolRuntime(ctx);
+  // 0.2.1 registries ignore when(); Finder then registers no session-scoped tools at all.
+  if (typeof tools.resolve === 'function') allFinderToolNames = [...allFinderToolNames, ...scopedFinderToolNames];
   ctx.provide('workspaceRegistry', { list: () => [], resolveByPath: forbidden('workspace resolution') });
   ctx.provide('sessionController', { create: forbidden('Session creation') });
   ctx.provide('llm', { prepareCall: forbidden('model dispatch') });
