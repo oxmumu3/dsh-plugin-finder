@@ -19,7 +19,7 @@ export const publicFiles = new Set([
   ...['client-style', 'client', 'catalog-archive', 'catalog-inventory', 'catalog-detail', 'catalog-install-service', 'plugin-detail-view', 'community-catalog-data', 'community-catalog',
     'community-presentation', 'community-selection', 'community-view', 'contracts',
     'creation-guide', 'creation', 'creator-feedback', 'creator-handoff', 'discovery',
-    'eligibility', 'execution-conversation-view', 'execution-markdown', 'execution-preparation',
+    'eligibility', 'execution-conversation-view', 'execution-markdown', 'execution-preparation', 'expert-session',
     'experience-style', 'experience-view', 'featured-catalog', 'featured-view', 'featured',
     'feedback', 'history', 'lifecycle', 'model', 'plugin-installation', 'agent-finder-service', 'agent-tools', 'agent-creator', 'agent-created-installation', 'agent-model', 'provenance', 'routes', 'progress',
     'runtime-context', 'service', 'brand-mark', 'search-history', 'opportunities', 'opportunity-api', 'opportunity-client', 'opportunity-context', 'opportunity-origin', 'opportunity-view', 'supply', 'telemetry-api', 'telemetry-config',

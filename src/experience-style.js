@@ -70,6 +70,15 @@ export const experienceCss = `
 .pf_v2 .pfv_home_scenario .pfv_scenario_start:hover:not(:disabled) { background: var(--pfv_tint); border-color: var(--pfv_accent); }
 .pfv_composer { border: 1px solid var(--pfv_strong_line); border-radius: 20px; background: var(--pfv_paper); padding: 18px 20px 16px; transition: border-color 160ms ease, box-shadow 160ms ease; }
 .pfv_composer:focus-within { border-color: var(--pfv_accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pfv_accent) 11%, transparent); }
+.pfv_expert { margin-top: 18px; border: 1px solid var(--pfv_strong_line); border-radius: 20px; background: var(--pfv_paper); padding: 16px 18px 12px; display: flex; flex-direction: column; gap: 10px; }
+.pfv_expert_heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.pfv_expert_heading h3 { margin: 0; font-size: 16px; }
+.pfv_expert .pf_expert_conversation { border-top: 1px solid var(--pfv_line); padding-top: 8px; }
+.pfv_expert_error { color: var(--pfv_danger, #c2410c); }
+.pfv_expert_plan { border: 1px solid color-mix(in srgb, var(--pfv_accent) 38%, var(--pfv_line)); border-radius: 16px; background: color-mix(in srgb, var(--pfv_accent) 5%, var(--pfv_paper)); padding: 14px 16px; margin: 0 0 18px; }
+.pfv_expert_plan_heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pfv_expert_plan h3 { margin: 8px 0 4px; font-size: 17px; }
+.pfv_expert_plugins, .pfv_expert_steps { margin: 8px 0; padding-left: 20px; line-height: 1.7; }
 .pfv_home_card { display: flex; flex-direction: column; min-width: 0; min-height: 208px; margin: 0; padding: 22px 24px 20px; border: 1px solid var(--pfv_strong_line); border-radius: 16px; }
 .pfv_home_composer { background: var(--pfv_paper); box-shadow: 0 4px 18px color-mix(in srgb, var(--pfv_ink) 4%, transparent); }
 .pfv_scenario_card { background: color-mix(in srgb, var(--pfv_accent) 6%, var(--pfv_paper)); border-color: color-mix(in srgb, var(--pfv_accent) 10%, var(--pfv_line)); }

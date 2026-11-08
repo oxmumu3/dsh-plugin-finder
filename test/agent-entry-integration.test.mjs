@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {Context} from '@deepseek-ai/cordis';
 const require=createRequire(import.meta.url);
 test('Host entry retains existing domains and UI routes while owning one independent Agent request domain',async()=>{
-  const registered=[],opened=[],closed=[],effects=[],tools=new Map(),routes=[];
+  const registered=[],opened=[],closed=[],effects=[],tools=new Map(),toolOptions=new Map(),routes=[];
   const sdk={
     '@deepseek-ai/dsh-storage-domain':{defineDomain:spec=>spec,domainTable:schema=>schema},
     '@deepseek-ai/dsh-app-boot':{getDshRuntimeVersion:()=> '0.2.1-rc.5'},
@@ -19,15 +19,19 @@ test('Host entry retains existing domains and UI routes while owning one indepen
   const module={exports:{}};vm.runInNewContext(bundled.outputFiles[0].text,{module,exports:module.exports,require:id=>sdk[id]??require(id),Buffer,process:{versions:{node:process.versions.node},platform:process.platform},AbortController,AbortSignal,Response,Request,URL,TextDecoder,structuredClone,setTimeout,clearTimeout,console,fetch:()=>{throw Error('no network during setup');}});
   const connection={fetch:{register:route=>{routes.push(route);return()=>{};}}};
   const ctx={
-    connection,tools:{register:definition=>{tools.set(definition.name,definition);return()=>tools.delete(definition.name);},get:name=>tools.get(name),schemas:()=>[...tools.values()]},
+    connection,tools:{register:(definition,options)=>{tools.set(definition.name,definition);if(options)toolOptions.set(definition.name,options);return()=>tools.delete(definition.name);},get:name=>tools.get(name),schemas:()=>[...tools.values()]},
     systemPrompt:{section:spec=>{registered.push(spec);return()=>{};}},workspaceRegistry:{list:()=>[]},workingDirectory:{get:()=>undefined},sandboxPolicy:{resolve:()=>({mode:'workspace-write'})},
     get(name){return this[name];},effect:fn=>{effects.push(fn());},
     storageDomain:{async open(spec){opened.push(spec);const tables=new Map();return{table(name){if(!tables.has(name))tables.set(name,new Map());const table=tables.get(name);return{get:id=>table.get(id),put:(id,row)=>table.set(id,row),delete:id=>table.delete(id),entries:()=>table.entries()};},global:{get:()=>structuredClone(spec.global?.initial??null),set:()=>{}},async close(){closed.push(spec.name);}};}},
   };
   await module.exports.apply(ctx);
-  assert.deepEqual(opened.map(spec=>spec.name),['plugin_finder','plugin_finder_history','plugin_finder_telemetry','plugin_finder_opportunities','plugin_finder_agent_requests','plugin_finder_catalog_installs','plugin_finder_search']);
+  assert.deepEqual(opened.map(spec=>spec.name),['plugin_finder','plugin_finder_history','plugin_finder_telemetry','plugin_finder_opportunities','plugin_finder_agent_requests','plugin_finder_catalog_installs','plugin_finder_search','plugin_finder_expert']);
   for(const spec of opened)assert.equal(spec.version,1);
-  assert.equal(tools.size,5);assert.equal(registered[0].name,'finder:agent-routing');
+  assert.equal(tools.size,6);assert.equal(registered[0].name,'finder:agent-routing');
+  // The expert prompt and tool exist globally but only resolve for a bound expert session.
+  assert.equal(registered[1].name,'finder:expert-session');assert.equal(registered[1].text({scope:{id:'any-session'}}),'');
+  assert.equal(typeof toolOptions.get('finder_plan_update')?.when,'function');assert.equal(await toolOptions.get('finder_plan_update').when({agent:{id:'any-session'}}),false);
+  for(const endpoint of ['expert-attach','expert-state','expert-verify'])assert.ok(routes.some(route=>route.path===`/api/plugin_finder/${endpoint}`));
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/bootstrap'));
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/search-history'));
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/opportunity-adopt'));
@@ -41,7 +45,7 @@ test('Host entry retains existing domains and UI routes while owning one indepen
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/catalog-install'));
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/catalog-status'));
   for(const cleanup of effects.reverse())await cleanup?.();
-  assert.equal(tools.size,0);assert.equal(new Set(closed).size,7);
+  assert.equal(tools.size,0);assert.equal(new Set(closed).size,8);
 });
 
 test('entry routes fixed plan issues from both factories through the official default logger exporter and buffer',async t=>{

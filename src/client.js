@@ -155,6 +155,8 @@ export function createFinderController(ctx, options = {}) {
     catalogOpen: false, catalogSelection: null, catalogDetail: null, catalogBusy: '', catalogError: '',
     opportunity: null, opportunityBusy: '', opportunityError: '', opportunityEditing: false, opportunityFiles: [], opportunityDraft: null, productIntroVisible: false,
     execution: null, executionReference: null, executions: [], executionWorkspaceLabel: '',
+    expert: null, expertReference: null, expertPhase: '', expertError: '', expertVerification: null,
+    expertAvailable: typeof ctx?.sessions?.create === 'function' && typeof ctx?.sessions?.retain === 'function' && typeof ctx?.sessions?.binding === 'function',
     creation: null, creationForm: null, creationDirty: false, localOnly: false, creatorAttempts: [], creatorHandoff: null, pendingCreatorRecord: null,
     conversation: [], followupText: '', followupWarning: '', followupPending: false, followupRetry: null, pendingOutcome: null,
     stage: 'describe', request: '', communityEntryId: null, homeCommunityEntryId: null, bootstrap: null, bootstrapLoaded: false,
@@ -615,6 +617,73 @@ export function createFinderController(ctx, options = {}) {
       globalThis.requestAnimationFrame?.(() => globalThis.document?.querySelector('[data-plugin-finder]')?.scrollIntoView({block:'start',behavior:'instant'}));
     },
   });
+  // ---- 插件专家会话：追问时打开一条真正的原生会话，方案卡片随会话里的工具调用更新 ----
+  let expertBinding = null, expertTask, expertStarting = false;
+  const expertSupported = () => typeof ctx?.sessions?.create === 'function' && typeof ctx?.sessions?.retain === 'function' && typeof ctx?.sessions?.binding === 'function';
+  const releaseExpert = () => {
+    const entry = expertBinding; expertBinding = null;
+    if (!entry) return;
+    for (const stop of entry.stops.splice(0)) { try { stop(); } catch { /* release every observer */ } }
+    try { entry.reference?.release?.(); } catch { /* already released */ }
+  };
+  const refreshExpert = async taskId => {
+    if (!taskId) return null;
+    const value = await executionPost('expert-state', { taskId });
+    if (closed || state.taskId !== taskId) return null;
+    const expert = value?.expert && value.expert.taskId === taskId ? value.expert : null;
+    publish({ expert });
+    return expert;
+  };
+  // Refresh the card when the expert calls the update tool or a turn ends; never poll.
+  const watchExpertPlan = (binding, taskId) => {
+    let seen = -1, timer = null;
+    const count = () => {
+      const entries = binding.eventSource?.getSnapshot?.()?.entries;
+      if (!Array.isArray(entries)) return 0;
+      let total = 0;
+      for (const entry of entries) {
+        const event = entry?.event;
+        if (entry?.type === 'event' && (event?.type === 'turn/end' || event?.type === 'tool/call' && event.data?.name === 'finder_plan_update')) total += 1;
+      }
+      return total;
+    };
+    const check = () => {
+      const now = count();
+      if (now === seen) return;
+      seen = now;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { timer = null; void refreshExpert(taskId).catch(() => null); }, 1200);
+    };
+    const stop = typeof binding.eventSource?.subscribe === 'function' ? binding.eventSource.subscribe(check) : null;
+    check();
+    return () => { if (timer) clearTimeout(timer); if (typeof stop === 'function') stop(); };
+  };
+  const bindExpert = async expert => {
+    if (expertBinding?.sessionId === expert.sessionId) return expertBinding.reference;
+    releaseExpert();
+    const reference = ctx.sessions.retain(expert.sessionId, { source: 'controllerOperation' });
+    const entry = { sessionId: expert.sessionId, taskId: expert.taskId, reference, stops: [] };
+    expertBinding = entry;
+    await reference.ready;
+    if (closed || expertBinding !== entry) return null;
+    const binding = reference.binding;
+    if (!binding || binding.sessionId !== expert.sessionId || ctx.sessions.binding(expert.sessionId) !== binding) throw handoffFailure('专家会话连接已变化，请重新打开这份方案。');
+    entry.stops.push(watchExpertPlan(binding, expert.taskId));
+    publish({ expertReference: reference, expertPhase: 'ready', expertError: '' });
+    return reference;
+  };
+  // Reopening a task returns to its saved expert session instead of creating another one.
+  const ensureExpert = () => {
+    if (closed || !expertSupported() || state.taskId === expertTask) return;
+    expertTask = state.taskId;
+    releaseExpert();
+    publish({ expert: null, expertReference: null, expertPhase: '', expertError: '', expertVerification: null });
+    const taskId = expertTask;
+    if (!taskId) return;
+    void refreshExpert(taskId).catch(() => null).then(expert => expert && !closed && state.taskId === taskId
+      ? bindExpert(expert).catch(() => { if (!closed && state.taskId === taskId) publish({ expertPhase: '', expertError: '专家会话暂时没有打开；它仍在 DSH 会话列表里，可以从那里继续。' }); })
+      : null);
+  };
   return {
     ...opportunityClient.methods,
     getSnapshot: () => state,
@@ -680,6 +749,51 @@ export function createFinderController(ctx, options = {}) {
         publish({ followupRetry: null, pendingOutcome: null });
         return true;
       } finally { if (current()) publish({ followupPending: false }); }
+    },
+    ensureExpert() { ensureExpert(); },
+    async startExpert() {
+      if (closed || operation || state.followupPending || expertStarting) return false;
+      const note = state.followupText.trim();
+      if (!state.taskId || !state.revisionId || !note || note.length > 1500) { publish({ error: '请写下想接着聊的内容，最多 1500 字。' }); return false; }
+      if (!expertSupported()) return this.submitFollowup();
+      syncWorkspaces();
+      const source = identity();
+      expertStarting = true;
+      expertTask = source.taskId;
+      publish({ expertPhase: 'opening', expertError: '', error: '', notice: '' });
+      try {
+        let expert = state.expert?.taskId === source.taskId ? state.expert : await refreshExpert(source.taskId).catch(() => null);
+        if (!expert) {
+          const workspaceId = state.workspaceId;
+          if (!workspaceId || !workspaceSnapshot()?.items?.some(item => item.workspaceId === workspaceId)) throw handoffFailure('请先选择这项任务所在的工作区，专家会话会在那里打开。');
+          let created;
+          try { created = await ctx.sessions.create({ workspaceId, agentPreset: 'standard' }); }
+          catch (error) { throw handoffFailure(`暂时无法创建专家会话：${text(error?.message) || '宿主未返回原因'}`.slice(0, 300)); }
+          const sessionId = typeof created === 'string' ? created : text(created?.sessionId) || text(created?.id);
+          if (!sessionId) throw handoffFailure('专家会话的创建结果尚未确认，没有发送。');
+          const attached = await executionPost('expert-attach', { ...source, sessionId, workspaceId });
+          if (closed || state.taskId !== source.taskId) return false;
+          expert = attached?.expert;
+          if (!expert?.sessionId) throw handoffFailure('专家会话关联尚未保存，没有发送。');
+          publish({ expert, expertVerification: attached.verification ?? null });
+        }
+        const reference = await bindExpert(expert);
+        if (!reference || closed || state.taskId !== source.taskId) return false;
+        const binding = reference.binding;
+        const preset = binding.session?.projections?.faceOf?.('agentPreset')?.getSnapshot?.();
+        if (preset !== undefined && preset !== null && preset !== 'standard') throw handoffFailure('专家会话类型未核实，没有发送。');
+        if (typeof binding.session?.prompt !== 'function') throw handoffFailure('当前宿主无法向会话发送消息，你的补充已保留。');
+        const requestId = globalThis.crypto?.randomUUID?.() ?? `finder-expert-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+        const result = await binding.session.prompt([{ type: 'text', text: note }], 'queue', undefined, requestId);
+        if (result?.ok !== true || result.value?.accepted !== true) throw handoffFailure('消息尚未确认送达专家会话，你的补充已保留。');
+        saveFollowup('');
+        publish({ expertPhase: 'ready', notice: '' });
+        void executionPost('expert-verify', { taskId: source.taskId }).then(value => { if (!closed && state.taskId === source.taskId) publish({ expertVerification: value?.verification ?? null }); }).catch(() => null);
+        return true;
+      } catch (error) {
+        if (!closed) publish({ expertPhase: state.expertReference ? 'ready' : '', expertError: error?.safeForUser === true ? error.message : '专家会话暂时没有打开，你的补充已保留。' });
+        return false;
+      } finally { expertStarting = false; }
     },
     setHomeRequest(request) { if (!closed && !state.searching && (!operation || operation.kind === 'bootstrap')) { if (state.resetPending) draftRevision += 1; saveHomeInput(text(request).slice(0, 6000), state.homeCommunityEntryId); publish({ error: '', notice: '' }); } },
     clearHomeCommunitySelection() {
@@ -1204,6 +1318,7 @@ export function createFinderController(ctx, options = {}) {
       executionMount?.reject(abortError()); executionMount = null;
       // Detach first: aborting a still-pending prompt wait must not mean Stop.
       executionHandle?.dispose();
+      releaseExpert();
       operation?.controller.abort('disposed'); operation = null;
       if (typeof stopSessions === 'function') stopSessions();
       if (typeof stopWorkspaces === 'function') stopWorkspaces(); listeners.clear();
@@ -1302,8 +1417,16 @@ export function apply(ctx) {
       h('div', { className: 'pf_execution_original_conversation' }, content),
       h(ExecutionFilePreview, { surface: previewSurface, renderSlot }));
   }
+  // The expert view is the official transcript; the factory keeps the official composer and docks.
+  function ExpertChat(props) {
+    return h('div', { className: 'pf_expert_chat', style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } }, props.renderSlot('conversation.session', { view: 'chat' }));
+  }
+  function ExpertConversation({ renderFactorySlot }) {
+    return renderFactorySlot('conversation.content', { variant: 'embedded', phase: 'active', hero: false }, { slots: { views: ExpertChat } });
+  }
   function Workbench({ SessionProvider, renderSlot } = {}) {
     const state = useState();
+    React.useEffect(() => { controller.ensureExpert(); }, [state.taskId]);
     const [feedbackOutcome, setFeedbackOutcome] = React.useState('');
     const [feedbackNote, setFeedbackNote] = React.useState('');
     const active = React.useRef(true);
@@ -1498,7 +1621,7 @@ export function apply(ctx) {
       !state.catalogOpen && state.followupWarning ? h('p', { className: 'pf_banner pf_small', role: 'status' }, state.followupWarning) : null,
       !state.catalogOpen && state.resetPending && state.busy !== 'reset' ? h('div', { className: 'pf_banner pf_small', role: 'status' }, '开始新需求尚未确认，已有方案仍保留。', button('重试开始新需求', () => controller.retryReset(), { disabled: busy })) : null,
       !state.catalogOpen && busy && ['home', 'featured', 'history', 'creation-guide'].includes(state.view) && !state.searching ? h('div', { className: 'pf_status', role: 'status' }, h('span', { className: 'pf_spinner', 'aria-hidden': true }), { 'opportunity-adopt': '正在核对建议并查找方案…', 'creation-start': '正在评估复用机会并生成共创草案…', 'creation-update': '正在保存蓝图并按需重新核对供给…', 'creation-refine': '正在根据你的描述修改蓝图…', creator: '正在连接官方 Creator 并保留会话关联…', 'creator-save': '正在保存 Creator 原会话关联…', bootstrap: '正在读取连接与配置…', analyze: '正在理解目标、材料与约束…', recommend: '正在搜索来源、读取候选资料并推荐…', handoff: '正在连接选定工作区并准备未发送草稿…', feedback: '正在保存到本机…', reset: '正在保存并开始新需求…', history: '正在读取本机历史方案…', open: '正在打开所选方案与版本…', refine: '正在根据反馈重新理解需求…', import: '正在导入本机备份…', export: '正在导出任务备份…', continue: '正在核对原会话绑定…', 'handoff-save': '正在保存原会话关联…', 'telemetry-status': '正在读取同步状态…', 'telemetry-consent': '正在保存自动回传选择…', 'telemetry-delete': '正在停止回传并申请删除记录…' }[state.busy], button('取消', () => controller.cancel(), { className: 'pf_btn pf_text' })) : null,
-      h('div', { className: 'pfv_catalog_background', style: { display: state.catalogOpen ? 'none' : undefined }, 'aria-hidden': state.catalogOpen ? true : undefined }, state.view === 'featured' ? renderFeaturedView({ h, state, controller, copyText, busy, mode: 'detail' }) : state.view === 'history' ? h('div', null, historyView, renderFeaturedView({ h, state, controller, copyText, busy, mode: 'drafts' })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, sections: { executionConversation: state.executionReference && SessionProvider && renderSlot ? h('div', { className: 'pf_execution_conversation', style: { minHeight: 400, height: 'min(68vh, 720px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.executionReference }, renderSlot('plugin-finder.execution', {}))) : null, workspacePicker: !state.workspaceId ? h('label', { className: 'pf_label' }, '在哪个工作区完成', h('select', { 'aria-label': '任务工作区', value: state.workspaceId, disabled: busy || state.workspacePhase !== 'ready', onChange: event => controller.selectWorkspace(event.target.value) }, h('option', { value: '' }, '选择任务材料所在的工作区'), ...state.workspaces.map(item => h('option', { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } })),
+      h('div', { className: 'pfv_catalog_background', style: { display: state.catalogOpen ? 'none' : undefined }, 'aria-hidden': state.catalogOpen ? true : undefined }, state.view === 'featured' ? renderFeaturedView({ h, state, controller, copyText, busy, mode: 'detail' }) : state.view === 'history' ? h('div', null, historyView, renderFeaturedView({ h, state, controller, copyText, busy, mode: 'drafts' })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, sections: { expertConversation: state.expertReference && SessionProvider && renderSlot ? h('div', { className: 'pf_expert_conversation', style: { minHeight: 420, height: 'min(70vh, 760px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.expertReference }, renderSlot('plugin-finder.expert', {}))) : null, executionConversation: state.executionReference && SessionProvider && renderSlot ? h('div', { className: 'pf_execution_conversation', style: { minHeight: 400, height: 'min(68vh, 720px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.executionReference }, renderSlot('plugin-finder.execution', {}))) : null, workspacePicker: !state.workspaceId ? h('label', { className: 'pf_label' }, '在哪个工作区完成', h('select', { 'aria-label': '任务工作区', value: state.workspaceId, disabled: busy || state.workspacePhase !== 'ready', onChange: event => controller.selectWorkspace(event.target.value) }, h('option', { value: '' }, '选择任务材料所在的工作区'), ...state.workspaces.map(item => h('option', { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } })),
       state.catalogOpen ? renderPluginDetailView({ h, state, controller }) : null,
       state.telemetrySettingsOpen ? telemetryView : null,
       h('footer', { className: 'pf_footer' }, h('details', { className: 'pf_details' }, h('summary', null, '关于搜索、模型与本机记录'),
@@ -1509,7 +1632,8 @@ export function apply(ctx) {
   }
   if (typeof ctx.layout?.selectPanel === 'function') {
     ctx.effect(() => { if (typeof document === 'undefined') return; const tag = document.createElement('style'); tag.dataset.pluginCss = 'dsh-plugin-finder'; tag.textContent = finderCss + experienceCss; document.head.appendChild(tag); return () => tag.remove(); });
-    ctx.effect(() => ctx.slots.inject('main', () => ctx.slots.register({ name: 'main', key: PANEL, children: { 'plugin-finder.execution': { kind: 'single', scope: 'session' } } }, Workbench)));
+    ctx.effect(() => ctx.slots.inject('main', () => ctx.slots.register({ name: 'main', key: PANEL, children: { 'plugin-finder.execution': { kind: 'single', scope: 'session' }, 'plugin-finder.expert': { kind: 'single', scope: 'session' } } }, Workbench)));
+    ctx.effect(() => ctx.slots.inject('plugin-finder.expert', () => ctx.slots.register({ name: 'plugin-finder.expert' }, ExpertConversation)));
     ctx.effect(() => ctx.slots.inject('plugin-finder.execution', () => ctx.slots.register({ name: 'plugin-finder.execution', children: {
       'plugin-finder.execution.file': { kind: 'keyed', scope: 'session', inject: { hooks: { tabInfo: executionPreviewTabInfoFactory } } },
     } }, ExecutionConversation)));

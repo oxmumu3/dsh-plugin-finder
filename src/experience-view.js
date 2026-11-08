@@ -130,7 +130,13 @@ export function createExperienceView(React) {
     const clockSuffix = waited >= 30
       ? ` 已等待 ${waited} 秒，比平时久；可以继续等，或点上面的「停止」。`
       : waited >= 3 ? ` 已用时 ${waited} 秒。` : '';
-    const submitFollowup = event => { event.preventDefault(); if (!followupBusy && modelReady && text(state.followupText).trim()) void controller.submitFollowup(); };
+    const expertMode = !isCreating && state.expertAvailable === true && typeof controller.startExpert === 'function';
+    const expertOpening = state.expertPhase === 'opening';
+    const submitFollowup = event => {
+      event.preventDefault();
+      if (followupBusy || expertOpening || !modelReady || !text(state.followupText).trim()) return;
+      void (expertMode ? controller.startExpert() : controller.submitFollowup());
+    };
     const statusLine = followupBusy && !execution ? h('div', { className: 'pfv_progress', role: 'status' },
       h('span', { className: 'pfv_progress_dot', 'aria-hidden': true }), h('span', null, progress),
       button('停止', () => controller.cancel(), { className: 'pfv_button pfv_quiet', 'aria-label': '停止当前操作并保留内容' })) : null;
@@ -225,9 +231,25 @@ export function createExperienceView(React) {
 
     const followup = h('form', { className: 'pfv_composer pfv_followup', onSubmit: submitFollowup },
       h('label', { className: 'pfv_composer_label', htmlFor: 'pfv_followup_input' }, '想调整哪里？'),
-      h('textarea', { id: 'pfv_followup_input', 'aria-label': '补充需求', value: text(state.followupText), maxLength: 1500, disabled: followupBusy || !state.taskId, placeholder: isCreating ? '例如：第一版只处理本地文件，先不做自动发送。' : '补充材料、限制，或直接说你想改什么。', onChange: event => controller.setFollowup(event.target.value), onKeyDown: shortcut }),
-      h('div', { className: 'pfv_composer_bottom' }, h('span', { className: 'pfv_hint' }, state.followupRetry ? '补充已保存，可以重试' : '接着改这份方案'), h('button', { type: 'submit', className: 'pfv_button', disabled: followupBusy || !modelReady || !state.taskId || !text(state.followupText).trim() }, state.followupRetry ? '重试查找' : '更新方案')),
+      h('textarea', { id: 'pfv_followup_input', 'aria-label': '补充需求', value: text(state.followupText), maxLength: 1500, disabled: followupBusy || expertOpening || !state.taskId, placeholder: isCreating ? '例如：第一版只处理本地文件，先不做自动发送。' : expertMode ? '比如：我已经装了某个插件 / 帮我看看这个文件夹 / 只要本地方案。' : '补充材料、限制，或直接说你想改什么。', onChange: event => controller.setFollowup(event.target.value), onKeyDown: shortcut }),
+      h('div', { className: 'pfv_composer_bottom' }, h('span', { className: 'pfv_hint' }, state.followupRetry ? '补充已保存，可以重试' : expertMode ? '发送后会打开插件专家会话，在这里接着聊' : '接着改这份方案'), h('button', { type: 'submit', className: 'pfv_button', disabled: followupBusy || expertOpening || !modelReady || !state.taskId || !text(state.followupText).trim() }, state.followupRetry ? '重试查找' : expertMode ? (expertOpening ? '正在打开…' : '开始对话') : '更新方案')),
+      expertMode && text(state.expertError) ? h('p', { className: 'pfv_hint pfv_expert_error', role: 'alert' }, state.expertError) : null,
       !modelReady && state.bootstrapLoaded ? h('p', { className: 'pfv_hint' }, '模型尚未配置，已有记录仍可查看。') : null);
+    // Once a native expert session exists, the official conversation replaces the form.
+    const expertSection = !isCreating && sections.expertConversation ? h('section', { className: 'pfv_expert', 'aria-labelledby': 'pfv_expert_session_title' },
+      h('div', { className: 'pfv_expert_heading' }, h('h3', { id: 'pfv_expert_session_title' }, '和插件专家接着聊'),
+        h('span', { className: 'pfv_hint' }, '这是一条真正的 DSH 会话：能看你的工作区和已装插件；默认只查找，不安装、不改文件。')),
+      text(state.expertError) ? h('p', { className: 'pfv_hint pfv_expert_error', role: 'alert' }, state.expertError) : null,
+      sections.expertConversation) : null;
+    const expertPlan = !isCreating && state.expert?.plan && typeof state.expert.plan === 'object' ? state.expert.plan : null;
+    const expertPlanCard = expertPlan ? h('section', { className: 'pfv_expert_plan', 'aria-label': '专家会话里的最新方案' },
+      h('div', { className: 'pfv_expert_plan_heading' }, h('span', { className: 'pfv_kind' }, '专家会话里的最新方案'),
+        Number.isInteger(state.expert.planVersion) ? h('span', { className: 'pfv_hint' }, `第 ${state.expert.planVersion} 次更新`) : null),
+      h('h3', null, text(expertPlan.title)), paragraph(expertPlan.summary),
+      records(expertPlan.plugins).length ? h('ul', { className: 'pfv_expert_plugins' }, ...records(expertPlan.plugins).map((item, index) => h('li', { key: index }, h('strong', null, text(item.name)), text(item.reason) ? h('span', null, ` — ${text(item.reason)}`) : null))) : null,
+      strings(expertPlan.steps).length ? h('ol', { className: 'pfv_expert_steps' }, ...strings(expertPlan.steps).map((step, index) => h('li', { key: index }, step))) : null,
+      strings(expertPlan.limits).length ? disclosure('限制与待核实', list(strings(expertPlan.limits))) : null,
+      h('p', { className: 'pfv_hint' }, '来自专家会话的方案记录，不代表插件已安装或已验证。')) : null;
 
     const history = h('div', { className: 'pfv_messages', 'aria-label': '当前需求的对话记录' }, ...messages.map((message, index) => h('article', { key: message.id || index, className: `pfv_message pfv_message_${message.role}` },
       h('div', { className: 'pfv_message_meta' }, h('span', null, message.role === 'user' ? '你' : '插件专家'), Number.isInteger(message.revisionNumber) ? h('span', null, `版本 ${message.revisionNumber}`) : null), paragraph(message.text))));
@@ -321,6 +343,6 @@ export function createExperienceView(React) {
         !startingNew && !execution && text(state.intent?.goal) && state.intent.goal !== request ? h('p', null, h('span', { className: 'pfv_hint' }, '我的理解'), h('span', { className: 'pfv_understanding_text' }, short(state.intent.goal, 160))) : null),
       h('section', { className: 'pfv_outcome', id: 'pfv_outcome', 'aria-labelledby': 'pfv_outcome_title', 'aria-busy': Boolean(followupBusy) },
         h('div', { className: 'pfv_column_heading' }, h('h2', { id: 'pfv_outcome_title' }, execution ? '本次运行' : isCreating ? '插件方案' : previousOutcome ? '上一版方案' : '当前方案'), startingNew ? null : h('span', { className: 'pfv_version' }, revisionLabel)),
-        statusLine, execution ? null : sourceNotice, h('div', { className: `pfv_outcome_document${execution ? ' pfv_outcome_live' : ''}` }, execution ? h('div', { className: 'pfv_result_grid' }, h('div', { className: 'pfv_result_primary' }, executionView), h('aside', { className: 'pfv_solution_overview', 'aria-label': '本次能力方案' }, isCreating ? blueprintView() : planView())) : isCreating ? blueprintView() : planView()), execution || startingNew ? null : followup, startingNew ? null : evidence));
+        statusLine, execution ? null : sourceNotice, h('div', { className: `pfv_outcome_document${execution ? ' pfv_outcome_live' : ''}` }, execution ? h('div', { className: 'pfv_result_grid' }, h('div', { className: 'pfv_result_primary' }, executionView), h('aside', { className: 'pfv_solution_overview', 'aria-label': '本次能力方案' }, isCreating ? blueprintView() : planView())) : isCreating ? blueprintView() : h(React.Fragment, null, expertPlanCard, planView())), execution || startingNew ? null : expertSection || followup, startingNew ? null : evidence));
   };
 }

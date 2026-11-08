@@ -2488,9 +2488,12 @@ function createExperienceView(React2) {
     const waited = state.searchingSince && state.clock ? Math.max(0, Math.round((state.clock - state.searchingSince) / 1e3)) : 0;
     const liveEvents = busy && Array.isArray(state.searchProgress?.events) ? state.searchProgress.events.filter((item) => item && typeof item.text === "string" && item.text).slice(-4) : [];
     const clockSuffix = waited >= 30 ? ` \u5DF2\u7B49\u5F85 ${waited} \u79D2\uFF0C\u6BD4\u5E73\u65F6\u4E45\uFF1B\u53EF\u4EE5\u7EE7\u7EED\u7B49\uFF0C\u6216\u70B9\u4E0A\u9762\u7684\u300C\u505C\u6B62\u300D\u3002` : waited >= 3 ? ` \u5DF2\u7528\u65F6 ${waited} \u79D2\u3002` : "";
+    const expertMode = !isCreating && state.expertAvailable === true && typeof controller.startExpert === "function";
+    const expertOpening = state.expertPhase === "opening";
     const submitFollowup = (event) => {
       event.preventDefault();
-      if (!followupBusy && modelReady && text6(state.followupText).trim()) void controller.submitFollowup();
+      if (followupBusy || expertOpening || !modelReady || !text6(state.followupText).trim()) return;
+      void (expertMode ? controller.startExpert() : controller.submitFollowup());
     };
     const statusLine = followupBusy && !execution ? h(
       "div",
@@ -2659,10 +2662,40 @@ function createExperienceView(React2) {
       "form",
       { className: "pfv_composer pfv_followup", onSubmit: submitFollowup },
       h("label", { className: "pfv_composer_label", htmlFor: "pfv_followup_input" }, "\u60F3\u8C03\u6574\u54EA\u91CC\uFF1F"),
-      h("textarea", { id: "pfv_followup_input", "aria-label": "\u8865\u5145\u9700\u6C42", value: text6(state.followupText), maxLength: 1500, disabled: followupBusy || !state.taskId, placeholder: isCreating ? "\u4F8B\u5982\uFF1A\u7B2C\u4E00\u7248\u53EA\u5904\u7406\u672C\u5730\u6587\u4EF6\uFF0C\u5148\u4E0D\u505A\u81EA\u52A8\u53D1\u9001\u3002" : "\u8865\u5145\u6750\u6599\u3001\u9650\u5236\uFF0C\u6216\u76F4\u63A5\u8BF4\u4F60\u60F3\u6539\u4EC0\u4E48\u3002", onChange: (event) => controller.setFollowup(event.target.value), onKeyDown: shortcut }),
-      h("div", { className: "pfv_composer_bottom" }, h("span", { className: "pfv_hint" }, state.followupRetry ? "\u8865\u5145\u5DF2\u4FDD\u5B58\uFF0C\u53EF\u4EE5\u91CD\u8BD5" : "\u63A5\u7740\u6539\u8FD9\u4EFD\u65B9\u6848"), h("button", { type: "submit", className: "pfv_button", disabled: followupBusy || !modelReady || !state.taskId || !text6(state.followupText).trim() }, state.followupRetry ? "\u91CD\u8BD5\u67E5\u627E" : "\u66F4\u65B0\u65B9\u6848")),
+      h("textarea", { id: "pfv_followup_input", "aria-label": "\u8865\u5145\u9700\u6C42", value: text6(state.followupText), maxLength: 1500, disabled: followupBusy || expertOpening || !state.taskId, placeholder: isCreating ? "\u4F8B\u5982\uFF1A\u7B2C\u4E00\u7248\u53EA\u5904\u7406\u672C\u5730\u6587\u4EF6\uFF0C\u5148\u4E0D\u505A\u81EA\u52A8\u53D1\u9001\u3002" : expertMode ? "\u6BD4\u5982\uFF1A\u6211\u5DF2\u7ECF\u88C5\u4E86\u67D0\u4E2A\u63D2\u4EF6 / \u5E2E\u6211\u770B\u770B\u8FD9\u4E2A\u6587\u4EF6\u5939 / \u53EA\u8981\u672C\u5730\u65B9\u6848\u3002" : "\u8865\u5145\u6750\u6599\u3001\u9650\u5236\uFF0C\u6216\u76F4\u63A5\u8BF4\u4F60\u60F3\u6539\u4EC0\u4E48\u3002", onChange: (event) => controller.setFollowup(event.target.value), onKeyDown: shortcut }),
+      h("div", { className: "pfv_composer_bottom" }, h("span", { className: "pfv_hint" }, state.followupRetry ? "\u8865\u5145\u5DF2\u4FDD\u5B58\uFF0C\u53EF\u4EE5\u91CD\u8BD5" : expertMode ? "\u53D1\u9001\u540E\u4F1A\u6253\u5F00\u63D2\u4EF6\u4E13\u5BB6\u4F1A\u8BDD\uFF0C\u5728\u8FD9\u91CC\u63A5\u7740\u804A" : "\u63A5\u7740\u6539\u8FD9\u4EFD\u65B9\u6848"), h("button", { type: "submit", className: "pfv_button", disabled: followupBusy || expertOpening || !modelReady || !state.taskId || !text6(state.followupText).trim() }, state.followupRetry ? "\u91CD\u8BD5\u67E5\u627E" : expertMode ? expertOpening ? "\u6B63\u5728\u6253\u5F00\u2026" : "\u5F00\u59CB\u5BF9\u8BDD" : "\u66F4\u65B0\u65B9\u6848")),
+      expertMode && text6(state.expertError) ? h("p", { className: "pfv_hint pfv_expert_error", role: "alert" }, state.expertError) : null,
       !modelReady && state.bootstrapLoaded ? h("p", { className: "pfv_hint" }, "\u6A21\u578B\u5C1A\u672A\u914D\u7F6E\uFF0C\u5DF2\u6709\u8BB0\u5F55\u4ECD\u53EF\u67E5\u770B\u3002") : null
     );
+    const expertSection = !isCreating && sections.expertConversation ? h(
+      "section",
+      { className: "pfv_expert", "aria-labelledby": "pfv_expert_session_title" },
+      h(
+        "div",
+        { className: "pfv_expert_heading" },
+        h("h3", { id: "pfv_expert_session_title" }, "\u548C\u63D2\u4EF6\u4E13\u5BB6\u63A5\u7740\u804A"),
+        h("span", { className: "pfv_hint" }, "\u8FD9\u662F\u4E00\u6761\u771F\u6B63\u7684 DSH \u4F1A\u8BDD\uFF1A\u80FD\u770B\u4F60\u7684\u5DE5\u4F5C\u533A\u548C\u5DF2\u88C5\u63D2\u4EF6\uFF1B\u9ED8\u8BA4\u53EA\u67E5\u627E\uFF0C\u4E0D\u5B89\u88C5\u3001\u4E0D\u6539\u6587\u4EF6\u3002")
+      ),
+      text6(state.expertError) ? h("p", { className: "pfv_hint pfv_expert_error", role: "alert" }, state.expertError) : null,
+      sections.expertConversation
+    ) : null;
+    const expertPlan = !isCreating && state.expert?.plan && typeof state.expert.plan === "object" ? state.expert.plan : null;
+    const expertPlanCard = expertPlan ? h(
+      "section",
+      { className: "pfv_expert_plan", "aria-label": "\u4E13\u5BB6\u4F1A\u8BDD\u91CC\u7684\u6700\u65B0\u65B9\u6848" },
+      h(
+        "div",
+        { className: "pfv_expert_plan_heading" },
+        h("span", { className: "pfv_kind" }, "\u4E13\u5BB6\u4F1A\u8BDD\u91CC\u7684\u6700\u65B0\u65B9\u6848"),
+        Number.isInteger(state.expert.planVersion) ? h("span", { className: "pfv_hint" }, `\u7B2C ${state.expert.planVersion} \u6B21\u66F4\u65B0`) : null
+      ),
+      h("h3", null, text6(expertPlan.title)),
+      paragraph(expertPlan.summary),
+      records(expertPlan.plugins).length ? h("ul", { className: "pfv_expert_plugins" }, ...records(expertPlan.plugins).map((item, index) => h("li", { key: index }, h("strong", null, text6(item.name)), text6(item.reason) ? h("span", null, ` \u2014 ${text6(item.reason)}`) : null))) : null,
+      strings2(expertPlan.steps).length ? h("ol", { className: "pfv_expert_steps" }, ...strings2(expertPlan.steps).map((step, index) => h("li", { key: index }, step))) : null,
+      strings2(expertPlan.limits).length ? disclosure("\u9650\u5236\u4E0E\u5F85\u6838\u5B9E", list2(strings2(expertPlan.limits))) : null,
+      h("p", { className: "pfv_hint" }, "\u6765\u81EA\u4E13\u5BB6\u4F1A\u8BDD\u7684\u65B9\u6848\u8BB0\u5F55\uFF0C\u4E0D\u4EE3\u8868\u63D2\u4EF6\u5DF2\u5B89\u88C5\u6216\u5DF2\u9A8C\u8BC1\u3002")
+    ) : null;
     const history = h("div", { className: "pfv_messages", "aria-label": "\u5F53\u524D\u9700\u6C42\u7684\u5BF9\u8BDD\u8BB0\u5F55" }, ...messages2.map((message, index) => h(
       "article",
       { key: message.id || index, className: `pfv_message pfv_message_${message.role}` },
@@ -2816,8 +2849,8 @@ function createExperienceView(React2) {
         h("div", { className: "pfv_column_heading" }, h("h2", { id: "pfv_outcome_title" }, execution ? "\u672C\u6B21\u8FD0\u884C" : isCreating ? "\u63D2\u4EF6\u65B9\u6848" : previousOutcome ? "\u4E0A\u4E00\u7248\u65B9\u6848" : "\u5F53\u524D\u65B9\u6848"), startingNew ? null : h("span", { className: "pfv_version" }, revisionLabel)),
         statusLine,
         execution ? null : sourceNotice,
-        h("div", { className: `pfv_outcome_document${execution ? " pfv_outcome_live" : ""}` }, execution ? h("div", { className: "pfv_result_grid" }, h("div", { className: "pfv_result_primary" }, executionView), h("aside", { className: "pfv_solution_overview", "aria-label": "\u672C\u6B21\u80FD\u529B\u65B9\u6848" }, isCreating ? blueprintView() : planView())) : isCreating ? blueprintView() : planView()),
-        execution || startingNew ? null : followup,
+        h("div", { className: `pfv_outcome_document${execution ? " pfv_outcome_live" : ""}` }, execution ? h("div", { className: "pfv_result_grid" }, h("div", { className: "pfv_result_primary" }, executionView), h("aside", { className: "pfv_solution_overview", "aria-label": "\u672C\u6B21\u80FD\u529B\u65B9\u6848" }, isCreating ? blueprintView() : planView())) : isCreating ? blueprintView() : h(React2.Fragment, null, expertPlanCard, planView())),
+        execution || startingNew ? null : expertSection || followup,
         startingNew ? null : evidence
       )
     );
@@ -2896,6 +2929,15 @@ var experienceCss = `
 .pf_v2 .pfv_home_scenario .pfv_scenario_start:hover:not(:disabled) { background: var(--pfv_tint); border-color: var(--pfv_accent); }
 .pfv_composer { border: 1px solid var(--pfv_strong_line); border-radius: 20px; background: var(--pfv_paper); padding: 18px 20px 16px; transition: border-color 160ms ease, box-shadow 160ms ease; }
 .pfv_composer:focus-within { border-color: var(--pfv_accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pfv_accent) 11%, transparent); }
+.pfv_expert { margin-top: 18px; border: 1px solid var(--pfv_strong_line); border-radius: 20px; background: var(--pfv_paper); padding: 16px 18px 12px; display: flex; flex-direction: column; gap: 10px; }
+.pfv_expert_heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.pfv_expert_heading h3 { margin: 0; font-size: 16px; }
+.pfv_expert .pf_expert_conversation { border-top: 1px solid var(--pfv_line); padding-top: 8px; }
+.pfv_expert_error { color: var(--pfv_danger, #c2410c); }
+.pfv_expert_plan { border: 1px solid color-mix(in srgb, var(--pfv_accent) 38%, var(--pfv_line)); border-radius: 16px; background: color-mix(in srgb, var(--pfv_accent) 5%, var(--pfv_paper)); padding: 14px 16px; margin: 0 0 18px; }
+.pfv_expert_plan_heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pfv_expert_plan h3 { margin: 8px 0 4px; font-size: 17px; }
+.pfv_expert_plugins, .pfv_expert_steps { margin: 8px 0; padding-left: 20px; line-height: 1.7; }
 .pfv_home_card { display: flex; flex-direction: column; min-width: 0; min-height: 208px; margin: 0; padding: 22px 24px 20px; border: 1px solid var(--pfv_strong_line); border-radius: 16px; }
 .pfv_home_composer { background: var(--pfv_paper); box-shadow: 0 4px 18px color-mix(in srgb, var(--pfv_ink) 4%, transparent); }
 .pfv_scenario_card { background: color-mix(in srgb, var(--pfv_accent) 6%, var(--pfv_paper)); border-color: color-mix(in srgb, var(--pfv_accent) 10%, var(--pfv_line)); }
@@ -3664,6 +3706,12 @@ function createFinderController(ctx, options = {}) {
     executionReference: null,
     executions: [],
     executionWorkspaceLabel: "",
+    expert: null,
+    expertReference: null,
+    expertPhase: "",
+    expertError: "",
+    expertVerification: null,
+    expertAvailable: typeof ctx?.sessions?.create === "function" && typeof ctx?.sessions?.retain === "function" && typeof ctx?.sessions?.binding === "function",
     creation: null,
     creationForm: null,
     creationDirty: false,
@@ -4342,6 +4390,85 @@ function createFinderController(ctx, options = {}) {
       globalThis.requestAnimationFrame?.(() => globalThis.document?.querySelector("[data-plugin-finder]")?.scrollIntoView({ block: "start", behavior: "instant" }));
     }
   });
+  let expertBinding = null, expertTask, expertStarting = false;
+  const expertSupported = () => typeof ctx?.sessions?.create === "function" && typeof ctx?.sessions?.retain === "function" && typeof ctx?.sessions?.binding === "function";
+  const releaseExpert = () => {
+    const entry = expertBinding;
+    expertBinding = null;
+    if (!entry) return;
+    for (const stop of entry.stops.splice(0)) {
+      try {
+        stop();
+      } catch {
+      }
+    }
+    try {
+      entry.reference?.release?.();
+    } catch {
+    }
+  };
+  const refreshExpert = async (taskId) => {
+    if (!taskId) return null;
+    const value = await executionPost("expert-state", { taskId });
+    if (closed || state.taskId !== taskId) return null;
+    const expert = value?.expert && value.expert.taskId === taskId ? value.expert : null;
+    publish({ expert });
+    return expert;
+  };
+  const watchExpertPlan = (binding, taskId) => {
+    let seen = -1, timer = null;
+    const count2 = () => {
+      const entries = binding.eventSource?.getSnapshot?.()?.entries;
+      if (!Array.isArray(entries)) return 0;
+      let total = 0;
+      for (const entry of entries) {
+        const event = entry?.event;
+        if (entry?.type === "event" && (event?.type === "turn/end" || event?.type === "tool/call" && event.data?.name === "finder_plan_update")) total += 1;
+      }
+      return total;
+    };
+    const check = () => {
+      const now = count2();
+      if (now === seen) return;
+      seen = now;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        void refreshExpert(taskId).catch(() => null);
+      }, 1200);
+    };
+    const stop = typeof binding.eventSource?.subscribe === "function" ? binding.eventSource.subscribe(check) : null;
+    check();
+    return () => {
+      if (timer) clearTimeout(timer);
+      if (typeof stop === "function") stop();
+    };
+  };
+  const bindExpert = async (expert) => {
+    if (expertBinding?.sessionId === expert.sessionId) return expertBinding.reference;
+    releaseExpert();
+    const reference = ctx.sessions.retain(expert.sessionId, { source: "controllerOperation" });
+    const entry = { sessionId: expert.sessionId, taskId: expert.taskId, reference, stops: [] };
+    expertBinding = entry;
+    await reference.ready;
+    if (closed || expertBinding !== entry) return null;
+    const binding = reference.binding;
+    if (!binding || binding.sessionId !== expert.sessionId || ctx.sessions.binding(expert.sessionId) !== binding) throw handoffFailure("\u4E13\u5BB6\u4F1A\u8BDD\u8FDE\u63A5\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u6253\u5F00\u8FD9\u4EFD\u65B9\u6848\u3002");
+    entry.stops.push(watchExpertPlan(binding, expert.taskId));
+    publish({ expertReference: reference, expertPhase: "ready", expertError: "" });
+    return reference;
+  };
+  const ensureExpert = () => {
+    if (closed || !expertSupported() || state.taskId === expertTask) return;
+    expertTask = state.taskId;
+    releaseExpert();
+    publish({ expert: null, expertReference: null, expertPhase: "", expertError: "", expertVerification: null });
+    const taskId = expertTask;
+    if (!taskId) return;
+    void refreshExpert(taskId).catch(() => null).then((expert) => expert && !closed && state.taskId === taskId ? bindExpert(expert).catch(() => {
+      if (!closed && state.taskId === taskId) publish({ expertPhase: "", expertError: "\u4E13\u5BB6\u4F1A\u8BDD\u6682\u65F6\u6CA1\u6709\u6253\u5F00\uFF1B\u5B83\u4ECD\u5728 DSH \u4F1A\u8BDD\u5217\u8868\u91CC\uFF0C\u53EF\u4EE5\u4ECE\u90A3\u91CC\u7EE7\u7EED\u3002" });
+    }) : null);
+  };
   return {
     ...opportunityClient.methods,
     getSnapshot: () => state,
@@ -4421,6 +4548,63 @@ function createFinderController(ctx, options = {}) {
         return true;
       } finally {
         if (current()) publish({ followupPending: false });
+      }
+    },
+    ensureExpert() {
+      ensureExpert();
+    },
+    async startExpert() {
+      if (closed || operation || state.followupPending || expertStarting) return false;
+      const note = state.followupText.trim();
+      if (!state.taskId || !state.revisionId || !note || note.length > 1500) {
+        publish({ error: "\u8BF7\u5199\u4E0B\u60F3\u63A5\u7740\u804A\u7684\u5185\u5BB9\uFF0C\u6700\u591A 1500 \u5B57\u3002" });
+        return false;
+      }
+      if (!expertSupported()) return this.submitFollowup();
+      syncWorkspaces();
+      const source = identity3();
+      expertStarting = true;
+      expertTask = source.taskId;
+      publish({ expertPhase: "opening", expertError: "", error: "", notice: "" });
+      try {
+        let expert = state.expert?.taskId === source.taskId ? state.expert : await refreshExpert(source.taskId).catch(() => null);
+        if (!expert) {
+          const workspaceId = state.workspaceId;
+          if (!workspaceId || !workspaceSnapshot()?.items?.some((item) => item.workspaceId === workspaceId)) throw handoffFailure("\u8BF7\u5148\u9009\u62E9\u8FD9\u9879\u4EFB\u52A1\u6240\u5728\u7684\u5DE5\u4F5C\u533A\uFF0C\u4E13\u5BB6\u4F1A\u8BDD\u4F1A\u5728\u90A3\u91CC\u6253\u5F00\u3002");
+          let created;
+          try {
+            created = await ctx.sessions.create({ workspaceId, agentPreset: "standard" });
+          } catch (error) {
+            throw handoffFailure(`\u6682\u65F6\u65E0\u6CD5\u521B\u5EFA\u4E13\u5BB6\u4F1A\u8BDD\uFF1A${text7(error?.message) || "\u5BBF\u4E3B\u672A\u8FD4\u56DE\u539F\u56E0"}`.slice(0, 300));
+          }
+          const sessionId = typeof created === "string" ? created : text7(created?.sessionId) || text7(created?.id);
+          if (!sessionId) throw handoffFailure("\u4E13\u5BB6\u4F1A\u8BDD\u7684\u521B\u5EFA\u7ED3\u679C\u5C1A\u672A\u786E\u8BA4\uFF0C\u6CA1\u6709\u53D1\u9001\u3002");
+          const attached = await executionPost("expert-attach", { ...source, sessionId, workspaceId });
+          if (closed || state.taskId !== source.taskId) return false;
+          expert = attached?.expert;
+          if (!expert?.sessionId) throw handoffFailure("\u4E13\u5BB6\u4F1A\u8BDD\u5173\u8054\u5C1A\u672A\u4FDD\u5B58\uFF0C\u6CA1\u6709\u53D1\u9001\u3002");
+          publish({ expert, expertVerification: attached.verification ?? null });
+        }
+        const reference = await bindExpert(expert);
+        if (!reference || closed || state.taskId !== source.taskId) return false;
+        const binding = reference.binding;
+        const preset = binding.session?.projections?.faceOf?.("agentPreset")?.getSnapshot?.();
+        if (preset !== void 0 && preset !== null && preset !== "standard") throw handoffFailure("\u4E13\u5BB6\u4F1A\u8BDD\u7C7B\u578B\u672A\u6838\u5B9E\uFF0C\u6CA1\u6709\u53D1\u9001\u3002");
+        if (typeof binding.session?.prompt !== "function") throw handoffFailure("\u5F53\u524D\u5BBF\u4E3B\u65E0\u6CD5\u5411\u4F1A\u8BDD\u53D1\u9001\u6D88\u606F\uFF0C\u4F60\u7684\u8865\u5145\u5DF2\u4FDD\u7559\u3002");
+        const requestId = globalThis.crypto?.randomUUID?.() ?? `finder-expert-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+        const result = await binding.session.prompt([{ type: "text", text: note }], "queue", void 0, requestId);
+        if (result?.ok !== true || result.value?.accepted !== true) throw handoffFailure("\u6D88\u606F\u5C1A\u672A\u786E\u8BA4\u9001\u8FBE\u4E13\u5BB6\u4F1A\u8BDD\uFF0C\u4F60\u7684\u8865\u5145\u5DF2\u4FDD\u7559\u3002");
+        saveFollowup("");
+        publish({ expertPhase: "ready", notice: "" });
+        void executionPost("expert-verify", { taskId: source.taskId }).then((value) => {
+          if (!closed && state.taskId === source.taskId) publish({ expertVerification: value?.verification ?? null });
+        }).catch(() => null);
+        return true;
+      } catch (error) {
+        if (!closed) publish({ expertPhase: state.expertReference ? "ready" : "", expertError: error?.safeForUser === true ? error.message : "\u4E13\u5BB6\u4F1A\u8BDD\u6682\u65F6\u6CA1\u6709\u6253\u5F00\uFF0C\u4F60\u7684\u8865\u5145\u5DF2\u4FDD\u7559\u3002" });
+        return false;
+      } finally {
+        expertStarting = false;
       }
     },
     setHomeRequest(request) {
@@ -5178,6 +5362,7 @@ function createFinderController(ctx, options = {}) {
       executionMount?.reject(abortError());
       executionMount = null;
       executionHandle?.dispose();
+      releaseExpert();
       operation?.controller.abort("disposed");
       operation = null;
       if (typeof stopSessions === "function") stopSessions();
@@ -5315,8 +5500,17 @@ function apply(ctx) {
       h(ExecutionFilePreview, { surface: previewSurface, renderSlot })
     );
   }
+  function ExpertChat(props) {
+    return h("div", { className: "pf_expert_chat", style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" } }, props.renderSlot("conversation.session", { view: "chat" }));
+  }
+  function ExpertConversation({ renderFactorySlot }) {
+    return renderFactorySlot("conversation.content", { variant: "embedded", phase: "active", hero: false }, { slots: { views: ExpertChat } });
+  }
   function Workbench({ SessionProvider, renderSlot } = {}) {
     const state = useState();
+    import_react.default.useEffect(() => {
+      controller.ensureExpert();
+    }, [state.taskId]);
     const [feedbackOutcome, setFeedbackOutcome] = import_react.default.useState("");
     const [feedbackNote, setFeedbackNote] = import_react.default.useState("");
     const active = import_react.default.useRef(true);
@@ -5639,7 +5833,7 @@ function apply(ctx) {
       !state.catalogOpen && state.followupWarning ? h("p", { className: "pf_banner pf_small", role: "status" }, state.followupWarning) : null,
       !state.catalogOpen && state.resetPending && state.busy !== "reset" ? h("div", { className: "pf_banner pf_small", role: "status" }, "\u5F00\u59CB\u65B0\u9700\u6C42\u5C1A\u672A\u786E\u8BA4\uFF0C\u5DF2\u6709\u65B9\u6848\u4ECD\u4FDD\u7559\u3002", button2("\u91CD\u8BD5\u5F00\u59CB\u65B0\u9700\u6C42", () => controller.retryReset(), { disabled: busy })) : null,
       !state.catalogOpen && busy && ["home", "featured", "history", "creation-guide"].includes(state.view) && !state.searching ? h("div", { className: "pf_status", role: "status" }, h("span", { className: "pf_spinner", "aria-hidden": true }), { "opportunity-adopt": "\u6B63\u5728\u6838\u5BF9\u5EFA\u8BAE\u5E76\u67E5\u627E\u65B9\u6848\u2026", "creation-start": "\u6B63\u5728\u8BC4\u4F30\u590D\u7528\u673A\u4F1A\u5E76\u751F\u6210\u5171\u521B\u8349\u6848\u2026", "creation-update": "\u6B63\u5728\u4FDD\u5B58\u84DD\u56FE\u5E76\u6309\u9700\u91CD\u65B0\u6838\u5BF9\u4F9B\u7ED9\u2026", "creation-refine": "\u6B63\u5728\u6839\u636E\u4F60\u7684\u63CF\u8FF0\u4FEE\u6539\u84DD\u56FE\u2026", creator: "\u6B63\u5728\u8FDE\u63A5\u5B98\u65B9 Creator \u5E76\u4FDD\u7559\u4F1A\u8BDD\u5173\u8054\u2026", "creator-save": "\u6B63\u5728\u4FDD\u5B58 Creator \u539F\u4F1A\u8BDD\u5173\u8054\u2026", bootstrap: "\u6B63\u5728\u8BFB\u53D6\u8FDE\u63A5\u4E0E\u914D\u7F6E\u2026", analyze: "\u6B63\u5728\u7406\u89E3\u76EE\u6807\u3001\u6750\u6599\u4E0E\u7EA6\u675F\u2026", recommend: "\u6B63\u5728\u641C\u7D22\u6765\u6E90\u3001\u8BFB\u53D6\u5019\u9009\u8D44\u6599\u5E76\u63A8\u8350\u2026", handoff: "\u6B63\u5728\u8FDE\u63A5\u9009\u5B9A\u5DE5\u4F5C\u533A\u5E76\u51C6\u5907\u672A\u53D1\u9001\u8349\u7A3F\u2026", feedback: "\u6B63\u5728\u4FDD\u5B58\u5230\u672C\u673A\u2026", reset: "\u6B63\u5728\u4FDD\u5B58\u5E76\u5F00\u59CB\u65B0\u9700\u6C42\u2026", history: "\u6B63\u5728\u8BFB\u53D6\u672C\u673A\u5386\u53F2\u65B9\u6848\u2026", open: "\u6B63\u5728\u6253\u5F00\u6240\u9009\u65B9\u6848\u4E0E\u7248\u672C\u2026", refine: "\u6B63\u5728\u6839\u636E\u53CD\u9988\u91CD\u65B0\u7406\u89E3\u9700\u6C42\u2026", import: "\u6B63\u5728\u5BFC\u5165\u672C\u673A\u5907\u4EFD\u2026", export: "\u6B63\u5728\u5BFC\u51FA\u4EFB\u52A1\u5907\u4EFD\u2026", continue: "\u6B63\u5728\u6838\u5BF9\u539F\u4F1A\u8BDD\u7ED1\u5B9A\u2026", "handoff-save": "\u6B63\u5728\u4FDD\u5B58\u539F\u4F1A\u8BDD\u5173\u8054\u2026", "telemetry-status": "\u6B63\u5728\u8BFB\u53D6\u540C\u6B65\u72B6\u6001\u2026", "telemetry-consent": "\u6B63\u5728\u4FDD\u5B58\u81EA\u52A8\u56DE\u4F20\u9009\u62E9\u2026", "telemetry-delete": "\u6B63\u5728\u505C\u6B62\u56DE\u4F20\u5E76\u7533\u8BF7\u5220\u9664\u8BB0\u5F55\u2026" }[state.busy], button2("\u53D6\u6D88", () => controller.cancel(), { className: "pf_btn pf_text" })) : null,
-      h("div", { className: "pfv_catalog_background", style: { display: state.catalogOpen ? "none" : void 0 }, "aria-hidden": state.catalogOpen ? true : void 0 }, state.view === "featured" ? renderFeaturedView({ h, state, controller, copyText, busy, mode: "detail" }) : state.view === "history" ? h("div", null, historyView, renderFeaturedView({ h, state, controller, copyText, busy, mode: "drafts" })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, sections: { executionConversation: state.executionReference && SessionProvider && renderSlot ? h("div", { className: "pf_execution_conversation", style: { minHeight: 400, height: "min(68vh, 720px)", display: "flex", flexDirection: "column", position: "relative" } }, h(SessionProvider, { session: state.executionReference }, renderSlot("plugin-finder.execution", {}))) : null, workspacePicker: !state.workspaceId ? h("label", { className: "pf_label" }, "\u5728\u54EA\u4E2A\u5DE5\u4F5C\u533A\u5B8C\u6210", h("select", { "aria-label": "\u4EFB\u52A1\u5DE5\u4F5C\u533A", value: state.workspaceId, disabled: busy || state.workspacePhase !== "ready", onChange: (event) => controller.selectWorkspace(event.target.value) }, h("option", { value: "" }, "\u9009\u62E9\u4EFB\u52A1\u6750\u6599\u6240\u5728\u7684\u5DE5\u4F5C\u533A"), ...state.workspaces.map((item) => h("option", { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } })),
+      h("div", { className: "pfv_catalog_background", style: { display: state.catalogOpen ? "none" : void 0 }, "aria-hidden": state.catalogOpen ? true : void 0 }, state.view === "featured" ? renderFeaturedView({ h, state, controller, copyText, busy, mode: "detail" }) : state.view === "history" ? h("div", null, historyView, renderFeaturedView({ h, state, controller, copyText, busy, mode: "drafts" })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, sections: { expertConversation: state.expertReference && SessionProvider && renderSlot ? h("div", { className: "pf_expert_conversation", style: { minHeight: 420, height: "min(70vh, 760px)", display: "flex", flexDirection: "column", position: "relative" } }, h(SessionProvider, { session: state.expertReference }, renderSlot("plugin-finder.expert", {}))) : null, executionConversation: state.executionReference && SessionProvider && renderSlot ? h("div", { className: "pf_execution_conversation", style: { minHeight: 400, height: "min(68vh, 720px)", display: "flex", flexDirection: "column", position: "relative" } }, h(SessionProvider, { session: state.executionReference }, renderSlot("plugin-finder.execution", {}))) : null, workspacePicker: !state.workspaceId ? h("label", { className: "pf_label" }, "\u5728\u54EA\u4E2A\u5DE5\u4F5C\u533A\u5B8C\u6210", h("select", { "aria-label": "\u4EFB\u52A1\u5DE5\u4F5C\u533A", value: state.workspaceId, disabled: busy || state.workspacePhase !== "ready", onChange: (event) => controller.selectWorkspace(event.target.value) }, h("option", { value: "" }, "\u9009\u62E9\u4EFB\u52A1\u6750\u6599\u6240\u5728\u7684\u5DE5\u4F5C\u533A"), ...state.workspaces.map((item) => h("option", { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } })),
       state.catalogOpen ? renderPluginDetailView({ h, state, controller }) : null,
       state.telemetrySettingsOpen ? telemetryView : null,
       h("footer", { className: "pf_footer" }, h(
@@ -5662,7 +5856,8 @@ function apply(ctx) {
       document.head.appendChild(tag);
       return () => tag.remove();
     });
-    ctx.effect(() => ctx.slots.inject("main", () => ctx.slots.register({ name: "main", key: PANEL, children: { "plugin-finder.execution": { kind: "single", scope: "session" } } }, Workbench)));
+    ctx.effect(() => ctx.slots.inject("main", () => ctx.slots.register({ name: "main", key: PANEL, children: { "plugin-finder.execution": { kind: "single", scope: "session" }, "plugin-finder.expert": { kind: "single", scope: "session" } } }, Workbench)));
+    ctx.effect(() => ctx.slots.inject("plugin-finder.expert", () => ctx.slots.register({ name: "plugin-finder.expert" }, ExpertConversation)));
     ctx.effect(() => ctx.slots.inject("plugin-finder.execution", () => ctx.slots.register({ name: "plugin-finder.execution", children: {
       "plugin-finder.execution.file": { kind: "keyed", scope: "session", inject: { hooks: { tabInfo: executionPreviewTabInfoFactory } } }
     } }, ExecutionConversation)));
