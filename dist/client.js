@@ -4568,29 +4568,29 @@ function createFinderController(ctx, options = {}) {
       publish({ expertPhase: "opening", expertError: "", error: "", notice: "" });
       try {
         let expert = state.expert?.taskId === source.taskId ? state.expert : await refreshExpert(source.taskId).catch(() => null);
-        let created = false;
+        let freshSession = false;
         if (!expert) {
           const workspaceId = state.workspaceId;
           if (!workspaceId || !workspaceSnapshot()?.items?.some((item) => item.workspaceId === workspaceId)) throw handoffFailure("\u8BF7\u5148\u9009\u62E9\u8FD9\u9879\u4EFB\u52A1\u6240\u5728\u7684\u5DE5\u4F5C\u533A\uFF0C\u4E13\u5BB6\u4F1A\u8BDD\u4F1A\u5728\u90A3\u91CC\u6253\u5F00\u3002");
-          let created2;
+          let created;
           try {
-            created2 = await ctx.sessions.create({ workspaceId, agentPreset: "standard" });
+            created = await ctx.sessions.create({ workspaceId, agentPreset: "standard" });
           } catch (error) {
             throw handoffFailure(`\u6682\u65F6\u65E0\u6CD5\u521B\u5EFA\u4E13\u5BB6\u4F1A\u8BDD\uFF1A${text7(error?.message) || "\u5BBF\u4E3B\u672A\u8FD4\u56DE\u539F\u56E0"}`.slice(0, 300));
           }
-          const sessionId = typeof created2 === "string" ? created2 : text7(created2?.sessionId) || text7(created2?.id);
+          const sessionId = typeof created === "string" ? created : text7(created?.sessionId) || text7(created?.id);
           if (!sessionId) throw handoffFailure("\u4E13\u5BB6\u4F1A\u8BDD\u7684\u521B\u5EFA\u7ED3\u679C\u5C1A\u672A\u786E\u8BA4\uFF0C\u6CA1\u6709\u53D1\u9001\u3002");
           const attached = await executionPost("expert-attach", { ...source, sessionId, workspaceId });
           if (closed || state.taskId !== source.taskId) return false;
           expert = attached?.expert;
           if (!expert?.sessionId) throw handoffFailure("\u4E13\u5BB6\u4F1A\u8BDD\u5173\u8054\u5C1A\u672A\u4FDD\u5B58\uFF0C\u6CA1\u6709\u53D1\u9001\u3002");
           publish({ expert, expertVerification: attached.verification ?? null });
-          created2 = attached.attached === true && attached.conflict !== true;
+          freshSession = attached.attached === true && attached.conflict !== true;
         }
         const reference = await bindExpert(expert);
         if (!reference || closed || state.taskId !== source.taskId) return false;
         const binding = reference.binding;
-        if (created && typeof binding.session?.rename === "function") {
+        if (freshSession && typeof binding.session?.rename === "function") {
           const label = (text7(state.plan?.title) || text7(state.intent?.goal) || text7(state.request)).replace(/\s+/g, " ").trim().slice(0, 28);
           try {
             await binding.session.rename(label ? `\u63D2\u4EF6\u4E13\u5BB6 \xB7 ${label}` : "\u63D2\u4EF6\u4E13\u5BB6");
