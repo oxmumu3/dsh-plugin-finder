@@ -146,7 +146,12 @@ test('real SystemPrompt and ToolRuntime: creator session gets one section and th
   t.after(() => ctx.fiber?.dispose?.());
   const systemPrompt = new SystemPrompt(ctx, {});
   const tools = new ToolRuntime(ctx);
-  if (typeof tools.setExecutor !== 'function' || typeof tools.resolve !== 'function') { t.skip('this SDK has no per-step tool conditions; scoped tools are not registered there'); return; }
+  if (typeof tools.setExecutor !== 'function' || typeof tools.resolve !== 'function') {
+    // DSH 0.2.1: no per-step conditions, so the real registry must hold none of the creator tools.
+    registerCreatorAssist({ tools, systemPrompt: { section: () => () => {} }, effect: () => {} }, make().assist, { defineTool });
+    for (const name of Object.values(CREATOR_TOOLS)) assert.equal(tools.get(name), undefined);
+    return;
+  }
   tools.setExecutor({ describe: definitions => ({ schemas: definitions.map(item => ({ name: item.name, description: item.description, parameters: { type: 'object', properties: {} } })) }), execute: async () => [] });
   const { assist } = make();
   registerCreatorAssist({ tools, systemPrompt, effect: () => {} }, assist, { defineTool });
