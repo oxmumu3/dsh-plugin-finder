@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Context } from '@deepseek-ai/cordis';
-import { ToolRuntime, defineTool } from '@deepseek-ai/dsh-tools';
-import { SystemPrompt, renderPrompt } from '@deepseek-ai/dsh-system-prompt';
 import { createCreatorAssist, registerCreatorAssist, hostPresetReader, renderCreatorPrompt, CREATOR_SECTION, CREATOR_MARKER, CREATOR_TOOLS, CREATOR_GUIDE } from '../src/creator-assist.js';
 import { creatorProgress, creatorHandoffPrompt, openCreatorContinuation } from '../src/creator-strip.js';
+// The official SDK is a peer dependency: present locally and in the SDK compatibility
+// jobs (which forbid skipped tests), absent in the peer-less publish preparation job.
+const sdk = await Promise.all([import('@deepseek-ai/dsh-tools'), import('@deepseek-ai/dsh-system-prompt')])
+  .then(([tools, prompt]) => ({ ToolRuntime: tools.ToolRuntime, defineTool: tools.defineTool, SystemPrompt: prompt.SystemPrompt, renderPrompt: prompt.renderPrompt }))
+  .catch(() => null);
+const realSdk = { skip: sdk ? false : 'official DSH SDK peers are not installed here; the SDK compatibility jobs run this test' };
+
 
 function memoryStore({ enabled } = {}) {
   const state = { enabled, notes: new Map(), steps: new Map(), writes: [] };
@@ -20,6 +25,7 @@ function memoryStore({ enabled } = {}) {
   };
 }
 const presetOf = agent => agent?.preset ?? null;
+const defineTool = definition => definition;
 let seq = 0;
 const make = (store = memoryStore()) => ({ store, assist: createCreatorAssist({ store, presetOf, now: () => new Date('2026-11-09T00:00:00Z'), newId: () => `note-${++seq}` }) });
 const creatorAgent = { id: 'session-creator', preset: 'cordis' }, standardAgent = { id: 'session-standard', preset: 'standard' };
@@ -141,7 +147,8 @@ test('host preset reader uses agentPresets.presetForSession and never guesses', 
   assert.equal(hostPresetReader({ get: () => undefined })({ id: 's', session }), null);
 });
 
-test('real SystemPrompt and ToolRuntime: creator session gets one section and the tools, standard session gets neither', async t => {
+test('real SystemPrompt and ToolRuntime: creator session gets one section and the tools, standard session gets neither', realSdk, async t => {
+  const { ToolRuntime, SystemPrompt, renderPrompt, defineTool } = sdk;
   const ctx = new Context();
   t.after(() => ctx.fiber?.dispose?.());
   const systemPrompt = new SystemPrompt(ctx, {});

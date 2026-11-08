@@ -1,14 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Context } from '@deepseek-ai/cordis';
-import { ToolRuntime, defineTool } from '@deepseek-ai/dsh-tools';
-import { SystemPrompt, renderPrompt } from '@deepseek-ai/dsh-system-prompt';
 import { createExpertSessions, registerExpertSession, EXPERT_SECTION, EXPERT_TOOL, EXPERT_MARKER } from '../src/expert-session.js';
+// The official SDK is a peer dependency: present locally and in the SDK compatibility
+// jobs (which forbid skipped tests), absent in the peer-less publish preparation job.
+const sdk = await Promise.all([import('@deepseek-ai/dsh-tools'), import('@deepseek-ai/dsh-system-prompt')])
+  .then(([tools, prompt]) => ({ ToolRuntime: tools.ToolRuntime, defineTool: tools.defineTool, SystemPrompt: prompt.SystemPrompt, renderPrompt: prompt.renderPrompt }))
+  .catch(() => null);
+const realSdk = { skip: sdk ? false : 'official DSH SDK peers are not installed here; the SDK compatibility jobs run this test' };
+
 
 // Real SDK services, not mocks: the official prompt registry and tool runtime
 // decide visibility. The executor is the only stub, because prompt assembly
 // requires one and the native executor is not a test dependency.
-test('real SystemPrompt and ToolRuntime scope the expert prompt and tool to the bound session only', async t => {
+test('real SystemPrompt and ToolRuntime scope the expert prompt and tool to the bound session only', realSdk, async t => {
+  const { ToolRuntime, SystemPrompt, renderPrompt, defineTool } = sdk;
   const ctx = new Context();
   t.after(() => ctx.fiber?.dispose?.());
   const systemPrompt = new SystemPrompt(ctx, {});
