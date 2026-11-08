@@ -1,6 +1,6 @@
 {
   "name": "@oxmumu3/dsh-plugin-finder",
-  "version": "0.12.0-preview.10",
+  "version": "0.12.0-preview.11",
   "description": "Describe a need, find a usable plan, and run or create in the same DeepSeek Harness workspace",
   "icon": "./icon.svg",
   "author": "牛村木木山",
@@ -63,7 +63,9 @@
     "src/creation-guide.js",
     "src/creation.js",
     "src/creator-feedback.js",
+    "src/creator-assist.js",
     "src/creator-handoff.js",
+    "src/creator-strip.js",
     "src/discovery.js",
     "src/eligibility.js",
     "src/execution-conversation-view.js",

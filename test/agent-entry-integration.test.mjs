@@ -25,13 +25,15 @@ test('Host entry retains existing domains and UI routes while owning one indepen
     storageDomain:{async open(spec){opened.push(spec);const tables=new Map();return{table(name){if(!tables.has(name))tables.set(name,new Map());const table=tables.get(name);return{get:id=>table.get(id),put:(id,row)=>table.set(id,row),delete:id=>table.delete(id),entries:()=>table.entries()};},global:{get:()=>structuredClone(spec.global?.initial??null),set:()=>{}},async close(){closed.push(spec.name);}};}},
   };
   await module.exports.apply(ctx);
-  assert.deepEqual(opened.map(spec=>spec.name),['plugin_finder','plugin_finder_history','plugin_finder_telemetry','plugin_finder_opportunities','plugin_finder_agent_requests','plugin_finder_catalog_installs','plugin_finder_search','plugin_finder_expert']);
+  assert.deepEqual(opened.map(spec=>spec.name),['plugin_finder','plugin_finder_history','plugin_finder_telemetry','plugin_finder_opportunities','plugin_finder_agent_requests','plugin_finder_catalog_installs','plugin_finder_search','plugin_finder_expert','plugin_finder_creator']);
   for(const spec of opened)assert.equal(spec.version,1);
-  assert.equal(tools.size,6);assert.equal(registered[0].name,'finder:agent-routing');
+  assert.equal(tools.size,9);assert.equal(registered[0].name,'finder:agent-routing');
   // The expert prompt and tool exist globally but only resolve for a bound expert session.
   assert.equal(registered[1].name,'finder:expert-session');assert.equal(registered[1].text({scope:{id:'any-session'}}),'');
   assert.equal(typeof toolOptions.get('finder_plan_update')?.when,'function');assert.equal(await toolOptions.get('finder_plan_update').when({agent:{id:'any-session'}}),false);
-  for(const endpoint of ['expert-attach','expert-state','expert-verify'])assert.ok(routes.some(route=>route.path===`/api/plugin_finder/${endpoint}`));
+  assert.equal(registered[2].name,'finder:creator-assist');assert.equal(registered[2].text({agent:{id:'any-session'}}),'');
+  for(const name of ['finder_creator_guide','finder_creator_note','finder_creator_step'])assert.equal(await toolOptions.get(name).when({agent:{id:'any-session'}}),false);
+  for(const endpoint of ['expert-attach','expert-state','expert-verify','creator-settings','creator-configure','creator-note-delete','creator-session'])assert.ok(routes.some(route=>route.path===`/api/plugin_finder/${endpoint}`));
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/bootstrap'));
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/search-history'));
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/opportunity-adopt'));
@@ -45,7 +47,7 @@ test('Host entry retains existing domains and UI routes while owning one indepen
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/catalog-install'));
   assert.ok(routes.some(route=>route.path==='/api/plugin_finder/catalog-status'));
   for(const cleanup of effects.reverse())await cleanup?.();
-  assert.equal(tools.size,0);assert.equal(new Set(closed).size,8);
+  assert.equal(tools.size,0);assert.equal(new Set(closed).size,9);
 });
 
 test('entry routes fixed plan issues from both factories through the official default logger exporter and buffer',async t=>{

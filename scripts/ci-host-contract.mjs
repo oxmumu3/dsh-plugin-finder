@@ -26,7 +26,10 @@ let backend, facility, tools;
 const finderToolNames = ['finder_lookup', 'finder_activate', 'finder_create', 'finder_status'];
 // The four capability tools are the verified feedback contract; finder_search is
 // a read-only auxiliary registration that must still be present and disposed.
-const allFinderToolNames = [...finderToolNames, 'finder_search'];
+// Session-scoped tools are registered globally with a when() condition: the expert
+// card writer and the creator-mode experience tools resolve only inside their sessions.
+const scopedFinderToolNames = ['finder_plan_update', 'finder_creator_guide', 'finder_creator_note', 'finder_creator_step'];
+const allFinderToolNames = [...finderToolNames, 'finder_search', ...scopedFinderToolNames];
 const promptSections = new Map();
 let forbiddenInvocations = 0;
 const forbidden = operation => () => { forbiddenInvocations++; assert.fail('No ' + operation + ' in compatibility CI'); };
@@ -72,6 +75,9 @@ try {
       for (const name of allFinderToolNames) assert.ok(tools.get(name), 'Missing official ToolRuntime registration: ' + name);
       assert.deepEqual(tools.schemas().map(tool => tool.name).sort(), [...allFinderToolNames].sort());
       assert.match(promptSections.get('finder:agent-routing')?.text({ scope: undefined }) ?? '', /finder_lookup/);
+      // Scoped sections stay empty for a scope that is neither an expert nor a creator-mode session.
+      assert.equal(promptSections.get('finder:expert-session')?.text({ scope: { id: 'ci-plain-session' } }), '');
+      assert.equal(promptSections.get('finder:creator-assist')?.text({ agent: { id: 'ci-plain-session' } }), '');
       const domain = facility.get('plugin_finder'); assert.ok(domain);
       if (mount === 0) await domain.table('feedback').put('entries', feedbackRow);
       assert.deepEqual(await domain.table('feedback').get('entries'), feedbackRow, 'Four-capability feedback must survive domain close and reopen');

@@ -16,6 +16,7 @@ import { createExperienceView } from './experience-view.js';
 import { experienceCss } from './experience-style.js';
 import { createCreatorFeedbackDraft, renderCreatorFeedbackDraft } from './creator-feedback.js';
 import { canRecheckPluginSource, renderPluginDetailView } from './plugin-detail-view.js';
+import { createCreatorStrip, creatorStripCss } from './creator-strip.js';
 
 export const inject = ['slots', 'layout', 'uiWorkspace', 'workspaces', 'sessions', 'uiSession', 'sidebarRightTabs'];
 const PANEL = 'dsh-plugin-finder';
@@ -1424,6 +1425,39 @@ export function apply(ctx) {
       h('div', { className: 'pf_execution_original_conversation' }, content),
       h(ExecutionFilePreview, { surface: previewSurface, renderSlot }));
   }
+  // Creator-mode experience: one request helper shared by the strip and the settings card.
+  const creatorRequest = async (path, body) => {
+    const response = await (globalThis.fetch)(endpoint + path, {
+      method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin', redirect: 'error', cache: 'no-store',
+      ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
+    });
+    const value = await response.json();
+    if (!response.ok) { const error = new Error(text(value?.error?.message) || '操作未完成，请稍后再试。'); error.safeForUser = true; throw error; }
+    return value;
+  };
+  const creatorSettingsAnchor = 'pf_creator_settings';
+  const CreatorStrip = createCreatorStrip(React, { ctx, request: creatorRequest, openSettings: typeof ctx.layout?.selectPanel === 'function' ? () => {
+    ctx.layout.selectPanel(PANEL);
+    globalThis.requestAnimationFrame?.(() => { const node = globalThis.document?.getElementById(creatorSettingsAnchor); if (node) { node.open = true; node.scrollIntoView({ block: 'center' }); } });
+  } : undefined });
+  function CreatorSettings() {
+    const [value, setValue] = React.useState(null);
+    const [busy, setBusy] = React.useState('');
+    const [message, setMessage] = React.useState('');
+    const load = () => creatorRequest('creator-settings').then(setValue).catch(() => setMessage('暂时读不到创造经验设置。'));
+    // Read only when the user opens the card, so the panel itself makes no extra request.
+    const onToggle = event => { if (event.currentTarget.open && !value) void load(); };
+    const toggle = enabled => { setBusy('toggle'); setMessage(''); void creatorRequest('creator-configure', { enabled }).then(load).catch(error => setMessage(error.message)).finally(() => setBusy('')); };
+    const remove = id => { setBusy(id); setMessage(''); void creatorRequest('creator-note-delete', { id }).then(load).catch(error => setMessage(error.message)).finally(() => setBusy('')); };
+    const notes = Array.isArray(value?.notes) ? value.notes : [];
+    return h('details', { className: 'pf_details', id: creatorSettingsAnchor, onToggle },
+      h('summary', null, value ? `创造模式经验 · ${value.enabled ? '已开启' : '已关闭'}${notes.length ? ` · ${notes.length} 条经验` : ''}` : '创造模式经验'),
+      h('p', null, '开启后，DSH 的创造模式会话会自动按省 Token 的顺序做：先查现成插件、先定设计、先跑空架子、讲清刷新还是重启；输入框上方会显示进度，卡住时可以一键开新窗口接着做。普通会话不受影响。'),
+      value ? h('label', { className: 'pf_check' }, h('input', { type: 'checkbox', checked: value.enabled === true, disabled: busy !== '', onChange: event => toggle(event.target.checked) }), ' 在创造模式里启用') : null,
+      h('p', { className: 'pf_small pf_muted' }, '在创造模式里说「记入插件经验：……」，经验会存在这里，之后新开的创造模式会话都会读到。'),
+      notes.length ? h('ul', { className: 'pf_creator_notes' }, ...notes.map(note => h('li', { key: note.id }, h('span', null, note.text), ' ', button(busy === note.id ? '正在删除…' : '删除', () => remove(note.id), { className: 'pf_btn pf_text', disabled: busy !== '', 'aria-label': `删除经验：${note.text}` })))) : null,
+      message ? h('p', { className: 'pf_small pf_error', role: 'alert' }, message) : null);
+  }
   // The expert view is the official transcript; the factory keeps the official composer and docks.
   function ExpertChat(props) {
     return h('div', { className: 'pf_expert_chat', style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } }, props.renderSlot('conversation.session', { view: 'chat' }));
@@ -1631,14 +1665,14 @@ export function apply(ctx) {
       h('div', { className: 'pfv_catalog_background', style: { display: state.catalogOpen ? 'none' : undefined }, 'aria-hidden': state.catalogOpen ? true : undefined }, state.view === 'featured' ? renderFeaturedView({ h, state, controller, copyText, busy, mode: 'detail' }) : state.view === 'history' ? h('div', null, historyView, renderFeaturedView({ h, state, controller, copyText, busy, mode: 'drafts' })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, sections: { expertConversation: state.expertReference && SessionProvider && renderSlot ? h('div', { className: 'pf_expert_conversation', style: { minHeight: 420, height: 'min(70vh, 760px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.expertReference }, renderSlot('plugin-finder.expert', {}))) : null, executionConversation: state.executionReference && SessionProvider && renderSlot ? h('div', { className: 'pf_execution_conversation', style: { minHeight: 400, height: 'min(68vh, 720px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.executionReference }, renderSlot('plugin-finder.execution', {}))) : null, workspacePicker: !state.workspaceId ? h('label', { className: 'pf_label' }, '在哪个工作区完成', h('select', { 'aria-label': '任务工作区', value: state.workspaceId, disabled: busy || state.workspacePhase !== 'ready', onChange: event => controller.selectWorkspace(event.target.value) }, h('option', { value: '' }, '选择任务材料所在的工作区'), ...state.workspaces.map(item => h('option', { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } })),
       state.catalogOpen ? renderPluginDetailView({ h, state, controller }) : null,
       state.telemetrySettingsOpen ? telemetryView : null,
-      h('footer', { className: 'pf_footer' }, h('details', { className: 'pf_details' }, h('summary', null, '关于搜索、模型与本机记录'),
+      h('footer', { className: 'pf_footer' }, h(CreatorSettings), h('details', { className: 'pf_details' }, h('summary', null, '关于搜索、模型与本机记录'),
         h('p', null, '需求、方案和草稿保存在本机；历史方案可随时继续。自动回传默认关闭，可在「更多」中调整。'),
         h('p', null, `查找与起草使用 DSH 默认模型：${state.modelLabel || '尚未读取'}。沿用已有额度；浏览精选不调用模型。`),
         h('p', null, '第三方精选源，非官方审核。来源与版本会随搜索结果列出，安装和实际效果需另行核验。'),
         Array.isArray(state.bootstrap?.discovery?.sources) ? h('ul', { className: 'pf_sources' }, ...state.bootstrap.discovery.sources.slice(0, 20).map((source, index) => sourceRow(source, index, true))) : null))));
   }
   if (typeof ctx.layout?.selectPanel === 'function') {
-    ctx.effect(() => { if (typeof document === 'undefined') return; const tag = document.createElement('style'); tag.dataset.pluginCss = 'dsh-plugin-finder'; tag.textContent = finderCss + experienceCss; document.head.appendChild(tag); return () => tag.remove(); });
+    ctx.effect(() => { if (typeof document === 'undefined') return; const tag = document.createElement('style'); tag.dataset.pluginCss = 'dsh-plugin-finder'; tag.textContent = finderCss + experienceCss + creatorStripCss; document.head.appendChild(tag); return () => tag.remove(); });
     ctx.effect(() => ctx.slots.inject('main', () => ctx.slots.register({ name: 'main', key: PANEL, children: { 'plugin-finder.execution': { kind: 'single', scope: 'session' }, 'plugin-finder.expert': { kind: 'single', scope: 'session' } } }, Workbench)));
     ctx.effect(() => ctx.slots.inject('plugin-finder.expert', () => ctx.slots.register({ name: 'plugin-finder.expert' }, ExpertConversation)));
     ctx.effect(() => ctx.slots.inject('plugin-finder.execution', () => ctx.slots.register({ name: 'plugin-finder.execution', children: {
@@ -1648,5 +1682,7 @@ export function apply(ctx) {
       slots: ctx.slots, createElement: h, target: 'plugin-finder.execution.file', rootKey: () => ctx.sidebarRightTabs.get('text')?.id,
     }))));
     ctx.effect(() => ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({ name: 'sidebar.panellist', id: PANEL, order: 7, label: '发现好插件' }, PluginIcon)));
+    // Only creator-mode sessions render anything; every other session gets null from the component.
+    ctx.effect(() => ctx.slots.inject('conversation.input.dock', () => ctx.slots.register({ name: 'conversation.input.dock', id: 'plugin-finder-creator', order: 40 }, CreatorStrip)));
   }
 }

@@ -26,6 +26,7 @@ import {createGeneratedPluginInstaller,createGeneratedArtifactReviewer} from './
 import {createAgentModelAdapter} from './src/agent-model.js';
 import {safePlanValidationIssue,FinderError} from './src/contracts.js';
 import {createExpertSessions,registerExpertSession,verifyExpertSession} from './src/expert-session.js';
+import {createCreatorAssist,registerCreatorAssist,hostPresetReader} from './src/creator-assist.js';
 export const name='plugin-finder';
 export const inject=['connection','storageDomain','tools','systemPrompt','workspaceRegistry','workingDirectory','sandboxPolicy'];
 const feedback=z.object({id:z.string().uuid(),createdAt:z.string().datetime(),outcome:z.enum(['complete','partial','blocked']),pluginIds:z.array(z.string().max(200)).max(4),note:z.string().max(1500),stage:z.string().max(80)}).strict();
@@ -51,8 +52,12 @@ const searchHistoryDomain=defineDomain({name:'plugin_finder_search',version:1,ta
 // 专家会话关联单独成域：只存「任务 ↔ 原生会话」和方案卡片，不改任务历史。
 const expertRow=z.object({id:z.string().min(1).max(200),serialized:z.string().max(64000)}).strict();
 const expertDomain=defineDomain({name:'plugin_finder_expert',version:1,tables:{sessions:domainTable(expertRow)}});
+// 创造模式经验：开关、用户记下的经验和每个创造会话的阶段记录，独立成域。
+const creatorRow=z.object({id:z.string().min(1).max(200),serialized:z.string().max(32000)}).strict();
+const creatorGlobal=z.object({enabled:z.boolean()}).strict();
+const creatorDomain=defineDomain({name:'plugin_finder_creator',version:1,global:{schema:creatorGlobal,initial:{enabled:true}},tables:{notes:domainTable(creatorRow),steps:domainTable(creatorRow)}});
 export async function apply(ctx){
-  return withOwnedDomains(ctx,[domain,historyDomain,telemetryDomain,opportunityDomain,agentRequestDomain,catalogInstallDomain,searchHistoryDomain,expertDomain],async([store,historyStoreHandle,telemetryHandle,opportunityHandle,agentHandle,catalogHandle,searchHistoryHandle,expertHandle])=>{
+  return withOwnedDomains(ctx,[domain,historyDomain,telemetryDomain,opportunityDomain,agentRequestDomain,catalogInstallDomain,searchHistoryDomain,expertDomain,creatorDomain],async([store,historyStoreHandle,telemetryHandle,opportunityHandle,agentHandle,catalogHandle,searchHistoryHandle,expertHandle,creatorHandle])=>{
   const table=store.table('feedback');
   const feedbackStore=createFeedbackStore({read:()=>table.get('entries'),write:row=>table.put('entries',state.parse(row))});
   const lifetime=new AbortController();
@@ -91,12 +96,26 @@ export async function apply(ctx){
     store:{list:()=>[...expertRows.entries()].map(([,row])=>row),write:row=>expertRows.put(row.id,expertRow.parse(row))},
     readTask:async taskId=>{const row=await tasks.get(taskId);if(!row)throw new FinderError('WORKFLOW_NOT_FOUND');return JSON.parse(row.serialized);},
   });
+  const creatorNotes=creatorHandle.table('notes'),creatorSteps=creatorHandle.table('steps');
+  let creatorEnabled=true;try{creatorEnabled=(await creatorHandle.global.get())?.enabled!==false;}catch{}
+  const creator=createCreatorAssist({
+    store:{readEnabled:()=>creatorEnabled,writeEnabled:value=>creatorHandle.global.set(creatorGlobal.parse({enabled:value})),
+      listNotes:()=>[...creatorNotes.entries()].map(([,row])=>row),putNote:row=>creatorNotes.put(row.id,creatorRow.parse(row)),deleteNote:id=>creatorNotes.delete(id),
+      listSteps:()=>[...creatorSteps.entries()].map(([,row])=>row),putSteps:row=>creatorSteps.put(row.id,creatorRow.parse(row))},
+    presetOf:hostPresetReader(ctx),
+  });
+  const creatorApi={
+    creatorSettings:()=>creator.settings(),
+    creatorConfigure:body=>creator.setEnabled(body.enabled),
+    creatorNoteDelete:body=>creator.deleteNote(body.id),
+    creatorSession:body=>creator.session({sessionId:body.sessionId}),
+  };
   const expertApi={
     expertAttach:async body=>{const result=await experts.attach(body);return{...result,verification:await verifyExpertSession(ctx,experts,result.expert.sessionId,{signal:body.signal})};},
     expertState:body=>experts.state(body),
     expertVerify:async body=>{const {expert}=experts.state(body);if(!expert)throw new FinderError('WORKFLOW_NOT_FOUND');return{expert,verification:await verifyExpertSession(ctx,experts,expert.sessionId,{signal:body.signal})};},
   };
-  const service={...expertApi,...withOpportunityApi(withTelemetryApi(core,telemetry),{model,store:opportunityStore,historyStore,readWorkspaceContext:createOpportunityContextReader(ctx,{signal:lifetime.signal})}),
+  const service={...creatorApi,...expertApi,...withOpportunityApi(withTelemetryApi(core,telemetry),{model,store:opportunityStore,historyStore,readWorkspaceContext:createOpportunityContextReader(ctx,{signal:lifetime.signal})}),
     catalogDetail:body=>catalogService.detail(body),catalogInstall:body=>catalogService.install(body),catalogStatus:body=>catalogService.status(body)};
   const requests=agentHandle.table('requests');
   const agentModel=createAgentModelAdapter(model,{readRuntime:createRuntimeContextReader(ctx,{signal:lifetime.signal})});
@@ -118,12 +137,13 @@ export async function apply(ctx){
   });
   const stopAgentTools=registerAgentTools(ctx,agentService,{defineTool,approveEscalation,signal:lifetime.signal});
   const stopExpert=registerExpertSession(ctx,experts,{defineTool});
+  const stopCreator=registerCreatorAssist(ctx,creator,{defineTool});
   telemetry.committed();
   const stopRoutes=registerFinderRoutes(ctx,service);
   return async()=>{
     lifetime.abort();
     try{stopRoutes();}finally{
-      try{await stopAgentTools();}finally{try{stopExpert();}finally{try{await catalogService.close();}finally{service.close();discovery.close();}}}
+      try{await stopAgentTools();}finally{try{stopExpert();stopCreator();}finally{try{await catalogService.close();}finally{service.close();discovery.close();}}}
     }
   };
   });
