@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>发现好插件 · 体验 v3 原型（示例数据）</title>
+<style>
+:root{
+  --bg:#14161b; --side:#1a1d23; --panel:#181b21; --card:#20242c; --card2:#252a33; --line:#2c313b; --line2:#3a404c;
+  --ink:#eef1f6; --ink2:#c3c9d4; --muted:#8b93a3; --accent:#5b7cff; --accent2:#7d97ff; --accentSoft:rgba(91,124,255,.14);
+  --ok:#3fbf8f; --okSoft:rgba(63,191,143,.13); --warn:#f0a841; --warnSoft:rgba(240,168,65,.13);
+  --r:14px; --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box} html,body{margin:0;background:#0e1014;color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer} a{color:inherit}
+.proto_bar{position:sticky;top:0;z-index:20;display:flex;gap:6px;align-items:center;padding:10px 16px;background:#0b0c10;border-bottom:1px solid #22252c;font-size:13px}
+.proto_bar b{margin-right:10px;color:#9aa3b5;font-weight:600}
+.proto_bar button{border:1px solid #2c313b;background:#161920;color:#c3c9d4;border-radius:8px;padding:5px 11px}
+.proto_bar button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.proto_bar .demo{margin-left:auto;color:#f0a841}
+/* fake host window */
+.win{display:grid;grid-template-columns:232px 1fr;min-height:calc(100vh - 47px);background:var(--bg)}
+.side{background:var(--side);border-right:1px solid var(--line);padding:18px 12px;font-size:14px;color:var(--ink2)}
+.side .brand{font-weight:700;font-size:18px;color:var(--ink);padding:4px 8px 16px;letter-spacing:.2px}
+.side .item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;margin:2px 0}
+.side .item.on{background:#262a33;color:var(--ink)}
+.side .sep{height:1px;background:var(--line);margin:14px 6px}
+.side .sess{font-size:13px;color:var(--muted);padding:6px 10px}
+.main{min-width:0}
+.view{display:none} .view.on{display:block}
+/* ---------- Finder panel ---------- */
+.page{max-width:960px;margin:0 auto;padding:22px 40px 64px}
+.topnav{display:flex;align-items:center;gap:18px;font-size:14px;color:var(--muted);margin-bottom:26px}
+.topnav .title{display:flex;align-items:center;gap:10px;font-weight:650;color:var(--ink);font-size:16px}
+.topnav .spacer{flex:1}
+.topnav a{text-decoration:none} .topnav a:hover{color:var(--ink)}
+.whale{width:22px;height:22px;display:inline-block}
+.hero{text-align:center;padding:26px 0 8px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--accent2);background:var(--accentSoft);padding:5px 12px;border-radius:999px}
+.hero h1{font-size:40px;line-height:1.2;margin:18px 0 12px;letter-spacing:.5px;font-weight:750}
+.hero p{font-size:16px;line-height:1.7;color:var(--ink2);margin:0 auto;max-width:680px}
+.resume{display:flex;align-items:center;gap:10px;max-width:760px;margin:26px auto 10px;padding:10px 14px;border:1px dashed var(--line2);border-radius:12px;font-size:14px;color:var(--ink2)}
+.resume b{color:var(--ink);font-weight:600}
+.resume .go{margin-left:auto;color:var(--accent2)}
+.composer{max-width:760px;margin:0 auto;background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:18px 18px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.composer textarea{width:100%;min-height:76px;resize:none;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:17px;line-height:1.7}
+.composer textarea::placeholder{color:#6f7787}
+.composer .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line2);background:transparent;color:var(--ink2);border-radius:999px;padding:6px 12px;font-size:13px}
+.chip:hover{border-color:var(--accent);color:var(--ink)}
+.btn{border:0;border-radius:11px;padding:10px 18px;font-size:15px;font-weight:600}
+.btn.primary{background:var(--accent);color:#fff} .btn.primary:hover{background:#6a88ff}
+.btn.ghost{background:transparent;border:1px solid var(--line2);color:var(--ink)}
+.btn.small{padding:6px 12px;font-size:13px;border-radius:9px}
+.row .btn.primary{margin-left:auto}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:960px;margin:44px auto 0}
+.how .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 16px;position:relative}
+.how .num{width:26px;height:26px;border-radius:8px;background:var(--accentSoft);color:var(--accent2);display:grid;place-items:center;font-weight:700;font-size:14px}
+.how h3{margin:12px 0 6px;font-size:16px}
+.how p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.65}
+.how .stat{font-size:22px;font-weight:750;color:var(--ink);margin-top:10px;letter-spacing:.3px}
+.how .stat small{font-size:12.5px;color:var(--muted);font-weight:500;margin-left:6px}
+.how .auto{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:12.5px;color:var(--ok);background:var(--okSoft);padding:4px 10px;border-radius:999px}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+.section{margin-top:46px}
+.section .head{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+.section h2{font-size:19px;margin:0}
+.section .head span{color:var(--muted);font-size:13px}
+.section .head a{margin-left:auto;font-size:13px;color:var(--accent2);text-decoration:none}
+.featured{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.fcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;gap:14px;align-items:flex-start}
+.ficon{width:40px;height:40px;border-radius:11px;background:linear-gradient(140deg,#2c3a6e,#1f2740);display:grid;place-items:center;font-size:19px;flex:none}
+.fcard h4{margin:0 0 4px;font-size:15px} .fcard p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+.cats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:10px}
+.cat b{font-size:14.5px} .cat span{color:var(--muted);font-size:12.5px} .cat em{margin-left:auto;font-style:normal;color:var(--ink2);font-size:13px}
+.foot{margin-top:40px;color:#6f7787;font-size:12.5px;text-align:center}
+/* ---------- result ---------- */
+.back{font-size:14px;color:var(--muted);text-decoration:none}
+.ask{margin:16px 0 22px;padding:14px 18px;border-left:3px solid var(--line2);color:var(--ink2);font-size:15px;line-height:1.7;background:var(--panel);border-radius:0 12px 12px 0}
+.ask small{display:block;color:var(--muted);font-size:12.5px;margin-bottom:4px}
+.verdict{background:linear-gradient(160deg,#1f2640 0%,#1b1f29 60%);border:1px solid #33406a;border-radius:18px;padding:22px 24px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 10px;border-radius:999px;background:var(--okSoft);color:var(--ok)}
+.verdict h2{font-size:26px;margin:12px 0 8px;line-height:1.35}
+.verdict p{margin:0;color:var(--ink2);font-size:15px;line-height:1.7}
+.verdict .acts{display:flex;gap:10px;margin-top:18px;align-items:center}
+.verdict .acts .hint{color:var(--muted);font-size:13px;margin-left:6px}
+.found{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:15px}
+.pcard .top{display:flex;align-items:center;gap:8px}
+.pcard h4{margin:0;font-size:15px} .pcard .by{color:var(--muted);font-size:12px}
+.pcard p{margin:8px 0 10px;color:var(--ink2);font-size:13px;line-height:1.6}
+.why{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:9px;line-height:1.6}
+.why b{color:var(--warn);font-weight:600}
+.tag{font-size:11.5px;padding:2px 7px;border-radius:6px;background:#2a2f39;color:var(--muted)}
+.steps{counter-reset:s;list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.steps li{counter-increment:s;display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--ink2);line-height:1.6}
+.steps li::before{content:counter(s);flex:none;width:22px;height:22px;border-radius:7px;background:var(--accentSoft);color:var(--accent2);display:grid;place-items:center;font-size:12.5px;font-weight:700}
+.steps b{color:var(--ink)}
+.note{display:flex;gap:10px;align-items:flex-start;color:var(--ink2);font-size:13.5px;line-height:1.6;background:var(--warnSoft);border:1px solid rgba(240,168,65,.25);border-radius:12px;padding:12px 14px}
+.note ul{margin:0;padding-left:18px} .note a{color:var(--warn);text-decoration:none;font-size:13px}
+.chat{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.chat .hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.chat .hd b{font-size:15px} .chat .hd span{color:var(--muted);font-size:12.5px}
+.chat .body{padding:16px 18px;display:grid;gap:14px}
+.msg{max-width:78%;font-size:14px;line-height:1.7;padding:10px 14px;border-radius:14px}
+.msg.me{justify-self:end;background:#2b3245;color:var(--ink)}
+.msg.bot{background:var(--card2);color:var(--ink2)}
+.msg.bot b{color:var(--ink)}
+.toolcard{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ok);background:var(--okSoft);padding:6px 10px;border-radius:8px;justify-self:start}
+.chat .input{display:flex;gap:10px;padding:12px 14px;border-top:1px solid var(--line)}
+.chat .input div{flex:1;background:var(--card);border:1px solid var(--line2);border-radius:11px;padding:10px 12px;color:#6f7787;font-size:14px}
+.links{display:flex;gap:18px;margin-top:22px;font-size:13px;color:var(--muted)}
+.links a{text-decoration:none} .links a:hover{color:var(--ink)}
+/* ---------- creator mode mock ---------- */
+.conv{max-width:880px;margin:0 auto;padding:22px 40px 0;min-height:calc(100vh - 47px);display:flex;flex-direction:column}
+.conv .chead{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted);padding-bottom:14px;border-bottom:1px solid var(--line)}
+.conv .chead b{color:var(--ink);font-size:15px}
+.mode{font-size:12px;padding:3px 9px;border-radius:999px;background:#2a2f39;color:var(--ink2)}
+.conv .flow{flex:1;padding:22px 0;display:grid;gap:16px;align-content:start}
+.bubble{max-width:74%;font-size:14.5px;line-height:1.75;padding:12px 16px;border-radius:16px}
+.bubble.me{justify-self:end;background:#2b3245}
+.bubble.bot{color:var(--ink2)}
+.bubble.bot b{color:var(--ink)}
+.dock{position:sticky;bottom:0;padding:10px 0 22px;background:linear-gradient(180deg,rgba(20,22,27,0) 0%,var(--bg) 22%)}
+.cbox{background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:14px 16px 12px}
+.cbox .ph{color:#6f7787;font-size:15px;min-height:42px}
+.cbox .tools{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px}
+.cbox .send{margin-left:auto;width:32px;height:32px;border-radius:50%;background:var(--accent);display:grid;place-items:center;color:#fff}
+/* the strip — 3 states */
+.pal{margin-bottom:8px;border-radius:14px;border:1px solid var(--line2);background:var(--panel)}
+.pal.intro{padding:14px 16px;display:flex;gap:14px;align-items:flex-start;border-color:#35406a;background:linear-gradient(160deg,#1e2438,#1a1d25)}
+.pal.intro h4{margin:0 0 4px;font-size:15px}
+.pal.intro p{margin:0;color:var(--ink2);font-size:13.5px;line-height:1.7}
+.pal.intro .steps5{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 2px}
+.pal.intro .steps5 span{font-size:12.5px;padding:3px 9px;border-radius:999px;background:var(--accentSoft);color:var(--accent2)}
+.pal.intro .acts{display:flex;gap:8px;margin-top:12px}
+.pal.line{display:flex;align-items:center;gap:12px;padding:8px 10px 8px 12px;font-size:13px}
+.pal.line .who{display:flex;align-items:center;gap:7px;color:var(--ink);font-weight:600;white-space:nowrap}
+.seg{display:flex;gap:3px}
+.seg i{width:22px;height:5px;border-radius:3px;background:#323846;display:block}
+.seg i.done{background:var(--accent)} .seg i.now{background:var(--accent2);box-shadow:0 0 0 2px rgba(125,151,255,.25)} .seg i.skip{background:transparent;border:1px solid #4a5162}
+.pal.line .what{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.pal.line .what b{color:var(--ink);font-weight:600;margin-right:6px}
+.more{width:28px;height:28px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:16px;line-height:1}
+.more:hover{border-color:var(--line2);color:var(--ink)}
+.pal.line.blocked{border-color:rgba(240,168,65,.45);background:linear-gradient(90deg,rgba(240,168,65,.10),var(--panel) 60%)}
+.pal.line.blocked .who{color:var(--warn)}
+.menu{position:absolute;right:0;bottom:44px;background:#22262f;border:1px solid var(--line2);border-radius:12px;padding:6px;min-width:220px;box-shadow:0 12px 30px rgba(0,0,0,.4);font-size:13.5px}
+.menu div{padding:8px 10px;border-radius:8px;color:var(--ink2)} .menu div:hover{background:#2b303a;color:var(--ink)}
+.menu small{color:var(--muted);margin-left:6px}
+.rel{position:relative}
+.demo_note{max-width:960px;margin:0 auto;padding:0 40px 30px;color:#6f7787;font-size:12px}
+</style>
+</head>
+<body>
+<nav class="proto_bar" aria-label="原型页面切换">
+  <b>体验 v3 原型</b>
+  <button data-go="home">① 面板首页</button>
+  <button data-go="result">② 方案页</button>
+  <button data-go="c-intro">③ 创造模式 · 第一次</button>
+  <button data-go="c-run">④ 创造模式 · 进行中</button>
+  <button data-go="c-stuck">⑤ 创造模式 · 卡住了</button>
+  <span class="demo">示例数据 · 不连真实服务</span>
+</nav>
+
+<div class="win">
+  <aside class="side" aria-label="DSH 左侧栏（示意）">
+    <div class="brand">deepseek <span style="font-size:11px;border:1px solid #555;border-radius:4px;padding:1px 4px;vertical-align:3px">HARNESS</span></div>
+    <div class="item">＋ 新会话</div>
+    <div class="item">插件</div>
+    <div class="item">DSH Dot</div>
+    <div class="item" id="side-finder">🔍 发现好插件</div>
+    <div class="item">学习空间</div>
+    <div class="sep"></div>
+    <div class="sess">工作区 · Agent</div>
+    <div class="item" id="side-conv" style="font-size:13px">做一个会议纪要看板</div>
+    <div class="item" style="font-size:13px">DSH 入门</div>
+  </aside>
+
+  <main class="main">
+    <!-- ① HOME -->
+    <section class="view" id="home">
+      <div class="page">
+        <div class="topnav">
+          <span class="title"><svg class="whale" viewBox="0 0 24 24" fill="none"><path d="M3 13c0-4 3.6-7 8-7s7 2.6 7.6 6.2c.3-1.5 1.4-2.6 2.9-2.9-.4 1.9-1.6 3.2-3 3.8C17.4 17 14.6 19 11 19c-4.4 0-8-2.5-8-6Z" fill="#5b7cff"/><circle cx="8.3" cy="12" r="1" fill="#fff"/></svg>发现好插件</span>
+          <span class="spacer"></span>
+          <a href="#">我的方案</a><a href="#">插件商店</a>
+        </div>
+        <div class="hero">
+          <span class="eyebrow">你的插件专家</span>
+          <h1>想让 DSH 多会点什么？</h1>
+          <p>说一句你想做的事。有现成插件，我帮你找到、装好、跑一遍；<br>没有的，陪你在创造模式里做出来。</p>
+        </div>
+        <div class="resume">↩︎ 上次聊到 <b>Markdown 笔记 → 项目待办</b><a class="go" href="#result" data-go="result">继续 →</a></div>
+        <form class="composer" onsubmit="return false">
+          <textarea placeholder="例如：把我的会议记录整理成待办，每周五发一份项目简报"></textarea>
+          <div class="row">
+            <button class="chip" type="button">整理笔记成待办</button>
+            <button class="chip" type="button">统计各模型花销</button>
+            <button class="chip" type="button">输入框 Tab 补全</button>
+            <button class="btn primary" type="button" data-go="result">帮我找</button>
+          </div>
+        </form>
+
+        <div class="how" aria-label="它能帮你做什么">
+          <div class="card">
+            <div class="num">1</div>
+            <h3>找现成的</h3>
+            <p>从社区插件里挑出最合适的，说清楚为什么选它、为什么不选别的。</p>
+            <div class="stat">6,563<small>个社区插件 · 6 大类</small></div>
+          </div>
+          <div class="card">
+            <div class="num">2</div>
+            <h3>装好跑一遍</h3>
+            <p>在你选的工作区装好、真跑一次。结果留在这里，有问题接着说。</p>
+            <span class="auto" style="color:var(--ink2);background:#262b35"><span class="dot"></span>装之前先核对作者、版本和兼容</span>
+          </div>
+          <div class="card">
+            <div class="num">3</div>
+            <h3>没有就自己做</h3>
+            <p>打开创造模式说你想做什么，我会自动陪你：先找现成、再定设计、搭好骨架、一次加一个功能。</p>
+            <span class="auto"><span class="dot"></span>已开启 · 自动生效，不用设置</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="head"><h2>精选</h2><span>作者亲手做、亲手验过</span></div>
+          <div class="featured">
+            <div class="fcard"><div class="ficon">🧑‍💼</div><div><h4>AI 分身</h4><p>把零散的项目材料整理成有来源的知识和工作方法。</p></div></div>
+            <div class="fcard"><div class="ficon">🏠</div><div><h4>家庭助手</h4><p>家人各自聊天、提醒和日报，管理者统一配置。</p></div></div>
+            <div class="fcard"><div class="ficon">◎</div><div><h4>DSH Dot</h4><p>看项目进展、交办任务，回复接回到原来的地方。</p></div></div>
+            <div class="fcard"><div class="ficon">🔗</div><div><h4>Dot 连接</h4><p>让已有助手读取授权的项目与会话，跟进进度。</p></div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="head"><h2>按用途逛</h2><span>6,563 个社区插件</span><a href="#">全部插件 →</a></div>
+          <div class="cats">
+            <div class="cat"><div><b>办公与工具</b><br><span>整理任务、处理文件</span></div><em>1,476</em></div>
+            <div class="cat"><div><b>界面与趣味</b><br><span>更顺手，也更好玩</span></div><em>1,693</em></div>
+            <div class="cat"><div><b>模型与管理</b><br><span>模型、会话、费用</span></div><em>1,459</em></div>
+            <div class="cat"><div><b>开发与连接</b><br><span>代码、网页、多设备</span></div><em>994</em></div>
+            <div class="cat"><div><b>知识与助手</b><br><span>记忆和专属助手</span></div><em>617</em></div>
+            <div class="cat"><div><b>内容与输入</b><br><span>文档、图片、语音</span></div><em>324</em></div>
+          </div>
+        </div>
+        <p class="foot">社区目录来自 awesome-dsh-plugin（2026-10-22 快照），插件介绍为作者自述，装之前我会再核对一遍。</p>
+      </div>
+    </section>
+
+    <!-- ② RESULT -->
+    <section class="view" id="result">
+      <div class="page">
+        <a class="back" href="#home" data-go="home">← 发现好插件</a>
+        <div class="ask"><small>你想做的事</small>“把 Markdown 笔记整理成项目待办，只查找方案，先不安装、不改文件。”</div>
+
+        <div class="verdict">
+          <span class="badge"><span class="dot"></span>结论</span>
+          <h2>不用装插件，DSH 自带就能做</h2>
+          <p>你指定笔记所在的文件夹，DSH 读出待办、按项目分组、标上出处，在对话里给你一份清单草稿，不改任何文件。</p>
+          <div class="acts">
+            <button class="btn primary" type="button">在 Agent 工作区开始</button>
+            <button class="btn ghost" type="button" data-go="c-intro">自己做一个插件</button>
+            <span class="hint">开始前会先问你笔记在哪</span>
+          </div>
+        </div>
+
+        <div class="section" style="margin-top:30px">
+          <div class="head"><h2>查过的现成插件</h2><span>读了 6 个来源，找到 3 个相关</span></div>
+          <div class="found">
+            <div class="pcard"><div class="top"><h4>dsh-taskboard</h4><span class="tag">作者自述</span></div><div class="by">cloader · 0.9.1</div><p>把待办整理成项目看板，可以定时执行。</p><div class="why"><b>没选：</b>只管理已有待办，不会从笔记里识别。</div></div>
+            <div class="pcard"><div class="top"><h4>dsh-todos</h4><span class="tag">作者自述</span></div><div class="by">示例作者 · 0.3.0</div><p>在侧栏里记录和勾选待办。</p><div class="why"><b>没选：</b>需要手动录入，不读 Markdown。</div></div>
+            <div class="pcard"><div class="top"><h4>dsh-plugin-todo-panel</h4><span class="tag">作者自述</span></div><div class="by">示例作者 · 1.2.0</div><p>对话顶部显示待办面板。</p><div class="why"><b>以后可以加：</b>想长期管理待办时再装。</div></div>
+          </div>
+        </div>
+
+        <div class="section" style="margin-top:30px">
+          <div class="head"><h2>接下来会这样做</h2></div>
+          <ol class="steps">
+            <li><div><b>你指定笔记在哪</b> — 一个文件夹或几个文件都行，只读本周修改过的</div></li>
+            <li><div><b>DSH 读取并找出待办</b> — 按项目分组，每条标上来自哪篇笔记</div></li>
+            <li><div><b>在对话里给你清单草稿</b> — 你确认后，再决定要不要存成文件</div></li>
+          </ol>
+        </div>
+
+        <div class="section" style="margin-top:22px">
+          <div class="note">⚠︎<div><ul><li>还不知道你的笔记放在哪，开始前会先问你。</li><li>只读不写：这次不会安装插件、也不会改文件。</li></ul><a href="#">还有 12 条细节 →</a></div></div>
+        </div>
+
+        <div class="section" style="margin-top:30px">
+          <div class="chat">
+            <div class="hd"><svg class="whale" viewBox="0 0 24 24" fill="none"><path d="M3 13c0-4 3.6-7 8-7s7 2.6 7.6 6.2c.3-1.5 1.4-2.6 2.9-2.9-.4 1.9-1.6 3.2-3 3.8C17.4 17 14.6 19 11 19c-4.4 0-8-2.5-8-6Z" fill="#5b7cff"/><circle cx="8.3" cy="12" r="1" fill="#fff"/></svg><b>不满意？直接跟插件专家说</b><span>真正的 DSH 会话，能看你的工作区和已装插件</span></div>
+            <div class="body">
+              <div class="msg me">只整理这周改过的笔记就行。</div>
+              <div class="msg bot">可以。开始时我只读<b>本周修改过的笔记</b>，其他的不碰。这一条已经写进上面的方案。</div>
+              <div class="toolcard">✓ 方案已更新：只读本周笔记</div>
+            </div>
+            <div class="input"><div>比如：只要本周的笔记 / 我还装了某某插件</div><button class="btn primary small" type="button">发送</button></div>
+          </div>
+        </div>
+        <div class="links"><a href="#">查看依据和来源</a><a href="#">修改记录（2 版）</a><a href="#">用完了，记一下效果</a></div>
+      </div>
+    </section>
+
+    <!-- ③④⑤ CREATOR MODE -->
+    <section class="view" id="creator">
+      <div class="conv">
+        <div class="chead"><b>做一个会议纪要看板</b><span class="mode">创造模式</span></div>
+        <div class="flow" id="flow-stuck" style="display:none">
+          <div class="bubble me">空架子能打开了，现在加拖拽排序。</div>
+          <div class="bubble bot">加好了，装好后请<b>彻底退出再打开 DSH</b> 看效果（加了后台工具，按 Cmd+R 不够）。</div>
+          <div class="bubble me">重开了，看板白屏。</div>
+          <div class="bubble bot">我换了 3 种写法，还是白屏，同一个问题没有进展。<b>建议开个新窗口</b>：我会把做到哪一步、卡在哪里带过去，新窗口不背着前面几万字的报错记录，更省 Token。</div>
+        </div>
+        <div class="flow" id="flow-main">
+          <div class="bubble me">我想做一个插件：把会议纪要自动整理成看板，挂在左侧栏。</div>
+          <div class="bubble bot" id="bot1">先查了一下社区，有 2 个接近的：<b>dsh-taskboard</b>（看板，但不读会议纪要）和 <b>dsh-meeting-notes</b>（只做摘要）。你想先试现成的，还是自己做？</div>
+          <div class="bubble me" id="me2">自己做吧，要能从纪要里自动抽待办。</div>
+          <div class="bubble bot" id="bot2"><b>设计（三句话）：</b>左侧栏加一个「会议看板」入口；分 3 个文件：入口、看板页、抽取工具；数据存在本机。<br>确认的话我先搭一个能点开、不白屏的空架子。</div>
+        </div>
+        <div class="dock">
+          <!-- state: intro -->
+          <div class="pal intro" id="p-intro">
+            <svg class="whale" style="width:30px;height:30px;flex:none" viewBox="0 0 24 24" fill="none"><path d="M3 13c0-4 3.6-7 8-7s7 2.6 7.6 6.2c.3-1.5 1.4-2.6 2.9-2.9-.4 1.9-1.6 3.2-3 3.8C17.4 17 14.6 19 11 19c-4.4 0-8-2.5-8-6Z" fill="#5b7cff"/><circle cx="8.3" cy="12" r="1" fill="#fff"/></svg>
+            <div>
+              <h4>做插件这件事，插件专家会自动陪你</h4>
+              <p>你不用设置任何东西，正常说你想做什么就行。它会按这 5 步带你走，每步都会先问你，平时聊别的不会打扰。</p>
+              <div class="steps5"><span>1 找现成</span><span>2 定设计</span><span>3 搭骨架</span><span>4 加功能</span><span>5 验收</span></div>
+              <div class="acts"><button class="btn primary small" type="button" data-go="c-run">知道了</button><button class="btn ghost small" type="button">这次不用陪</button></div>
+            </div>
+          </div>
+          <!-- state: running -->
+          <div class="pal line rel" id="p-run">
+            <span class="who"><svg class="whale" viewBox="0 0 24 24" fill="none"><path d="M3 13c0-4 3.6-7 8-7s7 2.6 7.6 6.2c.3-1.5 1.4-2.6 2.9-2.9-.4 1.9-1.6 3.2-3 3.8C17.4 17 14.6 19 11 19c-4.4 0-8-2.5-8-6Z" fill="#5b7cff"/><circle cx="8.3" cy="12" r="1" fill="#fff"/></svg>插件专家陪你做</span>
+            <span class="seg" title="5 步：找现成 · 定设计 · 搭骨架 · 加功能 · 验收"><i class="done"></i><i class="now"></i><i></i><i></i><i></i></span>
+            <span class="what"><b>第 2 步 · 定设计</b>等你确认：左侧栏入口、3 个文件、数据存本机</span>
+            <button class="more" type="button" aria-label="更多" onclick="document.getElementById('menu').hidden=!document.getElementById('menu').hidden">⋯</button>
+            <div class="menu" id="menu" hidden>
+              <div>我的避坑本<small>2 条</small></div>
+              <div>这个会话不用陪</div>
+              <div>以后都不用陪</div>
+            </div>
+          </div>
+          <!-- state: stuck -->
+          <div class="pal line blocked" id="p-stuck">
+            <span class="who">⚠︎ 卡住了</span>
+            <span class="seg"><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i></span>
+            <span class="what"><b>第 4 步 · 加功能</b>看板白屏，改了 3 轮没进展</span>
+            <button class="btn primary small" type="button">开新窗口接着做</button>
+            <button class="more" type="button" aria-label="更多">⋯</button>
+          </div>
+          <div class="cbox"><div class="ph">发消息或创建任务，/ 调用指令，@ 文件或对话</div><div class="tools"><span>＋</span><span>完全权限 ⌄</span><span style="margin-left:auto">Claude Opus 5.5</span><span class="send" style="margin-left:8px">↑</span></div></div>
+        </div>
+      </div>
+    </section>
+    <p class="demo_note" id="demo_note">原型：页面、插件名、版本与对话均为示例；社区数量 6,563 / 6 类、精选 4 个来自当前目录快照。</p>
+  </main>
+</div>
+
+<script>
+const views={home:['home'],result:['result'],'c-intro':['creator','p-intro'],'c-run':['creator','p-run'],'c-stuck':['creator','p-stuck']};
+function go(key){
+  if(!views[key])key='home';
+  const [view,pal]=views[key];
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id===view));
+  ['p-intro','p-run','p-stuck'].forEach(id=>{document.getElementById(id).style.display=id===pal?'':'none'});
+  document.getElementById('menu').hidden=true;
+  const stuck=key==='c-stuck', intro=key==='c-intro';
+  document.getElementById('me2').style.display=intro?'none':'';
+  document.getElementById('bot2').style.display=intro?'none':'';
+  document.getElementById('flow-stuck').style.display=stuck?'':'none';
+  document.getElementById('flow-main').style.display=stuck?'none':'';
+  document.getElementById('side-finder').classList.toggle('on',view!=='creator');
+  document.getElementById('side-conv').classList.toggle('on',view==='creator');
+  document.querySelectorAll('.proto_bar button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.go===key)));
+  if(location.hash.slice(1)!==key)history.replaceState(null,'','#'+key);
+  window.scrollTo(0,0);
+}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(t){e.preventDefault();go(t.dataset.go);}});
+go(location.hash.slice(1)||'home');
+</script>
+</body>
+</html>
