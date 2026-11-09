@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14161b">
-<title>发现好插件 · 体验 v3.2 原型（示例数据）</title>
+<title>发现好插件 · 体验 v3.3 原型（示例数据）</title>
 <style>
 /* ======================================================================
    Tokens. Every spatial / type / radius value below comes from these scales
@@ -34,6 +34,7 @@
   --shadow:0 1px 2px rgba(0,0,0,.30),0 8px 24px rgba(0,0,0,.24);
   --shadowLift:0 1px 2px rgba(0,0,0,.30),0 16px 48px rgba(4,10,32,.50);
   --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:#0e1014;color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
@@ -199,7 +200,6 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
 .cbox .send{margin-left:var(--s2);width:32px;height:32px;border-radius:50%;background:var(--btn);display:grid;place-items:center;color:#fff}
 .pal{margin-bottom:var(--s2);border-radius:var(--r2)}
 .pal.intro{display:flex;gap:var(--s4);align-items:flex-start;padding:var(--s4) var(--s5);background:var(--raise);border:1px solid rgba(77,107,254,.40)}
-.pal.intro .whale{width:32px;height:32px}
 .pal.intro h4{font-size:var(--t16);font-weight:600;line-height:1.5}
 .pal.intro p{margin-top:var(--s1);font-size:var(--t14);line-height:1.7;color:var(--ink2)}
 .five{display:flex;flex-wrap:wrap;align-items:center;margin-top:var(--s3);font-size:var(--t12);color:var(--blue2)}
@@ -209,7 +209,6 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
 .pal.intro .acts{display:flex;align-items:center;gap:var(--s4);margin-top:var(--s4)}
 .pal.line{position:relative;display:flex;align-items:center;gap:var(--s3);height:48px;padding:0 var(--s2) 0 var(--s4);background:var(--raise);border:1px solid var(--line2);font-size:var(--t12)}
 .pal.line .who{display:flex;align-items:center;gap:var(--s2);color:var(--ink);font-size:var(--t14);font-weight:600;white-space:nowrap}
-.pal.line .who .whale{width:16px;height:16px}
 .seg{display:flex;gap:var(--s1)}
 .seg i{display:block;width:20px;height:4px;border-radius:2px;background:rgba(255,255,255,.12)}
 .seg i.done{background:var(--blue)} .seg i.now{background:var(--blue2);animation:pulse 1.8s ease-in-out infinite}
@@ -226,6 +225,33 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
 .menu small{margin-left:auto;font-size:var(--t12);color:var(--muted)}
 .demo_note{padding-bottom:var(--s6);font-size:var(--t12);color:var(--muted)}
 
+/* ---------- brand mark: same silhouette at every size ---------- */
+.brandmark{display:inline-grid;place-items:center;flex:none;width:24px;height:24px;border-radius:7px;background:linear-gradient(155deg,#7c93ff,#3b56e0);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 2px rgba(0,0,0,.35)}
+.brandmark svg{display:block;width:16px;height:16px}
+.brandmark.sm{width:20px;height:20px;border-radius:6px}.brandmark.sm svg{width:13px;height:13px}
+.brandmark.lg{width:32px;height:32px;border-radius:10px}.brandmark.lg svg{width:21px;height:21px}
+.helper{margin-top:var(--s3);text-align:center;font-size:var(--t12);color:var(--muted)}
+.btn.primary:disabled,.btn.primary[disabled]{background:rgba(68,98,246,.34);color:rgba(255,255,255,.55);cursor:not-allowed}
+.crow b{font-family:var(--mono);font-weight:500;letter-spacing:-.2px}
+/* ---------- real states: waiting / nothing found / stopped ---------- */
+.status{border-radius:var(--r3);background:var(--raise);border:1px solid var(--line);padding:var(--s6)}
+.status .echo{font-size:var(--t12);color:var(--muted)}
+.status .echo b{display:block;margin-top:var(--s1);font-size:var(--t20);font-weight:600;line-height:1.5;color:var(--ink)}
+.status h2{margin-top:var(--s5);font-size:var(--t24);font-weight:700;line-height:1.35}
+.status .lead{margin-top:var(--s3);max-width:32em;font-size:var(--t16);line-height:1.75;color:var(--ink2)}
+.status .lead b{color:var(--ink);font-weight:600}
+.status .fine{margin-top:var(--s3);font-size:var(--t12);line-height:1.7;color:var(--muted)}
+.scanline{position:relative;height:3px;border-radius:2px;margin-top:var(--s5);background:rgba(77,107,254,.16);overflow:hidden}
+.scanline::after{content:"";position:absolute;top:0;bottom:0;width:38%;border-radius:2px;background:linear-gradient(90deg,transparent,var(--blue2),transparent);animation:scan 1.5s ease-in-out infinite}
+@keyframes scan{from{transform:translateX(-110%)}to{transform:translateX(300%)}}
+.choices{display:grid;gap:var(--s2);margin-top:var(--s5)}
+.choice{display:grid;grid-template-columns:28px minmax(0,1fr) 20px;align-items:center;gap:var(--s3);padding:var(--s3) var(--s4);border-radius:var(--r2);background:var(--field);border:1px solid var(--line2);text-align:left;transition:border-color .15s,background-color .15s}
+.choice:hover{border-color:rgba(77,107,254,.55);background:#232833}
+.choice .k{display:grid;place-items:center;width:28px;height:28px;border-radius:var(--r1);background:var(--blueSoft);color:var(--blue2);font-size:var(--t12);font-weight:700}
+.choice b{display:block;font-size:var(--t14);font-weight:600;color:var(--ink)}
+.choice small{display:block;margin-top:2px;font-size:var(--t12);line-height:1.6;color:var(--muted)}
+.choice .arrow{color:var(--muted);text-align:center}
+.choice:hover .arrow{color:var(--blue2)}
 /* ---------- narrow: hold structure until it breaks ---------- */
 @media (max-width:1000px){
   .win{grid-template-columns:minmax(0,1fr)} .side{display:none}
@@ -246,16 +272,20 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="whale" viewBox="0 0 24 24"><path d="M3 13c0-4 3.6-7 8-7s7 2.6 7.6 6.2c.3-1.5 1.4-2.6 2.9-2.9-.4 1.9-1.6 3.2-3 3.8C17.4 17 14.6 19 11 19c-4.4 0-8-2.5-8-6Z" fill="#4d6bfe"/><circle cx="8.3" cy="12" r="1.05" fill="#fff"/></symbol>
+  <symbol id="whalew" viewBox="0 0 24 24"><path d="M3 13c0-4 3.6-7 8-7s7 2.6 7.6 6.2c.3-1.5 1.4-2.6 2.9-2.9-.4 1.9-1.6 3.2-3 3.8C17.4 17 14.6 19 11 19c-4.4 0-8-2.5-8-6Z" fill="#fff"/><circle cx="8.3" cy="12" r="1.05" fill="#3b56e0"/></symbol>
   <symbol id="check" viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 
 <nav class="proto_bar" aria-label="原型页面切换">
-  <b>体验 v3.2</b>
+  <b>体验 v3.3</b>
   <button data-go="home">① 面板首页</button>
   <button data-go="result">② 方案页</button>
   <button data-go="c-intro">③ 创造模式 · 第一次</button>
   <button data-go="c-run">④ 创造模式 · 进行中</button>
   <button data-go="c-stuck">⑤ 创造模式 · 卡住了</button>
+  <button data-go="s-load">⑥ 正在查</button>
+  <button data-go="s-empty">⑦ 没找到</button>
+  <button data-go="s-error">⑧ 没查完</button>
   <span class="demo">示例数据，不连真实服务</span>
 </nav>
 
@@ -265,7 +295,7 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
     <div class="item">＋ 新会话</div>
     <div class="item">插件</div>
     <div class="item">DSH Dot</div>
-    <div class="item" id="side-finder"><svg class="whale" style="width:16px;height:16px"><use href="#whale"/></svg>发现好插件</div>
+    <div class="item" id="side-finder"><span class="brandmark sm"><svg><use href="#whalew"/></svg></span>发现好插件</div>
     <div class="item">学习空间</div>
     <div class="sep"></div>
     <div class="sess">工作区 Agent</div>
@@ -278,7 +308,7 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
     <section class="view" id="home">
       <div class="col">
         <header class="topnav" data-col>
-          <span class="title"><svg class="whale"><use href="#whale"/></svg>发现好插件</span>
+          <span class="title"><span class="brandmark sm"><svg><use href="#whalew"/></svg></span>发现好插件</span>
           <span class="spacer"></span>
           <a href="#">我的方案</a><a href="#">插件商店</a>
         </header>
@@ -288,7 +318,7 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
             <p>说一句你想做的事。有现成插件，我帮你找到、装好、跑一遍；<br>没有的，就陪你在创造模式里做出来。</p>
           </div>
           <div class="start" style="margin-top:var(--s7)">
-            <div class="resume" data-col><svg class="whale" style="width:16px;height:16px"><use href="#whale"/></svg>上次聊到<b>Markdown 笔记整理成项目待办</b><button class="btn small tint" type="button" data-go="result">接着看</button></div>
+            <div class="resume" data-col><span class="brandmark sm"><svg><use href="#whalew"/></svg></span>上次聊到<b>Markdown 笔记整理成项目待办</b><button class="btn small tint" type="button" data-go="result">接着看</button></div>
             <form class="composer" data-col onsubmit="return false">
               <label for="ask" class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">你想做的事</label>
               <textarea id="ask" placeholder="比如：把会议记录整理成待办，每周五给我一份项目简报…"></textarea>
@@ -297,12 +327,13 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
                 <button class="chip" type="button">统计各模型花了多少钱</button>
                 <button class="chip" type="button">输入框按 Tab 补全</button>
                 <span class="hint">⌘&nbsp;Enter 发送</span>
-                <button class="btn primary" type="button" data-go="result">帮我找</button>
+                <button class="btn primary" id="send" type="button" data-go="result" disabled>帮我找</button>
               </div>
             </form>
+            <p class="helper" data-col>不确定怎么写也没关系，说个大概我就能开始。</p>
           </div>
           <div class="path" data-col aria-label="它会怎么帮你">
-            <div class="stop"><h3>先找现成的</h3><p>从 <b class="num">6,563</b> 个社区插件里挑最合适的，说清为什么选它。</p></div>
+            <div class="stop"><h3>先找现成的</h3><p>从 <b class="num">6,563</b> 个社区插件里挑最合适的，说清为什么选它、为什么不选别的。</p></div>
             <div class="stop"><h3>装好跑一遍</h3><p>装进你选的工作区真跑一次，装之前先核对作者和兼容。</p></div>
             <div class="stop auto"><h3>没有就一起做</h3><p>在创造模式里陪你查现成、定设计、搭骨架，一次加一个功能。</p><span class="tag"><svg width="12" height="12"><use href="#check"/></svg>装上就生效，不用设置</span></div>
           </div>
@@ -316,7 +347,7 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
             </div>
           </section>
           <section class="group" data-col>
-            <div class="hd"><h2>按用途逛</h2><span class="note"><span class="num">6,563</span> 个社区插件</span><button class="link" type="button">看全部插件</button></div>
+            <div class="hd"><h2>按用途逛</h2><span class="note">按数量排，条越长插件越多</span><button class="link" type="button">看全部插件</button></div>
             <div class="cats" role="list">
               <a class="catrow" role="listitem" href="#"><span><b>界面与趣味</b><small>更顺手，也更好玩</small></span><span class="bar"><i style="width:100%"></i></span><em class="num">1,693</em></a>
               <a class="catrow" role="listitem" href="#"><span><b>办公与工具</b><small>整理任务、处理文件</small></span><span class="bar"><i style="width:87.2%"></i></span><em class="num">1,476</em></a>
@@ -351,8 +382,8 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
               <button class="btn ghost" type="button" data-go="c-intro">我想自己做个插件</button>
               <button class="btn share" type="button"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="3" width="11" height="10" rx="2"/><path d="m2.5 11 3.2-3.2 2.6 2.6 1.7-1.7 3.5 3.5"/></svg>存成图片</button>
             </div>
-            <p class="go">点「开始做」会在 Agent 工作区新开一个对话，先问你笔记在哪。</p>
-            <div class="sign"><svg><use href="#whale"/></svg>发现好插件 整理</div>
+            <p class="go">点「开始做」会新开一个对话，第一步先问你笔记在哪。</p>
+            <div class="sign"><span class="brandmark sm"><svg><use href="#whalew"/></svg></span>发现好插件 整理<span style="opacity:.6">·</span>2026-11-09</div>
           </article>
           <section class="sec group" data-col style="margin-top:var(--s7)">
             <h3>开始后会这样</h3>
@@ -367,7 +398,7 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
             <div class="heads"><p>它还不知道你的笔记放在哪，开始时会先问你。</p><p>这次只读不写，不会安装插件，也不会改文件。</p><button class="link" type="button">查看另外 12 条细节</button></div>
           </section>
           <section class="expert" aria-label="和插件专家接着聊" data-col style="margin-top:var(--s7)">
-            <div class="head"><svg class="whale"><use href="#whale"/></svg><b>还想改？直接跟插件专家说</b><span>它能看你的工作区和已装插件</span></div>
+            <div class="head"><span class="brandmark"><svg><use href="#whalew"/></svg></span><b>还想改？直接跟插件专家说</b><span>它能看你的工作区和已装插件</span></div>
             <div class="body">
               <div class="msg me">只整理这周改过的笔记就行。</div>
               <div class="msg bot">可以。开始时我只读<b>本周修改过的笔记</b>，其他的不碰，已经改进上面的步骤里了。</div>
@@ -377,6 +408,54 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
           </section>
           <div class="links" data-col style="margin-top:var(--s5)"><button class="link" type="button">依据和来源</button><button class="link" type="button">改过 2 次</button><button class="link" type="button">用完了，说说好不好用</button></div>
         </div>
+      </div>
+    </section>
+
+    <!-- ⑥ waiting -->
+    <section class="view" id="s-load">
+      <div class="col">
+        <nav class="crumb" data-col aria-label="返回"><a class="back" href="#home" data-go="home"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3.5 5.5 8l4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>发现好插件</a></nav>
+        <article class="status" data-col>
+          <p class="echo">你问<b>把会议记录整理成待办，每周五给我简报</b></p>
+          <div class="scanline" role="progressbar" aria-label="正在查找"></div>
+          <p class="fine">正在读社区目录、查你的本机环境，然后用一句话给结论。通常十几秒。</p>
+          <p class="fine">查完会留在这里，不用守着这一页。</p>
+          <div style="margin-top:var(--s5)"><button class="link" type="button">停止查找</button></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ⑦ nothing found -->
+    <section class="view" id="s-empty">
+      <div class="col">
+        <nav class="crumb" data-col aria-label="返回"><a class="back" href="#home" data-go="home"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3.5 5.5 8l4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>发现好插件</a></nav>
+        <article class="status" data-col>
+          <p class="echo">你问<b>把会议记录整理成待办，每周五给我简报</b></p>
+          <h2>没找到能直接用上的现成插件</h2>
+          <p class="lead">查了 <b>6,563</b> 个社区插件和你的本机环境，没有能同时做到「从会议记录里抽待办」和「每周五发简报」的。<b>也可能只是我没搜到。</b></p>
+          <div class="choices">
+            <button class="choice" type="button" data-go="c-intro"><span class="k">1</span><span><b>我陪你做一个</b><small>推荐。你已经知道要什么，从空架子开始最快</small></span><span class="arrow">→</span></button>
+            <button class="choice" type="button"><span class="k">2</span><span><b>换个说法再找一次</b><small>有时候只是描述里少了关键条件</small></span><span class="arrow">→</span></button>
+            <button class="choice" type="button"><span class="k">3</span><span><b>看最接近的 3 个</b><small>可能只做到其中一半，拼起来也能用</small></span><span class="arrow">→</span></button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ⑧ stopped before a verdict -->
+    <section class="view" id="s-error">
+      <div class="col">
+        <nav class="crumb" data-col aria-label="返回"><a class="back" href="#home" data-go="home"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3.5 5.5 8l4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>发现好插件</a></nav>
+        <article class="status" data-col>
+          <p class="echo">你问<b>把会议记录整理成待办，每周五给我简报</b></p>
+          <h2>这次没查完，先不给你结论</h2>
+          <p class="lead">社区目录读到了，但 <b>npm 上的版本信息没读到</b>。少了版本，我没法确认插件能不能装上，所以停在这里，不拿半份结果糊弄你。</p>
+          <div class="choices">
+            <button class="choice" type="button"><span class="k">1</span><span><b>再试一次</b><small>通常重试一次就好</small></span><span class="arrow">→</span></button>
+            <button class="choice" type="button"><span class="k">2</span><span><b>只看社区目录里的结果</b><small>会标清哪些没核对过版本</small></span><span class="arrow">→</span></button>
+            <button class="choice" type="button" data-go="result"><span class="k">3</span><span><b>先按现有做法开始</b><small>不装插件，DSH 自带就能做的部分先跑起来</small></span><span class="arrow">→</span></button>
+          </div>
+        </article>
       </div>
     </section>
 
@@ -398,7 +477,7 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
         </div>
         <div class="dock" data-col>
           <div class="pal intro" id="p-intro">
-            <svg class="whale"><use href="#whale"/></svg>
+            <span class="brandmark lg"><svg><use href="#whalew"/></svg></span>
             <div>
               <h4>做插件这件事，插件专家会陪你一起</h4>
               <p>不用设置，正常说你想做什么就行。它按 5 步带你走，每一步都先问你；你聊别的，它不打扰。</p>
@@ -407,7 +486,7 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
             </div>
           </div>
           <div class="pal line" id="p-run">
-            <span class="who"><svg class="whale"><use href="#whale"/></svg>插件专家陪你做</span>
+            <span class="who"><span class="brandmark sm"><svg><use href="#whalew"/></svg></span>插件专家陪你做</span>
             <span class="seg" title="找现成、定设计、搭骨架、加功能、验收"><i class="done"></i><i class="now"></i><i></i><i></i><i></i></span>
             <span class="what"><b>第 2 步 定设计</b>等你确认：左侧栏入口、3 个文件、数据存本机</span>
             <button class="more" type="button" aria-label="更多选项" aria-haspopup="menu" onclick="document.getElementById('menu').hidden=!document.getElementById('menu').hidden">⋯</button>
@@ -433,18 +512,19 @@ h1,h2,h3,h4{text-wrap:balance} p{text-wrap:pretty}
 </div>
 
 <script>
-const views={home:['home'],result:['result'],'c-intro':['creator','p-intro'],'c-run':['creator','p-run'],'c-stuck':['creator','p-stuck']};
+const views={home:['home'],result:['result'],'c-intro':['creator','p-intro'],'c-run':['creator','p-run'],'c-stuck':['creator','p-stuck'],'s-load':['s-load'],'s-empty':['s-empty'],'s-error':['s-error']};
 function go(key){
   if(!views[key])key='home';
   const [view,pal]=views[key];
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id===view));
-  ['p-intro','p-run','p-stuck'].forEach(id=>{document.getElementById(id).style.display=id===pal?'':'none'});
-  document.getElementById('menu').hidden=true;
+  ['p-intro','p-run','p-stuck'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=id===pal?'':'none'});
+  const menu=document.getElementById('menu');if(menu)menu.hidden=true;
   const stuck=key==='c-stuck',intro=key==='c-intro';
-  document.getElementById('flow-stuck').style.display=stuck?'':'none';
-  document.getElementById('flow-main').style.display=stuck?'none':'';
-  document.getElementById('me2').style.display=intro?'none':'';
-  document.getElementById('bot2').style.display=intro?'none':'';
+  const fs=document.getElementById('flow-stuck'),fm=document.getElementById('flow-main'),me2=document.getElementById('me2'),bot2=document.getElementById('bot2');
+  if(fs)fs.style.display=stuck?'':'none';
+  if(fm)fm.style.display=stuck?'none':'';
+  if(me2)me2.style.display=intro?'none':'';
+  if(bot2)bot2.style.display=intro?'none':'';
   document.getElementById('side-finder').classList.toggle('on',view!=='creator');
   document.getElementById('side-conv').classList.toggle('on',view==='creator');
   document.querySelectorAll('.proto_bar button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.go===key)));
@@ -452,7 +532,15 @@ function go(key){
   window.scrollTo(0,0);requestAnimationFrame(()=>window.scrollTo(0,0));
 }
 addEventListener('load',()=>window.scrollTo(0,0));
-document.addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(t){e.preventDefault();go(t.dataset.go);}});
+document.addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(t&&!t.disabled){e.preventDefault();go(t.dataset.go);}});
+/* composer is real: type or pick an example, the button unlocks, Enter sends */
+const ask=document.getElementById('ask'),send=document.getElementById('send');
+if(ask&&send){
+  const sync=()=>{send.disabled=!ask.value.trim();};
+  ask.addEventListener('input',sync);sync();
+  document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ask.value=c.textContent.trim();ask.focus();sync();}));
+  ask.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(!send.disabled)go('result');}});
+}
 go(location.hash.slice(1)||'home');
 </script>
 <script>
@@ -487,6 +575,7 @@ if(location.search.includes('audit')){
     const hasText=[...el.childNodes].some(n=>n.nodeType===3&&n.textContent.trim());
     if(hasText){
       if(!TYPE.includes(Math.round(fs))){out.offScaleType[fs]=(out.offScaleType[fs]||0)+1;}
+      if(el.closest('[disabled]')){out.exempt=(out.exempt||0)+1;continue;}
       const a=lum(s.color),b=lum(bgOf(el));
       if(a!=null&&b!=null){const ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);const large=fs>=24||(fs>=18.66&&+s.fontWeight>=700);
         if(ratio<(large?3:4.5))out.lowContrast.push({text:el.textContent.trim().slice(0,16),ratio:+ratio.toFixed(2),size:fs});}
