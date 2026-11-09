@@ -3817,13 +3817,21 @@ var css = `
 .pfc_brand { display: inline-flex; align-items: center; gap: 7px; color: var(--dsw-alias-label-primary, #18263b); font-weight: 600; white-space: nowrap; font-size: 12.5px; }
 .pfc_brand::before { content: ""; width: 16px; height: 16px; border-radius: 5px; flex: none;
   background: linear-gradient(155deg, #7c93ff, #3b56e0); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3); }
-.pfc_track { display: flex; align-items: center; gap: 3px; margin: 0; padding: 0; list-style: none; }
-.pfc_stage { display: block; width: 20px; height: 4px; border-radius: 2px; padding: 0; overflow: hidden; text-indent: -9999px; white-space: nowrap;
-  background: color-mix(in srgb, var(--dsw-alias-label-primary, #18263b) 14%, transparent); }
-.pfc_stage[data-state="done"] { background: var(--dsw-alias-state-business-primary, #4d6bfe); }
-.pfc_stage[data-state="current"] { background: var(--dsw-alias-state-business-primary, #4d6bfe); box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsw-alias-state-business-primary, #4d6bfe) 24%, transparent); }
-.pfc_stage[data-state="skipped"] { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dsw-alias-label-primary, #18263b) 26%, transparent); }
-.pfc_dot { display: none; }
+/* Bars alone cannot say what they mean, so each step keeps its name. */
+.pfc_track { display: flex; align-items: center; gap: 6px; margin: 0; padding: 0; list-style: none; flex-wrap: wrap; }
+.pfc_stage { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px;
+  font-size: 11.5px; line-height: 1; white-space: nowrap; color: var(--dsw-alias-label-secondary, #606b78);
+  background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dsw-alias-label-primary, #18263b) 12%, transparent); }
+.pfc_stage[data-state="done"] { color: var(--dsw-alias-state-business-primary, #4d6bfe);
+  background: color-mix(in srgb, var(--dsw-alias-state-business-primary, #4d6bfe) 10%, transparent); box-shadow: none; }
+.pfc_stage[data-state="current"] { color: #fff; font-weight: 600;
+  background: var(--dsw-alias-state-business-primary, #4d6bfe); box-shadow: none; }
+.pfc_stage[data-state="skipped"] { color: color-mix(in srgb, var(--dsw-alias-label-secondary, #606b78) 65%, transparent); }
+.pfc_dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .9; flex: none; }
+.pfc_stage[data-state="skipped"] .pfc_dot { background: transparent;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dsw-alias-label-secondary, #606b78) 55%, transparent); opacity: 1; }
+.pfc_stage[data-state="todo"] .pfc_dot { background: transparent;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dsw-alias-label-primary, #18263b) 22%, transparent); opacity: 1; }
 .pfc_last { flex: 1 1 200px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px;
   color: var(--dsw-alias-label-secondary, #606b78); }
 .pfc_actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
