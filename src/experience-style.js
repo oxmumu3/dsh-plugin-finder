@@ -684,6 +684,13 @@ export const experienceCss = `
 .pf_v2 .pfv_plan_hero a { color: #9fb0ff; }
 .pf_v2 .pfv_plan_hero .pfv_disclosure { border-top-color: rgba(147, 166, 255, .18); }
 .pf_v2 .pfv_plan_hero h2, .pf_v2 .pfv_plan_hero h3 { letter-spacing: -.2px; }
+/* Live-panel polish after the first real screenshot: the empty composer was
+   the largest object on the page, and two headings competed for the same job. */
+.pf_v2 .pfv_composer textarea { min-height: 64px; }
+.pf_v2 .pfv_home_heading { font-size: 16px; font-weight: 600; }
+.pf_v2 .pfv_home_lead { font-size: 13px; }
+.pf_v2 .pfv_last_search_request { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pf_v2 .pfv_last_search_sources { font-size: 12px; }
 /* Package names are identifiers, so they read as identifiers. */
 .pf_v2 .pfv_reuse_list strong,
 .pf_v2 .pfv_plugin_identity h1 { font-family: var(--pfv3_mono); font-weight: 500; letter-spacing: -.2px; }

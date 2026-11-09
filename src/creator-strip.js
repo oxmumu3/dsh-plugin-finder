@@ -40,26 +40,35 @@ export function creatorHandoffPrompt(steps) {
 }
 
 const css = `
-.pfc_strip { box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 7px 12px; margin: 0 0 6px; border: 1px solid var(--dsw-alias-border-l3, #dce4ed); border-radius: 12px; background: var(--dsw-alias-bg-base, #fff); color: var(--dsw-alias-label-secondary, #606b78); font-size: 12px; line-height: 18px; }
-.pfc_strip[data-blocked="true"] { border-color: color-mix(in srgb, var(--dsw-alias-state-business-primary, #4d6bfe) 45%, var(--dsw-alias-border-l3, #dce4ed)); }
-.pfc_brand { color: var(--dsw-alias-label-primary, #18263b); font-weight: 600; white-space: nowrap; }
-.pfc_track { display: flex; align-items: center; gap: 4px; margin: 0; padding: 0; list-style: none; }
-.pfc_stage { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
-.pfc_stage[data-state="done"] { color: var(--dsw-alias-label-primary, #18263b); }
-.pfc_stage[data-state="current"] { color: var(--dsw-alias-label-on-primary, #fff); background: var(--dsw-alias-state-business-primary, #4d6bfe); }
-.pfc_dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .55; }
-.pfc_stage[data-state="done"] .pfc_dot, .pfc_stage[data-state="current"] .pfc_dot { opacity: 1; }
-.pfc_stage[data-state="skipped"] { opacity: .55; }
-.pfc_stage[data-state="skipped"] .pfc_dot { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
-.pfc_last { flex: 1 1 180px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pfc_actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-.pfc_button { font: inherit; font-size: 12px; padding: 3px 10px; border-radius: 8px; border: 1px solid var(--dsw-alias-border-l2, #becbdb); background: transparent; color: var(--dsw-alias-label-primary, #18263b); cursor: pointer; white-space: nowrap; }
-.pfc_button[data-primary="true"] { border-color: var(--dsw-alias-state-business-primary, #4d6bfe); color: var(--dsw-alias-state-business-primary, #4d6bfe); }
+.pfc_strip { box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 8px 10px 8px 12px; margin: 0 0 8px; border-radius: 12px;
+  border: 1px solid var(--dsw-alias-border-l3, #dce4ed); background: var(--dsw-alias-bg-layer-1, #f7f9fc); }
+.pfc_strip[data-blocked="true"] { border-color: color-mix(in srgb, #f0a841 55%, var(--dsw-alias-border-l3, #dce4ed)); }
+.pfc_brand { display: inline-flex; align-items: center; gap: 7px; color: var(--dsw-alias-label-primary, #18263b); font-weight: 600; white-space: nowrap; font-size: 12.5px; }
+.pfc_brand::before { content: ""; width: 16px; height: 16px; border-radius: 5px; flex: none;
+  background: linear-gradient(155deg, #7c93ff, #3b56e0); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3); }
+.pfc_track { display: flex; align-items: center; gap: 3px; margin: 0; padding: 0; list-style: none; }
+.pfc_stage { display: block; width: 20px; height: 4px; border-radius: 2px; padding: 0; overflow: hidden; text-indent: -9999px; white-space: nowrap;
+  background: color-mix(in srgb, var(--dsw-alias-label-primary, #18263b) 14%, transparent); }
+.pfc_stage[data-state="done"] { background: var(--dsw-alias-state-business-primary, #4d6bfe); }
+.pfc_stage[data-state="current"] { background: var(--dsw-alias-state-business-primary, #4d6bfe); box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsw-alias-state-business-primary, #4d6bfe) 24%, transparent); }
+.pfc_stage[data-state="skipped"] { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dsw-alias-label-primary, #18263b) 26%, transparent); }
+.pfc_dot { display: none; }
+.pfc_last { flex: 1 1 200px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px;
+  color: var(--dsw-alias-label-secondary, #606b78); }
+.pfc_actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.pfc_button { font: inherit; font-size: 12px; padding: 4px 11px; border-radius: 8px; border: 1px solid var(--dsw-alias-border-l2, #becbdb);
+  background: transparent; color: var(--dsw-alias-label-primary, #18263b); cursor: pointer; }
+.pfc_button:hover { border-color: var(--dsw-alias-state-business-primary, #4d6bfe); }
+.pfc_button[data-primary="true"] { border-color: transparent; background: var(--dsw-alias-state-business-primary, #4d6bfe); color: #fff; }
 .pfc_button:disabled { opacity: .5; cursor: default; }
-.pfc_link { font: inherit; font-size: 12px; border: 0; padding: 0; background: none; color: var(--dsw-alias-label-secondary, #606b78); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.pfc_link { font: inherit; font-size: 12px; border: 0; padding: 0; background: none; color: var(--dsw-alias-label-secondary, #606b78); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--dsw-alias-label-secondary, #606b78) 40%, transparent); }
+.pfc_link:hover { color: var(--dsw-alias-label-primary, #18263b); }
 .pf_creator_notes { padding-left: 18px; line-height: 1.7; }
 .pf_creator_notes li { margin: 4px 0; }
 .pfc_link:focus-visible, .pfc_button:focus-visible { outline: 2px solid var(--dsw-alias-state-business-primary, #4d6bfe); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) { .pfc_stage { transition: background-color .2s, box-shadow .2s; } }
 `;
 export const creatorStripCss = css;
 
@@ -156,13 +165,13 @@ export function createCreatorStrip(React, { ctx, request, openSettings }) {
       void request('creator-configure', { enabled: false }).then(() => setClosedHere(true)).catch(() => setNotice('没有关闭成功，请稍后再试。')).finally(() => setBusy(''));
     };
     return h('div', { className: 'pfc_strip', 'data-blocked': progress.blocked ? 'true' : 'false', role: 'region', 'aria-label': '发现好插件 · 创造进度' },
-      h('span', { className: 'pfc_brand', title: '「发现好插件」给这个创造模式会话加了省 Token 的做法：先查现成、先定设计、先跑空架子。' }, '创造经验已开启'),
+      h('span', { className: 'pfc_brand', title: '「发现好插件」按先查现成、先定设计、先跑空架子带你做，每一步都会先问你。' }, '插件专家陪你做'),
       h('ol', { className: 'pfc_track', 'aria-label': '创造阶段' }, ...progress.stages.map(stage => h('li', { key: stage.id, className: 'pfc_stage', 'data-state': stage.state, 'aria-current': stage.state === 'current' ? 'step' : undefined, title: stage.state === 'skipped' ? '这一步没有记录' : undefined },
         h('span', { className: 'pfc_dot', 'aria-hidden': true }), stage.label))),
       h('span', { className: 'pfc_last', title: progress.last ? `${progress.last.label}：${progress.last.summary}` : undefined },
         notice || (progress.last ? `${progress.last.label}：${progress.last.summary}` : '说出你想做的功能，它会先帮你查有没有现成插件。')),
       h('div', { className: 'pfc_actions' },
-        progress.count > 0 ? h('button', { type: 'button', className: 'pfc_button', 'data-primary': progress.blocked ? 'true' : 'false', disabled: busy !== '', onClick: openNext, title: '新建一个干净的创造模式窗口，把这里记下的进展放进输入框（不会自动发送）' }, busy === 'next' ? '正在打开…' : '开新窗口接着做') : null,
+        progress.blocked && progress.count > 0 ? h('button', { type: 'button', className: 'pfc_button', 'data-primary': 'true', disabled: busy !== '', onClick: openNext, title: '新建一个干净的创造模式窗口，把这里记下的进展放进输入框（不会自动发送）' }, busy === 'next' ? '正在打开…' : '开新窗口接着做') : null,
         typeof openSettings === 'function' ? h('button', { type: 'button', className: 'pfc_link', onClick: openSettings }, '经验') : null,
         h('button', { type: 'button', className: 'pfc_link', disabled: busy !== '', onClick: close }, '关闭')));
   };
