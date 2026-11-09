@@ -186,6 +186,9 @@ test('progress folds steps into five stages and flags a block', () => {
   const blocked = creatorProgress([{ stage: 'feature', summary: 'x' }, { stage: 'blocked', summary: '白屏，改了 3 轮' }]);
   assert.equal(blocked.blocked, true);
   assert.equal(blocked.stages[3].state, 'current');
+  // Unrecorded earlier stages are not claimed as done.
+  assert.deepEqual(blocked.stages.map(stage => stage.state), ['skipped', 'skipped', 'skipped', 'current', 'todo']);
+  assert.deepEqual(creatorProgress([{ stage: 'verify', summary: '只记了验证' }]).stages.map(stage => stage.state), ['skipped', 'skipped', 'skipped', 'skipped', 'current']);
   assert.equal(creatorProgress([{ stage: 'nonsense', summary: 'x' }]).count, 0);
 });
 

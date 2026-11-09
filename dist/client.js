@@ -3561,9 +3561,10 @@ var CREATOR_PRESET = "cordis";
 function creatorProgress(steps) {
   const rows = Array.isArray(steps) ? steps.filter((item) => item && typeof item.stage === "string" && LABEL[item.stage]) : [];
   const furthest = rows.reduce((max, item) => item.stage in ORDER ? Math.max(max, ORDER[item.stage]) : max, -1);
+  const recorded = new Set(rows.map((item) => item.stage));
   const last = rows.at(-1) ?? null;
   return {
-    stages: STAGES.map((stage, index) => ({ ...stage, state: index < furthest ? "done" : index === furthest ? "current" : "todo" })),
+    stages: STAGES.map((stage, index) => ({ ...stage, state: index === furthest ? "current" : index > furthest ? "todo" : recorded.has(stage.id) ? "done" : "skipped" })),
     last: last ? { stage: last.stage, label: LABEL[last.stage], summary: text7(last.summary) } : null,
     blocked: last?.stage === "blocked",
     count: rows.length
@@ -3589,6 +3590,8 @@ var css = `
 .pfc_stage[data-state="current"] { color: var(--dsw-alias-label-on-primary, #fff); background: var(--dsw-alias-state-business-primary, #4d6bfe); }
 .pfc_dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .55; }
 .pfc_stage[data-state="done"] .pfc_dot, .pfc_stage[data-state="current"] .pfc_dot { opacity: 1; }
+.pfc_stage[data-state="skipped"] { opacity: .55; }
+.pfc_stage[data-state="skipped"] .pfc_dot { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
 .pfc_last { flex: 1 1 180px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pfc_actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .pfc_button { font: inherit; font-size: 12px; padding: 3px 10px; border-radius: 8px; border: 1px solid var(--dsw-alias-border-l2, #becbdb); background: transparent; color: var(--dsw-alias-label-primary, #18263b); cursor: pointer; white-space: nowrap; }
@@ -3740,7 +3743,7 @@ function createCreatorStrip(React2, { ctx, request, openSettings }) {
       h("span", { className: "pfc_brand", title: "\u300C\u53D1\u73B0\u597D\u63D2\u4EF6\u300D\u7ED9\u8FD9\u4E2A\u521B\u9020\u6A21\u5F0F\u4F1A\u8BDD\u52A0\u4E86\u7701 Token \u7684\u505A\u6CD5\uFF1A\u5148\u67E5\u73B0\u6210\u3001\u5148\u5B9A\u8BBE\u8BA1\u3001\u5148\u8DD1\u7A7A\u67B6\u5B50\u3002" }, "\u521B\u9020\u7ECF\u9A8C\u5DF2\u5F00\u542F"),
       h("ol", { className: "pfc_track", "aria-label": "\u521B\u9020\u9636\u6BB5" }, ...progress.stages.map((stage) => h(
         "li",
-        { key: stage.id, className: "pfc_stage", "data-state": stage.state, "aria-current": stage.state === "current" ? "step" : void 0 },
+        { key: stage.id, className: "pfc_stage", "data-state": stage.state, "aria-current": stage.state === "current" ? "step" : void 0, title: stage.state === "skipped" ? "\u8FD9\u4E00\u6B65\u6CA1\u6709\u8BB0\u5F55" : void 0 },
         h("span", { className: "pfc_dot", "aria-hidden": true }),
         stage.label
       ))),

@@ -16,9 +16,11 @@ export const CREATOR_PRESET = 'cordis';
 export function creatorProgress(steps) {
   const rows = Array.isArray(steps) ? steps.filter(item => item && typeof item.stage === 'string' && LABEL[item.stage]) : [];
   const furthest = rows.reduce((max, item) => item.stage in ORDER ? Math.max(max, ORDER[item.stage]) : max, -1);
+  const recorded = new Set(rows.map(item => item.stage));
   const last = rows.at(-1) ?? null;
+  // Only a recorded stage counts as done; an earlier stage with no record is shown as skipped, not completed.
   return {
-    stages: STAGES.map((stage, index) => ({ ...stage, state: index < furthest ? 'done' : index === furthest ? 'current' : 'todo' })),
+    stages: STAGES.map((stage, index) => ({ ...stage, state: index === furthest ? 'current' : index > furthest ? 'todo' : recorded.has(stage.id) ? 'done' : 'skipped' })),
     last: last ? { stage: last.stage, label: LABEL[last.stage], summary: text(last.summary) } : null,
     blocked: last?.stage === 'blocked',
     count: rows.length,
@@ -47,6 +49,8 @@ const css = `
 .pfc_stage[data-state="current"] { color: var(--dsw-alias-label-on-primary, #fff); background: var(--dsw-alias-state-business-primary, #4d6bfe); }
 .pfc_dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .55; }
 .pfc_stage[data-state="done"] .pfc_dot, .pfc_stage[data-state="current"] .pfc_dot { opacity: 1; }
+.pfc_stage[data-state="skipped"] { opacity: .55; }
+.pfc_stage[data-state="skipped"] .pfc_dot { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
 .pfc_last { flex: 1 1 180px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pfc_actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .pfc_button { font: inherit; font-size: 12px; padding: 3px 10px; border-radius: 8px; border: 1px solid var(--dsw-alias-border-l2, #becbdb); background: transparent; color: var(--dsw-alias-label-primary, #18263b); cursor: pointer; white-space: nowrap; }
@@ -153,7 +157,7 @@ export function createCreatorStrip(React, { ctx, request, openSettings }) {
     };
     return h('div', { className: 'pfc_strip', 'data-blocked': progress.blocked ? 'true' : 'false', role: 'region', 'aria-label': '发现好插件 · 创造进度' },
       h('span', { className: 'pfc_brand', title: '「发现好插件」给这个创造模式会话加了省 Token 的做法：先查现成、先定设计、先跑空架子。' }, '创造经验已开启'),
-      h('ol', { className: 'pfc_track', 'aria-label': '创造阶段' }, ...progress.stages.map(stage => h('li', { key: stage.id, className: 'pfc_stage', 'data-state': stage.state, 'aria-current': stage.state === 'current' ? 'step' : undefined },
+      h('ol', { className: 'pfc_track', 'aria-label': '创造阶段' }, ...progress.stages.map(stage => h('li', { key: stage.id, className: 'pfc_stage', 'data-state': stage.state, 'aria-current': stage.state === 'current' ? 'step' : undefined, title: stage.state === 'skipped' ? '这一步没有记录' : undefined },
         h('span', { className: 'pfc_dot', 'aria-hidden': true }), stage.label))),
       h('span', { className: 'pfc_last', title: progress.last ? `${progress.last.label}：${progress.last.summary}` : undefined },
         notice || (progress.last ? `${progress.last.label}：${progress.last.summary}` : '说出你想做的功能，它会先帮你查有没有现成插件。')),
