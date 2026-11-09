@@ -294,6 +294,15 @@ export function createExperienceView(React) {
       disclosure('来源与备选方案', h(React.Fragment, null, sections.candidateView, sections.searchEvidence, sections.selectedInstallGuide)),
       disclosure('需求与修改记录', h(React.Fragment, null, history, sections.taskHistory)),
       disclosure('记录使用结果', sections.feedback));
+    // While a search is running the page used to be an empty document. Say what is
+    // happening, echo the request, and never invent a percentage.
+    const searchingView = startingNew ? h('article', { className: 'pfv_search_status', role: 'status', 'aria-live': 'polite' },
+      // Echo the request this search is about; never the previous one.
+      h('p', { className: 'pfv_search_echo' }, '你问', h('b', null, text(state.homeRequest) || text(state.request) || '这次的需求')),
+      h('div', { className: 'pfv_scan', 'aria-hidden': true }),
+      h('p', { className: 'pfv_hint' }, '方案正在形成：正在读社区目录、查你的本机环境，然后用一句话给结论。通常十几秒。'),
+      h('p', { className: 'pfv_hint' }, '查完会留在这里，不用守着这一页。')) : null;
+
     const sourceNotice = health ? h('aside', { className: 'pfv_source_notice', role: 'status' }, h('p', null, health.message),
       health.incomplete && isCreating ? h('p', { className: 'pfv_hint' }, '开始创建时会重新核对；你的补充会保留。') : null) : null;
     const workspacePicker = sections.workspacePicker ? h('div', { className: 'pfv_workspace_picker' }, sections.workspacePicker) : null;
@@ -379,7 +388,7 @@ export function createExperienceView(React) {
         request.length > 80 ? disclosure('查看完整需求', paragraph(request)) : null,
         !startingNew && !execution && text(state.intent?.goal) && state.intent.goal !== request ? h('p', null, h('span', { className: 'pfv_hint' }, '我的理解'), h('span', { className: 'pfv_understanding_text' }, short(state.intent.goal, 160))) : null),
       h('section', { className: 'pfv_outcome', id: 'pfv_outcome', 'aria-labelledby': 'pfv_outcome_title', 'aria-busy': Boolean(followupBusy) },
-        h('div', { className: 'pfv_column_heading' }, h('h2', { id: 'pfv_outcome_title' }, execution ? '本次运行' : isCreating ? '插件方案' : previousOutcome ? '上一版方案' : '当前方案'), startingNew ? null : h('span', { className: 'pfv_version' }, revisionLabel)),
-        statusLine, execution ? null : sourceNotice, h('div', { className: `pfv_outcome_document${execution ? ' pfv_outcome_live' : ''}` }, execution ? h('div', { className: 'pfv_result_grid' }, h('div', { className: 'pfv_result_primary' }, executionView), h('aside', { className: 'pfv_solution_overview', 'aria-label': '本次能力方案' }, isCreating ? blueprintView() : planView())) : isCreating ? blueprintView() : h('section', { className: 'pfv_plan_hero', 'aria-label': '当前方案' }, expertPlanCard, planView())), execution || startingNew ? null : expertSection || followup, startingNew ? null : evidence));
+        h('div', { className: 'pfv_column_heading' }, h('h2', { id: 'pfv_outcome_title' }, startingNew ? '正在查找' : execution ? '本次运行' : isCreating ? '插件方案' : previousOutcome ? '上一版方案' : '当前方案'), startingNew ? null : h('span', { className: 'pfv_version' }, revisionLabel)),
+        statusLine, execution ? null : sourceNotice, h('div', { className: `pfv_outcome_document${execution ? ' pfv_outcome_live' : ''}` }, startingNew ? searchingView : execution ? h('div', { className: 'pfv_result_grid' }, h('div', { className: 'pfv_result_primary' }, executionView), h('aside', { className: 'pfv_solution_overview', 'aria-label': '本次能力方案' }, isCreating ? blueprintView() : planView())) : isCreating ? blueprintView() : h('section', { className: 'pfv_plan_hero', 'aria-label': '当前方案' }, expertPlanCard, planView())), execution || startingNew ? null : expertSection || followup, startingNew ? null : evidence));
   };
 }

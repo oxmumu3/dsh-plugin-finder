@@ -731,6 +731,22 @@ export const experienceCss = `
   .pf_v2 .pfv_v3_cat { grid-template-columns: 96px minmax(0, 1fr) 48px; gap: var(--pfv3_s3); }
   .pf_v2 .pfv_v3_cat_name small { display: none; }
 }
+/* Real states: waiting, and "we stopped before a verdict". */
+.pf_v2 .pfv_outcome_document:has(.pfv_search_status) { padding: var(--pfv3_s6); }
+.pf_v2 .pfv_search_echo { margin: 0; font-size: 12px; color: var(--pfv_muted); }
+.pf_v2 .pfv_search_echo b { display: block; margin-top: var(--pfv3_s1); font-size: 20px; line-height: 1.5; font-weight: 600; color: var(--pfv_ink); }
+.pf_v2 .pfv_scan { position: relative; height: 3px; margin: var(--pfv3_s5) 0 var(--pfv3_s3); border-radius: 2px; overflow: hidden;
+  background: color-mix(in srgb, var(--pfv_accent) 16%, transparent); }
+.pf_v2 .pfv_scan::after { content: ""; position: absolute; top: 0; bottom: 0; width: 38%; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--pfv_accent), transparent); animation: pfv_scan 1.5s ease-in-out infinite; }
+@keyframes pfv_scan { from { transform: translateX(-110%); } to { transform: translateX(300%); } }
+@media (prefers-reduced-motion: reduce) { .pf_v2 .pfv_scan::after { animation: none; width: 100%; opacity: .35; } }
+.pf_v2 .pfv_search_status .pfv_hint { margin: var(--pfv3_s1) 0 0; font-size: 13px; line-height: 1.7; color: var(--pfv_muted); }
+/* A partial read is a warning, not fine print. */
+.pf_v2 .pfv_source_notice { margin: var(--pfv3_s3) 0 0; padding: var(--pfv3_s3) var(--pfv3_s4); border: 0; border-left: 3px solid #f0a841;
+  border-radius: 0 10px 10px 0; background: rgba(240, 168, 65, .10); }
+.pf_v2 .pfv_source_notice p { margin: 0; font-size: 14px; line-height: 1.7; color: var(--pfv_ink); }
+.pf_v2 .pfv_source_notice .pfv_hint { margin-top: var(--pfv3_s1); font-size: 12px; color: var(--pfv_muted); }
 /* Package names are identifiers, so they read as identifiers. */
 .pf_v2 .pfv_reuse_list strong,
 .pf_v2 .pfv_plugin_identity h1 { font-family: var(--pfv3_mono); font-weight: 500; letter-spacing: -.2px; }

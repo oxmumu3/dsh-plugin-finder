@@ -2770,6 +2770,15 @@ function createExperienceView(React2) {
       disclosure("\u9700\u6C42\u4E0E\u4FEE\u6539\u8BB0\u5F55", h(React2.Fragment, null, history, sections.taskHistory)),
       disclosure("\u8BB0\u5F55\u4F7F\u7528\u7ED3\u679C", sections.feedback)
     );
+    const searchingView = startingNew ? h(
+      "article",
+      { className: "pfv_search_status", role: "status", "aria-live": "polite" },
+      // Echo the request this search is about; never the previous one.
+      h("p", { className: "pfv_search_echo" }, "\u4F60\u95EE", h("b", null, text6(state.homeRequest) || text6(state.request) || "\u8FD9\u6B21\u7684\u9700\u6C42")),
+      h("div", { className: "pfv_scan", "aria-hidden": true }),
+      h("p", { className: "pfv_hint" }, "\u65B9\u6848\u6B63\u5728\u5F62\u6210\uFF1A\u6B63\u5728\u8BFB\u793E\u533A\u76EE\u5F55\u3001\u67E5\u4F60\u7684\u672C\u673A\u73AF\u5883\uFF0C\u7136\u540E\u7528\u4E00\u53E5\u8BDD\u7ED9\u7ED3\u8BBA\u3002\u901A\u5E38\u5341\u51E0\u79D2\u3002"),
+      h("p", { className: "pfv_hint" }, "\u67E5\u5B8C\u4F1A\u7559\u5728\u8FD9\u91CC\uFF0C\u4E0D\u7528\u5B88\u7740\u8FD9\u4E00\u9875\u3002")
+    ) : null;
     const sourceNotice = health ? h(
       "aside",
       { className: "pfv_source_notice", role: "status" },
@@ -2907,10 +2916,10 @@ function createExperienceView(React2) {
       h(
         "section",
         { className: "pfv_outcome", id: "pfv_outcome", "aria-labelledby": "pfv_outcome_title", "aria-busy": Boolean(followupBusy) },
-        h("div", { className: "pfv_column_heading" }, h("h2", { id: "pfv_outcome_title" }, execution ? "\u672C\u6B21\u8FD0\u884C" : isCreating ? "\u63D2\u4EF6\u65B9\u6848" : previousOutcome ? "\u4E0A\u4E00\u7248\u65B9\u6848" : "\u5F53\u524D\u65B9\u6848"), startingNew ? null : h("span", { className: "pfv_version" }, revisionLabel)),
+        h("div", { className: "pfv_column_heading" }, h("h2", { id: "pfv_outcome_title" }, startingNew ? "\u6B63\u5728\u67E5\u627E" : execution ? "\u672C\u6B21\u8FD0\u884C" : isCreating ? "\u63D2\u4EF6\u65B9\u6848" : previousOutcome ? "\u4E0A\u4E00\u7248\u65B9\u6848" : "\u5F53\u524D\u65B9\u6848"), startingNew ? null : h("span", { className: "pfv_version" }, revisionLabel)),
         statusLine,
         execution ? null : sourceNotice,
-        h("div", { className: `pfv_outcome_document${execution ? " pfv_outcome_live" : ""}` }, execution ? h("div", { className: "pfv_result_grid" }, h("div", { className: "pfv_result_primary" }, executionView), h("aside", { className: "pfv_solution_overview", "aria-label": "\u672C\u6B21\u80FD\u529B\u65B9\u6848" }, isCreating ? blueprintView() : planView())) : isCreating ? blueprintView() : h("section", { className: "pfv_plan_hero", "aria-label": "\u5F53\u524D\u65B9\u6848" }, expertPlanCard, planView())),
+        h("div", { className: `pfv_outcome_document${execution ? " pfv_outcome_live" : ""}` }, startingNew ? searchingView : execution ? h("div", { className: "pfv_result_grid" }, h("div", { className: "pfv_result_primary" }, executionView), h("aside", { className: "pfv_solution_overview", "aria-label": "\u672C\u6B21\u80FD\u529B\u65B9\u6848" }, isCreating ? blueprintView() : planView())) : isCreating ? blueprintView() : h("section", { className: "pfv_plan_hero", "aria-label": "\u5F53\u524D\u65B9\u6848" }, expertPlanCard, planView())),
         execution || startingNew ? null : expertSection || followup,
         startingNew ? null : evidence
       )
@@ -3651,6 +3660,22 @@ var experienceCss = `
   .pf_v2 .pfv_v3_cat { grid-template-columns: 96px minmax(0, 1fr) 48px; gap: var(--pfv3_s3); }
   .pf_v2 .pfv_v3_cat_name small { display: none; }
 }
+/* Real states: waiting, and "we stopped before a verdict". */
+.pf_v2 .pfv_outcome_document:has(.pfv_search_status) { padding: var(--pfv3_s6); }
+.pf_v2 .pfv_search_echo { margin: 0; font-size: 12px; color: var(--pfv_muted); }
+.pf_v2 .pfv_search_echo b { display: block; margin-top: var(--pfv3_s1); font-size: 20px; line-height: 1.5; font-weight: 600; color: var(--pfv_ink); }
+.pf_v2 .pfv_scan { position: relative; height: 3px; margin: var(--pfv3_s5) 0 var(--pfv3_s3); border-radius: 2px; overflow: hidden;
+  background: color-mix(in srgb, var(--pfv_accent) 16%, transparent); }
+.pf_v2 .pfv_scan::after { content: ""; position: absolute; top: 0; bottom: 0; width: 38%; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--pfv_accent), transparent); animation: pfv_scan 1.5s ease-in-out infinite; }
+@keyframes pfv_scan { from { transform: translateX(-110%); } to { transform: translateX(300%); } }
+@media (prefers-reduced-motion: reduce) { .pf_v2 .pfv_scan::after { animation: none; width: 100%; opacity: .35; } }
+.pf_v2 .pfv_search_status .pfv_hint { margin: var(--pfv3_s1) 0 0; font-size: 13px; line-height: 1.7; color: var(--pfv_muted); }
+/* A partial read is a warning, not fine print. */
+.pf_v2 .pfv_source_notice { margin: var(--pfv3_s3) 0 0; padding: var(--pfv3_s3) var(--pfv3_s4); border: 0; border-left: 3px solid #f0a841;
+  border-radius: 0 10px 10px 0; background: rgba(240, 168, 65, .10); }
+.pf_v2 .pfv_source_notice p { margin: 0; font-size: 14px; line-height: 1.7; color: var(--pfv_ink); }
+.pf_v2 .pfv_source_notice .pfv_hint { margin-top: var(--pfv3_s1); font-size: 12px; color: var(--pfv_muted); }
 /* Package names are identifiers, so they read as identifiers. */
 .pf_v2 .pfv_reuse_list strong,
 .pf_v2 .pfv_plugin_identity h1 { font-family: var(--pfv3_mono); font-weight: 500; letter-spacing: -.2px; }
