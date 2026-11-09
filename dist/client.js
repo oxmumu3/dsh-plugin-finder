@@ -2849,7 +2849,7 @@ function createExperienceView(React2) {
         h("div", { className: "pfv_column_heading" }, h("h2", { id: "pfv_outcome_title" }, execution ? "\u672C\u6B21\u8FD0\u884C" : isCreating ? "\u63D2\u4EF6\u65B9\u6848" : previousOutcome ? "\u4E0A\u4E00\u7248\u65B9\u6848" : "\u5F53\u524D\u65B9\u6848"), startingNew ? null : h("span", { className: "pfv_version" }, revisionLabel)),
         statusLine,
         execution ? null : sourceNotice,
-        h("div", { className: `pfv_outcome_document${execution ? " pfv_outcome_live" : ""}` }, execution ? h("div", { className: "pfv_result_grid" }, h("div", { className: "pfv_result_primary" }, executionView), h("aside", { className: "pfv_solution_overview", "aria-label": "\u672C\u6B21\u80FD\u529B\u65B9\u6848" }, isCreating ? blueprintView() : planView())) : isCreating ? blueprintView() : h(React2.Fragment, null, expertPlanCard, planView())),
+        h("div", { className: `pfv_outcome_document${execution ? " pfv_outcome_live" : ""}` }, execution ? h("div", { className: "pfv_result_grid" }, h("div", { className: "pfv_result_primary" }, executionView), h("aside", { className: "pfv_solution_overview", "aria-label": "\u672C\u6B21\u80FD\u529B\u65B9\u6848" }, isCreating ? blueprintView() : planView())) : isCreating ? blueprintView() : h("section", { className: "pfv_plan_hero", "aria-label": "\u5F53\u524D\u65B9\u6848" }, expertPlanCard, planView())),
         execution || startingNew ? null : expertSection || followup,
         startingNew ? null : evidence
       )
@@ -3485,6 +3485,69 @@ var experienceCss = `
 .pfv_plugin_sources > p { color: var(--pfv_muted); font-size: 12px; margin-top: 12px !important; }
 .pfv_plugin_error { margin-top: 22px; padding: 14px 16px; border: 1px solid var(--pfv_line); border-radius: 10px; }
 .pfv_plugin_error .pfv_button { margin-top: 10px; }
+/* ==========================================================================
+   v3 layer (2026-11-09). Adds the approved prototype's scales and identity on
+   top of the existing structure: one column, three text levels, one scale for
+   space, and a single brand mark. Nothing here removes an existing rule; it
+   only overrides values that the prototype changed.
+   ========================================================================== */
+.pf_v2 {
+  --pfv3_s1: 4px; --pfv3_s2: 8px; --pfv3_s3: 12px; --pfv3_s4: 16px;
+  --pfv3_s5: 24px; --pfv3_s6: 32px; --pfv3_s7: 48px; --pfv3_s8: 64px;
+  --pfv3_col: 760px;
+  --pfv3_mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+/* One column: every top-level block on the home page shares the same edges. */
+.pf_v2:has(.pfv_home) .pfv_inner { padding: var(--pfv3_s5) var(--pfv3_s6) var(--pfv3_s8); }
+.pf_v2 .pfv_home { max-width: none; }
+.pf_v2 .pfv_home > * { max-width: var(--pfv3_col); margin-inline: auto; }
+.pf_v2 .pfv_home_start { display: block; max-width: none; }
+.pf_v2 .pfv_home_start > * { max-width: var(--pfv3_col); margin-inline: auto; }
+.pf_v2 .pfv_home_scenario { margin-top: var(--pfv3_s5); }
+.pf_v2 .pfv_home_extras { margin-top: var(--pfv3_s4); }
+.pf_v2 .pfv_home_card { border-radius: 16px; }
+/* Identity: one badge, same silhouette at every size. */
+.pf_v2 .pfv_expert_identity { gap: var(--pfv3_s4); padding: var(--pfv3_s4) 0 var(--pfv3_s5); }
+.pf_v2 .pfv_expert_mark {
+  width: 44px; height: 44px; padding: 10px; border-radius: 13px; color: #fff;
+  background: linear-gradient(155deg, #7c93ff, #3b56e0);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), 0 1px 2px rgba(0, 0, 0, .22);
+}
+.pf_v2 .pfv_expert_identity h1 {
+  font-size: clamp(32px, 3.6cqi, 46px); line-height: 1.18; letter-spacing: -.5px; font-weight: 700;
+}
+.pf_v2 .pfv_expert_identity .pfv_expert_name { font-size: 12px; letter-spacing: .2px; }
+.pf_v2 .pfv_expert_identity p { margin-top: var(--pfv3_s3); font-size: 15px; }
+/* Header: same column as the content below it. */
+.pf_v2:has(.pfv_home) .pf_header { max-width: var(--pfv3_col); margin-inline: auto; }
+/* Controls: one height, one radius, an honest disabled state. */
+.pf_v2 .pfv_button { border-radius: 10px; }
+.pf_v2 .pfv_button.pfv_primary { background: var(--pfv_accent); color: var(--pfv_on_accent); }
+.pf_v2 .pfv_button.pfv_primary:hover { filter: brightness(.93); }
+.pf_v2 .pfv_button.pfv_primary:disabled,
+.pf_v2 .pfv_button.pfv_primary[disabled] { opacity: .45; cursor: not-allowed; filter: none; }
+.pf_v2 .pfv_composer { border-radius: 16px; }
+/* The plan card: the one place that carries the brand, and the thing worth
+   screenshotting. Text inside uses a hue-matched set, never grey on colour. */
+.pf_v2 .pfv_plan_hero {
+  position: relative; border-radius: 24px; padding: var(--pfv3_s6);
+  background: radial-gradient(120% 140% at 100% 0%, #22378a 0%, #16255a 40%, #0e1838 100%);
+  border: 1px solid rgba(147, 166, 255, .22);
+  box-shadow: 0 16px 48px rgba(4, 10, 32, .45);
+}
+.pf_v2 .pfv_plan_hero p, .pf_v2 .pfv_plan_hero li, .pf_v2 .pfv_plan_hero span,
+.pf_v2 .pfv_plan_hero dd, .pf_v2 .pfv_plan_hero dt, .pf_v2 .pfv_plan_hero summary { color: #c7d0f6; }
+.pf_v2 .pfv_plan_hero h1, .pf_v2 .pfv_plan_hero h2, .pf_v2 .pfv_plan_hero h3, .pf_v2 .pfv_plan_hero h4,
+.pf_v2 .pfv_plan_hero strong, .pf_v2 .pfv_plan_hero b { color: #eef1ff; }
+.pf_v2 .pfv_plan_hero .pfv_hint, .pf_v2 .pfv_plan_hero .pfv_version { color: #9eacde; }
+.pf_v2 .pfv_plan_hero a { color: #9fb0ff; }
+.pf_v2 .pfv_plan_hero .pfv_disclosure { border-top-color: rgba(147, 166, 255, .18); }
+.pf_v2 .pfv_plan_hero h2, .pf_v2 .pfv_plan_hero h3 { letter-spacing: -.2px; }
+/* Package names are identifiers, so they read as identifiers. */
+.pf_v2 .pfv_reuse_list strong,
+.pf_v2 .pfv_plugin_identity h1 { font-family: var(--pfv3_mono); font-weight: 500; letter-spacing: -.2px; }
+.pf_v2 .pfv_reuse_list strong { font-size: .94em; }
+
 @container finder (max-width: 700px) {
   .pfv_plugin_hero { grid-template-columns: 1fr; gap: 4px; }
   .pfv_plugin_install { padding-top: 18px; max-width: 360px; }
