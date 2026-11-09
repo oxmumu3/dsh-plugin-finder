@@ -4,7 +4,7 @@ import { renderFeaturedView } from './featured-view.js';
 import { featuredCatalog } from './featured-catalog.js';
 import { rankFeatured } from './featured.js';
 import { createCommunityView } from './community-view.js';
-import { getCommunityEntry } from './community-catalog.js';
+import { getCommunityEntry, getCommunityOverview } from './community-catalog.js';
 
 const text = value => typeof value === 'string' ? value : '';
 const items = value => Array.isArray(value) ? value : [];
@@ -170,6 +170,42 @@ export function createExperienceView(React) {
         }));
     })();
 
+    const catalog = (() => { try { return getCommunityOverview(); } catch { return null; } })();
+    const catalogTotal = safeCount(catalog?.total);
+    const countText = value => safeCount(value).toLocaleString('en-US');
+    const categories = records(catalog?.categories)
+      .filter(item => text(item.label) && Number.isSafeInteger(item.count))
+      .sort((left, right) => right.count - left.count).slice(0, 6);
+    const categoryMax = categories.reduce((max, item) => Math.max(max, item.count), 1);
+
+    // Three outcomes on one rail: the product promise, in the order it happens.
+    const journey = h('div', { className: 'pfv_journey', 'aria-label': '它会怎么帮你' },
+      h('div', { className: 'pfv_journey_stop' }, h('h3', null, '先找现成的'),
+        h('p', null, catalogTotal
+          ? `从 ${countText(catalogTotal)} 个社区插件里挑最合适的，说清为什么选它、为什么不选别的。`
+          : '从社区插件里挑最合适的，说清为什么选它、为什么不选别的。')),
+      h('div', { className: 'pfv_journey_stop' }, h('h3', null, '装好跑一遍'),
+        h('p', null, '装进你选的工作区真跑一次，装之前先核对作者和兼容。')),
+      h('div', { className: 'pfv_journey_stop pfv_journey_auto' }, h('h3', null, '没有就一起做'),
+        h('p', null, '在创造模式里陪你查现成、定设计、搭骨架，一次加一个功能。'),
+        h('span', { className: 'pfv_journey_tag' }, '装上就生效，不用设置')));
+
+    // Bar length is the real share of the catalog, so the order explains itself.
+    const categoriesView = categories.length ? h('section', { className: 'pfv_v3_block', 'aria-labelledby': 'pfv_categories_title' },
+      h('div', { className: 'pfv_v3_head' },
+        h('h2', { id: 'pfv_categories_title' }, '按用途逛'),
+        h('span', null, '按数量排，条越长插件越多'),
+        h('a', { href: '#pfv_community_title', className: 'pfv_v3_more' }, '看全部插件')),
+      h('div', { className: 'pfv_v3_cats' }, ...categories.map(item => h('a', {
+        key: text(item.id) || text(item.label), className: 'pfv_v3_cat', href: '#pfv_community_title',
+      },
+      h('span', { className: 'pfv_v3_cat_name' },
+        h('b', null, text(item.label)),
+        text(item.description) ? h('small', null, text(item.description)) : null),
+      h('span', { className: 'pfv_v3_bar', 'aria-hidden': true },
+        h('i', { style: { width: `${Math.max(4, Math.round(item.count / categoryMax * 100))}%` } })),
+      h('em', null, countText(item.count)))))) : null;
+
     const home = () => h('div', { className: 'pfv_home' },
       h('header', { className: 'pfv_expert_identity', 'aria-labelledby': 'pfv_expert_title' },
         h('span', { className: 'pfv_expert_mark', 'aria-hidden': true, dangerouslySetInnerHTML: { __html: expertWhaleSvg } }),
@@ -179,36 +215,37 @@ export function createExperienceView(React) {
         h('div', null, h('h2', { id: 'pfv_product_intro_title' }, '从需求到能用'), h('p', null, '先查现成能力，只造缺失部分，在当前工作区做到能用。')),
         button('×', () => { controller.hideProductIntro?.(); globalThis.document?.getElementById('pfv_intro_toggle')?.focus(); }, { className: 'pfv_button pfv_quiet pfv_intro_close', 'aria-label': '关闭产品介绍' })) : null,
       h('div', { className: 'pfv_home_start', role: 'group', 'aria-labelledby': 'pfv_expert_title', 'aria-describedby': 'pfv_expert_opening' },
-      h('section', { className: 'pfv_home_intro', 'aria-labelledby': 'pfv_home_title' },
-        resumeView,
-        h('h2', { id: 'pfv_home_title', className: 'pfv_home_heading' }, '告诉我你的目标'),
-        h('p', { className: 'pfv_home_lead' }, '一句话就好，之后我们接着聊。'),
-        h('form', { className: 'pfv_composer pfv_home_composer pfv_home_card', onSubmit: event => { event.preventDefault(); if (!busy && modelReady && text(state.homeRequest).trim()) void controller.searchHome(); } },
-          state.homeCommunityEntryId ? h('div', { className: 'pfv_home_selection', 'aria-label': '已选插件' },
-            h('span', null, `已选插件：${homeCommunityEntry?.name || '当前目录未收录'}`),
-            button('取消指定', () => { if (!taskInputBusy) controller.clearHomeCommunitySelection(); }, { className: 'pfv_button pfv_quiet', disabled: taskInputBusy })) : null,
-          h('label', { className: 'pfv_sr_only', htmlFor: 'pfv_home_input' }, '任务描述'),
-          h('textarea', { ref: homeInput, id: 'pfv_home_input', 'aria-label': '任务描述', value: text(state.homeRequest), maxLength: 6000, disabled: taskInputBusy, placeholder: '例如：把会议记录整理成待办，再给我一份项目简报。', onChange: event => controller.setHomeRequest(event.target.value), onKeyDown: shortcut }),
-          h('div', { className: 'pfv_composer_bottom' }, h('button', { type: 'submit', className: 'pfv_button pfv_primary', disabled: busy || !modelReady || !text(state.homeRequest).trim() }, '帮我找方案')))),
-      h('div', { className: 'pfv_home_extras' },
-        lastSearchView,
-        h('div', { className: 'pfv_examples', 'aria-label': '可编辑的需求示例' }, h('span', { className: 'pfv_hint' }, '例如'), ...examples.map(([label, value]) => button(label, () => {
-          if (controller.prepareHomeExample) controller.prepareHomeExample(value);
-          else if (!text(state.homeRequest).trim()) controller.setHomeRequest(value);
-          homeInput.current?.focus?.();
-        }, { key: label, className: 'pfv_button pfv_example', disabled: taskInputBusy, 'aria-label': `填入${label}的示例，之后可以修改` })),
-          h('a', { href: '#pfv_community_title', className: 'pfv_store_jump' }, '逛逛插件商店 →')),
-        state.homeWarning ? h('p', { className: 'pfv_warning', role: 'status' }, text(state.homeWarning)) : null,
-        state.bootstrapLoaded && !modelReady ? h('div', { className: 'pfv_warning' }, h('p', null, '先在 DSH 设置中配置默认模型，再开始查找。'), button('重新读取配置', () => controller.bootstrap(), { disabled: busy })) : null),
-      state.opportunity ? renderOpportunityCard({h,state,controller,disabled:locked,modelReady,fallback:{id:scenario.id,title:scenarioTitles[scenario.id],benefit:scenarioBenefits[scenario.id],basis:suggested?'本机线索':'通用想法',reason:suggested?.reason||''}}) : h('aside', { className: 'pfv_home_scenario', 'aria-label': suggested ? '猜你喜欢' : '试试这个' },
+        h('section', { className: 'pfv_home_intro', 'aria-labelledby': 'pfv_home_title' },
+          resumeView,
+          h('h2', { id: 'pfv_home_title', className: 'pfv_home_heading' }, '告诉我你的目标'),
+          h('p', { className: 'pfv_home_lead' }, '一句话就好，之后我们接着聊。'),
+          h('form', { className: 'pfv_composer pfv_home_composer pfv_home_card', onSubmit: event => { event.preventDefault(); if (!busy && modelReady && text(state.homeRequest).trim()) void controller.searchHome(); } },
+            state.homeCommunityEntryId ? h('div', { className: 'pfv_home_selection', 'aria-label': '已选插件' },
+              h('span', null, `已选插件：${homeCommunityEntry?.name || '当前目录未收录'}`),
+              button('取消指定', () => { if (!taskInputBusy) controller.clearHomeCommunitySelection(); }, { className: 'pfv_button pfv_quiet', disabled: taskInputBusy })) : null,
+            h('label', { className: 'pfv_sr_only', htmlFor: 'pfv_home_input' }, '任务描述'),
+            h('textarea', { ref: homeInput, id: 'pfv_home_input', 'aria-label': '任务描述', value: text(state.homeRequest), maxLength: 6000, disabled: taskInputBusy, placeholder: '例如：把会议记录整理成待办，再给我一份项目简报。', onChange: event => controller.setHomeRequest(event.target.value), onKeyDown: shortcut }),
+            h('div', { className: 'pfv_composer_bottom' },
+              h('div', { className: 'pfv_examples', 'aria-label': '可编辑的需求示例' }, h('span', { className: 'pfv_hint' }, '例如'), ...examples.map(([label, value]) => button(label, () => {
+                if (controller.prepareHomeExample) controller.prepareHomeExample(value);
+                else if (!text(state.homeRequest).trim()) controller.setHomeRequest(value);
+                homeInput.current?.focus?.();
+              }, { key: label, className: 'pfv_button pfv_example', disabled: taskInputBusy, 'aria-label': `填入${label}的示例，之后可以修改` }))),
+              h('button', { type: 'submit', className: 'pfv_button pfv_primary', disabled: busy || !modelReady || !text(state.homeRequest).trim() }, '帮我找方案'))),
+          state.homeWarning ? h('p', { className: 'pfv_warning', role: 'status' }, text(state.homeWarning)) : null,
+          state.bootstrapLoaded && !modelReady ? h('div', { className: 'pfv_warning' }, h('p', null, '先在 DSH 设置中配置默认模型，再开始查找。'), button('重新读取配置', () => controller.bootstrap(), { disabled: busy })) : null),
+        journey,
+        state.opportunity ? renderOpportunityCard({h,state,controller,disabled:locked,modelReady,fallback:{id:scenario.id,title:scenarioTitles[scenario.id],benefit:scenarioBenefits[scenario.id],basis:suggested?'本机线索':'通用想法',reason:suggested?.reason||''}}) : h('aside', { className: 'pfv_home_scenario', 'aria-label': suggested ? '猜你喜欢' : '试试这个' },
         h('h2', { className: 'pfv_home_heading' }, suggested ? '我猜你可能需要' : '我先给你一个想法'),
         h('p', { className: 'pfv_home_lead' }, '也可以从这个想法开始聊。'),
         h('div', { className: 'pfv_home_card pfv_scenario_card' },
           h('h3', null, scenarioTitles[scenario.id]), paragraph(scenarioBenefits[scenario.id]),
           suggested ? h('p', { className: 'pfv_scenario_reason' }, suggested.reason) : null,
-          h('div', { className: 'pfv_composer_bottom' }, button('开始这个需求', () => controller.startFeatured(scenario.id), { className: 'pfv_button pfv_scenario_start', disabled: locked || !modelReady }))))),
-      renderOpportunitySettings({h,state,controller,modelReady}),
+          h('div', { className: 'pfv_composer_bottom' }, button('开始这个需求', () => controller.startFeatured(scenario.id), { className: 'pfv_button pfv_scenario_start', disabled: locked || !modelReady })))),
+        renderOpportunitySettings({h,state,controller,modelReady})),
       renderFeaturedView({ h, state, controller, copyText, busy, mode: 'home' }),
+      categoriesView,
+      lastSearchView,
       h(CommunityView, { controller, busy: locked, modelReady }));
 
     if (state.view === 'home' && !state.searching) return home();

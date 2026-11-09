@@ -1,6 +1,6 @@
 {
   "name": "@oxmumu3/dsh-plugin-finder",
-  "version": "0.12.0-preview.15",
+  "version": "0.12.0-preview.16",
   "description": "Describe a need, find a usable plan, and run or create in the same DeepSeek Harness workspace",
   "icon": "./icon.svg",
   "author": "牛村木木山",

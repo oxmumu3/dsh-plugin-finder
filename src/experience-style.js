@@ -691,6 +691,46 @@ export const experienceCss = `
 .pf_v2 .pfv_home_lead { font-size: 13px; }
 .pf_v2 .pfv_last_search_request { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .pf_v2 .pfv_last_search_sources { font-size: 12px; }
+/* Home v3 structure: the three outcomes as one rail, and categories whose bar
+   length is the real share of the catalog. */
+.pf_v2 .pfv_home_composer .pfv_composer_bottom { flex-wrap: wrap; gap: var(--pfv3_s3); }
+.pf_v2 .pfv_home_composer .pfv_examples { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; gap: var(--pfv3_s2); }
+.pf_v2 .pfv_journey { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--pfv3_s5); text-align: center; padding-top: var(--pfv3_s6); }
+.pf_v2 .pfv_journey::before { content: ""; position: absolute; top: 10px; left: calc(100% / 6); right: calc(100% / 6); height: 2px; border-radius: 1px;
+  background: linear-gradient(90deg, var(--pfv_accent), color-mix(in srgb, var(--pfv_accent) 30%, transparent)); }
+.pf_v2 .pfv_journey_stop { position: relative; }
+.pf_v2 .pfv_journey_stop::before { content: ""; position: absolute; top: -30px; left: 50%; margin-left: -8px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--pfv_paper); border: 2px solid var(--pfv_accent); }
+.pf_v2 .pfv_journey_stop.pfv_journey_auto::before { background: #43c495; border-color: #43c495; box-shadow: 0 0 0 4px rgba(67, 196, 149, .16); }
+.pf_v2 .pfv_journey_stop h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--pfv_ink); }
+.pf_v2 .pfv_journey_stop p { margin: 8px 0 0; font-size: 14px; line-height: 1.7; color: var(--pfv_muted); }
+.pf_v2 .pfv_journey_tag { display: inline-flex; align-items: center; height: 24px; margin-top: var(--pfv3_s3); padding: 0 var(--pfv3_s2); border-radius: 999px;
+  font-size: 12px; color: #2f9c76; background: rgba(67, 196, 149, .14); }
+.pf_v2 .pfv_v3_block { margin-top: var(--pfv3_s7); }
+.pf_v2 .pfv_v3_head { display: flex; align-items: baseline; gap: var(--pfv3_s3); margin-bottom: var(--pfv3_s4); }
+.pf_v2 .pfv_v3_head h2 { margin: 0; font-size: 18px; font-weight: 600; color: var(--pfv_ink); }
+.pf_v2 .pfv_v3_head span { font-size: 14px; color: var(--pfv_muted); }
+.pf_v2 .pfv_v3_more { margin-left: auto; font-size: 14px; color: var(--pfv_accent); text-decoration: none; }
+.pf_v2 .pfv_v3_more:hover { text-decoration: underline; text-underline-offset: 3px; }
+.pf_v2 .pfv_v3_cats { display: grid; gap: var(--pfv3_s1); }
+.pf_v2 .pfv_v3_cat { display: grid; grid-template-columns: 120px minmax(0, 1fr) 64px; align-items: center; gap: var(--pfv3_s4);
+  padding: var(--pfv3_s2) var(--pfv3_s3); border-radius: 8px; text-decoration: none; color: inherit; }
+.pf_v2 .pfv_v3_cat:hover { background: var(--pfv_tint); }
+.pf_v2 .pfv_v3_cat_name b { display: block; font-size: 14px; font-weight: 600; color: var(--pfv_ink); }
+.pf_v2 .pfv_v3_cat_name small { display: block; margin-top: 2px; font-size: 12px; color: var(--pfv_muted); }
+.pf_v2 .pfv_v3_bar { display: block; height: 8px; border-radius: 4px; overflow: hidden;
+  background: color-mix(in srgb, var(--pfv_ink) 9%, transparent); }
+.pf_v2 .pfv_v3_bar i { display: block; height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, var(--pfv_accent), color-mix(in srgb, var(--pfv_accent) 55%, #fff)); }
+.pf_v2 .pfv_v3_cat em { font-style: normal; text-align: right; font-size: 14px; color: var(--pfv_ink); font-variant-numeric: tabular-nums; }
+@container finder (max-width: 700px) {
+  .pf_v2 .pfv_journey { grid-template-columns: minmax(0, 1fr); gap: var(--pfv3_s5); text-align: left; padding-top: 0; padding-left: var(--pfv3_s6); }
+  .pf_v2 .pfv_journey::before { top: 8px; bottom: 8px; left: 7px; right: auto; width: 2px; height: auto;
+    background: linear-gradient(180deg, var(--pfv_accent), color-mix(in srgb, var(--pfv_accent) 30%, transparent)); }
+  .pf_v2 .pfv_journey_stop::before { top: 4px; left: calc(-1 * var(--pfv3_s6)); margin-left: 0; }
+  .pf_v2 .pfv_v3_cat { grid-template-columns: 96px minmax(0, 1fr) 48px; gap: var(--pfv3_s3); }
+  .pf_v2 .pfv_v3_cat_name small { display: none; }
+}
 /* Package names are identifiers, so they read as identifiers. */
 .pf_v2 .pfv_reuse_list strong,
 .pf_v2 .pfv_plugin_identity h1 { font-family: var(--pfv3_mono); font-weight: 500; letter-spacing: -.2px; }

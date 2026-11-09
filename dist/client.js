@@ -2543,6 +2543,71 @@ function createExperienceView(React2) {
         })
       );
     })();
+    const catalog = (() => {
+      try {
+        return getCommunityOverview();
+      } catch {
+        return null;
+      }
+    })();
+    const catalogTotal = safeCount(catalog?.total);
+    const countText = (value) => safeCount(value).toLocaleString("en-US");
+    const categories = records(catalog?.categories).filter((item) => text6(item.label) && Number.isSafeInteger(item.count)).sort((left, right) => right.count - left.count).slice(0, 6);
+    const categoryMax = categories.reduce((max, item) => Math.max(max, item.count), 1);
+    const journey = h(
+      "div",
+      { className: "pfv_journey", "aria-label": "\u5B83\u4F1A\u600E\u4E48\u5E2E\u4F60" },
+      h(
+        "div",
+        { className: "pfv_journey_stop" },
+        h("h3", null, "\u5148\u627E\u73B0\u6210\u7684"),
+        h("p", null, catalogTotal ? `\u4ECE ${countText(catalogTotal)} \u4E2A\u793E\u533A\u63D2\u4EF6\u91CC\u6311\u6700\u5408\u9002\u7684\uFF0C\u8BF4\u6E05\u4E3A\u4EC0\u4E48\u9009\u5B83\u3001\u4E3A\u4EC0\u4E48\u4E0D\u9009\u522B\u7684\u3002` : "\u4ECE\u793E\u533A\u63D2\u4EF6\u91CC\u6311\u6700\u5408\u9002\u7684\uFF0C\u8BF4\u6E05\u4E3A\u4EC0\u4E48\u9009\u5B83\u3001\u4E3A\u4EC0\u4E48\u4E0D\u9009\u522B\u7684\u3002")
+      ),
+      h(
+        "div",
+        { className: "pfv_journey_stop" },
+        h("h3", null, "\u88C5\u597D\u8DD1\u4E00\u904D"),
+        h("p", null, "\u88C5\u8FDB\u4F60\u9009\u7684\u5DE5\u4F5C\u533A\u771F\u8DD1\u4E00\u6B21\uFF0C\u88C5\u4E4B\u524D\u5148\u6838\u5BF9\u4F5C\u8005\u548C\u517C\u5BB9\u3002")
+      ),
+      h(
+        "div",
+        { className: "pfv_journey_stop pfv_journey_auto" },
+        h("h3", null, "\u6CA1\u6709\u5C31\u4E00\u8D77\u505A"),
+        h("p", null, "\u5728\u521B\u9020\u6A21\u5F0F\u91CC\u966A\u4F60\u67E5\u73B0\u6210\u3001\u5B9A\u8BBE\u8BA1\u3001\u642D\u9AA8\u67B6\uFF0C\u4E00\u6B21\u52A0\u4E00\u4E2A\u529F\u80FD\u3002"),
+        h("span", { className: "pfv_journey_tag" }, "\u88C5\u4E0A\u5C31\u751F\u6548\uFF0C\u4E0D\u7528\u8BBE\u7F6E")
+      )
+    );
+    const categoriesView = categories.length ? h(
+      "section",
+      { className: "pfv_v3_block", "aria-labelledby": "pfv_categories_title" },
+      h(
+        "div",
+        { className: "pfv_v3_head" },
+        h("h2", { id: "pfv_categories_title" }, "\u6309\u7528\u9014\u901B"),
+        h("span", null, "\u6309\u6570\u91CF\u6392\uFF0C\u6761\u8D8A\u957F\u63D2\u4EF6\u8D8A\u591A"),
+        h("a", { href: "#pfv_community_title", className: "pfv_v3_more" }, "\u770B\u5168\u90E8\u63D2\u4EF6")
+      ),
+      h("div", { className: "pfv_v3_cats" }, ...categories.map((item) => h(
+        "a",
+        {
+          key: text6(item.id) || text6(item.label),
+          className: "pfv_v3_cat",
+          href: "#pfv_community_title"
+        },
+        h(
+          "span",
+          { className: "pfv_v3_cat_name" },
+          h("b", null, text6(item.label)),
+          text6(item.description) ? h("small", null, text6(item.description)) : null
+        ),
+        h(
+          "span",
+          { className: "pfv_v3_bar", "aria-hidden": true },
+          h("i", { style: { width: `${Math.max(4, Math.round(item.count / categoryMax * 100))}%` } })
+        ),
+        h("em", null, countText(item.count))
+      )))
+    ) : null;
     const home = () => h(
       "div",
       { className: "pfv_home" },
@@ -2592,27 +2657,21 @@ function createExperienceView(React2) {
             ) : null,
             h("label", { className: "pfv_sr_only", htmlFor: "pfv_home_input" }, "\u4EFB\u52A1\u63CF\u8FF0"),
             h("textarea", { ref: homeInput, id: "pfv_home_input", "aria-label": "\u4EFB\u52A1\u63CF\u8FF0", value: text6(state.homeRequest), maxLength: 6e3, disabled: taskInputBusy, placeholder: "\u4F8B\u5982\uFF1A\u628A\u4F1A\u8BAE\u8BB0\u5F55\u6574\u7406\u6210\u5F85\u529E\uFF0C\u518D\u7ED9\u6211\u4E00\u4EFD\u9879\u76EE\u7B80\u62A5\u3002", onChange: (event) => controller.setHomeRequest(event.target.value), onKeyDown: shortcut }),
-            h("div", { className: "pfv_composer_bottom" }, h("button", { type: "submit", className: "pfv_button pfv_primary", disabled: busy || !modelReady || !text6(state.homeRequest).trim() }, "\u5E2E\u6211\u627E\u65B9\u6848"))
-          )
-        ),
-        h(
-          "div",
-          { className: "pfv_home_extras" },
-          lastSearchView,
-          h(
-            "div",
-            { className: "pfv_examples", "aria-label": "\u53EF\u7F16\u8F91\u7684\u9700\u6C42\u793A\u4F8B" },
-            h("span", { className: "pfv_hint" }, "\u4F8B\u5982"),
-            ...examples2.map(([label, value]) => button2(label, () => {
-              if (controller.prepareHomeExample) controller.prepareHomeExample(value);
-              else if (!text6(state.homeRequest).trim()) controller.setHomeRequest(value);
-              homeInput.current?.focus?.();
-            }, { key: label, className: "pfv_button pfv_example", disabled: taskInputBusy, "aria-label": `\u586B\u5165${label}\u7684\u793A\u4F8B\uFF0C\u4E4B\u540E\u53EF\u4EE5\u4FEE\u6539` })),
-            h("a", { href: "#pfv_community_title", className: "pfv_store_jump" }, "\u901B\u901B\u63D2\u4EF6\u5546\u5E97 \u2192")
+            h(
+              "div",
+              { className: "pfv_composer_bottom" },
+              h("div", { className: "pfv_examples", "aria-label": "\u53EF\u7F16\u8F91\u7684\u9700\u6C42\u793A\u4F8B" }, h("span", { className: "pfv_hint" }, "\u4F8B\u5982"), ...examples2.map(([label, value]) => button2(label, () => {
+                if (controller.prepareHomeExample) controller.prepareHomeExample(value);
+                else if (!text6(state.homeRequest).trim()) controller.setHomeRequest(value);
+                homeInput.current?.focus?.();
+              }, { key: label, className: "pfv_button pfv_example", disabled: taskInputBusy, "aria-label": `\u586B\u5165${label}\u7684\u793A\u4F8B\uFF0C\u4E4B\u540E\u53EF\u4EE5\u4FEE\u6539` }))),
+              h("button", { type: "submit", className: "pfv_button pfv_primary", disabled: busy || !modelReady || !text6(state.homeRequest).trim() }, "\u5E2E\u6211\u627E\u65B9\u6848")
+            )
           ),
           state.homeWarning ? h("p", { className: "pfv_warning", role: "status" }, text6(state.homeWarning)) : null,
           state.bootstrapLoaded && !modelReady ? h("div", { className: "pfv_warning" }, h("p", null, "\u5148\u5728 DSH \u8BBE\u7F6E\u4E2D\u914D\u7F6E\u9ED8\u8BA4\u6A21\u578B\uFF0C\u518D\u5F00\u59CB\u67E5\u627E\u3002"), button2("\u91CD\u65B0\u8BFB\u53D6\u914D\u7F6E", () => controller.bootstrap(), { disabled: busy })) : null
         ),
+        journey,
         state.opportunity ? renderOpportunityCard({ h, state, controller, disabled: locked, modelReady, fallback: { id: scenario.id, title: scenarioTitles[scenario.id], benefit: scenarioBenefits[scenario.id], basis: suggested ? "\u672C\u673A\u7EBF\u7D22" : "\u901A\u7528\u60F3\u6CD5", reason: suggested?.reason || "" } }) : h(
           "aside",
           { className: "pfv_home_scenario", "aria-label": suggested ? "\u731C\u4F60\u559C\u6B22" : "\u8BD5\u8BD5\u8FD9\u4E2A" },
@@ -2626,10 +2685,12 @@ function createExperienceView(React2) {
             suggested ? h("p", { className: "pfv_scenario_reason" }, suggested.reason) : null,
             h("div", { className: "pfv_composer_bottom" }, button2("\u5F00\u59CB\u8FD9\u4E2A\u9700\u6C42", () => controller.startFeatured(scenario.id), { className: "pfv_button pfv_scenario_start", disabled: locked || !modelReady }))
           )
-        )
+        ),
+        renderOpportunitySettings({ h, state, controller, modelReady })
       ),
-      renderOpportunitySettings({ h, state, controller, modelReady }),
       renderFeaturedView({ h, state, controller, copyText, busy, mode: "home" }),
+      categoriesView,
+      lastSearchView,
       h(CommunityView, { controller, busy: locked, modelReady })
     );
     if (state.view === "home" && !state.searching) return home();
@@ -3550,6 +3611,46 @@ var experienceCss = `
 .pf_v2 .pfv_home_lead { font-size: 13px; }
 .pf_v2 .pfv_last_search_request { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .pf_v2 .pfv_last_search_sources { font-size: 12px; }
+/* Home v3 structure: the three outcomes as one rail, and categories whose bar
+   length is the real share of the catalog. */
+.pf_v2 .pfv_home_composer .pfv_composer_bottom { flex-wrap: wrap; gap: var(--pfv3_s3); }
+.pf_v2 .pfv_home_composer .pfv_examples { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; gap: var(--pfv3_s2); }
+.pf_v2 .pfv_journey { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--pfv3_s5); text-align: center; padding-top: var(--pfv3_s6); }
+.pf_v2 .pfv_journey::before { content: ""; position: absolute; top: 10px; left: calc(100% / 6); right: calc(100% / 6); height: 2px; border-radius: 1px;
+  background: linear-gradient(90deg, var(--pfv_accent), color-mix(in srgb, var(--pfv_accent) 30%, transparent)); }
+.pf_v2 .pfv_journey_stop { position: relative; }
+.pf_v2 .pfv_journey_stop::before { content: ""; position: absolute; top: -30px; left: 50%; margin-left: -8px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--pfv_paper); border: 2px solid var(--pfv_accent); }
+.pf_v2 .pfv_journey_stop.pfv_journey_auto::before { background: #43c495; border-color: #43c495; box-shadow: 0 0 0 4px rgba(67, 196, 149, .16); }
+.pf_v2 .pfv_journey_stop h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--pfv_ink); }
+.pf_v2 .pfv_journey_stop p { margin: 8px 0 0; font-size: 14px; line-height: 1.7; color: var(--pfv_muted); }
+.pf_v2 .pfv_journey_tag { display: inline-flex; align-items: center; height: 24px; margin-top: var(--pfv3_s3); padding: 0 var(--pfv3_s2); border-radius: 999px;
+  font-size: 12px; color: #2f9c76; background: rgba(67, 196, 149, .14); }
+.pf_v2 .pfv_v3_block { margin-top: var(--pfv3_s7); }
+.pf_v2 .pfv_v3_head { display: flex; align-items: baseline; gap: var(--pfv3_s3); margin-bottom: var(--pfv3_s4); }
+.pf_v2 .pfv_v3_head h2 { margin: 0; font-size: 18px; font-weight: 600; color: var(--pfv_ink); }
+.pf_v2 .pfv_v3_head span { font-size: 14px; color: var(--pfv_muted); }
+.pf_v2 .pfv_v3_more { margin-left: auto; font-size: 14px; color: var(--pfv_accent); text-decoration: none; }
+.pf_v2 .pfv_v3_more:hover { text-decoration: underline; text-underline-offset: 3px; }
+.pf_v2 .pfv_v3_cats { display: grid; gap: var(--pfv3_s1); }
+.pf_v2 .pfv_v3_cat { display: grid; grid-template-columns: 120px minmax(0, 1fr) 64px; align-items: center; gap: var(--pfv3_s4);
+  padding: var(--pfv3_s2) var(--pfv3_s3); border-radius: 8px; text-decoration: none; color: inherit; }
+.pf_v2 .pfv_v3_cat:hover { background: var(--pfv_tint); }
+.pf_v2 .pfv_v3_cat_name b { display: block; font-size: 14px; font-weight: 600; color: var(--pfv_ink); }
+.pf_v2 .pfv_v3_cat_name small { display: block; margin-top: 2px; font-size: 12px; color: var(--pfv_muted); }
+.pf_v2 .pfv_v3_bar { display: block; height: 8px; border-radius: 4px; overflow: hidden;
+  background: color-mix(in srgb, var(--pfv_ink) 9%, transparent); }
+.pf_v2 .pfv_v3_bar i { display: block; height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, var(--pfv_accent), color-mix(in srgb, var(--pfv_accent) 55%, #fff)); }
+.pf_v2 .pfv_v3_cat em { font-style: normal; text-align: right; font-size: 14px; color: var(--pfv_ink); font-variant-numeric: tabular-nums; }
+@container finder (max-width: 700px) {
+  .pf_v2 .pfv_journey { grid-template-columns: minmax(0, 1fr); gap: var(--pfv3_s5); text-align: left; padding-top: 0; padding-left: var(--pfv3_s6); }
+  .pf_v2 .pfv_journey::before { top: 8px; bottom: 8px; left: 7px; right: auto; width: 2px; height: auto;
+    background: linear-gradient(180deg, var(--pfv_accent), color-mix(in srgb, var(--pfv_accent) 30%, transparent)); }
+  .pf_v2 .pfv_journey_stop::before { top: 4px; left: calc(-1 * var(--pfv3_s6)); margin-left: 0; }
+  .pf_v2 .pfv_v3_cat { grid-template-columns: 96px minmax(0, 1fr) 48px; gap: var(--pfv3_s3); }
+  .pf_v2 .pfv_v3_cat_name small { display: none; }
+}
 /* Package names are identifiers, so they read as identifiers. */
 .pf_v2 .pfv_reuse_list strong,
 .pf_v2 .pfv_plugin_identity h1 { font-family: var(--pfv3_mono); font-weight: 500; letter-spacing: -.2px; }
