@@ -3624,7 +3624,8 @@ var experienceCss = `
    length is the real share of the catalog. */
 .pf_v2 .pfv_home_composer .pfv_composer_bottom { flex-wrap: wrap; gap: var(--pfv3_s3); }
 .pf_v2 .pfv_home_composer .pfv_examples { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; gap: var(--pfv3_s2); }
-.pf_v2 .pfv_journey { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--pfv3_s5); text-align: center; padding-top: var(--pfv3_s6); }
+.pf_v2 .pfv_journey { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--pfv3_s6);
+  margin-top: var(--pfv3_s8); text-align: center; padding-top: var(--pfv3_s6); }
 .pf_v2 .pfv_journey::before { content: ""; position: absolute; top: 10px; left: calc(100% / 6); right: calc(100% / 6); height: 2px; border-radius: 1px;
   background: linear-gradient(90deg, var(--pfv_accent), color-mix(in srgb, var(--pfv_accent) 30%, transparent)); }
 .pf_v2 .pfv_journey_stop { position: relative; }
@@ -3676,6 +3677,27 @@ var experienceCss = `
   border-radius: 0 10px 10px 0; background: rgba(240, 168, 65, .10); }
 .pf_v2 .pfv_source_notice p { margin: 0; font-size: 14px; line-height: 1.7; color: var(--pfv_ink); }
 .pf_v2 .pfv_source_notice .pfv_hint { margin-top: var(--pfv3_s1); font-size: 12px; color: var(--pfv_muted); }
+/* Breathing pass after the first live screenshot: the rail sat on the composer,
+   the featured heading collided with its own note, category rows broke into three
+   lines, and every section had the same gap. */
+.pf_v2 .pfv_home_start > .pfv_home_intro .pfv_home_lead { margin: 2px 0 0; font-size: 12px; line-height: 1.6; }
+.pf_v2 .pfv_home_composer textarea { min-height: 56px; }
+.pf_v2 .pfv_journey_stop h3 { line-height: 1.5; }
+.pf_v2 .pfv_journey_stop p { margin-top: 6px; }
+/* Featured: one heading row, note underneath, never overlapping. */
+.pf_v2 .pf_featured_group > .pf_section_head { align-items: flex-start; margin-bottom: var(--pfv3_s4); }
+.pf_v2 .pf_featured_group h2 { margin: 0; font-size: 18px; line-height: 1.4; letter-spacing: 0; }
+.pf_v2 .pfv_featured_intro { margin: 4px 0 0; font-size: 13px; line-height: 1.6; color: var(--pfv_muted); }
+.pf_v2 .pf_featured_group { margin-top: var(--pfv3_s7); }
+/* Categories: a wider name column keeps each row on one line. */
+.pf_v2 .pfv_v3_cat { grid-template-columns: 168px minmax(0, 1fr) 64px; gap: var(--pfv3_s4); padding: var(--pfv3_s3) var(--pfv3_s3); }
+.pf_v2 .pfv_v3_cat_name small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf_v2 .pfv_v3_cat_name b { line-height: 1.5; }
+/* Rhythm: the gap between blocks is larger than any gap inside a block. */
+.pf_v2 .pfv_home_scenario { margin-top: var(--pfv3_s7); }
+.pf_v2 .pfv_opportunity { margin-top: var(--pfv3_s7); }
+.pf_v2 .pfv_v3_block { margin-top: var(--pfv3_s7); }
+.pf_v2 .pfv_last_search { margin-top: var(--pfv3_s7); padding-top: var(--pfv3_s5); border-top: 1px solid var(--pfv_line); }
 /* Package names are identifiers, so they read as identifiers. */
 .pf_v2 .pfv_reuse_list strong,
 .pf_v2 .pfv_plugin_identity h1 { font-family: var(--pfv3_mono); font-weight: 500; letter-spacing: -.2px; }
