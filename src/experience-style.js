@@ -769,6 +769,17 @@ export const experienceCss = `
 .pf_v2 .pfv_opportunity { margin-top: var(--pfv3_s7); }
 .pf_v2 .pfv_v3_block { margin-top: var(--pfv3_s7); }
 .pf_v2 .pfv_last_search { margin-top: var(--pfv3_s7); padding-top: var(--pfv3_s5); border-top: 1px solid var(--pfv_line); }
+/* Found by rendering the real component: .pfv_home_card carries a 208px
+   min-height, which is why the composer was a big empty box and the idea card
+   was mostly blank. Compact them; the content decides the height. */
+.pf_v2 .pfv_home_composer.pfv_home_card { min-height: 0; padding: var(--pfv3_s4); }
+.pf_v2 .pfv_home_scenario .pfv_home_card { min-height: 0; padding: var(--pfv3_s5); align-items: flex-start; }
+.pf_v2 .pfv_home_scenario .pfv_home_card h3 { margin: 0; font-size: 17px; line-height: 1.5; }
+.pf_v2 .pfv_home_scenario .pfv_home_card > p { margin-top: var(--pfv3_s2); }
+.pf_v2 .pfv_home_scenario .pfv_scenario_card .pfv_composer_bottom { justify-content: flex-start; margin-top: var(--pfv3_s4); padding-top: 0; }
+.pf_v2 .pfv_home_scenario { margin-top: var(--pfv3_s7); }
+.pf_v2 .pfv_home_scenario .pfv_home_heading { margin: 0; }
+.pf_v2 .pfv_home_scenario .pfv_home_lead { margin: 2px 0 var(--pfv3_s3); }
 /* Package names are identifiers, so they read as identifiers. */
 .pf_v2 .pfv_reuse_list strong,
 .pf_v2 .pfv_plugin_identity h1 { font-family: var(--pfv3_mono); font-weight: 500; letter-spacing: -.2px; }
