@@ -8,6 +8,7 @@ import { validateCompatibility } from './compatibility.mjs';
 import { runInSandbox, verifySandbox } from './ci-sandbox.mjs';
 const exec = promisify(execFile);
 const source = fileURLToPath(new URL('../', import.meta.url));
+const cordis41Targets = new Set(['0.2.2-rc.1', '0.2.2-rc.2', '0.2.2-rc.3']);
 export async function planSdk(args) {
   if (args.length < 2 || args.length > 3 || args[0] !== '--sdk' || args.length === 3 && args[2] !== '--plan') throw Error('Usage: node scripts/ci-sdk.mjs --sdk EXACT_VERSION [--plan]');
   const metadata = JSON.parse(await readFile(join(source, 'package.json')));
@@ -18,17 +19,18 @@ export async function planSdk(args) {
   for (const name of ['dsh-storage', 'dsh-storage-domain', 'dsh-storage-json', 'dsh-client-connection']) dependencies['@deepseek-ai/' + name] = sdk;
   // The Host contract imports Cordis directly; pin each exact official SDK's peer
   // rather than relying on a transitive, automatically hoisted installation.
-  dependencies['@deepseek-ai/cordis'] = sdk === '0.2.2-rc.1' ? '4.1.0' : '4.0.5';
-  dependencies['@deepseek-ai/schemastery'] = sdk === '0.2.2-rc.1' ? '3.19.0' : '3.18.5';
+  const usesCordis41 = cordis41Targets.has(sdk);
+  dependencies['@deepseek-ai/cordis'] = usesCordis41 ? '4.1.0' : '4.0.5';
+  dependencies['@deepseek-ai/schemastery'] = usesCordis41 ? '3.19.0' : '3.18.5';
   // Retain Finder's measured VM-fixture suite baseline; all other Node processes stay at 128 MB.
   const suiteHeapMb = metadata.name === '@oxmumu3/dsh-plugin-finder' ? 512 : 128;
   const minimumTests = metadata.name === '@oxmumu3/dsh-plugin-finder' ? 1185 : 267;
-  return { sdk, dependencies, nodeMinimumVersion: sdk === '0.2.2-rc.1' ? '24.9.0' : '22.22.0', suiteHeapMb, minimumTests, otherNodeHeapMb: 128, compatibilityOverride: false, hooks: false };
+  return { sdk, dependencies, nodeMinimumVersion: usesCordis41 ? '24.9.0' : '22.22.0', suiteHeapMb, minimumTests, otherNodeHeapMb: 128, compatibilityOverride: false, hooks: false };
 }
 export function assertSdkNodeVersion(sdk,version=process.versions.node) {
-  if (sdk === '0.2.2-rc.1') {
+  if (cordis41Targets.has(sdk)) {
     const match=typeof version==='string'?version.match(/^(\d+)\.(\d+)\.(\d+)$/):null;
-    if (!match || Number(match[1]) < 24 || Number(match[1]) === 24 && Number(match[2]) < 9) throw Error('Official 0.2.2-rc.1 requires Node >=24.9.0 before SDK acquisition or execution');
+    if (!match || Number(match[1]) < 24 || Number(match[1]) === 24 && Number(match[2]) < 9) throw Error(`Official ${sdk} requires Node >=24.9.0 before SDK acquisition or execution`);
   }
   return version;
 }

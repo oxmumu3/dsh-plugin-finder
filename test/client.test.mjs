@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import { build } from 'esbuild';
 import { fileURLToPath } from 'node:url';
 import { getCommunityOverview } from '../src/community-catalog.js';
+import { renderPluginDetailView } from '../src/plugin-detail-view.js';
 
 const clientUrl = new URL('../src/client.js', import.meta.url);
 const styleUrl = new URL('../src/client-style.js', import.meta.url);
@@ -87,7 +88,7 @@ async function renderWorkbench(snapshot, options = {}) {
   const loaded = await loadClient({ React, ...options }); const h = host();
   loaded.module.apply(h.ctx);
   const rawTree = h.registrations.find(item => item.spec.name === 'main').component();
-  const resolve = node => Array.isArray(node) ? node.map(resolve) : !node || typeof node !== 'object' ? node : typeof node.type === 'function' ? resolve(node.type({ ...node.props, children: node.children })) : { ...node, props: options.openEvidence && node.type === 'details' && node.children.some(child => child?.type === 'summary' && child.children.includes('来源与备选方案')) ? { ...node.props, open: true } : node.props, children: resolve(node.children) };
+  const resolve = node => Array.isArray(node) ? node.map(resolve) : !node || typeof node !== 'object' ? node : typeof node.type === 'function' ? resolve(node.type({ ...node.props, children: node.children })) : { ...node, props: options.openEvidence && node.type === 'details' && node.children.some(child => child?.type === 'summary' && child.children.includes('依据和来源')) ? { ...node.props, open: true } : node.props, children: resolve(node.children) };
   const tree = resolve(rawTree);
   const nodes = [];
   const walk = node => {
@@ -331,8 +332,8 @@ test('home describes live source search without presenting the old cache count a
   await controller.bootstrap();
   const rendered = await renderWorkbench(controller.getSnapshot());
   assert.equal(controller.getSnapshot().view, 'home');
-  assert.ok(rendered.visibleNodes.some(node => node.type === 'button' && node.children.includes('帮我找方案')));
-  assert.ok(rendered.visibleNodes.some(node => node.type === 'section' && node.props?.['aria-labelledby'] === 'pfv_home_title'));
+  assert.ok(rendered.visibleNodes.some(node => node.type === 'button' && node.props?.['aria-label'] === '帮我找方案'));
+  assert.ok(rendered.visibleNodes.some(node => node.type === 'h1' && node.props?.id === 'pfv_home_title'));
   assert.ok(rendered.visibleNodes.some(node => node.type === 'textarea' && node.props?.id === 'pfv_home_input' && node.props?.['aria-label'] === '任务描述'));
   assert.equal(rendered.nodes.some(node => node.props?.className === 'pf_tabs'), false);
   assert.doesNotMatch(rendered.text, /索引 15|15 条插件记录/);
@@ -389,11 +390,13 @@ test('recommendation prioritizes direct use and creation while retaining folded 
   const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
   const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind();
   const rendered = await renderWorkbench(controller.getSnapshot());
-  const positions = ['当前方案', '使用这个方案', '创建自己的插件', '查看执行安排', '来源与备选方案'].map(label => rendered.visibleText.indexOf(label));
+  const positions = ['你说：', '使用这个方案', '创建自己的插件', '开始后会这样', '依据和来源'].map(label => rendered.visibleText.indexOf(label));
   assert.ok(positions.every(index => index >= 0), positions.join(',')); assert.deepEqual([...positions].sort((a, b) => a - b), positions);
-  const arrangement = rendered.nodes.find(node => node.type === 'details' && node.children.some(child => child?.type === 'summary' && child.children.includes('查看执行安排')));
+  const arrangement = rendered.nodes.find(node => node.type === 'details' && node.children.some(child => child?.type === 'summary' && child.children.includes('完整方案和每一步的输入产出')));
   assert.ok(arrangement); assert.equal(Boolean(arrangement.props.open), false);
-  assert.match(rendered.text, /这次会做什么/); assert.ok(!rendered.visibleText.includes('这次会做什么'));
+  const ioRows = rendered.nodes.filter(node => node.props.className === 'pfv_io');
+  assert.ok(ioRows.length >= 1);
+  assert.ok(ioRows.every(node => !rendered.visibleNodes.includes(node)));
   assert.doesNotMatch(rendered.visibleText, /复制|粘贴|交接|去会话继续|Creator|下一步/);
   const history = rendered.nodes.find(node => node.type === 'details' && node.props['aria-label'] === '当前方案与历史版本');
   assert.ok(history); assert.equal(Boolean(history.props.open), false);
@@ -645,14 +648,37 @@ test('blank home exposes history and opens exact task versions without model cal
   const api = server({ history: async () => ({ ok: true, json: async () => historyEnvelope(a) }), open: async () => ({ ok: true, json: async () => historyEnvelope(a) }) });
   const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
   const blank = await renderWorkbench(controller.getSnapshot()); assert.equal(controller.getSnapshot().view, 'home');
-  assert.ok(blank.visibleNodes.some(node => node.type === 'button' && node.children.includes('帮我找方案')));
-  assert.ok(blank.visibleNodes.some(node => node.type === 'button' && node.children.includes('历史方案')));
+  assert.ok(blank.visibleNodes.some(node => node.type === 'button' && node.props?.['aria-label'] === '帮我找方案'));
+  assert.ok(blank.visibleNodes.some(node => node.type === 'button' && node.children.includes('我交代过的事')));
   assert.equal(await controller.showHistory(), true); assert.equal(controller.getSnapshot().view, 'history');
   assert.equal(await controller.openTask('task-a', 'task-a-revision-1'), true);
   assert.equal(controller.getSnapshot().taskId, 'task-a'); assert.equal(controller.getSnapshot().revisionId, 'task-a-revision-1');
   assert.deepEqual(JSON.parse(api.calls.at(-1).options.body), { taskId: 'task-a', revisionId: 'task-a-revision-1' });
   assert.equal(controller.getSnapshot().view, 'find'); assert.equal(controller.getSnapshot().feedback.length, 1);
   assert.equal(api.calls.some(call => /analyze|recommend/.test(call.url)), false); assert.equal(h.connected.length, 0);
+  controller.close();
+});
+
+test('the panel keeps one v8 top bar, the three original actions, and a way home on history', async () => {
+  const { module } = await loadClient(); const h = host(); const a = identifiedWorkflow();
+  const api = server({ history: async () => ({ ok: true, json: async () => historyEnvelope(a) }) });
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap();
+  const home = await renderWorkbench(controller.getSnapshot());
+  const classed = name => home.nodes.filter(node => String(node.props?.className || '').split(' ').includes(name));
+  // 一条顶栏：v8 那条；旧的 pf_header 不再渲染。
+  assert.equal(classed('pf8_top').length, 1);
+  assert.equal(classed('pf_header').length, 0);
+  assert.equal(classed('pf8_topmore').length, 1);
+  // 「更多」里原来那三个动作一个都不少，顺序照旧。
+  const menu = classed('pf8_topmore')[0];
+  const labels = menu.children.flatMap(node => node.children ?? []).filter(node => node && typeof node === 'object' && String(node.props?.className || '').includes('pf8_topmore_item')).map(node => node.children[0]);
+  assert.deepEqual(labels, ['重新读取配置', '回传设置', '导入本机备份']);
+  // 小试一试去掉；历史方案并进「我交代过的事」。
+  assert.equal(home.nodes.some(node => node.type === 'button' && node.children.includes('小试一试')), false);
+  assert.equal(home.nodes.some(node => node.type === 'button' && node.children.includes('历史方案')), false);
+  assert.equal(await controller.showHistory(), true);
+  const history = await renderWorkbench(controller.getSnapshot());
+  assert.ok(history.nodes.some(node => node.type === 'button' && node.children.includes('返回')));
   controller.close();
 });
 
@@ -860,8 +886,11 @@ test('unasked consent is opt-in and bootstrap does not register, upload, poll or
   controller.showFind(); assert.equal((await renderWorkbench(controller.getSnapshot())).nodes.some(node => node.props?.className === 'pf_telemetry'), false); controller.openTelemetrySettings(); const rendered = await renderWorkbench(controller.getSnapshot());
   assert.deepEqual(copy(controller.getSnapshot().telemetry), status); assert.match(rendered.text, /同意并自动回传/); assert.match(rendered.text, /暂不同意/);
   assert.match(rendered.text, /摘要/); assert.match(rendered.text, /集中/); assert.match(rendered.text, /不倒灌|不补传/); assert.match(rendered.text, /文件|完整会话/);
-  const settings = rendered.nodes.find(node => node.type === 'details' && node.props.className === 'pf_telemetry');
+  const hasClass = (node, name) => String(node.props?.className || '').split(/\s+/).includes(name);
+  const settings = rendered.nodes.find(node => node.type === 'details' && hasClass(node, 'pf_telemetry'));
   assert.ok(settings); assert.equal(settings.props.open, true, 'consent settings appear only after the explicit action');
+  // 016：这一块按 v8 排版，动作语义不变（默认关闭仍由数据决定）。
+  assert.ok(hasClass(settings, 'pf_v8'));
   assert.ok(rendered.nodes.some(node => node.type === 'button' && node.children.includes('回传设置')));
   assert.match(rendered.text, /无法保证识别所有敏感内容/); assert.match(rendered.text, /关联需求.*方案.*摘要/);
   assert.equal(rendered.nodes.some(node => node.type === 'input' && node.props.type === 'checkbox' && (node.props.checked || node.props.defaultChecked)), false);
@@ -878,10 +907,11 @@ test('first unasked feedback may show one optional settings entry without collec
   const rendered = await renderWorkbench(controller.getSnapshot());
   assert.match(rendered.text, /可选：允许自动回传后续反馈摘要/); assert.match(rendered.text, /本次已保存的记录不会追溯上传/);
   assert.ok(rendered.nodes.some(node => node.type === 'button' && node.children.includes('查看可选回传设置')));
-  assert.equal(rendered.nodes.some(node => node.type === 'details' && node.props.className === 'pf_telemetry'), false);
+  const isTelemetry = node => node.type === 'details' && String(node.props?.className || '').split(/\s+/).includes('pf_telemetry');
+  assert.equal(rendered.nodes.some(isTelemetry), false);
   controller.openTelemetrySettings(); assert.equal(controller.getSnapshot().telemetrySettingsOpen, true);
   assert.equal(controller.getSnapshot().telemetry.enabled, false); assert.equal(controller.getSnapshot().telemetrySuggestionVisible, false);
-  assert.equal((await renderWorkbench(controller.getSnapshot())).nodes.find(node => node.type === 'details' && node.props.className === 'pf_telemetry').props.open, true);
+  assert.equal((await renderWorkbench(controller.getSnapshot())).nodes.find(isTelemetry).props.open, true);
   controller.setTelemetrySettingsOpen(false); await controller.saveFeedback('partial', '另一条反馈');
   assert.equal(controller.getSnapshot().telemetrySuggestionVisible, false, 'the lightweight suggestion appears at most once per plugin lifetime');
   assert.ok(api.calls.every(call => !/telemetry-consent|telemetry-delete|telemetry-status/.test(call.url)));
@@ -1191,9 +1221,9 @@ test('single flow opens home even with a saved creation and keeps new input sepa
   c.showFeatured('agent-twin'); c.showHome();
   assert.equal(c.getSnapshot().homeRequest, '准备查找的另一件事'); assert.equal(c.getSnapshot().creationForm.blueprint.name, '原蓝图未保存编辑');
   const rendered = await renderWorkbench(c.getSnapshot());
-  assert.ok(rendered.visibleNodes.some(node => node.type === 'section' && node.props?.['aria-labelledby'] === 'pfv_home_title'));
+  assert.ok(rendered.visibleNodes.some(node => node.type === 'h1' && node.props?.id === 'pfv_home_title'));
   assert.equal(rendered.visibleNodes.find(node => node.type === 'textarea' && node.props?.id === 'pfv_home_input')?.props.value, '准备查找的另一件事');
-  assert.match(rendered.visibleText, /帮我找方案/); assert.match(rendered.visibleText, /精选插件/); assert.match(rendered.visibleText, /继续上次/);
+  assert.ok(rendered.visibleNodes.some(node => node.props?.['aria-label'] === '帮我找方案')); assert.match(rendered.visibleText, /精选/); assert.match(rendered.visibleText, /继续上次/);
   assert.equal(rendered.nodes.some(node => node.props?.className === 'pf_tabs'), false);
   assert.doesNotMatch(rendered.visibleText, /重新读取配置|首版蓝图|Creator 工作区|同意并自动回传/);
   c.close(); const again = module.createFinderController(h.ctx, { fetch: api.fetch, draftStorage: storage }); await again.bootstrap();
@@ -1364,7 +1394,7 @@ test('legacy creation guide route restores the same creation surface while faile
     const api = server({ bootstrap: async () => ({ ok: true, json: async () => restoredBootstrap(workflow) }) });
     const c = module.createFinderController(h.ctx, { fetch: api.fetch }); await c.bootstrap(); c.showFind();
     const results = await renderWorkbench(c.getSnapshot());
-    assert.match(results.visibleText, /重试查找/); assert.match(results.visibleText, /供给仍待核对/);
+    assert.match(results.visibleText, /重试查找/); assert.match(results.visibleText, /还有来源没核对/);
     assert.doesNotMatch(results.visibleText, /还没有合适的方案，要一起做一个吗|供给缺口/);
     assert.match(results.text, /搜索未完成，暂不能判断是否存在合适插件/);
     assert.doesNotMatch(results.text, /本次已返回的来源中没有找到足够合适/);
@@ -1633,4 +1663,76 @@ test('saving the first plan then returning home refreshes recent-plan count from
   const statusCalls=api.calls.filter(x=>x.url.endsWith('/opportunity-status'));assert.equal(statusCalls.length,1);assert.equal(statusCalls[0].options.method,'GET');
   assert.ok(api.calls.every(x=>!/(opportunity-grant|opportunity-discover|opportunity-context)$/.test(x.url)));
  }finally{c.close();engine.close();}
+});
+
+test('the real client keeps a validated compatibility enum and the detail disables install without retry', async () => {
+  const { module } = await loadClient(); const h = host(); const entry = getCommunityOverview().categories[0].previews[0];
+  const detail = {
+    ...catalogDetailFixture('community', entry.id, 'unknown'),
+    installable: false, sourceRecheckAllowed: true,
+    unavailableReason: '这个版本要求 Node >=24，你现在的是 22.13。暂不能安装。',
+    compatibility: { status: 'incompatible', kind: 'node', declared: '>=24' },
+    installation: { status: 'unknown', installed: false, enabled: false, active: false, code: 'PLUGIN_INSTALL_UNAVAILABLE' },
+  };
+  const c = module.createFinderController(h.ctx, { fetch: async url => ({ ok: true, json: async () => url.endsWith('/bootstrap') ? restoredBootstrap() : detail }) });
+  await c.bootstrap();
+  assert.equal(await c.showCatalogPlugin('community', entry.id), true);
+  const state = c.getSnapshot();
+  assert.deepEqual(state.catalogDetail.compatibility, detail.compatibility);
+  const inner = (type, props, ...children) => ({ type, props: props ?? {}, children });
+  const flatten = node => Array.isArray(node) ? node.flatMap(flatten) : node && typeof node === 'object' ? [node, ...flatten(node.children)] : [];
+  const textOf = node => node == null ? '' : typeof node !== 'object' ? String(node) : Array.isArray(node) ? node.map(textOf).join(' ') : textOf(node.children);
+  const view = renderPluginDetailView({ h: inner, state, controller: {} });
+  const buttons = flatten(view).filter(node => node.type === 'button');
+  const disabled = buttons.filter(node => node.props.disabled === true && textOf(node).trim() === '这个版本装不了');
+  assert.equal(disabled.length, 1);
+  assert.equal(buttons.some(node => textOf(node).trim() === '重新核对来源'), false);
+  assert.match(textOf(view), /这个版本要求 Node >=24/);
+  c.close();
+});
+
+test('only a real fixed git candidate explains source fetching and keeps the exact copyable spec', async () => {
+  const { module } = await loadClient();
+  const sha = '60f38fe01684c472c88e6dee8130719c59c78629';
+  const gitSpec = `git+https://github.com/oxmumu3/dsh-own-git.git#${sha}&path:/packages/plugin`;
+  const gitCandidate = { ...candidate, name: 'dsh-own-git', install: { type: 'git', spec: gitSpec, commit: sha, version: '0.2.0-preview.1' } };
+  const workflow = { ...identifiedWorkflow(), candidates: [gitCandidate] };
+  const api = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(workflow), ...historyEnvelope(workflow) }) }) });
+  const h = host();
+  const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind();
+  const copied = [];
+  const rendered = await renderWorkbench(controller.getSnapshot(), { keepAlive: true, openEvidence: true, navigator: { clipboard: { writeText: async value => copied.push(value) } } });
+  assert.ok(rendered.visibleText.includes(`固定在 ${sha.slice(0, 12)} 的仓库源码，安装时由 DSH 从仓库拉取。Finder 没有核对它的打包校验值。`));
+  assert.ok(rendered.visibleText.includes(gitSpec));
+  assert.doesNotMatch(rendered.visibleText, /已验|安全|签名通过/);
+  const copyAction = rendered.visibleNodes.find(node => node.type === 'button' && node.children.includes('复制安装来源'));
+  assert.ok(copyAction); await copyAction.props.onClick(); assert.deepEqual(copied, [gitCandidate.install.spec]);
+  assert.ok(rendered.visibleText.includes('在原生插件页核对已安装与启用，然后回到这份方案继续'));
+  assert.ok(rendered.visibleText.includes('本页不会读取已安装状态'));
+  rendered.dispose(); controller.close();
+
+  const npmWorkflow = { ...identifiedWorkflow(), candidates: [{ ...candidate, install: { spec: 'dsh-npm-only@1.0.0', version: '1.0.0' } }] };
+  const npmApi = server({ bootstrap: async () => ({ ok: true, json: async () => ({ ...restoredBootstrap(npmWorkflow), ...historyEnvelope(npmWorkflow) }) }) });
+  const npmController = module.createFinderController(host().ctx, { fetch: npmApi.fetch }); await npmController.bootstrap(); npmController.showFind();
+  const npmRendered = await renderWorkbench(npmController.getSnapshot(), { keepAlive: true, openEvidence: true });
+  assert.doesNotMatch(npmRendered.visibleText, /固定在 .* 的仓库源码/);
+  npmRendered.dispose(); npmController.close();
+});
+
+test('fixedGitSource accepts only git installs with a full fixed SHA', async () => {
+  const { module } = await loadClient();
+  const sha = 'a'.repeat(40);
+  const spec = `git+https://github.com/owner/repo.git#${sha}`;
+  const fixed = module.fixedGitSource({ install: { type: 'git', spec, commit: sha } });
+  assert.equal(fixed.commit, sha); assert.equal(fixed.spec, spec);
+  const sub = `git+https://github.com/owner/repo.git#${sha}&path:/packages/plugin`;
+  assert.equal(module.fixedGitSource({ install: { type: 'git', spec: sub, commit: sha } }).spec, sub);
+  assert.equal(module.fixedGitSource({ install: { type: 'npm', spec, commit: sha } }), null);
+  assert.equal(module.fixedGitSource({ install: { type: 'git', spec: 'git+https://github.com/owner/repo.git#abc', commit: 'abc' } }), null);
+  for (const bad of [
+    `git+https://github.com/owner/repo.git#${sha}&path:/../outside`,
+    `git+https://github.com/owner/repo.git#${sha}&path:/packages/./plugin`,
+    `git+https://gitlab.com/owner/repo.git#${sha}`,
+    `git+https://user:pass@github.com/owner/repo.git#${sha}`,
+  ]) assert.equal(module.fixedGitSource({ install: { type: 'git', spec: bad, commit: sha } }), null, bad);
 });

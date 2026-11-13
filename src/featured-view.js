@@ -7,7 +7,10 @@ const items = value => Array.isArray(value) ? value : [];
 const statusLabels = { available: '公开包已核对', preview: '本地预览', private: '私有接入' };
 const dateLabel = value => {
   const time = Date.parse(value);
-  return Number.isFinite(time) ? `${new Date(time).toISOString().slice(0, 16).replace('T', ' ')} UTC` : '时间待核对';
+  if (!Number.isFinite(time)) return '时间待核对';
+  const at = new Date(time);
+  const pad = number => String(number).padStart(2, '0');
+  return `${at.getMonth() + 1}月${at.getDate()}日 ${pad(at.getHours())}:${pad(at.getMinutes())}`;
 };
 /** Read-only rendering. User actions stay in the controller; no hooks or effects. */
 export function renderFeaturedView({ h, state, controller, copyText, busy = false, mode = 'home' }) {
@@ -44,7 +47,7 @@ export function renderFeaturedView({ h, state, controller, copyText, busy = fals
 
   const draftItems = items(state.featuredDrafts).filter(draft => draft && typeof draft.id === 'string').slice(0, 20);
   const drafts = draftItems.length ? h('section', { className: 'pf_section pf_featured_drafts', 'aria-label': '保留的编辑草稿' },
-    h('div', { className: 'pf_section_head' }, h('h2', null, '保留的编辑草稿'), h('span', { className: 'pf_small pf_muted' }, `${draftItems.length} 份 · 本机保存`)),
+    h('div', { className: 'pf_section_head pf8_draft_head' }, h('h2', null, '保留的编辑草稿'), h('span', { className: 'pf_small pf_muted' }, `${draftItems.length} 份，本机保存`)),
     h('p', { className: 'pf_small pf_muted' }, '从场景开始前保留的输入，可以恢复后继续编辑。移除只删除这份本机输入副本，历史任务仍保留。'),
     h('ul', { className: 'pf_featured_draft_list' }, ...draftItems.map(draft => {
       const title = (text(draft.title) || text(draft.request) || '未提交的编辑草稿').replace(/\s+/gu, ' ').trim();
@@ -52,11 +55,29 @@ export function renderFeaturedView({ h, state, controller, copyText, busy = fals
       return h('li', { className: 'pf_featured_draft', key: draft.id },
         h('div', null, h('p', { className: 'pf_featured_draft_title' }, snippet), text(draft.createdAt) ? h('p', { className: 'pf_small pf_muted' }, dateLabel(draft.createdAt)) : null),
         h('div', { className: 'pf_featured_draft_actions' },
-          button('恢复草稿', () => controller.restoreFeaturedDraft(draft.id), { disabled: busy, 'aria-label': `恢复草稿：${snippet}` }),
-          button('移除这份输入', () => controller.removeFeaturedDraft(draft.id), { className: 'pf_btn pf_text', disabled: busy, 'aria-label': `移除这份输入：${snippet}` })));
+          button('恢复草稿', () => controller.restoreFeaturedDraft(draft.id), { className: 'pf_btn pf8_btn', disabled: busy, 'aria-label': `恢复草稿：${snippet}` }),
+          button('移除这份输入', () => controller.removeFeaturedDraft(draft.id), { className: 'pf_btn pf_text pf8_lk', disabled: busy, 'aria-label': `移除这份输入：${snippet}` })));
     }))) : null;
 
-  if (mode === 'drafts') return drafts;
+  // 首页 v8 把「调整精选」收进自己的折叠里，所以这里只给设置本体，不再嵌一层 details。
+  // 草稿和读取错误都属于这个入口：历史页和首页的「调整精选」都能恢复或移除。
+  const settingsCore = h('div', { className: 'pf_featured_settings_body' },
+    drafts,
+    h('fieldset', { className: 'pf_featured_interests' }, h('legend', null, '感兴趣的方向'),
+      h('div', { className: 'pf_featured_interest_buttons' }, ...featuredTopics.map(topic => button(topic.label, () => controller.toggleFeaturedInterest(topic.id), { key: topic.id, 'aria-pressed': interests.has(topic.id), disabled: busy }))),
+      h('p', { className: 'pf_small pf_muted' }, '可多选，只保存在本机。推荐也会参考本机已保存的方案。')),
+    h('div', { className: 'pf_featured_hidden' },
+      h('p', { className: 'pf_small pf_muted' }, '减少不感兴趣的推荐，仍可从精选查看详情。'),
+      h('ul', { className: 'pf_featured_hidden_list' }, ...featuredCatalog.map(entry => h('li', { key: entry.id },
+        h('span', null, entry.subtitle.split(' · ')[0]),
+        dismissed.has(entry.id) ? h('span', { className: 'pf_small pf_muted' }, '已减少推荐') : button('不感兴趣', () => controller.dismissFeatured(entry.id), { className: 'pf_btn pf_text', disabled: busy, 'aria-label': `对${entry.title}不感兴趣` })))),
+      dismissed.size ? button('恢复全部推荐', () => controller.restoreFeatured(), { className: 'pf_btn pf_text', disabled: busy }) : null));
+
+  const warning = state.featuredWarning
+    ? h('div', { className: 'pf_banner pf_small', role: 'status' }, text(state.featuredWarning))
+    : null;
+  if (mode === 'drafts') return warning || drafts ? h('div', { className: 'pf8_drafts' }, warning, drafts) : null;
+  if (mode === 'settings') return h('div', null, warning, settingsCore);
 
   let content;
   if (selected) {
@@ -83,19 +104,10 @@ export function renderFeaturedView({ h, state, controller, copyText, busy = fals
           recommendations.length ? h('div', { className: 'pfv_featured_matches', 'aria-label': '与你相关的精选插件' }, ...recommendations.map(({ entry, reason }) => card(entry, reason, 'recommended'))) : null,
           ...editorial.map(entry => card(entry, null)))),
       h('details', { className: 'pf_featured_settings' },
-        h('summary', null, '调整推荐'),
-        h('fieldset', { className: 'pf_featured_interests' }, h('legend', null, '感兴趣的方向'),
-          h('div', { className: 'pf_featured_interest_buttons' }, ...featuredTopics.map(topic => button(topic.label, () => controller.toggleFeaturedInterest(topic.id), { key: topic.id, 'aria-pressed': interests.has(topic.id), disabled: busy }))),
-          h('p', { className: 'pf_small pf_muted' }, '可多选，只保存在本机。推荐也会参考本机已保存的方案。')),
-        h('div', { className: 'pf_featured_hidden' },
-          h('p', { className: 'pf_small pf_muted' }, '减少不感兴趣的推荐，仍可从精选查看详情。'),
-          h('ul', { className: 'pf_featured_hidden_list' }, ...featuredCatalog.map(entry => h('li', { key: entry.id },
-            h('span', null, entry.subtitle.split(' · ')[0]),
-            dismissed.has(entry.id) ? h('span', { className: 'pf_small pf_muted' }, '已减少推荐') : button('不感兴趣', () => controller.dismissFeatured(entry.id), { className: 'pf_btn pf_text', disabled: busy, 'aria-label': `对${entry.title}不感兴趣` })))),
-          dismissed.size ? button('恢复全部推荐', () => controller.restoreFeatured(), { className: 'pf_btn pf_text', disabled: busy }) : null)));
+        h('summary', null, '调整推荐'), settingsCore));
   }
   return h('div', { className: 'pf_featured' },
-    state.featuredWarning ? h('div', { className: 'pf_banner pf_small', role: 'status' }, text(state.featuredWarning)) : null,
+    warning,
     content,
-    h('p', { className: 'pf_small pf_muted pf_featured_disclosure' }, selected ? '自研策展 · 牛村木木山。收录表达作者的场景选择，不代表官方审核或质量认证。' : '作者精选 · 牛村木木山。使用前提与验证范围见详情。'));
+    h('p', { className: 'pf_small pf_muted pf_featured_disclosure' }, selected ? '自研策展，牛村木木山。收录表达作者的场景选择，不代表官方审核或质量认证。' : '作者精选，牛村木木山。使用前提与验证范围见详情。'));
 }

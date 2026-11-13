@@ -251,3 +251,23 @@ test('lost reinstall claim ACK keeps the previous successful receipt and cannot 
 test('a concurrent installed-version change during recheck stops reinstall without clearing the old success',async()=>{
  let f,resolves=0;f=fixture({resolveDetail:async()=>{if(resolves++)f.setInstalled({installed:true,enabled:true,active:true,conflict:true,version:'2.0.0'});return{entry,candidate:clone(candidate),unavailableReason:''};}});const d=await detail(f);await f.service.install({detailId:d.detailId});f.setInstalled({installed:false,enabled:false,active:false});const before=clone(f.data.rows.get(d.detailId));assert.equal((await f.service.install({detailId:d.detailId})).installation.status,'conflict');assert.deepEqual(f.data.rows.get(d.detailId),before);assert.equal(f.calls.prepare.length,1);
 });
+
+test('a decided incompatibility survives an unreadable local inventory', async () => {
+  const reason = '这个版本要求 Node >=24，你现在的是 22.13。暂不能安装。';
+  const f = fixture({
+    resolveDetail: async input => ({
+      entry: { ...entry, collection: input.collection, id: input.entryId }, candidate: null,
+      compatibility: { status: 'incompatible', kind: 'node', declared: '>=24' },
+      unavailableReason: reason,
+    }),
+    readInstalled: async () => { throw new FinderError('PLUGIN_INSTALL_INVALID'); },
+    readEntryInstalled: async () => ({ installed: false, enabled: false, active: false, conflict: false, localUnknown: true }),
+  });
+  const d = await detail(f);
+  assert.equal(d.installable, false);
+  assert.deepEqual(d.compatibility, { status: 'incompatible', kind: 'node', declared: '>=24' });
+  assert.equal(d.installation.status, 'unavailable');
+  assert.equal(d.installation.message, reason);
+  assert.equal(d.unavailableReason, reason);
+  assert.equal(d.sourceRecheckAllowed, undefined);
+});

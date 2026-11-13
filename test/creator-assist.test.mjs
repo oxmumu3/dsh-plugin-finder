@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Context } from '@deepseek-ai/cordis';
 import { createCreatorAssist, registerCreatorAssist, hostPresetReader, renderCreatorPrompt, CREATOR_SECTION, CREATOR_MARKER, CREATOR_TOOLS, CREATOR_GUIDE } from '../src/creator-assist.js';
-import { creatorProgress, creatorHandoffPrompt, openCreatorContinuation } from '../src/creator-strip.js';
+import { createCreatorDock, creatorProgress, creatorHandoffPrompt, openCreatorContinuation } from '../src/creator-strip.js';
 // The official SDK is a peer dependency: present locally and in the SDK compatibility
 // jobs (which forbid skipped tests), absent in the peer-less publish preparation job.
 const sdk = await Promise.all([import('@deepseek-ai/dsh-tools'), import('@deepseek-ai/dsh-system-prompt')])
@@ -214,4 +214,18 @@ test('continuation opens a creator session in the same workspace with an unsent 
   assert.deepEqual(log.opened, ['session-next']);
   assert.equal(log.released, 1);
   await assert.rejects(openCreatorContinuation(ctx, 'session-unknown', 'x'), /没找到这个会话所在的工作区/);
+});
+
+test('the stuck dock can be dismissed for this entry only, without touching the global switch', () => {
+  const calls = [];
+  const h = (type, props, ...children) => ({ type, props: props ?? {}, children });
+  const React = { createElement: h };
+  const Dock = createCreatorDock(React);
+  const view = Dock({ mode: 'stuck', progress: creatorProgress([{ stage: 'blocked', summary: '面板点开是白的' }]), busy: '', notice: '', onDismiss: () => calls.push('dismiss'), onClose: () => calls.push('close'), onOpenNext: () => {}, onEnable: () => {} });
+  const walk = node => Array.isArray(node) ? node.flatMap(walk) : node && typeof node === 'object' ? [node, ...walk(node.children)] : [];
+  const content = node => typeof node === 'string' ? node : Array.isArray(node) ? node.map(content).join(' ') : node && typeof node === 'object' ? content(node.children) : '';
+  const dismiss = walk(view).find(node => node.type === 'button' && content(node) === '先不用');
+  assert.ok(dismiss);
+  dismiss.props.onClick();
+  assert.deepEqual(calls, ['dismiss']);
 });

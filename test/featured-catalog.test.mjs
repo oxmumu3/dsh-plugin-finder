@@ -32,7 +32,9 @@ test('cold-start catalog offers exactly four distinct products rather than platf
 test('each curated card explains its use, audience, requirements and evidence boundaries', () => {
   for (const id of expectedIds) {
     const entry = card(id);
-    assert.deepEqual(Object.keys(entry).sort(), [...strings, ...lists, 'install'].sort());
+    assert.deepEqual(Object.keys(entry).sort(), [...strings, ...lists, 'hosts', 'install'].sort());
+    assert.ok(Array.isArray(entry.hosts) && entry.hosts.length > 0, `${id}.hosts`);
+    assert.ok(entry.hosts.every(host => /^0\.2\.\d+-(?:rc|alpha)\.\d+$/u.test(host)), `${id}.hosts shape`);
     for (const field of strings) assert.ok(typeof entry[field] === 'string' && entry[field].trim(), `${id}.${field}`);
     for (const field of lists) {
       assert.ok(Array.isArray(entry[field]), `${id}.${field}`);

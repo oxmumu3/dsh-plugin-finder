@@ -1,5 +1,8 @@
+import { v8TokensCss } from "./v8-tokens.js";
+import { v8Css } from "./v8-style.js";
+
 /** Finder-owned V2 layer. Host aliases supply both light and dark colors. */
-export const experienceCss = `
+const experienceV3Css = `
 .pf_root.pf_v2 {
   container-type: inline-size;
   container-name: finder;
@@ -10,7 +13,7 @@ export const experienceCss = `
   --pfv_line: var(--dsw-alias-border-l3, #dce4ed);
   --pfv_strong_line: var(--dsw-alias-border-l2, #becbdb);
   --pfv_accent: var(--dsw-alias-state-business-primary, #4d6bfe);
-  --pfv_on_accent: var(--dsw-alias-label-on-primary, #fff);
+  --pfv_on_accent: var(--dsw-alias-label-primary-inverted, #fff);
   --pfv_tint: color-mix(in srgb, var(--pfv_accent) 8%, var(--pfv_paper));
   background: var(--pfv_canvas);
   color: var(--pfv_ink);
@@ -32,7 +35,7 @@ export const experienceCss = `
 .pf_v2 .pf_muted { color: var(--pfv_muted); }
 .pf_v2 .pf_header .pf_options > summary { min-height: 44px; padding-top: 10px; }
 .pf_v2 .pf_header .pf_options[open] { background: var(--pfv_paper); border-radius: 12px; }
-.pf_v2 .pf_flow_back { display: none; }
+.pf_v2 .pf_flow_back { display: block; margin-bottom: 18px; }
 .pf_v2 .pf_footer { font-size: 12px; line-height: 1.8; color: var(--pfv_muted); margin-top: 36px; border-color: var(--pfv_line); }
 .pf_v2 .pf_status { border-radius: 10px; margin-bottom: 18px; }
 .pf_v2 .pf_telemetry { background: var(--pfv_paper); border-color: var(--pfv_line); }
@@ -793,3 +796,5 @@ export const experienceCss = `
   .pfv_plugin_facts .pfv_plugin_section + .pfv_plugin_section { padding-top: 0; }
 }
 `;
+
+export const experienceCss = `${experienceV3Css}\n${v8TokensCss}\n${v8Css}`;

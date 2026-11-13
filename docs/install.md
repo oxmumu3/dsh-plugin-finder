@@ -1,28 +1,26 @@
 # 安装、首次使用与卸载
 
-本说明对应 `@oxmumu3/dsh-plugin-finder@0.12.0-preview.20`。精确发布状态以 npm 与 GitHub Release 为准；尚未同步时保留当前安装，不用其他版本或本地路径冒充公开包。
+本说明对应 `@oxmumu3/dsh-plugin-finder@0.12.0-preview.22`。在 npm 和 GitHub Releases 可查询本版的发行状态。
 
-正式发行记录见 [GitHub Releases](https://github.com/oxmumu3/dsh-plugin-finder/releases)。新版本附件及哈希确认存在前，不提供推测的下载地址。
+正式下载附件及 SHA-256 见 [GitHub Releases](https://github.com/oxmumu3/dsh-plugin-finder/releases)。
 
 ## 兼容范围
 
 | 项目 | 本版的准确目标 |
 | --- | --- |
-| 官方桌面与 Host | `0.2.1-rc.5` |
+| 官方桌面与 Host | `0.2.1-rc.5`、`0.2.2-rc.1`、`0.2.2-rc.2`、`0.2.2-rc.3` |
 | Node.js | `^22.19.0 || >=24.0.0` |
-| 四个官方 SDK peer | 下列包均为 `0.2.1-rc.5` |
-| 其他 RC、next 或 alpha | 未由本版声明支持，不能从安装成功推导兼容 |
+| 四个官方 SDK peer | 各 SDK 与宿主版本相同 |
+| 其他 RC、next 或 alpha | 兼容性待验证 |
 
 四个固定 SDK 为 `@deepseek-ai/dsh-app-boot`、`@deepseek-ai/dsh-storage-domain`、`@deepseek-ai/dsh-tools`、`@deepseek-ai/dsh-sandbox`。宿主提供这些 SDK，不需要用户另外安装不匹配版本。
 
-必须先完成最终包声明、内部版本检查与接口回归，以及真实官方隔离 Host 的安装、启用、卸载/重启验证，才能确认本版兼容完成。当前步骤仍在本轮验收中，不沿用旧 rc.2/rc.3 的结果。
-
 ## 安装或更新 Finder
 
-公开发布并回读精确 npm 版本后，在正在使用的官方 Harness 原生「插件 → 添加插件」中填入：
+在正在使用的官方 Harness 原生「插件 → 添加插件」中填入：
 
 ```text
-@oxmumu3/dsh-plugin-finder@0.12.0-preview.20
+@oxmumu3/dsh-plugin-finder@0.12.0-preview.22
 ```
 
 这是本版的精确 npm 安装身份。若注册表尚未返回该版本，请查看正式 Release 并保留当前安装。通过本地 TGZ 安装时，应核对发行哈希；绝对路径必须位于目标宿主机器，不能使用另一台机器的路径。
@@ -63,5 +61,3 @@
 ## 历史
 
 [重写前的安装说明原文](history/pre-0.12-20261103/install.md)保留旧版本下载、当时 CLI 用法与验证范围，只供追溯。它们不构成本版的当前兼容或发布声明。项目作者为牛村木木山；正式仓库为 [oxmumu3/dsh-plugin-finder](https://github.com/oxmumu3/dsh-plugin-finder)。
-
-本版本仅支持准确的官方 `0.2.1-rc.5` 与 `0.2.2-rc.1`；rc.1 宿主要求 Node `>=24.9.0`。未知 RC、next 或 alpha 不自动获得兼容。

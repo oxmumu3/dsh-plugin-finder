@@ -5,11 +5,12 @@ import { featuredCatalog } from '../src/featured-catalog.js';
 import { getCommunityOverview } from '../src/community-catalog.js';
 
 const h = (type, props, ...children) => ({ type, props: props ?? {}, children });
-const React = { createElement: h, Fragment: 'fragment', useRef: value => ({ current: value }), useEffect() {} };
+const React = { createElement: h, Fragment: 'fragment', useRef: value => ({ current: value }), useState: value => [value, () => {}], useEffect() {} };
 const View = createExperienceView(React);
-const nodes = node => Array.isArray(node) ? node.flatMap(nodes) : node && typeof node === 'object' ? [node, ...nodes(node.children)] : [];
-const visibleNodes = node => Array.isArray(node) ? node.flatMap(visibleNodes) : node && typeof node === 'object' ? [node, ...visibleNodes(node.type === 'details' && !node.props.open ? node.children.find(child => child?.type === 'summary') : node.children)] : [];
-const content = (node, visible = false) => node == null ? '' : typeof node !== 'object' ? String(node) : Array.isArray(node) ? node.map(child => content(child, visible)).join(' ') : content(visible && node.type === 'details' && !node.props.open ? node.children.find(child => child?.type === 'summary') : node.children, visible);
+const resolve = node => node && typeof node === 'object' && !Array.isArray(node) && typeof node.type === 'function' ? resolve(node.type(node.props)) : node;
+const nodes = node => { const value = resolve(node); return Array.isArray(value) ? value.flatMap(nodes) : value && typeof value === 'object' ? [value, ...nodes(value.children)] : []; };
+const visibleNodes = node => { const value = resolve(node); return Array.isArray(value) ? value.flatMap(visibleNodes) : value && typeof value === 'object' ? [value, ...visibleNodes(value.type === 'details' && !value.props.open ? value.children.find(child => child?.type === 'summary') : value.children)] : []; };
+const content = (node, visible = false) => { const value = resolve(node); return value == null ? '' : typeof value !== 'object' ? String(value) : Array.isArray(value) ? value.map(child => content(child, visible)).join(' ') : content(visible && value.type === 'details' && !value.props.open ? value.children.find(child => child?.type === 'summary') : value.children, visible); };
 const button = (view, label) => nodes(view).find(node => node.type === 'button' && content(node) === label);
 const byLabel = (view, label) => nodes(view).find(node => node.props['aria-label'] === label);
 const blueprint = { name: '用户的真实工具名称', purpose: '已记录的目标', scope: '只处理选定材料', workflow: '先读取，再核对', inputs: '已选目录', outputs: '带来源的结果', ui: '简单列表', data: '本机保存', tools: '只读文件', runtime: '随宿主使用', acceptance: '逐条核对来源' };
@@ -19,26 +20,26 @@ const fixture = patch => ({ view: 'find', taskId: 'task-a', revisionId: 'revisio
 const createState = patch => fixture({ view: 'create', creation: { strategy: 'new', status: 'draft', supply: { status: 'current' }, blueprint, reuseAssessment: '真实模型评估', questions: [], answers: [] }, creationForm: { blueprint, answers: [], assumptions: [] }, ...patch });
 function render(state = fixture(), extra = {}) {
   const calls = [];
-  const names = ['setHomeRequest', 'clearHomeCommunitySelection', 'searchHome', 'setFollowup', 'submitFollowup', 'showFind', 'showHome', 'showCreationGuide', 'showCreation', 'recommend', 'startCreation', 'editCreation', 'updateCreation', 'cancel', 'runCurrentPlan', 'createInWorkspace', 'answerCreation', 'cancelExecution', 'continueExecution', 'startFeatured'];
+  const names = ['setHomeRequest', 'clearHomeCommunitySelection', 'searchHome', 'setFollowup', 'submitFollowup', 'showFind', 'showHome', 'showHistory', 'showCreationGuide', 'showCreation', 'recommend', 'startCreation', 'editCreation', 'updateCreation', 'cancel', 'runCurrentPlan', 'createInWorkspace', 'answerCreation', 'cancelExecution', 'continueExecution', 'startFeatured'];
   const controller = Object.fromEntries(names.map(name => [name, (...args) => calls.push([name, ...args])]));
   const view = View({ state, controller, busy: false, modelReady: true, copyText() {}, sections: {}, ...extra });
   return { view, calls, controller };
 }
 
-test('home has one demand composer, editable examples and four distinct products without navigation tabs', () => {
-  const { view, calls } = render(fixture({ view: 'home', homeRequest: '', featuredPreferences: { interests: ['family'], dismissed: [] } }));
-  assert.match(content(view, true), /你的插件专家/);
-  assert.match(content(view, true), /告诉我你的目标/);
+test('home has one demand composer, editable examples and four distinct featured products without navigation tabs', () => {
+  const { view, calls } = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '', featuredPreferences: { interests: ['family'], dismissed: [] } }));
+  assert.match(content(view, true), /发现好插件/);
+  assert.match(content(view, true), /想让 DSH 帮你做成什么？/);
   assert.equal(visibleNodes(view).filter(node => node.type === 'textarea').length, 1);
   assert.equal(nodes(view).filter(node => node.props.role === 'tab' || node.props.role === 'tablist').length, 0);
-  const products = nodes(view).filter(node => node.type === 'article');
-  assert.equal(products.length, 4);
-  for (const entry of featuredCatalog) assert.equal(products.filter(node => content(node).includes(entry.title)).length, 1);
-  assert.match(content(products[0]), /你选择了「家庭助手」兴趣/);
-  button(view, '整理知识').props.onClick();
+  const featured = nodes(view).filter(node => node.type === 'button' && String(node.props['aria-label'] || '').startsWith('查看精选：'));
+  assert.equal(featured.length, 4);
+  for (const entry of featuredCatalog) assert.equal(featured.filter(node => node.props['aria-label'] === `查看精选：${entry.title}`).length, 1);
+  assert.match(content(view), /你选择了「家庭助手」兴趣/);
+  nodes(view).find(node => node.props['aria-label'] === '把「把邮箱里的发票收齐，汇成 Excel」填进输入框').props.onClick();
   assert.equal(calls.length, 1);
   assert.equal(calls[0][0], 'setHomeRequest');
-  assert.match(calls[0][1], /保留原文来源/);
+  assert.match(calls[0][1], /发票/);
 });
 
 test('home makes the canonical community selection visible and removable without replacing the request', () => {
@@ -60,10 +61,10 @@ test('home makes the canonical community selection visible and removable without
 test('examples preserve existing input before replacement', () => {
   const calls = [];
   const { view } = render(fixture({ view: 'home', homeRequest: '尚未提交的重要原话' }), { controller: { prepareHomeExample: value => calls.push(value) } });
-  button(view, '跟进项目').props.onClick();
-  assert.match(calls[0], /选定项目/);
+  button(view, '每周五出一份项目简报').props.onClick();
+  assert.match(calls[0], /项目简报/);
   const fallback = render(fixture({ view: 'home', homeRequest: '尚未提交的重要原话' }));
-  button(fallback.view, '跟进项目').props.onClick();
+  button(fallback.view, '每周五出一份项目简报').props.onClick();
   assert.deepEqual(fallback.calls, []);
 });
 
@@ -73,16 +74,62 @@ test('home has one actionable idea beside the demand input and an independently 
     const scenario = nodes(view).find(node => node.props.className === 'pfv_home_scenario');
     assert.equal(nodes(view).filter(node => node.props.className === 'pfv_home_scenario').length, 1);
     assert.equal(scenario.props['aria-label'], interests.length ? '猜你喜欢' : '试试这个');
-    const benefit = nodes(scenario).find(node => node.props.className === 'pfv_prose');
+    const benefit = nodes(scenario).find(node => node.props.className === 'pf8_idea_benefit');
     assert.ok(content(benefit).length < 45);
     assert.doesNotMatch(content(benefit), /回执|交付|送达|明确授权/);
-    if (interests.length) assert.match(content(scenario), /你选择了「家庭助手」兴趣/);
-    else assert.doesNotMatch(content(scenario), /猜你喜欢|根据你的|你选择了/);
-    button(scenario, '开始这个需求').props.onClick();
+    if (interests.length) {
+      assert.match(content(scenario), /你选择了「家庭助手」兴趣/);
+      assert.match(content(view), /按你在这里留下的线索挑的/);
+    } else {
+      assert.doesNotMatch(content(scenario), /猜你喜欢|根据你的|你选择了/);
+      assert.match(content(view), /还不认识你，先给一个通用想法/);
+      assert.doesNotMatch(content(view), /大家常用/);
+    }
+    button(scenario, '试试').props.onClick();
     assert.deepEqual(calls, [['startFeatured', interests.length ? 'family-assistant' : 'agent-twin']]);
-    assert.equal(nodes(view).filter(node => node.type === 'h2' && content(node) === '精选插件').length, 1);
-    assert.equal(nodes(view).filter(node => node.props.className?.includes('pf_featured_grid')).length, 1);
+    assert.equal(nodes(view).filter(node => node.type === 'h2' && content(node) === '精选').length, 1);
+    assert.equal(nodes(view).filter(node => node.type === 'button' && String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 4);
   }
+});
+
+test('home history rows and 全部 N 件 share the saved-plan scope', () => {
+  const saved = {
+    taskId: 'task-saved', title: '把周报整理成一张表', request: '把周报整理成一张表',
+    updatedAt: '2026-11-10T14:00:00.000Z', stage: 'plan', planKind: 'combo', lastFeedback: null,
+  };
+  const state = fixture({ view: 'home', plan: null, taskId: null, request: '', homeRequest: '', history: [saved], historyTotal: 1 });
+  const { view, calls } = render(state);
+  assert.match(content(view, true), /你交代过 1 件事/);
+  assert.match(content(view, true), /给了解法：拼几个/);
+  button(view, '全部 1 件').props.onClick();
+  assert.deepEqual(calls, [['showHistory']]);
+});
+
+test('search-only records do not claim saved plans or a 全部 count', () => {
+  const search = { id: 'search-1', request: '找过但没保存成方案', searchedAt: '2026-11-10T14:00:00.000Z', planKind: 'single' };
+  const state = fixture({ view: 'home', plan: null, taskId: null, request: '', homeRequest: '', history: [], historyTotal: 0, searchHistory: [search] });
+  const { view } = render(state);
+  assert.doesNotMatch(content(view, true), /全部 \d+ 件/);
+  assert.doesNotMatch(content(view, true), /找过但没保存成方案/);
+});
+
+test('a draft-storage failure stays reachable from the featured adjustment entry', () => {
+  const state = fixture({ view: 'home', plan: null, taskId: null, request: '', homeRequest: '', featuredWarning: '本机草稿这次没读出来，历史记录仍保留。' });
+  const { view } = render(state);
+  assert.match(content(view, true), /调整精选（草稿没读出来）/);
+  assert.doesNotMatch(content(view, true), /本机草稿这次没读出来/);
+  assert.match(content(view), /本机草稿这次没读出来/);
+});
+
+test('home uses green only when a saved plan has an explicit successful result', () => {
+  const saved = {
+    taskId: 'task-done', title: '把发票收齐汇成表格', request: '把发票收齐汇成表格',
+    updatedAt: '2026-11-10T14:00:00.000Z', stage: 'plan', planKind: 'single',
+    lastFeedback: { type: 'result', outcome: 'complete' },
+  };
+  const { view } = render(fixture({ view: 'home', plan: null, taskId: null, request: '', homeRequest: '', history: [saved], historyTotal: 1 }));
+  assert.match(content(view, true), /已经做成了/);
+  assert.doesNotMatch(content(view, true), /给了解法：装一个/);
 });
 
 test('the outcome leads one column; actual conversation stays available without a second transcript wall', () => {
@@ -159,7 +206,7 @@ test('incomplete or unknown searches cannot turn gap claims into findings and of
   for (const discovery of [null, {}, { status: 'failed' }, { status: 'partial' }, { sources: [{ status: 'stale' }] }, { sourceCoverage: [{ status: 'failed' }] }]) {
     const { view, calls } = render(fixture({ discovery, plan: { kind: 'gap', title: '没有任何插件', rationale: '全市场都不存在', steps: [], limits: [], pluginIds: [] } }));
     assert.doesNotMatch(content(view, true), /没有任何插件|全市场都不存在/);
-    assert.match(content(view, true), /供给仍待核对/);
+    assert.match(content(view, true), /还有来源没核对/);
     button(view, '重试查找').props.onClick();
     button(view, '创建自己的插件').props.onClick();
     assert.deepEqual(calls, [['recommend'], ['startCreation']]);
@@ -178,7 +225,7 @@ test('live indexes with unchecked candidates keep gap findings tentative and all
       const discovery = { status: 'complete', sources: [{ status }], ...coverage };
       const { view, calls } = render(fixture({ discovery, plan: { kind: 'gap', title: '没有任何插件', rationale: '全市场都不存在', steps: [], limits: [], pluginIds: [] } }));
       assert.doesNotMatch(content(view, true), /没有任何插件|全市场都不存在/);
-      assert.match(content(view, true), /供给仍待核对/);
+      assert.match(content(view, true), /还有来源没核对/);
       assert.equal(experienceSourceHealth(discovery)?.incomplete, true);
       const retry = button(view, '重试查找'), customize = button(view, '创建自己的插件');
       assert.match(retry.props.className, /pfv_primary/);
@@ -394,12 +441,13 @@ test('keyboard submit respects composition and model output stays text', () => {
 test('one expert identity owns both direct demand and proactive advice without an extra conversation wall',()=>{
   const state=fixture({view:'home',homeRequest:'保留我还没提交的目标',opportunity:{consent:{enabled:true},status:'ready',opportunities:[{id:'idea-a',title:'把零散材料变成清楚的简报',expectedResult:'一份可核对的简报',suggestedRequest:'只整理选定材料',observation:'你选定的材料有可复用步骤',evidenceRefs:[{id:'source-a',label:'brief.md',excerpt:'授权材料'}]}]}});
   const {view}=render(state);
-  const identity=nodes(view).filter(n=>n.props.className==='pfv_expert_identity');
-  assert.equal(identity.length,1);
-  assert.equal(nodes(view).filter(n=>n.type==='h1'&&content(n)==='一个需求，找到能用的办法。').length,1);
   const group=nodes(view).find(n=>n.props.role==='group'&&n.props['aria-labelledby']==='pfv_expert_title');
   assert.ok(group);
-  assert.match(content(group),/告诉我你的目标/);assert.match(content(group),/我猜你可能需要/);
+  assert.match(content(view),/发现好插件/);
+  assert.equal(nodes(view).filter(n=>n.props.className==='pf8_top').length,1);
+  assert.equal(nodes(group).filter(n=>n.type==='h1').length,1);
+  assert.match(content(group),/还没做完/);
+  assert.match(content(group),/猜你需要/);
   assert.equal(byLabel(view,'任务描述').props.value,'保留我还没提交的目标');
   assert.equal(nodes(group).filter(n=>n.props.className==='pfv_opportunity_controls').length,1);
   const aside=nodes(group).find(n=>n.type==='aside'&&n.props['aria-label']==='猜你喜欢');
@@ -441,14 +489,37 @@ test('execution output leads the task surface while planned capability evidence 
   assert.doesNotMatch(content(result), /需求已解决|创建成功|已验证/);
 });
 
-test('home has one strong task promise with an inline closable explanation and unchanged direct entry', () => {
-  const { view } = render(fixture({ view: 'home', productIntroVisible: true, homeRequest: '' }));
+test('home has one strong task promise and the three examples instead of the removed product intro', () => {
+  const { view } = render(fixture({ view: 'home', productIntroVisible: true, homeRequest: '', plan: null, taskId: null, request: '', searchHistory: [] }));
   const headings = nodes(view).filter(n => n.type === 'h1');
-  assert.equal(headings.length, 1); assert.equal(content(headings[0]), '一个需求，找到能用的办法。');
-  const intro = nodes(view).find(n => n.props.className === 'pfv_product_intro');
-  assert.ok(intro); assert.equal(nodes(intro).filter(n => n.type === 'ol').length, 0);
-  assert.equal(nodes(intro).filter(n => n.props.role === 'dialog').length, 0);
-  assert.ok(button(view, '帮我找方案')); assert.equal(visibleNodes(view).filter(n => n.type === 'textarea').length, 1);
+  assert.equal(headings.length, 1); assert.equal(content(headings[0]), '想让 DSH 帮你做成什么？');
+  assert.equal(nodes(view).filter(n => n.props.className === 'pfv_product_intro').length, 0);
+  assert.match(content(view), /不知道说什么？点一句试试/);
+  assert.equal(nodes(view).filter(n => n.props.className === 'pf8_says').length, 1);
+  assert.equal(nodes(view).filter(n => n.props.className === 'pf8_pill').length, 3);
+  assert.ok(byLabel(view, '帮我找方案')); assert.equal(visibleNodes(view).filter(n => n.type === 'textarea').length, 1);
+});
+
+// 示例区不承诺结果：三句例句只是可点的句子，下面三栏是 Finder 会给的三种办法，
+// 两边不再配对，也不出现任何插件名（2026-11-12 三次真跑结果各不相同）。
+test('home examples promise no result and the three ways stay descriptive', () => {
+  const { view, calls } = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '' }));
+  const pills = nodes(view).filter(n => n.props.className === 'pf8_pill' && n.type === 'button');
+  assert.deepEqual(pills.map(node => content(node)), ['把邮箱里的发票收齐，汇成 Excel', '每周五出一份项目简报', '给家里人做个记账工具']);
+  const ways = nodes(view).filter(n => n.props.className === 'pf8_way');
+  assert.equal(ways.length, 3);
+  assert.deepEqual(ways.map(way => content(nodes(way).find(node => node.props.className === 'pf8_wayres'))), ['有现成的，替你装好', '一块不够，替你拼起来', '都没有，陪你做出来']);
+  assert.match(content(ways[0]), /一个现成的插件/);
+  assert.match(content(ways[1]), /几个现成的插件.*缺的那块，一起做/);
+  assert.match(content(ways[2]), /一个新插件，一起做/);
+  // 三栏纯说明：不是按钮、够不到点击回调。
+  assert.equal(nodes(view).filter(node => node.props.className === 'pf8_way').flatMap(way => nodes(way)).filter(node => node.type === 'button').length, 0);
+  // 例句不和结果配对：示例区里搜不到具体插件名，也没有旧配对里那几个编造的标签。
+  const examples = nodes(view).find(node => node.props.className === 'pf8_examples');
+  assert.ok(examples);
+  assert.doesNotMatch(content(examples), /dsh-invoice-downloader|dsh-taskboard|dsh-md-studio|每周五自动汇总|家里人各记各的账/);
+  pills[0].props.onClick();
+  assert.deepEqual(calls, [['setHomeRequest', '把邮箱里的发票收齐，汇成 Excel']]);
 });
 
 test('hybrid delegates one click to the complete controller path without a duplicate draft action', () => {
@@ -463,4 +534,132 @@ test('hybrid completion waits for workspace readiness before calling the executi
   const { view } = render(state, { controller: { completeHybridPlan: () => calls.push('complete') } });
   const action = button(view, '补齐并使用'); assert.equal(action.props.disabled, true); action.props.onClick();
   assert.deepEqual(calls, []); assert.match(content(view), /正在读取工作区/);
+});
+
+test('a source listed in both sources and sourceCoverage becomes one row', () => {
+  const { view } = render(fixture({
+    view: 'find',
+    plan: { kind: 'gap', title: '没有任何插件，先陪你做一块', rationale: '', pluginIds: [], limits: [], steps: [], gaps: [] },
+    candidates: [],
+    discovery: {
+      status: 'partial',
+      searchedAt: '2026-11-11T02:00:00.000Z',
+      sources: [
+        { id: 'awesome', title: 'Awesome DSH 社区目录', status: 'live', total: 6563, used: 2 },
+        { id: 'npm', title: 'npm 上的版本信息', status: 'failed' },
+      ],
+      sourceCoverage: [{ sourceId: 'awesome', title: 'Awesome DSH 社区目录', inspected: 4 }],
+    },
+  }));
+  const text = content(view);
+  assert.equal((text.match(/Awesome DSH 社区目录/g) || []).length, 1);
+  assert.match(text, /npm 上的版本信息/);
+  assert.match(text, /这次没查到|这次没查完/);
+});
+
+test('retry is disabled while another search is running, so two searches cannot start at once', () => {
+  const state = fixture({
+    view: 'find',
+    plan: { kind: 'gap', title: '没有任何插件，先陪你做一块', rationale: '', pluginIds: [], limits: [], steps: [], gaps: [] },
+    candidates: [], discovery: { status: 'failed', sources: [] },
+  });
+  const idle = render(state);
+  assert.equal(button(idle.view, '重试查找').props.disabled, false);
+  const running = render(state, { busy: true });
+  assert.equal(button(running.view, '重试查找').props.disabled, true);
+});
+
+test('a native plan never claims it will install anything', () => {
+  const { view } = render(fixture());
+  assert.match(content(view, true), /不安装插件/);
+  assert.doesNotMatch(content(view, true), /装好之后在对话里跑一遍/);
+});
+
+test('the tentative plan is labelled tentative instead of being shown as a conclusion', () => {
+  const { view } = render(fixture({
+    view: 'find',
+    plan: { kind: 'gap', title: '还没有合适的方案，要一起做一个吗', rationale: '', pluginIds: [], limits: [], steps: [], gaps: [] },
+    candidates: [], discovery: { status: 'failed', sources: [] },
+  }));
+  assert.doesNotMatch(content(view, true), /还没有合适的方案，要一起做一个吗/);
+  assert.match(content(view), /来源没读全，还不能当结论/);
+});
+
+test('the store is a standalone page and hides every home block behind it', () => {
+  const { view } = render(fixture({
+    view: 'home', communityOpen: true, homeRequest: '',
+    communityIntent: { categoryId: '', query: '', nonce: 1 },
+  }));
+  assert.match(content(view, true), /插件商店/);
+  assert.match(content(view, true), /返回/);
+  assert.doesNotMatch(content(view, true), /想让 DSH 帮你做成什么|猜你需要|你交代过的事|作者亲手做、亲手验过/);
+  assert.equal(nodes(view).filter(node => node.props.className === 'pf8_wrap pf8_shopw').length, 1);
+});
+
+test('featured hides pinned entries that declare no support for the current host', () => {
+  const current = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '', bootstrap: { hostVersion: '0.2.2-rc.2' } }));
+  assert.equal(nodes(current.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 0);
+  assert.equal(nodes(current.view).filter(node => node.props.className === 'pf8_feat').length, 0);
+  const declared = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '', bootstrap: { hostVersion: '0.2.1-rc.3' } }));
+  assert.equal(nodes(declared.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 4);
+  // No host version means unknown, not incompatible: keep the entries for the detail gate.
+  const unknown = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '' }));
+  assert.equal(nodes(unknown.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 4);
+});
+
+test('RC2 with no compatible featured keeps a live opportunity card instead of throwing', () => {
+  const state = fixture({
+    view: 'home', homeRequest: '', plan: null, taskId: null, request: '',
+    bootstrap: { hostVersion: '0.2.2-rc.2' },
+    opportunity: {
+      consent: { enabled: true }, status: 'ready',
+      opportunities: [{
+        id: 'idea-a', title: '把零散材料变成清楚的简报', expectedResult: '一份可核对的简报',
+        suggestedRequest: '只整理选定材料', observation: '你选定的材料有可复用步骤',
+        evidenceRefs: [{ id: 'source-a', label: 'brief.md', excerpt: '授权材料' }],
+      }],
+    },
+  });
+  const { view } = render(state);
+  const aside = nodes(view).find(node => node.type === 'aside' && node.props['aria-labelledby'] === 'pfv_opportunity_title');
+  assert.ok(aside, 'the live opportunity card still renders');
+  assert.match(content(aside), /把零散材料变成清楚的简报/);
+  assert.equal(nodes(view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 0);
+});
+
+test('source health names a GitHub limit instead of a generic unfinished line', () => {
+  const limited = experienceSourceHealth({ sources: [{ id: 'awesome', status: 'live' }], coverage: { excludedReasons: { 'author-rate-limited': 2 } } });
+  assert.equal(limited.incomplete, true);
+  assert.match(limited.message, /GitHub 这次限制了 2 个候选/);
+  const missing = experienceSourceHealth({ coverage: { excludedReasons: { 'author-missing': 1 } } });
+  assert.match(missing.message, /HTTP 404/);
+  const incompatible = experienceSourceHealth({ coverage: { excludedReasons: { 'author-incompatible': 3 } } });
+  assert.match(incompatible.message, /不兼容/);
+  assert.doesNotMatch(incompatible.message, /没核对/);
+  assert.equal(experienceSourceHealth({ coverage: { excludedReasons: {} } }), null);
+});
+
+test('a confirmed GitHub limit survives another failed source and names zero returned candidates', () => {
+  const mixed = experienceSourceHealth({ status: 'partial', sources: [{ status: 'failed' }], coverage: { returned: 1, excludedReasons: { 'author-rate-limited': 1 } } });
+  assert.match(mixed.message, /GitHub 这次限制了 1 个候选/);
+  assert.match(mixed.message, /另外，还有目录来源这次没读到/);
+  assert.match(mixed.message, /已返回的候选仍可用/);
+
+  const zero = experienceSourceHealth({ sources: [{ status: 'live' }], coverage: { returned: 0, excludedReasons: { 'author-rate-limited': 1 } } });
+  assert.match(zero.message, /这轮没有已返回的候选/);
+  assert.doesNotMatch(zero.message, /已返回的候选仍可用/);
+
+  const forbidden = experienceSourceHealth({ coverage: { returned: 1, excludedReasons: { 'author-forbidden': 1 } } });
+  assert.match(forbidden.message, /HTTP 403/);
+  assert.doesNotMatch(forbidden.message, /请求过快/);
+});
+
+test('generic source limits and 401 keep their own wording', () => {
+  const limited = experienceSourceHealth({ coverage: { returned: 1, excludedReasons: { 'author-source-limited': 1 } } });
+  assert.match(limited.message, /HTTP 429/);
+  assert.doesNotMatch(limited.message, /GitHub/);
+  const unauthorized = experienceSourceHealth({ coverage: { returned: 0, excludedReasons: { 'author-unauthorized': 1 } } });
+  assert.match(unauthorized.message, /HTTP 401/);
+  assert.doesNotMatch(unauthorized.message, /HTTP 403/);
+  assert.match(unauthorized.message, /这轮没有已返回的候选/);
 });

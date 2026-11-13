@@ -107,3 +107,17 @@ for (const fixtureCase of [{id:'dsh-dot',repository:'dsh-project-companion',pack
   assert.equal(value.entry.version,entry.version);assert.equal(calls.length,3);
  });
 }
+
+test('a pinned host miss is decided before any download and offers no source retry', async () => {
+  let fetched = 0;
+  const resolve = createCatalogDetailResolver({
+    featured: featuredCatalog,
+    hostVersion: '0.2.2-rc.2',
+    discovery: { searchSelected() { throw Error('unexpected community'); } },
+    fetchImpl: async () => { fetched += 1; throw Error('no network'); },
+  });
+  const detail = await resolve({ collection: 'featured', entryId: 'agent-twin' });
+  assert.equal(fetched, 0);
+  assert.equal(detail.candidate, null);
+  assert.equal(detail.unavailableReason, '目录里记的 0.4.0-preview.3 版不支持你现在的 DSH。等作者更新后再装。');
+});

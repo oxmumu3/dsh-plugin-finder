@@ -23,7 +23,9 @@ export const publicFiles = new Set([
     'experience-style', 'experience-view', 'featured-catalog', 'featured-view', 'featured',
     'feedback', 'history', 'lifecycle', 'model', 'plugin-installation', 'agent-finder-service', 'agent-tools', 'agent-creator', 'agent-created-installation', 'agent-model', 'provenance', 'routes', 'progress',
     'runtime-context', 'service', 'brand-mark', 'search-history', 'opportunities', 'opportunity-api', 'opportunity-client', 'opportunity-context', 'opportunity-origin', 'opportunity-view', 'supply', 'telemetry-api', 'telemetry-config',
-    'telemetry-contract', 'telemetry', 'workspace-execution'].map(name => `src/${name}.js`),
+    'telemetry-contract', 'telemetry', 'workspace-execution',
+    // v8 界面层：首页装配、积木、样式、变量。全部只读状态、无宿主依赖。
+    'v8-home-view', 'v8-home', 'v8-history-view', 'v8-lego', 'v8-menu', 'v8-plan-view', 'v8-style', 'v8-tokens'].map(name => `src/${name}.js`),
 ]);
 
 export function validatePackageName(name) {

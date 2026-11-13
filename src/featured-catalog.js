@@ -1,5 +1,9 @@
 // Editorial product groups, separate from the dynamic plugin supply catalog.
 // `available` means the pinned public artifact was read back, not task acceptance.
+// `hosts` is the pinned package's own engines.dsh, copied verbatim from the public
+// tarball; the 025 catalog survey verified it against the npm and GitHub archives
+// (docs/handoff/catalog/featured-pin-survey.md). It records where the pinned version
+// can install; the Finder host range itself stays in compatibility.json.
 // Audit: docs/research/2026-10-22-featured-catalog-audit.md
 export const featuredCatalog = [
   {
@@ -14,6 +18,7 @@ export const featuredCatalog = [
     requirements: ['DeepSeek Harness 0.2.1-rc.2 或 0.2.1-rc.3、Node.js 22.13+；其他宿主版本需另行核对', '明确选择可读取的项目和材料；通道探测需自己的 Slack 授权'],
     limitations: ['0.4.0-preview.3 是公开预发布包；本次只核对发行资产、包信息与文档，不等于实际功能验收', '具体资料范围、消息通道和权限由插件内配置；本页未验证各通道连接、外发或持续服务'],
     components: ['dsh-agent-twin'],
+    hosts: ['0.2.1-rc.2', '0.2.1-rc.3'],
     status: 'available',
     version: '0.4.0-preview.3',
     checkedAt: '2026-10-30T17:15:03Z',
@@ -41,6 +46,7 @@ export const featuredCatalog = [
     requirements: ['DeepSeek Harness 0.2.1-rc.2 或 0.2.1-rc.3、Node.js 22.13+ 和已配置的宿主模型', '每位成员本人扫码授权，分别选择记录分享范围；电脑与宿主需在线'],
     limitations: ['0.2.0-preview.30 为公开预发布版本；已核对发行资产、包信息与宿主兼容声明，不等于各项功能均完成验收', '本次依据项目说明核对身份与设计；真实扫码、模型调用、定时投递和手机显示需分别验收', '平台会话有效期与离线状态会影响提醒；接口接收回执不代表手机收到或已读'],
     components: ['dsh-family-assistant'],
+    hosts: ['0.2.1-rc.2', '0.2.1-rc.3'],
     status: 'available',
     version: '0.2.0-preview.30',
     checkedAt: '2026-10-30T17:15:03Z',
@@ -64,6 +70,7 @@ export const featuredCatalog = [
     requirements: ['官方 DeepSeek Harness 0.2.0-rc.2、0.2.1-rc.2 或 0.2.1-rc.3、Node.js 22.13+、已配置模型和可用项目会话', '配套微信桥接 dsh-wechat@0.11.1-dot.2 及本人授权；电脑、宿主与通道保持可用'],
     limitations: ['0.15.0-preview.14 是公开预发布版本；已核对发行资产与包信息，不等于实际功能验收', '本页安装项目助理，不等于微信通道已连接；配套桥接与扫码授权需在插件中核对', '真实手机恢复、持续运行和各资料来源需分别验收；发送回执不代表手机收到或已读'],
     components: ['dsh-project-companion', 'dsh-wechat@0.11.1-dot.2（配套桥接，基于社区插件）'],
+    hosts: ['0.2.0-rc.2', '0.2.1-rc.2', '0.2.1-rc.3'],
     status: 'available',
     version: '0.15.0-preview.14',
     checkedAt: '2026-10-30T17:15:03Z',
@@ -87,6 +94,7 @@ export const featuredCatalog = [
     requirements: ['macOS 上的 DeepSeek Harness 0.2.1-rc.2 或 0.2.1-rc.3、Node.js 22.15+ 及宿主 Python 运行时', '安装后在插件内连接本人账号并确认单人 MCP 授权；连接窗口使用 ego lite，本机与云端通道需在线'],
     limitations: ['0.6.0-preview.19 是公开预发布管理插件；已核对发行资产与包信息，不等于实际连接或任务功能验收', '安装管理插件不等于本人账号或云端通道已连接；需在插件内完成授权与连接验证', '本页管理插件已内含连接服务，无需另装第二个 Harness 插件；读取保存资料不代表实时完整上下文', '派发任务沿用宿主当前模型、工具与审批，可修改项目文件或运行命令；不支持共享或多租户接入'],
     components: ['dot-dsh-management', 'dot-dsh-connector'],
+    hosts: ['0.2.1-rc.2', '0.2.1-rc.3'],
     status: 'available',
     version: '0.6.0-preview.19',
     checkedAt: '2026-10-30T17:15:03Z',

@@ -2,7 +2,7 @@ import {recentOpportunityHistory} from './opportunity-client.js';
 const text=value=>typeof value==='string'?value:'';
 const items=value=>Array.isArray(value)?value:[];
 function button(h,label,action,props={}){return h('button',{type:'button',className:'pfv_button pfv_quiet',onClick:()=>action?.(),...props},label);}
-export function renderOpportunityCard({h,state,controller,disabled=false,modelReady=false,fallback=null}){
+export function renderOpportunityCard({h,state,controller,disabled=false,modelReady=false,fallback=null,Lego=null}){
  const op=state.opportunity;if(!op)return null;
  const enabled=op.consent?.enabled===true,busy=Boolean(state.opportunityBusy),adopting=state.busy==='opportunity-adopt',discovering=state.opportunityBusy==='opportunity-discover'||op.status==='running';
  const entry=enabled?items(op.opportunities)[0]:null;
@@ -12,10 +12,13 @@ export function renderOpportunityCard({h,state,controller,disabled=false,modelRe
  const title=adopting?'正在查找可用的方案':discovering?'我在找更好的办法':entry?text(entry.title):idea?text(idea.title):op.status==='empty'?'这次我先不勉强推荐':op.status==='failed'?'这次还没看完':'看看还有什么更好的办法';
  const body=adopting?'建议和资料已保留。先核对现成能力，缺口再在当前工作区创建。':entry?text(entry.expectedResult):idea?text(idea.benefit):discovering?'我只参考你选定的信息，建议会保留依据。':text(op.emptyReason)||text(op.lastError?.message)||text(op.lastError)||'可以更新参考资料，再让模型看一次。';
  const error=text(state.opportunityError);
- return [h('aside',{key:'opportunity',className:'pfv_home_scenario pfv_opportunity','aria-label':entry||idea?.basis==='本机线索'?'猜你喜欢':idea?'试试这个':'推荐状态','aria-labelledby':'pfv_opportunity_title'},
+ // 表现层：和首页 v8 卡片共用排版；下面的条件、数据来源、授权与动作都不动。
+ const lego = Lego ? h(Lego, { kinds: [entry ? 'build' : op.status === 'failed' ? 'slot' : 'build'], label: entry ? '还没有，要一起做' : '还没读到' }) : null;
+ return [h('aside',{key:'opportunity',className:'pfv_home_scenario pfv_opportunity pf8_oppcard','aria-label':entry||idea?.basis==='本机线索'?'猜你喜欢':idea?'试试这个':'推荐状态','aria-labelledby':'pfv_opportunity_title'},
   h('h2',{id:'pfv_opportunity_title',className:'pfv_home_heading'},entry||idea?.basis==='本机线索'?'我猜你可能需要':idea?'我先给你一个想法':'看看有没有更好的办法'),
   h('p',{className:'pfv_home_lead'},entry?'这是我基于参考资料想到的。':idea?'也可以从这个具体想法开始聊。':'仅参考你已授权的信息。'),
   h('div',{className:'pfv_home_card pfv_scenario_card'},
+   ...(lego ? [lego] : []),
    h('h3',{title},title),h('p',{className:'pfv_prose'},body),
    idea?h('p',{className:'pfv_scenario_reason'},text(idea.basis)||'通用想法',idea.reason?' · '+text(idea.reason):' · 尚未参考你的资料'):null,
    entry?h('details',{className:'pfv_opportunity_evidence'},h('summary',null,'为什么推荐'),h('p',null,text(entry.observation)),h('p',null,'预期结果：'+text(entry.expectedResult)),h('p',null,'这是我的改善建议，是否适合仍需你核对。'),h('p',null,'采纳后会查找：'+text(entry.suggestedRequest)),

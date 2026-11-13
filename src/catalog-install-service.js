@@ -11,6 +11,10 @@ const fail=(code,status)=>{throw new FinderError(code,status);};
 const collection=value=>value==='community'||value==='featured';
 const idFor=(kind,id,revision)=>'catalog-install-'+createHash('sha256').update(JSON.stringify(revision?[kind,id,revision]:[kind,id])).digest('hex');
 const validId=value=>typeof value==='string'&&/^catalog-install-[a-f0-9]{64}$/.test(value);
+// A decided incompatibility travels with the catalog record so an unreadable local
+// inventory cannot turn it back into a retryable unknown.
+const compatibilityKinds=new Set(['host','node','platform','runtime']);
+const validCompatibility=value=>object(value)&&value.status==='incompatible'&&compatibilityKinds.has(value.kind)&&clean(value.declared??'',500,true)&&clean(value.reason??'',3000,true);
 const messages={
  PLUGIN_INSTALL_UNAVAILABLE:'当前宿主的安装状态暂时无法读取，请稍后重试。',
  PLUGIN_INSTALL_CONFLICT:'已安装的版本或来源与本页不同，未覆盖现有插件。',
@@ -100,7 +104,7 @@ export function createCatalogInstallService({store,resolveDetail,preparePlugins,
    if(row.id!==id||typeof row.serialized!=='string'||Buffer.byteLength(row.serialized)>MAX_BYTES)throw Error();
    const value=JSON.parse(row.serialized);
    if(value.catalogRevision!==undefined&&!/^[a-f0-9]{64}$/.test(value.catalogRevision))throw Error();
-   if(value.version!==1||value.id!==id||!collection(value.collection)||!clean(value.entryId,2048)||idFor(value.collection,value.entryId,value.catalogRevision)!==id||!clean(value.unavailableReason,3000,true)||value.attempt!==null&&(!object(value.attempt)||value.attempt.operationId!==id||!clean(value.attempt.requestId,200)||!['installing','unknown','failed','ready'].includes(value.attempt.status)))throw Error();
+   if(value.version!==1||value.id!==id||!collection(value.collection)||!clean(value.entryId,2048)||idFor(value.collection,value.entryId,value.catalogRevision)!==id||!clean(value.unavailableReason,3000,true)||!(value.compatibility===undefined||value.compatibility===null||validCompatibility(value.compatibility))||value.attempt!==null&&(!object(value.attempt)||value.attempt.operationId!==id||!clean(value.attempt.requestId,200)||!['installing','unknown','failed','ready'].includes(value.attempt.status)))throw Error();
    value.entry=publicEntry(value.entry,value.collection,value.entryId);value.candidate=checkedCandidate(value.candidate);
    if(value.attempt){if(!value.candidate)throw Error();value.attempt=checkedAttempt(value.attempt,id,value.candidate);}
    if(value.archivedAttempts!==undefined&&(!Array.isArray(value.archivedAttempts)||value.archivedAttempts.length>MAX_ARCHIVED_ATTEMPTS))throw Error();
@@ -151,7 +155,7 @@ export function createCatalogInstallService({store,resolveDetail,preparePlugins,
    else if(record.attempt?.status==='ready'&&absent(facts))Object.assign(installation,{status:'not-installed',message:'此前安装的插件已卸载，可以在本页重新安装；点击后会重新核对固定版本。'});
    else if(record.attempt)withCode('failed',known.has(record.attempt.code)?record.attempt.code:'PLUGIN_INSTALL_FAILED');
   }
-  return clone({detailId:record.id,collection:record.collection,entryId:record.entryId,...Object.fromEntries(['name','title','summary','description','author','version','sourceUrl','requirements','limitations'].map(key=>[key,record.entry[key]])),installable:record.candidate!==null&&!facts?.sourceInvalid,...(record.candidate?.install?.type==='archive'?{sourceRecheckAllowed:facts?.sourceInvalid===true&&!unresolved.has(record.attempt?.status)&&!blocking.has(record.attempt?.code)}:{}),unavailableReason:facts?.sourceInvalid?'已保存的固定安装包暂时无法读取，可以重新核对原来源后恢复。':record.unavailableReason,installation});
+  return clone({detailId:record.id,collection:record.collection,entryId:record.entryId,...Object.fromEntries(['name','title','summary','description','author','version','sourceUrl','requirements','limitations'].map(key=>[key,record.entry[key]])),compatibility:record.compatibility??null,installable:record.candidate!==null&&!facts?.sourceInvalid,...(record.candidate?.install?.type==='archive'?{sourceRecheckAllowed:facts?.sourceInvalid===true&&!unresolved.has(record.attempt?.status)&&!blocking.has(record.attempt?.code)}:{}),unavailableReason:facts?.sourceInvalid?'已保存的固定安装包暂时无法读取，可以重新核对原来源后恢复。':record.unavailableReason,installation});
  };
  // Catalog revisions get separate durable records. Never bypass a still
  // unresolved earlier attempt merely because the editorial entry changed.
@@ -241,7 +245,7 @@ export function createCatalogInstallService({store,resolveDetail,preparePlugins,
      const existing=await load(id,true);if(existing&&(existing.candidate||existing.attempt))return project(existing,await observe(existing,signal));abort(signal);
      const resolved=await resolveDetail({collection:args.collection,entryId:args.entryId,signal});abort(signal);
      if(!object(resolved)||!clean(resolved.unavailableReason??'',3000,true))fail('PLUGIN_INSTALL_INVALID');
-     record=await save({version:1,id,...(catalogRevision?{catalogRevision}:{}),collection:args.collection,entryId:args.entryId,entry:publicEntry(resolved.entry,args.collection,args.entryId),candidate:checkedCandidate(resolved.candidate),unavailableReason:resolved.unavailableReason??'',attempt:null,createdAt:existing?.createdAt??stamp()});
+     record=await save({version:1,id,...(catalogRevision?{catalogRevision}:{}),collection:args.collection,entryId:args.entryId,entry:publicEntry(resolved.entry,args.collection,args.entryId),compatibility:resolved.compatibility??null,candidate:checkedCandidate(resolved.candidate),unavailableReason:resolved.unavailableReason??'',attempt:null,createdAt:existing?.createdAt??stamp()});
      return project(record,await observe(record,signal));
     });
    });

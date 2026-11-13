@@ -112,3 +112,45 @@ export function safeFeaturedInstall(entry,now=Date.now()) {
   if(!recentTimestamp(verifiedAt,now)||!recentTimestamp(entry.checkedAt,now)||!fixedPackageUrl(spec,version))return null;
   return {spec,version,verifiedAt};
 }
+
+const versionShape = value => {
+  if (typeof value !== 'string') return null;
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/u.exec(value.trim());
+  return match ? { core: [Number(match[1]), Number(match[2]), Number(match[3])], pre: match[4] ? match[4].split('.') : [] } : null;
+};
+
+/** Stable order for the catalog's x.y.z and x.y.z-preview.n versions; unknown shapes compare equal. */
+export function compareVersions(left, right) {
+  const a = versionShape(left), b = versionShape(right);
+  if (!a || !b) return 0;
+  for (let index = 0; index < 3; index += 1) if (a.core[index] !== b.core[index]) return a.core[index] < b.core[index] ? -1 : 1;
+  if (!a.pre.length || !b.pre.length) return a.pre.length ? -1 : b.pre.length ? 1 : 0;
+  for (let index = 0; index < Math.max(a.pre.length, b.pre.length); index += 1) {
+    const x = a.pre[index], y = b.pre[index];
+    if (x === undefined) return -1;
+    if (y === undefined) return 1;
+    const nx = /^\d+$/u.test(x), ny = /^\d+$/u.test(y);
+    if (nx && ny && Number(x) !== Number(y)) return Number(x) < Number(y) ? -1 : 1;
+    if (nx !== ny) return nx ? -1 : 1;
+    if (x !== y) return x < y ? -1 : 1;
+  }
+  return 0;
+}
+
+export const isNewerVersion = (left, right) => compareVersions(left, right) > 0;
+
+/**
+ * A pinned entry declares the hosts its fixed package can install on (engines.dsh).
+ * Missing data is unknown, never "incompatible": only an explicit miss hides it.
+ */
+export function featuredHostStatus(entry, hostVersion) {
+  const hosts = Array.isArray(entry?.hosts) ? entry.hosts.filter(value => typeof value === 'string' && value) : [];
+  const host = typeof hostVersion === 'string' ? hostVersion.trim() : '';
+  if (!hosts.length || !host) return 'unknown';
+  return hosts.includes(host) ? 'supported' : 'unsupported';
+}
+
+/** Home and featured surfaces show only entries whose pinned host declaration matches. */
+export function visibleFeatured(entries, hostVersion) {
+  return (Array.isArray(entries) ? entries : []).filter(entry => featuredHostStatus(entry, hostVersion) !== 'unsupported');
+}

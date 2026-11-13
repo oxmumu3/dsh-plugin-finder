@@ -1,6 +1,6 @@
 {
   "name": "@oxmumu3/dsh-plugin-finder",
-  "version": "0.12.0-preview.20",
+  "version": "0.12.0-preview.22",
   "description": "Describe a need, find a usable plan, and run or create in the same DeepSeek Harness workspace",
   "icon": "./icon.svg",
   "author": "牛村木木山",
@@ -8,7 +8,7 @@
   "type": "module",
   "engines": {
     "node": "^22.19.0 || >=24.0.0",
-    "dsh": "0.2.1-rc.5 || 0.2.2-rc.1"
+    "dsh": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3"
   },
   "exports": {
     ".": "./index.js",
@@ -24,9 +24,6 @@
     "catalog/index.mjs",
     "cordis.patch.yml",
     "dist/client.js",
-    "icon.svg",
-    "locale/en.json",
-    "locale/zh.json",
     "docs/agent-entry.md",
     "docs/community-browse-preview.md",
     "docs/creator-preview.md",
@@ -41,7 +38,10 @@
     "docs/single-flow-preview.md",
     "docs/verification.md",
     "docs/workspace-flow-preview.md",
+    "icon.svg",
     "index.js",
+    "locale/en.json",
+    "locale/zh.json",
     "src/agent-created-installation.js",
     "src/agent-creator.js",
     "src/agent-finder-service.js",
@@ -62,18 +62,18 @@
     "src/contracts.js",
     "src/creation-guide.js",
     "src/creation.js",
-    "src/creator-feedback.js",
     "src/creator-assist.js",
+    "src/creator-feedback.js",
     "src/creator-handoff.js",
     "src/creator-strip.js",
     "src/discovery.js",
     "src/eligibility.js",
     "src/execution-conversation-view.js",
-    "src/expert-session.js",
     "src/execution-markdown.js",
     "src/execution-preparation.js",
     "src/experience-style.js",
     "src/experience-view.js",
+    "src/expert-session.js",
     "src/featured-catalog.js",
     "src/featured-view.js",
     "src/featured.js",
@@ -100,6 +100,14 @@
     "src/telemetry-config.js",
     "src/telemetry-contract.js",
     "src/telemetry.js",
+    "src/v8-home-view.js",
+    "src/v8-home.js",
+    "src/v8-history-view.js",
+    "src/v8-lego.js",
+    "src/v8-menu.js",
+    "src/v8-plan-view.js",
+    "src/v8-style.js",
+    "src/v8-tokens.js",
     "src/workspace-execution.js"
   ],
   "scripts": {
@@ -145,10 +153,10 @@
     "zod": "4.6.7"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-app-boot": "0.2.1-rc.5 || 0.2.2-rc.1",
-    "@deepseek-ai/dsh-sandbox": "0.2.1-rc.5 || 0.2.2-rc.1",
-    "@deepseek-ai/dsh-storage-domain": "0.2.1-rc.5 || 0.2.2-rc.1",
-    "@deepseek-ai/dsh-tools": "0.2.1-rc.5 || 0.2.2-rc.1"
+    "@deepseek-ai/dsh-app-boot": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3",
+    "@deepseek-ai/dsh-sandbox": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3",
+    "@deepseek-ai/dsh-storage-domain": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3"
   },
   "repository": {
     "type": "git",

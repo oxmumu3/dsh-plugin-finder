@@ -45,10 +45,16 @@ test('an unavailable detail response stays explicit without assuming a particula
   const entry=featuredCatalog.find(entry=>entry.id==='dot-harness');
   const unavailable={...entry,name:entry.components[0],installable:false,unavailableReason:'此插件为私有接入，暂未提供公开安装版本。',installation:{status:'unavailable',installed:false,enabled:false,active:false}};
   const view = render({ featuredId: 'dot-harness', featuredDrafts: [draft],catalogDetail:unavailable }, { mode: 'detail', controller: { showHome: () => calls.push('home') } });
-  nodes(view).find(node => node.type === 'button' && content(node) === '返回插件列表').props.onClick();
+  nodes(view).find(node => node.type === 'button' && content(node) === '返回').props.onClick();
   assert.deepEqual(calls, ['home']);
-  assert.match(content(view), /使用前提/); assert.match(content(view), /需要了解/);
-  assert.match(content(view), /私有接入，暂未提供公开安装版本/);
+  const facts = nodes(view).find(node => node.type === 'dl');
+  assert.ok(facts);
+  assert.deepEqual(facts.children.map(row => content(row.children[0])), ['现在', '留意', '来源', '还没核对的']);
+  const [statusRow, caveatsRow] = facts.children;
+  assert.equal(statusRow.children[1].props.role, 'status');
+  assert.equal(content(statusRow.children[1]), unavailable.unavailableReason);
+  assert.deepEqual(nodes(caveatsRow).filter(node => node.type === 'li').map(content), [...entry.requirements, ...entry.limitations]);
+  assert.equal(nodes(view).some(node => node.type === 'button' && /^(安装插件|启用插件)$/.test(content(node))), false);
   assert.doesNotMatch(content(view), /复制安装来源|试试这个场景|需要恢复的未提交输入|恢复草稿/);
 });
 
@@ -67,10 +73,31 @@ test('featured cards open the bound product detail and public fallback does not 
 test('drafts mode is reserved for history and keeps the exact restore and remove actions', () => {
   const calls = [];
   const view = render({ featuredDrafts: [draft] }, { mode: 'drafts', controller: { restoreFeaturedDraft: id => calls.push(['restore', id]), removeFeaturedDraft: id => calls.push(['remove', id]) } });
+  assert.equal(view.props.className, 'pf8_drafts');
   assert.match(content(view), /需要恢复的未提交输入/);
   assert.doesNotMatch(content(view), /精选插件|猜你喜欢|调整推荐/);
   nodes(view).find(node => node.type === 'button' && content(node) === '恢复草稿').props.onClick();
   nodes(view).find(node => node.type === 'button' && content(node) === '移除这份输入').props.onClick();
   assert.deepEqual(calls, [['restore', draft.id], ['remove', draft.id]]);
   assert.equal(render({}, { mode: 'drafts' }), null);
+});
+
+test('adjust entry carries saved drafts and the draft-storage warning, not only interest controls', () => {
+  const calls = [];
+  const state = { featuredDrafts: [draft], featuredWarning: '本机草稿这次没读出来，历史记录仍保留。' };
+  const view = render(state, {
+    mode: 'settings',
+    controller: { restoreFeaturedDraft: id => calls.push(['restore', id]), removeFeaturedDraft: id => calls.push(['remove', id]) },
+  });
+  assert.match(content(view), /本机草稿这次没读出来/);
+  assert.match(content(view), /需要恢复的未提交输入/);
+  assert.match(content(view), /感兴趣的方向/);
+  nodes(view).find(node => node.type === 'button' && content(node) === '恢复草稿').props.onClick();
+  nodes(view).find(node => node.type === 'button' && content(node) === '移除这份输入').props.onClick();
+  assert.deepEqual(calls, [['restore', draft.id], ['remove', draft.id]]);
+});
+
+test('drafts mode also keeps the warning visible when draft storage failed', () => {
+  const view = render({ featuredWarning: '草稿读取失败，历史记录仍保留。' }, { mode: 'drafts' });
+  assert.match(content(view), /草稿读取失败/);
 });

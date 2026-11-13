@@ -42,7 +42,7 @@ export function renderCreatorPrompt(noteCount = 0, {tools = true} = {}) {
     '4. 先跑空架子：第一版只做能点开、不白屏的最小入口；之后每轮只加一个功能。',
     '5. 说清怎么看效果：只改了界面，告诉用户按 Cmd+R 刷新；加了工具、改了后台或重装同名插件，告诉用户彻底退出再打开 DSH。',
     '6. 卡住就止损：同一个问题连续改 3 轮还没好，停下来总结试过什么、卡在哪里，建议用户点输入框上方的「开新窗口接着做」。',
-    `每进入一个新阶段，调用 ${CREATOR_TOOLS.step} 记一笔，输入框上方的进度条会跟着更新。用户说「记入插件经验：……」时，调用 ${CREATOR_TOOLS.note} 保存。这些是建议做法，用户的明确要求优先。`,
+    `每进入一个新阶段，调用 ${CREATOR_TOOLS.step} 记一笔，输入框上方的进度条会跟着更新。出现下面任一情况时，主动调用 ${CREATOR_TOOLS.note} 记一条，不用等用户开口：同一个问题改了 3 轮以上才解决、宿主或 CI 拒绝了本以为能用的东西、用户纠正了你的做法、发现了不明显的约束。一条只写「什么情况下该怎么做」，不写夸自己的话。用户说「记入插件经验：……」时也照记。这些是建议做法，用户的明确要求优先。`,
   ].join('\n');
 }
 
@@ -183,7 +183,7 @@ export function registerCreatorAssist(ctx, assist, {defineTool} = {}) {
     }), {when}));
     disposers.push(ctx.tools.register(defineTool({
       name: CREATOR_TOOLS.note,
-      description: '把一条插件开发经验存进「发现好插件」，之后所有创造模式会话都能读到。只在用户明确说「记入插件经验」或同意保存时调用；不要自作主张保存。',
+      description: '把一条插件开发经验存进「发现好插件」，之后所有创造模式会话都能读到。遇到这些情况就主动记，不用等用户提醒：同一问题改了 3 轮以上才解决、宿主或 CI 拒绝了本以为能用的东西、用户纠正了你的做法、发现了不明显的约束。一条只写「什么情况下该怎么做」，不写夸自己的话；不确定是否值得记时，记事实而不下结论。',
       parameters: {text: {type: 'string', required: true, description: '一条经验，一句到三句话，最多500字。写清楚在什么情况下、该怎么做。'}},
       output: text,
       async execute(args, exec) {

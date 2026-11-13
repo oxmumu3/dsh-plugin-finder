@@ -2,9 +2,12 @@ import {expertWhaleSvg} from './brand-mark.js';
 import {renderOpportunityCard, renderOpportunitySettings} from './opportunity-view.js';
 import { renderFeaturedView } from './featured-view.js';
 import { featuredCatalog } from './featured-catalog.js';
-import { rankFeatured } from './featured.js';
+import { rankFeatured, visibleFeatured } from './featured.js';
 import { createCommunityView } from './community-view.js';
 import { getCommunityEntry, getCommunityOverview } from './community-catalog.js';
+import { createHomeView } from './v8-home-view.js';
+import { createPlanSurface, hybridInstallCopy } from './v8-plan-view.js';
+import { createLego } from './v8-lego.js';
 
 const text = value => typeof value === 'string' ? value : '';
 const items = value => Array.isArray(value) ? value : [];
@@ -35,27 +38,33 @@ const scenarioBenefits = {
   'dsh-dot': '把项目进展、卡点和下一步整理成一份手机上能看的简报。',
   'dot-harness': '让已有助手查到另一端的项目资料，少来回复制和补背景。',
 };
-const safeCount = value => Number.isSafeInteger(value) && value >= 0 ? value : 0;
-const searchKind = kind => ({ native: '现有能力', single: '现成插件', combo: '组合方案', hybrid: '组合＋补齐', gap: '自建插件' })[kind] || '检索';
-const searchTime = value => {
-  const milliseconds = Date.parse(value);
-  if (!Number.isFinite(milliseconds)) return '';
-  const date = new Date(milliseconds), pad = number => String(number).padStart(2, '0');
-  return `${date.getMonth() + 1}月${date.getDate()}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
-
 export function experienceSourceHealth(discovery) {
   if (!discovery) return null;
   const sources = [...records(discovery.sources), ...records(discovery.sourceCoverage)];
-  if (['failed', 'partial', 'incomplete'].includes(discovery.status) || sources.some(source => ['failed', 'stale', 'partial'].includes(source.status))) {
-    return { incomplete: true, message: '部分来源尚未查完。当前判断仅基于已返回资料，不能据此确认没有合适的插件。' };
-  }
   const coverage = records([discovery.coverage, ...records(discovery.sourceCoverage)]);
   const positiveCount = value => Number.isFinite(value) && value > 0;
+  // Reasons live on the search coverage only; sourceCoverage repeats per-source
+  // counts and must not double a single candidate.
+  const excluded = {};
+  for (const item of records([discovery.coverage])) for (const [reason, count] of Object.entries(item.excludedReasons ?? {})) if (Number.isFinite(count) && count > 0) excluded[reason] = (excluded[reason] ?? 0) + count;
+  const returned = Number.isFinite(discovery.coverage?.returned) ? discovery.coverage.returned : null;
+  const noneBack = returned === 0;
+  const sourceTrouble = ['failed', 'partial', 'incomplete'].includes(discovery.status) || sources.some(source => ['failed', 'stale', 'partial'].includes(source.status));
+  const tail = noneBack ? '这轮没有已返回的候选，也不能据此推断供给不存在。' : '已返回的候选仍可用，不能据此说没有更合适的。';
+  const extra = sourceTrouble ? '另外，还有目录来源这次没读到，具体原因见来源明细。' : '';
+  // A 403 is not GitHub throttling unless read() confirmed the rate-limit signal;
+  // generic denials keep their own source-not-readable wording.
+  if (excluded['author-rate-limited']) return { incomplete: true, message: `GitHub 这次限制了 ${excluded['author-rate-limited']} 个候选的作者资料核对（请求过快），这些没算进结果；${extra}${tail}` };
+  if (excluded['author-source-limited']) return { incomplete: true, message: `有 ${excluded['author-source-limited']} 个候选的来源这次返回限流（HTTP 429），这些没算进结果；${extra}${tail}` };
+  if (excluded['author-unauthorized']) return { incomplete: true, message: `有 ${excluded['author-unauthorized']} 个候选的来源这次需要授权（HTTP 401），这些没算进结果；${extra}${tail}` };
+  if (excluded['author-forbidden']) return { incomplete: true, message: `有 ${excluded['author-forbidden']} 个候选的来源这次拒绝访问（HTTP 403），这些没算进结果；${extra}${tail}` };
+  if (excluded['author-missing']) return { incomplete: true, message: `有 ${excluded['author-missing']} 个候选的作者资料这次打不开（HTTP 404），这些没算进结果；${extra}${tail}` };
+  if (excluded['author-incompatible']) return { incomplete: true, message: `另有 ${excluded['author-incompatible']} 个候选已判为和当前宿主不兼容，没有列进结果；它们当前不能装。${noneBack ? '这轮没有已返回的候选，也不能据此推断供给不存在。' : ''}` };
+  if (sourceTrouble) return { incomplete: true, message: noneBack ? '这次没有读回可用候选：部分来源尚未查完，不能据此推断供给不存在。' : '部分来源尚未查完。当前判断仅基于已返回资料，不能据此确认没有合适的插件。' };
   // A live index does not mean every match was read or its requirements verified.
   // Known exclusions (such as a required Key) are not unfinished evidence.
   if (coverage.some(item => positiveCount(item.uninspected) || ['author-read-timeout', 'author-unresolved', 'extra-key-unknown'].some(reason => positiveCount(item.excludedReasons?.[reason])))) {
-    return { incomplete: true, message: '部分候选尚未核对完整。当前判断仅基于已返回资料，不能据此确认没有合适的插件。' };
+    return { incomplete: true, message: noneBack ? '部分候选尚未核对完整，这轮没有已返回的候选，也不能据此推断供给不存在。' : '部分候选尚未核对完整。当前判断仅基于已返回资料，不能据此确认没有合适的插件。' };
   }
   if (sources.some(source => source.status === 'cached')) return { incomplete: false, message: '部分来源使用缓存。可以展开搜索依据，核对资料的读取时间。' };
   return null;
@@ -81,6 +90,10 @@ function prerequisites(plan, candidates) {
 export function createExperienceView(React) {
   const h = React.createElement;
   const CommunityView = createCommunityView(React);
+  // HomeView 直接当函数调用：测试会自己遍历元素树，包一层组件就看不见里面的结构了。
+  const renderHomeV8 = createHomeView(React);
+  const Lego = createLego(React);
+  const planSurface = createPlanSurface(React);
   const button = (label, onClick, attrs = {}) => h('button', { type: 'button', className: 'pfv_button', onClick, ...attrs }, label);
   const primary = (label, onClick, attrs = {}) => button(label, onClick, { ...attrs, className: 'pfv_button pfv_primary' });
   const disclosure = (label, content, attrs = {}) => content ? h('details', { className: 'pfv_disclosure', ...attrs }, h('summary', null, label), h('div', { className: 'pfv_disclosure_body' }, content)) : null;
@@ -93,7 +106,7 @@ export function createExperienceView(React) {
     }
   };
 
-  return function ExperienceView({ state, controller, busy = false, modelReady = false, copyText, sections = {} }) {
+  return function ExperienceView({ state, controller, busy = false, modelReady = false, copyText, sections = {}, more = null }) {
     const homeInput = React.useRef(null);
     const startingNew = Boolean(state.searching);
     // Old saved guide routes still recover into the same creation surface.
@@ -140,114 +153,49 @@ export function createExperienceView(React) {
     const statusLine = followupBusy && !execution ? h('div', { className: 'pfv_progress', role: 'status' },
       h('span', { className: 'pfv_progress_dot', 'aria-hidden': true }), h('span', null, progress),
       button('停止', () => controller.cancel(), { className: 'pfv_button pfv_quiet', 'aria-label': '停止当前操作并保留内容' })) : null;
-    const suggested = rankFeatured(featuredCatalog, { history: Array.isArray(state.featuredHistory) ? state.featuredHistory : state.history, preferences: state.featuredPreferences })[0];
-    const scenario = suggested?.entry || featuredCatalog.find(entry => !items(state.featuredPreferences?.dismissed).includes(entry.id)) || featuredCatalog[0];
+    // 精选按当前宿主过滤：只隐藏条目自己声明了不支持的锁定版本（SPEC 第 8 节）。
+    // 宿主版本未知时一律保留，交给详情页的安装门禁去核对，不按版本号猜。
+    const hostVersion = typeof state.bootstrap?.hostVersion === 'string' ? state.bootstrap.hostVersion : '';
+    const catalogue = visibleFeatured(featuredCatalog, hostVersion);
+    const suggested = rankFeatured(catalogue, { history: Array.isArray(state.featuredHistory) ? state.featuredHistory : state.history, preferences: state.featuredPreferences })[0];
+    const scenario = suggested?.entry || catalogue.find(entry => !items(state.featuredPreferences?.dismissed).includes(entry.id)) || catalogue[0] || null;
     const homeCommunityEntry = getCommunityEntry(state.homeCommunityEntryId);
     const resumeView = state.taskId || state.request ? h('div', { className: 'pfv_resume' }, h('div', null, h('span', { className: 'pfv_hint' }, '上次进行到这里'), paragraph(text(state.creation?.blueprint?.name) || text(state.plan?.title) || text(state.intent?.goal) || text(state.request))), button('继续上次方案', () => state.creation ? controller.showCreation() : controller.showFind(), { disabled: busy })) : null;
 
-    const lastSearchView = (() => {
-      const rows = records(state.searchHistory).filter(record => text(record.request) || records(record.sources).length).slice(0, 2);
-      if (!rows.length) return null;
-      return h('section', { className: 'pfv_last_search', 'aria-labelledby': 'pfv_last_search_title' },
-        h('div', { className: 'pfv_last_search_heading' },
-          h('h2', { id: 'pfv_last_search_title' }, '上次查找'),
-          h('span', { className: 'pfv_hint' }, '本机留下的最近检索，只有摘要')),
-        ...rows.map((record, index) => {
-          const sources = records(record.sources).slice(0, 8);
-          return h('div', { key: text(record.id) || index, className: 'pfv_last_search_item' },
-            h('div', { className: 'pfv_last_search_meta' },
-              h('span', { className: 'pfv_last_search_time' }, searchTime(record.searchedAt) || '时间未记录'),
-              h('span', { className: 'pfv_last_search_kind' }, searchKind(record.planKind))),
-            h('p', { className: 'pfv_last_search_request' }, short(record.request, 120) || '需求摘要未记录'),
-            sources.length ? h('ul', { className: 'pfv_last_search_sources' }, ...sources.map(source => h('li', {
-              key: text(source.id) || text(source.title),
-              className: `pfv_last_search_source${source.status === 'failed' ? ' pfv_last_search_source_failed' : ''}`,
-            },
-            h('span', { className: 'pfv_last_search_source_title' }, text(source.title) || text(source.id) || '未命名来源'),
-            h('span', { className: 'pfv_last_search_source_count' }, source.status === 'failed'
-              ? `读取失败 · 采用 ${safeCount(source.used)} 条`
-              : `读到 ${safeCount(source.total)} 条 · 采用 ${safeCount(source.used)} 条`)))) : h('p', { className: 'pfv_hint' }, '这次没有留下可展示的来源记录。'));
-        }));
-    })();
-
     const catalog = (() => { try { return getCommunityOverview(); } catch { return null; } })();
-    const catalogTotal = safeCount(catalog?.total);
-    const countText = value => safeCount(value).toLocaleString('en-US');
-    const categories = records(catalog?.categories)
-      .filter(item => text(item.label) && Number.isSafeInteger(item.count))
-      .sort((left, right) => right.count - left.count).slice(0, 6);
-    const categoryMax = categories.reduce((max, item) => Math.max(max, item.count), 1);
 
-    // Three outcomes on one rail: the product promise, in the order it happens.
-    const journey = h('div', { className: 'pfv_journey', 'aria-label': '它会怎么帮你' },
-      h('div', { className: 'pfv_journey_stop' }, h('h3', null, '先找现成的'),
-        h('p', null, catalogTotal
-          ? `从 ${countText(catalogTotal)} 个社区插件里挑最合适的，说清为什么选它、为什么不选别的。`
-          : '从社区插件里挑最合适的，说清为什么选它、为什么不选别的。')),
-      h('div', { className: 'pfv_journey_stop' }, h('h3', null, '装好跑一遍'),
-        h('p', null, '装进你选的工作区真跑一次，装之前先核对作者和兼容。')),
-      h('div', { className: 'pfv_journey_stop pfv_journey_auto' }, h('h3', null, '没有就一起做'),
-        h('p', null, '在创造模式里陪你查现成、定设计、搭骨架，一次加一个功能。'),
-        h('span', { className: 'pfv_journey_tag' }, '装上就生效，不用设置')));
+    // 首页整屏走 v8（SPEC 5.1–5.5）。旧版三站路径与产品介绍按 SPEC 第 4 节去掉。
+    const home = () => renderHomeV8({
+      state, controller, busy, modelReady, locked,
+      homeInput, shortcut, resumeView,
+      overview: catalog,
+      more,
+      homeCommunityName: homeCommunityEntry?.name,
+      suggested,
+      opportunityCard: state.opportunity
+        ? renderOpportunityCard({ h, state, controller, disabled: locked, modelReady, Lego,
+          // 精选全被当前宿主过滤掉时没有 scenario；机会卡自己照常渲染，fallback 留空。
+          fallback: scenario ? { id: scenario.id, title: scenarioTitles[scenario.id], benefit: scenarioBenefits[scenario.id], basis: suggested ? '本机线索' : '通用想法', reason: suggested?.reason || '' } : null })
+        : null,
+      opportunitySettings: renderOpportunitySettings({ h, state, controller, modelReady }),
+      fallbackIdea: scenario ? {
+        id: scenario.id, title: scenarioTitles[scenario.id], benefit: scenarioBenefits[scenario.id],
+        basis: suggested ? '本机线索' : '通用想法', reason: suggested?.reason || '', suggested: Boolean(suggested),
+      } : null,
+      featured: catalogue,
+      onFeatured: id => (typeof controller.showFeatured === 'function' ? controller.showFeatured(id) : controller.startFeatured?.(id)),
+      // 精选的兴趣方向、隐藏某一项、保留的草稿都还在原来的组件里：收进「调整精选」。
+      featuredSettings: renderFeaturedView({ h, state, controller, copyText, busy, mode: 'settings' }),
+      featuredWarning: state.featuredWarning,
+      onCommunity: intent => controller.showCommunity?.(intent),
+    });
 
-    // Bar length is the real share of the catalog, so the order explains itself.
-    const categoriesView = categories.length ? h('section', { className: 'pfv_v3_block', 'aria-labelledby': 'pfv_categories_title' },
-      h('div', { className: 'pfv_v3_head' },
-        h('h2', { id: 'pfv_categories_title' }, '按用途逛'),
-        h('span', null, '按数量排，条越长插件越多'),
-        h('a', { href: '#pfv_community_title', className: 'pfv_v3_more' }, '看全部插件')),
-      h('div', { className: 'pfv_v3_cats' }, ...categories.map(item => h('a', {
-        key: text(item.id) || text(item.label), className: 'pfv_v3_cat', href: '#pfv_community_title',
-      },
-      h('span', { className: 'pfv_v3_cat_name' },
-        h('b', null, text(item.label)),
-        text(item.description) ? h('small', null, text(item.description)) : null),
-      h('span', { className: 'pfv_v3_bar', 'aria-hidden': true },
-        h('i', { style: { width: `${Math.max(4, Math.round(item.count / categoryMax * 100))}%` } })),
-      h('em', null, countText(item.count)))))) : null;
-
-    const home = () => h('div', { className: 'pfv_home' },
-      h('header', { className: 'pfv_expert_identity', 'aria-labelledby': 'pfv_expert_title' },
-        h('span', { className: 'pfv_expert_mark', 'aria-hidden': true, dangerouslySetInnerHTML: { __html: expertWhaleSvg } }),
-        h('div', null, h('p', { className: 'pfv_expert_name' }, '你的插件专家'), h('h1', { id: 'pfv_expert_title' }, '一个需求，找到能用的办法。'),
-          h('p', { id: 'pfv_expert_opening' }, '你说目标，我来找办法；也可以先看看我的建议。'))),
-      state.productIntroVisible ? h('section', { className: 'pfv_product_intro', 'aria-labelledby': 'pfv_product_intro_title' },
-        h('div', null, h('h2', { id: 'pfv_product_intro_title' }, '从需求到能用'), h('p', null, '先查现成能力，只造缺失部分，在当前工作区做到能用。')),
-        button('×', () => { controller.hideProductIntro?.(); globalThis.document?.getElementById('pfv_intro_toggle')?.focus(); }, { className: 'pfv_button pfv_quiet pfv_intro_close', 'aria-label': '关闭产品介绍' })) : null,
-      h('div', { className: 'pfv_home_start', role: 'group', 'aria-labelledby': 'pfv_expert_title', 'aria-describedby': 'pfv_expert_opening' },
-        h('section', { className: 'pfv_home_intro', 'aria-labelledby': 'pfv_home_title' },
-          resumeView,
-          h('h2', { id: 'pfv_home_title', className: 'pfv_home_heading' }, '告诉我你的目标'),
-          h('p', { className: 'pfv_home_lead' }, '一句话就好，之后我们接着聊。'),
-          h('form', { className: 'pfv_composer pfv_home_composer pfv_home_card', onSubmit: event => { event.preventDefault(); if (!busy && modelReady && text(state.homeRequest).trim()) void controller.searchHome(); } },
-            state.homeCommunityEntryId ? h('div', { className: 'pfv_home_selection', 'aria-label': '已选插件' },
-              h('span', null, `已选插件：${homeCommunityEntry?.name || '当前目录未收录'}`),
-              button('取消指定', () => { if (!taskInputBusy) controller.clearHomeCommunitySelection(); }, { className: 'pfv_button pfv_quiet', disabled: taskInputBusy })) : null,
-            h('label', { className: 'pfv_sr_only', htmlFor: 'pfv_home_input' }, '任务描述'),
-            h('textarea', { ref: homeInput, id: 'pfv_home_input', 'aria-label': '任务描述', value: text(state.homeRequest), maxLength: 6000, disabled: taskInputBusy, placeholder: '例如：把会议记录整理成待办，再给我一份项目简报。', onChange: event => controller.setHomeRequest(event.target.value), onKeyDown: shortcut }),
-            h('div', { className: 'pfv_composer_bottom' },
-              h('div', { className: 'pfv_examples', 'aria-label': '可编辑的需求示例' }, h('span', { className: 'pfv_hint' }, '例如'), ...examples.map(([label, value]) => button(label, () => {
-                if (controller.prepareHomeExample) controller.prepareHomeExample(value);
-                else if (!text(state.homeRequest).trim()) controller.setHomeRequest(value);
-                homeInput.current?.focus?.();
-              }, { key: label, className: 'pfv_button pfv_example', disabled: taskInputBusy, 'aria-label': `填入${label}的示例，之后可以修改` }))),
-              h('button', { type: 'submit', className: 'pfv_button pfv_primary', disabled: busy || !modelReady || !text(state.homeRequest).trim() }, '帮我找方案'))),
-          state.homeWarning ? h('p', { className: 'pfv_warning', role: 'status' }, text(state.homeWarning)) : null,
-          state.bootstrapLoaded && !modelReady ? h('div', { className: 'pfv_warning' }, h('p', null, '先在 DSH 设置中配置默认模型，再开始查找。'), button('重新读取配置', () => controller.bootstrap(), { disabled: busy })) : null),
-        journey,
-        state.opportunity ? renderOpportunityCard({h,state,controller,disabled:locked,modelReady,fallback:{id:scenario.id,title:scenarioTitles[scenario.id],benefit:scenarioBenefits[scenario.id],basis:suggested?'本机线索':'通用想法',reason:suggested?.reason||''}}) : h('aside', { className: 'pfv_home_scenario', 'aria-label': suggested ? '猜你喜欢' : '试试这个' },
-        h('h2', { className: 'pfv_home_heading' }, suggested ? '我猜你可能需要' : '我先给你一个想法'),
-        h('p', { className: 'pfv_home_lead' }, '也可以从这个想法开始聊。'),
-        h('div', { className: 'pfv_home_card pfv_scenario_card' },
-          h('h3', null, scenarioTitles[scenario.id]), paragraph(scenarioBenefits[scenario.id]),
-          suggested ? h('p', { className: 'pfv_scenario_reason' }, suggested.reason) : null,
-          h('div', { className: 'pfv_composer_bottom' }, button('开始这个需求', () => controller.startFeatured(scenario.id), { className: 'pfv_button pfv_scenario_start', disabled: locked || !modelReady })))),
-        renderOpportunitySettings({h,state,controller,modelReady})),
-      renderFeaturedView({ h, state, controller, copyText, busy, mode: 'home' }),
-      categoriesView,
-      lastSearchView,
-      h(CommunityView, { controller, busy: locked, modelReady }));
-
+    // 商店是独立一页：打开时首页不显示，返回时由 controller 还原原来的滚动位置（SPEC 5.6）。
+    if (state.communityOpen && !state.searching && state.view === 'home') {
+      return h('div', { className: 'pf_v8 pf8_storepage' }, h(CommunityView, {
+        controller, busy: locked, modelReady, intent: state.communityIntent,
+      }));
+    }
     if (state.view === 'home' && !state.searching) return home();
     if (state.view === 'find' && state.stage === 'describe' && !busy && !state.request && !plan) return home();
 
@@ -261,10 +209,10 @@ export function createExperienceView(React) {
       execution.canContinue ? primary('继续执行', () => controller.continueExecution(), { disabled: busy }) : null,
       sections.executionConversation) : null;
 
-    const clarification = isCreating && question ? h('section', { className: 'pfv_clarification', 'aria-labelledby': 'pfv_question_title' },
-      h('h3', { id: 'pfv_question_title' }, text(question.question)), paragraph(question.reason, { className: 'pfv_hint' }),
-      h('div', { className: 'pfv_choices' }, ...strings(question.options).map(option => button(option, () => controller.answerCreation(question.id, option), { key: option, disabled: locked, 'aria-pressed': currentAnswer?.answer === option }))),
-      h('p', { className: 'pfv_hint' }, '也可以在下方补充你的想法。')) : null;
+    const clarification = isCreating && question ? planSurface.clarification({
+      question, options: question.options, current: currentAnswer?.answer,
+      disabled: locked, onPick: option => controller.answerCreation(question.id, option),
+    }) : null;
 
     const followup = h('form', { className: 'pfv_composer pfv_followup', onSubmit: submitFollowup },
       h('label', { className: 'pfv_composer_label', htmlFor: 'pfv_followup_input' }, '想调整哪里？'),
@@ -290,21 +238,13 @@ export function createExperienceView(React) {
 
     const history = h('div', { className: 'pfv_messages', 'aria-label': '当前需求的对话记录' }, ...messages.map((message, index) => h('article', { key: message.id || index, className: `pfv_message pfv_message_${message.role}` },
       h('div', { className: 'pfv_message_meta' }, h('span', null, message.role === 'user' ? '你' : '插件专家'), Number.isInteger(message.revisionNumber) ? h('span', null, `版本 ${message.revisionNumber}`) : null), paragraph(message.text))));
-    const evidence = h('div', { className: 'pfv_evidence' },
-      disclosure('来源与备选方案', h(React.Fragment, null, sections.candidateView, sections.searchEvidence, sections.selectedInstallGuide)),
-      disclosure('需求与修改记录', h(React.Fragment, null, history, sections.taskHistory)),
+    const evidence = h('div', { className: 'pf8_folds' },
+      disclosure('依据和来源', h(React.Fragment, null, sections.candidateView, sections.searchEvidence, sections.selectedInstallGuide)),
+      disclosure(Number.isInteger(revision) && revision > 1 ? `改过 ${revision - 1} 次` : '需求与修改记录', h(React.Fragment, null, history, sections.taskHistory)),
       disclosure('记录使用结果', sections.feedback));
-    // While a search is running the page used to be an empty document. Say what is
-    // happening, echo the request, and never invent a percentage.
-    const searchingView = startingNew ? h('article', { className: 'pfv_search_status', role: 'status', 'aria-live': 'polite' },
-      // Echo the request this search is about; never the previous one.
-      h('p', { className: 'pfv_search_echo' }, '你问', h('b', null, text(state.homeRequest) || text(state.request) || '这次的需求')),
-      h('div', { className: 'pfv_scan', 'aria-hidden': true }),
-      h('p', { className: 'pfv_hint' }, '方案正在形成：正在读社区目录、查你的本机环境，然后用一句话给结论。通常十几秒。'),
-      h('p', { className: 'pfv_hint' }, '查完会留在这里，不用守着这一页。')) : null;
-
-    const sourceNotice = health ? h('aside', { className: 'pfv_source_notice', role: 'status' }, h('p', null, health.message),
-      health.incomplete && isCreating ? h('p', { className: 'pfv_hint' }, '开始创建时会重新核对；你的补充会保留。') : null) : null;
+    // 来源没查完但方案可用：一条橙色提示说明边界，方案本身照常可看可用。
+    const sourceNotice = health ? h('aside', { className: 'pf8_warn_note', role: 'status' }, h('p', null, health.message),
+      health.incomplete && isCreating ? h('p', { className: 'pf8_fine' }, '开始创建时会重新核对；你的补充会保留。') : null) : null;
     const workspacePicker = sections.workspacePicker ? h('div', { className: 'pfv_workspace_picker' }, sections.workspacePicker) : null;
     const canAct = !locked && !previousOutcome && Boolean(state.taskId) && modelReady;
     const workspacePending = state.workspacePhase != null && state.workspacePhase !== 'ready';
@@ -334,45 +274,168 @@ export function createExperienceView(React) {
           plan.kind === 'native' ? h('section', { className: 'pfv_capability_item', 'data-capability-kind': 'native' }, h('span', { className: 'pfv_capability_kind' }, '现有能力'), h('strong', null, 'Harness 当前能力'), paragraph('无需额外安装插件。', { className: 'pfv_capability_purpose' })) : null));
     };
 
-    const planView = () => {
-      if (!plan) return h('div', { className: 'pfv_outcome_empty' }, h('h2', null, busy ? '方案正在形成' : '继续查找方案'),
-        h('p', { className: 'pfv_hint' }, busy ? `需求已保留，找到的方案会显示在这里。${clockSuffix}` : '上次查找尚未完成，你可以从这里继续。'),
-        liveEvents.length ? h('ul', { className: 'pfv_hint', 'aria-live': 'polite' }, liveEvents.map((item, index) => h('li', { key: `${item.seq || index}` }, item.text))) : null,
-        !busy && state.intent ? primary('重试查找', () => controller.recommend(), { disabled: !modelReady }) : null,
-        !busy && !state.intent && request ? primary('重试查找', () => { controller.setHomeRequest(request); void controller.searchHome(); }, { disabled: !modelReady }) : null);
-      const limits = prerequisites(plan, outcome.candidates);
-      const uncertainGap = plan.kind === 'gap' && (health?.incomplete || ![...records(discovery?.sources), ...records(discovery?.sourceCoverage)].some(source => ['live', 'cached'].includes(source.status)));
-      const retry = uncertainGap;
-      const kind = uncertainGap ? '供给仍待核对' : { native: '直接使用现有能力', single: '现成插件方案', combo: '组合方案', hybrid: '现成能力＋补齐缺口', gap: '可以创建自己的插件' }[plan.kind] || '当前方案';
-      const ownerLabel = owner => owner === 'dsh' ? 'DSH' : owner === 'create' ? '待补齐的能力' : owner === 'human' ? '需要你提供' : records(outcome.candidates).find(item => item.id === owner)?.name || text(owner);
-      const steps = records(plan.steps);
-      const needsCreation = plan.kind === 'gap' || plan.kind === 'hybrid';
-      return h(React.Fragment, null,
-        h('div', { className: 'pfv_outcome_intro' }, h('span', { className: 'pfv_kind' }, kind), h('h2', null, uncertainGap ? '继续核对可行方案' : text(plan.title)), !execution ? paragraph(uncertainGap ? '本次搜索还不足以判断有没有现成方案。可以重试，也可以直接创建自己的插件。' : short(plan.rationale, 140)) : null),
-        showActions ? h(React.Fragment, null, workspacePicker, !retry && plan.kind !== 'gap' ? workspaceStatus : null, h('div', { className: 'pfv_outcome_actions' },
-          primary(retry ? '重试查找' : plan.kind === 'hybrid' ? '补齐并使用' : needsCreation ? '创建自己的插件' : '使用这个方案', () => retry ? controller.recommend() : plan.kind === 'hybrid' ? !workspacePending && (typeof controller.completeHybridPlan === 'function' ? controller.completeHybridPlan() : controller.startCreation()) : needsCreation ? controller.startCreation() : !workspacePending && controller.runCurrentPlan(), { disabled: !canAct || !retry && (!needsCreation || plan.kind === 'hybrid') && workspacePending }),
-          !needsCreation || retry ? button('创建自己的插件', () => controller.startCreation(), { disabled: !canAct, className: 'pfv_button pfv_quiet' }) : null)) : null,
-        capabilityMap(),
-        execution?.phase === 'completed' && execution.kind === 'use' ? h('div', { className: 'pfv_outcome_actions' }, button('创建自己的插件', () => controller.startCreation(), { disabled: locked || !modelReady, className: 'pfv_button pfv_quiet' })) : null,
-        steps.length && !execution ? disclosure('查看执行安排', h('section', { className: 'pfv_plan_steps', 'aria-label': '完成路径' }, h('h3', null, '这次会做什么'), h('ol', null, ...steps.map((step, index) => h('li', { key: index }, h('span', { className: 'pfv_step_number', 'aria-hidden': true }, index + 1), h('div', null, h('h4', null, text(step.capability)), paragraph(short(step.action, 220)), h('p', { className: 'pfv_hint' }, ownerLabel(step.owner)))))))) : null,
-        limits.length ? h('div', { className: 'pfv_prerequisites' }, h('h3', null, '使用前提'), list(limits.slice(0, 2)), limits.length > 2 ? disclosure(`还有 ${limits.length - 2} 项限制`, list(limits.slice(2))) : null) : null,
-        disclosure('查看完整方案', h(React.Fragment, null, uncertainGap ? h('p', { className: 'pfv_hint' }, '以下是来源尚未完整核对时的暂定判断。') : null, paragraph(plan.title), paragraph(plan.rationale), ...steps.map((step, index) => h('section', { key: index }, h('h4', null, text(step.capability)), paragraph(step.action), h('dl', { className: 'pfv_io' }, h('dt', null, '输入'), h('dd', null, text(step.input)), h('dt', null, '产出'), h('dd', null, text(step.output))))))),
-        previousOutcome ? h('p', { className: 'pfv_hint pfv_previous_note' }, '这是上一次保存的结果，更新后会显示新方案。') : null);
+    // ——— v8：解法卡 / 正在找 / 没查完 (SPEC 5.8–5.10) ———
+    const searchedAt = text(discovery?.searchedAt) || text(outcome?.searchedAt);
+    // 「我的理解」只显示和原话不一样的那句理解；没有就不写。
+    const understanding = !startingNew && !execution ? text(state.intent?.goal) : '';
+    const hasLiveSource = [...records(discovery?.sources), ...records(discovery?.sourceCoverage)]
+      .some(source => ['live', 'cached'].includes(text(source.status)));
+    // gap 结论只有在来源确实读全时才成立；没读全时说结论仍待核对，不说「没有插件」。
+    const uncertainGap = Boolean(plan) && plan.kind === 'gap' && (Boolean(health?.incomplete) || !hasLiveSource);
+    const showFindCard = startingNew || (!plan && Boolean(busy));
+    const needsCreation = plan?.kind === 'gap' || plan?.kind === 'hybrid';
+
+    const v8Action = action => h('button', {
+      key: action.label, type: 'button',
+      className: action.primary ? 'pf8_btn pf8_ink pf8_big pfv_primary' : 'pf8_btn pf8_big',
+      disabled: Boolean(action.disabled), onClick: action.onClick,
+    }, action.label);
+
+    // 点了按钮会发生什么：按当前方案和真实动作写，原生方案不提安装。
+    const actionNote = label => {
+      if (label === '使用这个方案') return plan?.kind === 'native'
+        ? '会在对话里跑一遍，不安装插件，也不改文件。'
+        : '会先核对作者和版本，装好之后在对话里跑一遍。';
+      if (label === '补齐并使用') return hybridInstallCopy(items(plan?.pluginIds).length);
+      if (label === '创建自己的插件') return '会在发现好插件里先写出首版方案，你确认后再开始做。';
+      if (label === '重试查找') return '会重新读一遍来源，再给一次结论。';
+      return '';
+    };
+    const retryAction = () => ({
+      label: '重试查找', primary: true, disabled: !modelReady || locked,
+      onClick: state.intent
+        ? () => controller.recommend()
+        : () => { controller.setHomeRequest(request); void controller.searchHome(); },
+    });
+    const primaryAction = () => {
+      if (uncertainGap) return retryAction();
+      if (plan.kind === 'hybrid') return {
+        label: '补齐并使用', primary: true, disabled: !canAct || workspacePending,
+        onClick: () => !workspacePending && (typeof controller.completeHybridPlan === 'function' ? controller.completeHybridPlan() : controller.startCreation()),
+      };
+      if (needsCreation) return { label: '创建自己的插件', primary: true, disabled: !canAct, onClick: () => controller.startCreation() };
+      return { label: '使用这个方案', primary: true, disabled: !canAct || workspacePending, onClick: () => !workspacePending && controller.runCurrentPlan() };
     };
 
+    const solutionCard = () => {
+      const primaryChoice = primaryAction();
+      const secondary = !needsCreation || uncertainGap
+        ? { label: '创建自己的插件', onClick: () => controller.startCreation(), disabled: !canAct }
+        : null;
+      const actions = showActions ? [primaryChoice, secondary].filter(Boolean) : [];
+      return planSurface.solution({
+        request, understanding, plan, candidates: outcome.candidates, discovery, searchedAt, actions,
+        note: actions.length && actionNote(primaryChoice.label) ? actionNote(primaryChoice.label) : '',
+      });
+    };
+
+    const ownerLabel = owner => owner === 'dsh' ? 'DSH' : owner === 'create' ? '待补齐的能力' : owner === 'human' ? '需要你提供' : records(outcome.candidates).find(item => item.id === owner)?.name || text(owner);
+
+    // 卡片下面三块：开始后会这样 / 开始前知道这两点 / 想改？直接说（SPEC 5.8 后半）。
+    const afterCard = () => {
+      if (!plan || execution) return null;
+      const limits = prerequisites(plan, outcome.candidates);
+      const steps = records(plan.steps);
+      const capabilities = capabilityMap();
+      return h(React.Fragment, null,
+        capabilities ? h('details', { className: 'pf8_disclosure pf8_caps' },
+          h('summary', { className: 'pf8_lk' }, '方案里的插件和版本'),
+          h('div', { className: 'pf8_disclosure_body' }, capabilities)) : null,
+        steps.length ? h('section', { className: 'pf8_after', 'aria-label': '开始后会这样' },
+          h('h2', null, '开始后会这样'),
+          h('ol', { className: 'pf8_steps' }, ...steps.map((step, index) => h('li', { key: index },
+            h('div', null,
+              h('b', null, text(step.capability)),
+              text(step.action) ? h('span', { className: 'pf8_step_say' }, `，${short(step.action, 200)}`) : null,
+              h('small', null, `这一步由 ${ownerLabel(step.owner)} 负责`),
+              text(step.input) || text(step.output)
+                ? h('small', null, [
+                  text(step.input) ? `要用的：${short(step.input, 90)}` : '',
+                  text(step.output) ? `做完会有：${short(step.output, 90)}` : '',
+                ].filter(Boolean).join('；'))
+                : null))))) : null,
+        limits.length ? h('section', { className: 'pf8_after', 'aria-label': '开始前要知道' },
+          h('h2', null, limits.length > 1 ? '开始前知道这两点' : '开始前知道这一点'),
+          h('div', { className: 'pf8_know' }, ...limits.slice(0, 2).map((limit, index) => h('p', { key: index }, limit))),
+          limits.length > 2 ? h('details', { className: 'pf8_disclosure' },
+            h('summary', { className: 'pf8_lk' }, `还有 ${limits.length - 2} 条细节`),
+            h('div', { className: 'pf8_disclosure_body' }, list(limits.slice(2)))) : null) : null,
+        disclosure('完整方案和每一步的输入产出', h(React.Fragment, null,
+          paragraph(plan.title), paragraph(plan.rationale),
+          ...steps.map((step, index) => h('section', { key: index },
+            h('h4', null, text(step.capability)), paragraph(step.action),
+            h('dl', { className: 'pfv_io' }, h('dt', null, '输入'), h('dd', null, text(step.input)), h('dt', null, '产出'), h('dd', null, text(step.output))))))),
+        previousOutcome ? h('p', { className: 'pf8_fine pf8_prev_note' }, '这是上一次保存的结果，更新后会显示新方案。') : null);
+    };
+
+    const searchingCard = () => planSurface.searching({
+      request, progress, waited, events: liveEvents,
+      actions: [{ label: '停止', onClick: () => controller.cancel(), disabled: false }],
+    });
+
+    const emptyCard = () => {
+      const actions = state.intent || request ? [retryAction()] : [];
+      return h('article', { className: 'pf8_card' },
+        text(request) ? h('p', { className: 'pf8_q' }, '你说：', h('b', null, `「${short(request, 120)}」`)) : null,
+        h('h1', { className: 'pf8_verdict' }, '继续查找方案'),
+        h('p', { className: 'pf8_why' }, '上次查找还没走完，需求已经留着，可以在这里接着来。'),
+        actions.length ? h('div', { className: 'pf8_acts' }, ...actions.map(v8Action)) : null);
+    };
+
+    // 没查完：来源逐条说清读到/没读到；有方案时放进「先看读到的」，不把它当结论。
+    const incompleteCard = () => planSurface.incomplete({
+      request, health, discovery,
+      actions: [
+        retryAction(),
+        plan ? { label: '创建自己的插件', onClick: () => controller.startCreation(), disabled: !canAct } : null,
+      ].filter(Boolean),
+      tentative: plan ? planSurface.solution({
+        request, understanding: '', plan, candidates: outcome.candidates, discovery, searchedAt,
+        actions: [], note: '', showSignature: false, compact: true,
+      }) : null,
+    });
+
+    const planCardArea = () => {
+      if (uncertainGap) return incompleteCard();
+      if (plan) return h(React.Fragment, null,
+        showActions ? workspacePicker : null,
+        showActions ? workspaceStatus : null,
+        solutionCard(), afterCard());
+      if (showFindCard) return searchingCard();
+      return emptyCard();
+    };
+
+    const reviseCard = () => h('section', { className: 'pf8_card pf8_revise', 'aria-label': '想改直接说' },
+      h('div', { className: 'pf8_revise_head' },
+        h('h2', null, '想改？直接说'),
+        h('span', { className: 'pf8_fine' }, expertMode ? '我看得到你的工作区和已经装的插件' : '接着说，这份方案会跟着改')),
+      expertSection || followup);
+
     const blueprintView = () => {
-      if (!creation) return h('div', { className: 'pfv_outcome_empty' }, h('h2', null, busy ? '正在整理插件方案' : '创建自己的插件'), h('p', { className: 'pfv_hint' }, '根据这次需求，整理首版要做什么。'), !busy ? primary('创建自己的插件', () => controller.startCreation(), { disabled: !modelReady || !state.plan }) : null);
+      if (!creation) return h('article', { className: 'pf8_card' },
+        h('h1', { className: 'pf8_verdict' }, busy ? '正在整理插件方案' : '创建自己的插件'),
+        h('p', { className: 'pf8_why' }, '根据这次需求，整理首版要做什么。'),
+        !busy ? h('div', { className: 'pf8_acts' }, v8Action({ label: '创建自己的插件', primary: true, onClick: () => controller.startCreation(), disabled: !modelReady || !state.plan })) : null);
       const summaryRows = [
         ['首版做什么', blueprint.scope], ['怎样使用', blueprint.workflow], ['得到什么', blueprint.outputs],
         ['数据与权限', unique([text(blueprint.data), text(blueprint.tools)]).join('；')], ['完成标准', blueprint.acceptance],
       ].filter(([, value]) => text(value));
-      return h(React.Fragment, null,
-        h('div', { className: 'pfv_outcome_intro' }, h('span', { className: 'pfv_kind' }, '创建自己的插件'), h('h2', null, text(blueprint.name) || '我的插件'), !execution ? paragraph(short(blueprint.purpose, 260)) : null),
-        !execution ? h('dl', { className: 'pfv_creation_summary' }, ...summaryRows.map(([label, value]) => h('div', { key: label }, h('dt', null, label), h('dd', null, short(value, 200))))) : null,
-        capabilityMap(),
+      const capabilities = capabilityMap();
+      return h('article', { className: 'pf8_card', 'aria-label': '插件方案' },
+        h('p', { className: 'pf8_q' }, '创建自己的插件'),
+        h('h1', { className: 'pf8_verdict' }, text(blueprint.name) || '我的插件'),
+        !execution && text(blueprint.purpose) ? h('p', { className: 'pf8_why' }, short(blueprint.purpose, 260)) : null,
+        !execution && summaryRows.length ? h('dl', { className: 'pfv_creation_summary' }, ...summaryRows.map(([label, value]) => h('div', { key: label }, h('dt', null, label), h('dd', null, short(value, 200))))) : null,
+        capabilities ? h('details', { className: 'pf8_disclosure pf8_caps' },
+          h('summary', { className: 'pf8_lk' }, '方案里的插件和版本'),
+          h('div', { className: 'pf8_disclosure_body' }, capabilities)) : null,
         clarification,
-        showActions ? h(React.Fragment, null, workspacePicker, workspaceStatus, h('div', { className: 'pfv_outcome_actions' }, primary('开始创建', () => !workspacePending && controller.createInWorkspace(), { disabled: !canAct || workspacePending || Boolean(question) }), button('回看方案', () => controller.showFind(), { disabled: locked, className: 'pfv_button pfv_quiet' }))) : null,
-        state.creationDirty ? h('p', { className: 'pfv_save_state', role: 'status' }, '修改已保留，开始创建时会一并使用。') : null,
+        showActions ? h(React.Fragment, null, workspacePicker, workspaceStatus,
+          h('div', { className: 'pf8_acts' },
+            v8Action({ label: '开始创建', primary: true, onClick: () => !workspacePending && controller.createInWorkspace(), disabled: !canAct || workspacePending || Boolean(question) }),
+            v8Action({ label: '回看方案', onClick: () => controller.showFind(), disabled: locked })),
+          h('p', { className: 'pf8_next' }, '会先在发现好插件里存一份草稿，再从第一步开始；随时可以回来改。')) : null,
+        state.creationDirty ? h('p', { className: 'pf8_fine', role: 'status' }, '修改已保留，开始创建时会一并使用。') : null,
         disclosure('查看与编辑详细方案', h(React.Fragment, null,
           ...blueprintGroups.map((group, index) => h('section', { className: 'pfv_blueprint_block', key: group.title },
             h('h3', null, group.title), h('dl', { className: 'pfv_blueprint_values' }, ...group.fields.map(([key, label]) => h('div', { key }, h('dt', null, label), h('dd', null, text(blueprint[key]) || '待补充')))),
@@ -382,13 +445,35 @@ export function createExperienceView(React) {
           state.creationDirty ? button('保存草稿', () => controller.updateCreation(), { disabled: locked }) : null)));
     };
 
-    return h('div', { className: 'pfv_workspace pfv_current_workspace' },
-      h('nav', { className: 'pfv_workspace_nav', 'aria-label': '当前任务导航' }, button('返回首页', () => controller.showHome(), { disabled: locked, className: 'pfv_button pfv_quiet' }), h('span', { className: 'pfv_hint' }, text(state.executionWorkspaceLabel) || '当前工作区')),
-      h('section', { className: 'pfv_request_summary', 'aria-label': '本次需求' }, h('p', null, h('span', { className: 'pfv_hint' }, '你想做的事'), h('span', { className: 'pfv_request_text' }, short(request, 80))),
-        request.length > 80 ? disclosure('查看完整需求', paragraph(request)) : null,
-        !startingNew && !execution && text(state.intent?.goal) && state.intent.goal !== request ? h('p', null, h('span', { className: 'pfv_hint' }, '我的理解'), h('span', { className: 'pfv_understanding_text' }, short(state.intent.goal, 160))) : null),
-      h('section', { className: 'pfv_outcome', id: 'pfv_outcome', 'aria-labelledby': 'pfv_outcome_title', 'aria-busy': Boolean(followupBusy) },
-        h('div', { className: 'pfv_column_heading' }, h('h2', { id: 'pfv_outcome_title' }, startingNew ? '正在查找' : execution ? '本次运行' : isCreating ? '插件方案' : previousOutcome ? '上一版方案' : '当前方案'), startingNew ? null : h('span', { className: 'pfv_version' }, revisionLabel)),
-        statusLine, execution ? null : sourceNotice, h('div', { className: `pfv_outcome_document${execution ? ' pfv_outcome_live' : ''}` }, startingNew ? searchingView : execution ? h('div', { className: 'pfv_result_grid' }, h('div', { className: 'pfv_result_primary' }, executionView), h('aside', { className: 'pfv_solution_overview', 'aria-label': '本次能力方案' }, isCreating ? blueprintView() : planView())) : isCreating ? blueprintView() : h('section', { className: 'pfv_plan_hero', 'aria-label': '当前方案' }, expertPlanCard, planView())), execution || startingNew ? null : expertSection || followup, startingNew ? null : evidence));
+    const completedCreation = execution?.phase === 'completed' && execution.kind === 'use'
+      ? h('div', { className: 'pf8_acts' }, v8Action({ label: '创建自己的插件', onClick: () => controller.startCreation(), disabled: locked || !modelReady }))
+      : null;
+
+    const body = startingNew
+      ? searchingCard()
+      : execution
+        ? h('div', { className: 'pfv_result_grid' },
+          h('div', { className: 'pfv_result_primary' }, executionView),
+          h('aside', { className: 'pfv_solution_overview', 'aria-label': '本次能力方案' },
+            isCreating ? blueprintView() : h(React.Fragment, null, planCardArea(), completedCreation)))
+        : isCreating
+          ? blueprintView()
+          : h('section', { className: 'pf8_planwrap', 'aria-label': '当前方案' }, expertPlanCard, planCardArea());
+
+    return h('div', { className: 'pf_v8 pf8_findpage' },
+      h('div', { className: 'pf8_wrap pf8_narrow' },
+        h('div', { className: 'pf8_top' },
+          h(Lego, { kinds: ['mark'], className: 'pf8_brand', label: '发现好插件' }),
+          h('strong', null, '发现好插件'),
+          h('nav', { 'aria-label': '当前任务导航' },
+            h('button', { type: 'button', className: 'pf8_lk', disabled: locked, onClick: () => controller.showHome() }, '返回首页'),
+            h('span', { className: 'pf8_topmeta' }, text(state.executionWorkspaceLabel) || '当前工作区'),
+            more || null)),
+        previousOutcome ? h('p', { className: 'pf8_prev' }, '上一版方案', h('span', { className: 'pf8_tag' }, revisionLabel)) : null,
+        !startingNew && !execution && !showFindCard ? statusLine : null,
+        !execution && !showFindCard && (isCreating || !uncertainGap) ? sourceNotice : null,
+        h('div', { className: 'pf8_body', 'aria-busy': Boolean(followupBusy) }, body),
+        startingNew || execution ? null : reviseCard(),
+        startingNew ? null : evidence));
   };
 }

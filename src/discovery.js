@@ -105,6 +105,14 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
     });
   }
 
+  const validRetryAfter = value => {
+    const text = typeof value === 'string' ? value.trim() : '';
+    if (!text) return false;
+    if (/^\d+$/.test(text)) return Number(text) > 0;
+    const time = Date.parse(text);
+    return Number.isFinite(time) && time > Date.now();
+  };
+
   async function read(url, { signal, maxBytes = 512 * 1024, method = 'GET' } = {}) {
     abortIfNeeded(signal, lifetimeSignal);
     const target = new URL(url);
@@ -113,7 +121,26 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
     const response = await waitForHost(fetchImpl(target.href, { method, redirect: 'error', signal: AbortSignal.any(signals), headers: { 'User-Agent': 'dsh-plugin-finder/0.2 live-discovery', Accept: 'application/json, text/plain;q=0.8' } }), signal);
     abortIfNeeded(signal, lifetimeSignal);
     if (method === 'HEAD' && response.status === 404) return null;
-    if (!response.ok) throw new Error(`HTTP ${response.status} from ${target.hostname}`);
+    if (!response.ok) {
+      // Only authoritative signals are trusted: GitHub 429, an exhausted
+      // x-ratelimit-remaining, or a valid Retry-After. A tiny JSON body check was
+      // removed so a large or hostile body cannot be read, held or leave an open
+      // stream, and a phrase like "not a rate limit" can never match.
+      const status = response.status;
+      const host = target.hostname;
+      const github = host === 'api.github.com';
+      const error = new Error(`HTTP ${status} from ${host}`);
+      error.status = status; error.sourceHost = host;
+      if (status === 429) {
+        if (github) error.rateLimited = true;
+        else error.sourceRateLimited = true;
+      } else if (status === 403 && github) {
+        const remaining = response.headers.get('x-ratelimit-remaining');
+        const retryAfter = response.headers.get('retry-after');
+        error.rateLimited = remaining === '0' || validRetryAfter(retryAfter);
+      }
+      throw error;
+    }
     if (method === 'HEAD') return '';
     if (Number(response.headers.get('content-length')) > maxBytes) throw new Error('Source exceeds response size limit');
     const chunks = []; let bytes = 0;
@@ -395,7 +422,24 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
             for(const origin of origins)counts(origin).resolved++;
             if(requiresNoApiKey&&!['not-required','optional'].includes(entry.requirements.extraApiKey)){excluded++;for(const origin of origins)counts(origin).excluded++;const reason=entry.requirements.extraApiKey==='required'?'extra-key-required':'extra-key-unknown';excludedReasons[reason]=(excludedReasons[reason]??0)+1;return null;}
             entry.sourceTags = unique(row.origins ?? [row.origin]); return entry; }
-          catch (error) { abortIfNeeded(signal, lifetimeSignal);excluded++;for(const origin of origins)counts(origin).excluded++;const reason=authorSignal.aborted?'author-read-timeout':'author-unresolved';excludedReasons[reason]=(excludedReasons[reason]??0)+1;warnings.push(authorSignal.aborted?`${row.entry.name}: 作者资料读取超时，保留其他已读候选。`:String(error.message).slice(0, 300)); return null; }
+          catch (error) { abortIfNeeded(signal, lifetimeSignal);excluded++;for(const origin of origins)counts(origin).excluded++;
+            // Wrong HTTP status is not the same as "this plugin does not exist": keep the
+            // reason so the page can say whether GitHub limited us or the author is gone.
+            const detail=String(error?.message??'');
+            // Use the typed status/rate-limit signal from read(); a bare 403 is
+            // usually a permission denial, not throttling (npm answers 403 too).
+            const reason=authorSignal.aborted?'author-read-timeout'
+              :error?.rateLimited?'author-rate-limited'
+              :error?.sourceRateLimited?'author-source-limited'
+              :error?.status===404?'author-missing'
+              :error?.status===401?'author-unauthorized'
+              :error?.status===403?'author-forbidden'
+              :/incompatib|no compatible index version/iu.test(detail)?'author-incompatible'
+              :'author-unresolved';
+            excludedReasons[reason]=(excludedReasons[reason]??0)+1;
+            if(reason==='author-unresolved')warnings.push(String(detail).slice(0, 300));
+            else if(reason==='author-read-timeout')warnings.push(`${row.entry.name}: 作者资料读取超时，保留其他已读候选。`);
+            return null; }
         }));
         for (const result of results.filter(Boolean)) {
           const sameSource=candidates.find(entry=>sourceIdentity(entry)===sourceIdentity(result));
@@ -412,7 +456,15 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
         }
       }
       if (distinct.length > inspected) warnings.push(`本轮从来源匹配 ${distinct.length} 条候选，按相关性读取前 ${inspected} 条作者资料；尚未逐条核验全部候选。`);
+      const returnedCount=Math.min(candidates.length,6);
+      const returnedClause=returnedCount>0?'已返回的候选仍可用。':'这轮没有已返回的候选，也不能据此推断供给不存在。';
       if(requiresNoApiKey&&excludedReasons['extra-key-unknown'])warnings.push(`${excludedReasons['extra-key-unknown']} 个候选的免额外 Key 前提未确认，未直接推荐；不代表这些插件一定需要 Key。`);
+      if(excludedReasons['author-rate-limited'])warnings.push(`GitHub 这次限制了 ${excludedReasons['author-rate-limited']} 个候选的作者资料核对（请求过快），这些没有算进结果；${returnedClause}`);
+      if(excludedReasons['author-source-limited'])warnings.push(`${excludedReasons['author-source-limited']} 个候选的来源这次返回限流（HTTP 429），这些没有算进结果；${returnedClause}`);
+      if(excludedReasons['author-unauthorized'])warnings.push(`${excludedReasons['author-unauthorized']} 个候选的来源这次需要授权（HTTP 401），这些没有算进结果；${returnedClause}`);
+      if(excludedReasons['author-forbidden'])warnings.push(`${excludedReasons['author-forbidden']} 个候选的来源这次拒绝访问（HTTP 403），这些没有算进结果；${returnedClause}`);
+      if(excludedReasons['author-missing'])warnings.push(`${excludedReasons['author-missing']} 个候选的作者资料这次打不开（HTTP 404），这些没有算进结果；${returnedClause}`);
+      if(excludedReasons['author-incompatible'])warnings.push(`${excludedReasons['author-incompatible']} 个候选已判为与当前宿主不兼容，没有列进结果；它们当前不能装。`);
       const sourceCoverage=sources.map(source=>{const own=counts(source);return{sourceId:source.id,url:source.url,status:source.status,fetchedAt:source.fetchedAt,total:source.total,...('npmTotal'in source?{npmTotal:source.npmTotal,githubOnlyTotal:source.githubOnlyTotal,rejectedRows:source.rejectedRows}:{}),...own,uninspected:Math.max(0,own.matched-own.inspected),inspectionBudget};});
       return { candidates: distinctCandidateIds(candidates).slice(0, 6), sources, warnings: unique(warnings), searchedAt: iso(),coverage:{matched:distinct.length,inspected,resolved,excluded,excludedReasons,uninspected:distinct.length-inspected,returned:Math.min(candidates.length,6),inspectionBudget},sourceCoverage };
     },
