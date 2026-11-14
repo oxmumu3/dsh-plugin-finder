@@ -14,7 +14,7 @@ import { renderCreationGuide } from './creation-guide.js';
 import { createHistoryView } from './v8-history-view.js';
 import { finderCss } from './client-style.js';
 import { createExperienceView } from './experience-view.js';
-import { createMoreMenu } from './v8-menu.js';
+import { createConfirmDialog, createMoreMenu } from './v8-menu.js';
 import { experienceCss } from './experience-style.js';
 import { createCreatorFeedbackDraft, renderCreatorFeedbackDraft } from './creator-feedback.js';
 import { canRecheckPluginSource, renderPluginDetailView } from './plugin-detail-view.js';
@@ -1424,6 +1424,7 @@ export function apply(ctx) {
   // 在函数内创建会换掉组件类型、卸载旧节点，焦点随之丢失（015/016）。
   const MoreMenu = createMoreMenu(React);
   const HistoryView = createHistoryView(React);
+  const ConfirmDialog = createConfirmDialog(React);
   function FixedExecutionChat(props) {
     // ModuleLoader supplies the same official primitives singleton used by ui-chat.
     // Keep acquisition here so importing the controller in Node needs no UI runtime.
@@ -1522,6 +1523,8 @@ export function apply(ctx) {
     React.useEffect(() => { controller.ensureExpert(); }, [state.taskId]);
     const [feedbackOutcome, setFeedbackOutcome] = React.useState('');
     const [feedbackNote, setFeedbackNote] = React.useState('');
+    const [confirmModal, setConfirmModal] = React.useState(null);
+    const onRequestConfirm = typeof HTMLDialogElement !== 'undefined' ? spec => setConfirmModal(spec) : null;
     const active = React.useRef(true);
     const importInput = React.useRef(null);
     const telemetrySettings = React.useRef(null);
@@ -1660,7 +1663,7 @@ export function apply(ctx) {
           h('p', { className: 'pf_small pf_muted' }, `版本 ${version || '未声明'}${commit ? ` · 提交 ${commit.slice(0, 12)}` : ''}${details.compatibility ? ` · DSH ${details.compatibility}` : ''}${details.node ? ` · Node ${details.node}` : ''}`),
           requirements.length ? h('ul', { className: 'pf_list pf_small' }, ...requirements.map((item, index) => h('li', { key: index }, item))) : h('p', { className: 'pf_small pf_muted' }, '文档未列出完整使用前提，安装前请回来源核对。'),
           spec ? h('div', { className: 'pf_install' }, h('div', { className: 'pf_small pf_muted' }, '精确安装来源'), h('code', null, spec), h('div', { className: 'pf_actions' }, button('复制来源', () => copyText(spec)), button('去 DSH 插件页核对', () => controller.openPluginManager()))) : h('p', { className: 'pf_small pf_muted' }, '暂无可展示的精确安装来源，请先查看作者文档。'),
-          git ? h('p', { className: 'pf_small pf_muted' }, `固定在 ${git.commit.slice(0, 12)} 的仓库源码，安装时由 DSH 从仓库拉取。Finder 没有核对它的打包校验值。`) : null,
+          git ? h('p', { className: 'pf_small pf_muted' }, `固定在 ${git.commit.slice(0, 12)} 的仓库源码，安装时由 DSH 从仓库拉取。我没有核对它的打包校验值。`) : null,
           details.lifecycleWarning ? h('p', { className: 'pf_banner pf_small' }, details.lifecycleWarning) : null,
           details.buildPrerequisite ? h('p', { className: 'pf_banner pf_small' }, details.buildPrerequisite) : null,
           text(candidate.documentation?.readAt) ? h('p', { className: 'pf_small pf_muted' }, `作者资料读取：${candidate.documentation.readAt}${candidate.documentation.truncated ? ' · 有界节选，非全文' : ''}`) : null,
@@ -1679,7 +1682,7 @@ export function apply(ctx) {
           const git = fixedGitSource(candidate);
           return h('div', { className: 'pf_selected_plugin', key: candidate.id }, h('strong', null, text(candidate.name) || text(candidate.title) || candidate.id), h('p', { className: 'pf_small pf_muted' }, `版本 ${details.version || '未声明'}${details.commit ? ` · 提交 ${details.commit}` : ''}`),
             details.spec ? h('div', { className: 'pf_install' }, h('code', null, details.spec), button('复制安装来源', () => copyText(details.spec), { disabled: busy })) : h('p', { className: 'pf_small pf_error' }, '暂无精确安装来源，请先展开候选资料并核对作者说明，不能据此确认可安装。'),
-            git ? h('p', { className: 'pf_small pf_muted' }, `固定在 ${git.commit.slice(0, 12)} 的仓库源码，安装时由 DSH 从仓库拉取。Finder 没有核对它的打包校验值。`) : null,
+            git ? h('p', { className: 'pf_small pf_muted' }, `固定在 ${git.commit.slice(0, 12)} 的仓库源码，安装时由 DSH 从仓库拉取。我没有核对它的打包校验值。`) : null,
             details.lifecycleWarning ? h('p', { className: 'pf_banner pf_small' }, details.lifecycleWarning) : null,
             details.buildPrerequisite ? h('p', { className: 'pf_banner pf_small' }, details.buildPrerequisite) : null);
         })),
@@ -1723,9 +1726,10 @@ export function apply(ctx) {
       !state.catalogOpen && state.followupWarning ? h('p', { className: 'pf_banner pf_small', role: 'status' }, state.followupWarning) : null,
       !state.catalogOpen && state.resetPending && state.busy !== 'reset' ? h('div', { className: 'pf_banner pf_small', role: 'status' }, '开始新需求尚未确认，已有方案仍保留。', button('重试开始新需求', () => controller.retryReset(), { disabled: busy })) : null,
       !state.catalogOpen && busy && ['home', 'featured', 'history', 'creation-guide'].includes(state.view) && !state.searching ? h('div', { className: 'pf_status', role: 'status' }, h('span', { className: 'pf_spinner', 'aria-hidden': true }), { 'opportunity-adopt': '正在核对建议并查找方案…', 'creation-start': '正在评估复用机会并生成共创草案…', 'creation-update': '正在保存蓝图并按需重新核对供给…', 'creation-refine': '正在根据你的描述修改蓝图…', creator: '正在连接官方 Creator 并保留会话关联…', 'creator-save': '正在保存 Creator 原会话关联…', bootstrap: '正在读取连接与配置…', analyze: '正在理解目标、材料与约束…', recommend: '正在搜索来源、读取候选资料并推荐…', handoff: '正在连接选定工作区并准备未发送草稿…', feedback: '正在保存到本机…', reset: '正在保存并开始新需求…', history: '正在读取本机历史方案…', open: '正在打开所选方案与版本…', refine: '正在根据反馈重新理解需求…', import: '正在导入本机备份…', export: '正在导出任务备份…', continue: '正在核对原会话绑定…', 'handoff-save': '正在保存原会话关联…', 'telemetry-status': '正在读取同步状态…', 'telemetry-consent': '正在保存自动回传选择…', 'telemetry-delete': '正在停止回传并申请删除记录…' }[state.busy], button('取消', () => controller.cancel(), { className: 'pf_btn pf_text' })) : null,
-      h('div', { className: 'pfv_catalog_background', style: { display: state.catalogOpen ? 'none' : undefined }, 'aria-hidden': state.catalogOpen ? true : undefined }, state.view === 'featured' ? renderFeaturedView({ h, state, controller, copyText, busy, mode: 'detail' }) : state.view === 'history' ? h('div', null, h(HistoryView, { state, controller, busy, drafts: renderFeaturedView({ h, state, controller, copyText, busy, mode: 'drafts' }) })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, more: moreMenu, sections: { expertConversation: state.expertReference && SessionProvider && renderSlot ? h('div', { className: 'pf_expert_conversation', style: { minHeight: 420, height: 'min(70vh, 760px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.expertReference }, renderSlot('plugin-finder.expert', {}))) : null, executionConversation: state.executionReference && SessionProvider && renderSlot ? h('div', { className: 'pf_execution_conversation', style: { minHeight: 400, height: 'min(68vh, 720px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.executionReference }, renderSlot('plugin-finder.execution', {}))) : null, workspacePicker: !state.workspaceId ? h('label', { className: 'pf_label' }, '在哪个工作区完成', h('select', { 'aria-label': '任务工作区', value: state.workspaceId, disabled: busy || state.workspacePhase !== 'ready', onChange: event => controller.selectWorkspace(event.target.value) }, h('option', { value: '' }, '选择任务材料所在的工作区'), ...state.workspaces.map(item => h('option', { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } })),
-      state.catalogOpen ? renderPluginDetailView({ h, state, controller }) : null,
+      h('div', { className: 'pfv_catalog_background', style: { display: state.catalogOpen ? 'none' : undefined }, 'aria-hidden': state.catalogOpen ? true : undefined }, state.view === 'featured' ? renderFeaturedView({ h, state, controller, copyText, busy, mode: 'detail' }) : state.view === 'history' ? h('div', null, h(HistoryView, { state, controller, busy, drafts: renderFeaturedView({ h, state, controller, copyText, busy, mode: 'drafts' }) })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, more: moreMenu, onRequestConfirm, sections: { expertConversation: state.expertReference && SessionProvider && renderSlot ? h('div', { className: 'pf_expert_conversation', style: { minHeight: 420, height: 'min(70vh, 760px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.expertReference }, renderSlot('plugin-finder.expert', {}))) : null, executionConversation: state.executionReference && SessionProvider && renderSlot ? h('div', { className: 'pf_execution_conversation', style: { minHeight: 400, height: 'min(68vh, 720px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.executionReference }, renderSlot('plugin-finder.execution', {}))) : null, workspacePicker: !state.workspaceId ? h('label', { className: 'pf_label' }, '在哪个工作区完成', h('select', { 'aria-label': '任务工作区', value: state.workspaceId, disabled: busy || state.workspacePhase !== 'ready', onChange: event => controller.selectWorkspace(event.target.value) }, h('option', { value: '' }, '选择任务材料所在的工作区'), ...state.workspaces.map(item => h('option', { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } })),
+      state.catalogOpen ? renderPluginDetailView({ h, state, controller, onRequestConfirm }) : null,
       state.telemetrySettingsOpen ? telemetryView : null,
+      h(ConfirmDialog, { modal: confirmModal, workspaceId: state.workspaceId, workspaces: state.workspaces, onSelectWorkspace: id => controller.selectWorkspace(id), onDismiss: () => setConfirmModal(null) }),
       h('footer', { className: 'pf_footer' }, h(CreatorSettings), h('details', { className: 'pf_details' }, h('summary', null, '关于搜索、模型与本机记录'),
         h('p', null, '需求、方案和草稿保存在本机；历史方案可随时继续。自动回传默认关闭，可在「更多」中调整。'),
         h('p', null, `查找与起草使用 DSH 默认模型：${state.modelLabel || '尚未读取'}。沿用已有额度；浏览精选不调用模型。`),

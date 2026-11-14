@@ -1,3 +1,9 @@
+# 0.13.0（2026-11-14）
+
+- 围绕 `v9.2` 用户动线重构视觉与前端架构：统一 `--dsw-alias-*` 语义色板（`color-scheme: light dark` 与深浅回退）、零权重 `:where()` 基础重置、`@container finder` / `@container bricks` 自适应栅格与 `.pf_root` 滚动视口拥有权（`height: 100%; min-height: 0; overflow-y: auto; overscroll-behavior: contain`）。
+- 消除多代缝合与嵌套框噪音：解法卡、细节卡改为单层表面；积木拼装块（`.pf8_blk`）采用顶部双凸点与状态文字 + 整宽 `<code>`（`word-break: keep-all`），避免包名在窄栏中途折断；增加四段式来源筛选漏斗条与诚实限流/未完说明。
+- 对齐详情页原地问诊（先问问适不适合我）、`gap`/`hybrid` 3 行轻蓝图 + `<details>` 详细编辑器、创造模式陪做条分阶段 `dsh-plugin-lessons` 避坑指引，以及原生 `<dialog closedby="any">` 安装/工作区确认弹窗（含 `0.12.0-preview.23` 文案修正）。
+
 # 0.12.0-preview.22（2026-11-13）
 
 - 更新首页、方案、商店与详情。首页把通用示例与实际检查结果分开呈现；从详情返回商店时恢复原列表位置。

@@ -4,7 +4,7 @@
 export const v8Css = `
 /* —— 底座 —— */
 .pf_v8 { font: 15px/1.6 var(--sans); color: var(--ink); background: transparent; -webkit-font-smoothing: antialiased; }
-.pf_v8 * { box-sizing: border-box; }
+:where(.pf_v8 :is(div, section, article, header, footer, main, nav, aside, form, fieldset, details, summary, dialog, ul, ol, li, dl, dt, dd, h1, h2, h3, h4, p, span, b, strong, i, em, a, code, pre, button, input, textarea, select, label, svg)) { box-sizing: border-box; }
 .pf_v8 h1, .pf_v8 h2, .pf_v8 h3, .pf_v8 p, .pf_v8 ul, .pf_v8 ol { margin: 0; padding: 0; }
 .pf_v8 ul, .pf_v8 ol { list-style: none; }
 .pf_v8 button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; padding: 0; }
@@ -60,7 +60,7 @@ export const v8Css = `
 .pf_v8 .pf8_key .pf8_pc { --h: 19px; margin: 0 7px 0 0; }
 .pf_v8 .pf8_tries { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; align-items: center; font-size: 13px; color: var(--ink3); }
 .pf_v8 .pf8_pill { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 15px; border: 1px solid var(--line); color: var(--ink2); font-size: 13px; white-space: nowrap; }
-.pf_v8 .pf8_pill:hover { background: var(--hover); }
+.pf_v8 .pf8_pill:hover:not(:disabled) { background: var(--hover); }
 .pf_v8 .pf8_eglead { margin-top: 26px; font-size: 13px; color: var(--ink3); }
 .pf_v8 .pf8_eglead .pf8_lk { font-size: 13px; }
 /* 示例区：例句是可点的胶囊，只示范「可以这样说」，不和结果配对。
@@ -154,7 +154,7 @@ export const v8Css = `
 
 /* —— 按钮 —— */
 .pf_v8 .pf8_btn { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 18px; font-size: 13.5px; white-space: nowrap; border: 1px solid var(--line2); color: var(--ink); }
-.pf_v8 .pf8_btn:hover { background: var(--hover); }
+.pf_v8 .pf8_btn:hover:not(:disabled) { background: var(--hover); }
 .pf_v8 .pf8_btn.pf8_ink { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .pf_v8 .pf8_btn.pf8_ink:hover { opacity: .88; background: var(--primary); }
 .pf_v8 .pf8_btn.pf8_big { height: 42px; border-radius: 21px; padding: 0 20px; font-size: 14.5px; }
@@ -268,6 +268,7 @@ export const v8Css = `
 .pf_v8 .pf8_store_page:disabled { opacity: .4; cursor: default; }
 /* —— 外壳剩下的东西（SPEC 5.13）：一个底色、提示条、页底两个折叠入口。 —— */
 .pf_root.pf_v2, .pf_root.pf_v2:has(.pfv_home), .pf_root.pf_v2:has(.pf8_hero) { background: var(--dsw-alias-bg-base, #f8f8f6); }
+.pf_root.pf_v2 > .pf_inner { max-width: none; padding: 16px 0 0; }
 /* 外壳提示条：不依赖 .pf_v8 内部的变量，直接引用宿主 token 并带浅色回退；
    宽度等于各页正文的版心宽度（首页 1080-80、方案 860-80、商店/历史 920-80），
    left 与页内文字对齐；窄屏和版心用同一侧内缩。 */
@@ -339,7 +340,7 @@ export const v8Css = `
 .pf_v8 .pf8_detail_head h1 { font: 400 clamp(26px, 4cqw, 38px)/1.35 var(--serif); letter-spacing: .01em; }
 .pf_v8 .pf8_detail_head h1.pf8_detail_long { font: 400 clamp(21px, 3.2cqw, 26px)/1.5 var(--serif); }
 .pf_v8 .pf8_detail_lead { margin-top: 12px; max-width: 720px; color: var(--ink2); font-size: 15px; line-height: 1.75; }
-.pf_v8 .pf8_detail_block { margin-top: 22px; padding: 18px 20px; border: 1px solid color-mix(in srgb, var(--have) 24%, var(--line)); border-radius: 14px; background: color-mix(in srgb, var(--have) 7%, var(--card)); }
+.pf_v8 .pf8_detail_block { margin-top: 22px; padding: 16px 20px; border: 0; border-left: 2.5px solid var(--have); border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--have) 7%, var(--card)); }
 .pf_v8 .pf8_detail_block code { font: 15px/1.6 var(--mono); overflow-wrap: anywhere; }
 .pf_v8 .pf8_detail_block p { margin-top: 5px; color: var(--ink2); font-size: 12.5px; }
 .pf_v8 .pf8_detail_install { margin-top: 26px; }
@@ -386,17 +387,29 @@ export const v8Css = `
 .pf_v8 .pf8_card_mini .pf8_verdict { font-size: clamp(21px, 3.2cqw, 26px); }
 .pf_v8 .pf8_card_mini .pf8_fit { margin-top: 18px; }
 
-/* 拼出来的那一排：块与块之间留 8px，不互相压住。 */
-.pf_v8 .pf8_fit { display: flex; gap: 8px; margin-top: 28px; }
-.pf_v8 .pf8_blk { position: relative; flex: 1 1 0; min-width: 0; padding: 16px 20px 15px; border-radius: 18px; border: 1.3px solid transparent; }
-.pf_v8 .pf8_blk code { display: block; font: 600 14px/1.45 var(--mono); overflow-wrap: anywhere; }
+/* 拼出来的那一排：整行包在 @container bricks 内，全宽 code 在状态徽标下一行完整展示，不断词。 */
+.pf_v8 .pf8_fit_wrap { margin-top: 28px; container-type: inline-size; container-name: bricks; }
+.pf_v8 .pf8_card_mini .pf8_fit_wrap, .pf_v8 .pf8_tentative .pf8_fit_wrap { margin-top: 18px; }
+.pf_v8 .pf8_fit { display: flex; align-items: stretch; gap: 0; margin-top: 0; }
+.pf_v8 .pf8_blk { position: relative; flex: 1 1 0; min-width: 0; padding: 14px 18px; border-radius: 16px; border: 1.3px solid transparent; display: flex; flex-direction: column; gap: 4px; }
+.pf_v8 .pf8_blk_top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.pf_v8 .pf8_blk_studs { display: inline-flex; gap: 5px; align-items: center; flex: none; }
+.pf_v8 .pf8_blk_studs i { display: block; width: 9px; height: 4px; border-radius: 2px 2px 0 0; }
+.pf_v8 .pf8_blk.have .pf8_blk_studs i { background: var(--have); opacity: .75; }
+.pf_v8 .pf8_blk.build .pf8_blk_studs i { border: 1px dashed var(--build); background: transparent; height: 5px; }
+.pf_v8 .pf8_blk.native .pf8_blk_studs i { background: var(--line2); }
+.pf_v8 .pf8_bstat { font-size: 11px; line-height: 1.3; font-weight: 500; white-space: nowrap; color: var(--ink3); }
+.pf_v8 .pf8_blk.have .pf8_bstat { color: color-mix(in srgb, var(--have) 88%, var(--ink)); }
+.pf_v8 .pf8_blk.build .pf8_bstat { color: color-mix(in srgb, var(--build) 78%, var(--ink)); }
+.pf_v8 .pf8_blk code { display: block; width: 100%; font: 600 13.5px/1.45 var(--mono); word-break: keep-all; overflow-wrap: break-word; }
 .pf_v8 .pf8_blk code .pf8_pc { --h: 19px; margin: -3px 5px -3px -3px; vertical-align: -3px; }
-.pf_v8 .pf8_blk span { display: block; margin-top: 4px; font-size: 13px; line-height: 1.5; color: var(--ink2); }
-.pf_v8 .pf8_blk .pf8_blk_ver { color: var(--ink2); font-size: 12px; font-variant-numeric: tabular-nums; }
-.pf_v8 .pf8_blk em { display: block; margin-top: 8px; font-style: normal; font-size: 11.5px; color: var(--ink2); }
+.pf_v8 .pf8_blk span { display: block; margin-top: 2px; font-size: 13px; line-height: 1.5; color: var(--ink2); }
+.pf_v8 .pf8_blk .pf8_blk_ver { color: var(--ink3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pf_v8 .pf8_blk em { display: block; margin-top: auto; padding-top: 4px; font-style: normal; font-size: 11.5px; color: var(--ink2); }
+.pf_v8 .pf8_conn { display: flex; align-items: center; justify-content: center; flex: none; width: 22px; font: 600 15px/1 var(--sans); color: var(--ink4); user-select: none; }
 .pf_v8 .pf8_blk.have { background: color-mix(in srgb, var(--have) 9%, transparent); border-color: color-mix(in srgb, var(--have) 55%, transparent); }
 .pf_v8 .pf8_blk.build { background: color-mix(in srgb, var(--build) 8%, transparent); border: 1.3px dashed var(--build); }
-.pf_v8 .pf8_blk.build code { font-family: var(--sans); color: var(--build); }
+.pf_v8 .pf8_blk.build code { font-family: var(--sans); color: color-mix(in srgb, var(--build) 78%, var(--ink)); }
 .pf_v8 .pf8_blk.native { border-color: var(--line2); }
 
 .pf_v8 .pf8_sub { margin-top: 26px; font-size: 13px; font-weight: 600; color: var(--ink2); }
@@ -474,9 +487,7 @@ export const v8Css = `
 @container finder (max-width: 700px) {
   .pf_v8 .pf8_card { padding: 24px 20px 20px; border-radius: 20px; }
   .pf_v8 .pf8_card.pf8_revise { padding: 20px 18px 16px; }
-  .pf_v8 .pf8_fit { flex-direction: column; gap: 8px; margin-top: 22px; }
-  .pf_v8 .pf8_blk { flex: none; min-width: 0; }
-  .pf_v8 .pf8_blk + .pf8_blk { margin-left: 0; margin-top: 0; padding-left: 20px; padding-top: 16px; }
+  .pf_v8 .pf8_fit_wrap { margin-top: 22px; }
   .pf_v8 .pf8_rej li { grid-template-columns: 22px minmax(0, 1fr); }
   .pf_v8 .pf8_rej span { grid-column: 2; }
   .pf_v8 .pf8_src li { grid-template-columns: 22px minmax(0, 1fr); }
@@ -488,6 +499,56 @@ export const v8Css = `
   .pf_v8 .pf8_top nav { margin-left: 0; }
   .pf_v8 .pf8_verdict { font-size: clamp(23px, 7cqw, 30px); }
   .pf_v8 .pf8_acts .pf8_btn { width: 100%; justify-content: center; }
+  .pf_v8 .pf8_bp_row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }
+@container bricks (max-width: 520px) {
+  .pf_v8 .pf8_fit { flex-direction: column; gap: 6px; }
+  .pf_v8 .pf8_conn { width: auto; height: 14px; font-size: 13px; }
+  .pf_v8 .pf8_blk { flex: none; min-width: 0; }
+}
+
+/* —— v9.2 统一视觉牵引：漏斗、演化卡、商店占比、详情快速核对、扁平单层、原生弹窗 —— */
+.pf_v8 .pf8_tentative { margin-top: 14px; padding: 14px 16px; border: 0; border-left: 2px solid var(--line2); border-radius: 0 12px 12px 0; background: var(--subtle); }
+.pf_v8 .pf8_tentative .pf8_verdict { font-size: clamp(19px, 3cqw, 23px); }
+.pf_v8 .pf8_funnel { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 20px; padding: 10px 14px; border-radius: 12px; background: var(--subtle); font-size: 12.5px; color: var(--ink2); }
+.pf_v8 .pf8_fstep { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
+.pf_v8 .pf8_fstep b { font: 600 12.5px/1.2 var(--sans); font-variant-numeric: tabular-nums; color: var(--ink); }
+.pf_v8 .pf8_fstep[data-kind="selected"] b { color: color-mix(in srgb, var(--have) 88%, var(--ink)); }
+.pf_v8 .pf8_fstep[data-kind="warn"] b { color: color-mix(in srgb, var(--build) 78%, var(--ink)); }
+.pf_v8 .pf8_fsep { color: var(--ink4); font-size: 12px; }
+.pf_v8 .pf8_evo_bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 22px; padding: 10px 14px; border-left: 2.5px solid var(--build); border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--build) 7%, var(--card)); font-size: 13px; color: var(--ink2); }
+.pf_v8 .pf8_evo_pill { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: color-mix(in srgb, var(--build) 16%, transparent); color: color-mix(in srgb, var(--build) 78%, var(--ink)); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.pf_v8 .pf8_blueprint { margin-top: 12px; padding: 14px 16px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+.pf_v8 .pf8_bp_row { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; align-items: baseline; font-size: 13px; line-height: 1.65; }
+.pf_v8 .pf8_bp_row dt { color: var(--ink3); font-size: 12px; }
+.pf_v8 .pf8_bp_row dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.pf_v8 .pf8_store_shares { margin-top: 18px; display: grid; gap: 7px; max-width: 520px; }
+.pf_v8 .pf8_store_srow { display: grid; grid-template-columns: minmax(76px, auto) minmax(0, 1fr) auto; align-items: center; gap: 10px; font-size: 12px; color: var(--ink3); }
+.pf_v8 .pf8_store_sbar { height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.pf_v8 .pf8_store_sfill { display: block; height: 100%; border-radius: inherit; background: color-mix(in srgb, var(--have) 62%, transparent); }
+.pf_v8 .pf8_store_scnt { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pf_v8 .pf8_fit_inline { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+.pf_v8 .pf8_fit_inline > summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; cursor: pointer; list-style: none; font-size: 13px; color: var(--ink2); }
+.pf_v8 .pf8_fit_inline > summary::-webkit-details-marker { display: none; }
+.pf_v8 .pf8_fit_inline > summary::before { content: ""; display: inline-block; width: 0; height: 0; border-left: 5px solid currentColor; border-top: 4px solid transparent; border-bottom: 4px solid transparent; }
+.pf_v8 .pf8_fit_inline[open] > summary::before { vertical-align: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid currentColor; border-bottom: 0; }
+.pf_v8 .pf8_fit_badge { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11.5px; font-weight: 500; background: var(--subtle); color: var(--ink2); }
+.pf_v8 .pf8_fit_badge[data-tone="ok"] { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+.pf_v8 .pf8_fit_badge[data-tone="warn"] { color: color-mix(in srgb, var(--build) 78%, var(--ink)); background: color-mix(in srgb, var(--build) 12%, transparent); }
+.pf_v8 .pf8_fit_grid { margin-top: 12px; }
+.pf_v8 .pfv_plugin_error { margin-top: 18px; padding: 12px 16px; border: 0; border-left: 2.5px solid var(--err); border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--err) 7%, var(--card)); font-size: 13.5px; }
+.pf_v8 .pf8_folds :is(.pf_coverage, .pf_task_history, .pf_candidate, .pf_install) { border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 14px 0; margin: 10px 0 0; background: transparent; box-shadow: none; }
+.pf_modal_head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pf_modal_head h2 { margin: 0; font: 400 22px/1.4 var(--serif); color: var(--ink); }
+.pf_modal_x { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); color: var(--ink2); display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.pf_modal_x:hover:not(:disabled) { background: var(--hover); color: var(--ink); }
+.pf_modal_body { margin-top: 10px; font-size: 14px; line-height: 1.7; color: var(--ink2); }
+.pf_modal_facts { margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--subtle); display: grid; gap: 6px; font-size: 13px; }
+.pf_modal_facts > div { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; }
+.pf_modal_facts dt { color: var(--ink3); }
+.pf_modal_facts dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.pf_modal_ws { margin-top: 14px; display: grid; gap: 6px; font-size: 13px; color: var(--ink2); }
+.pf_modal_ws select { width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; }
+.pf_modal_acts { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 
 `;

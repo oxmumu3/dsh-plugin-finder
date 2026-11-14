@@ -59,7 +59,7 @@ export function canRecheckPluginSource(detail) {
 }
 
 /** One plugin identity, one action, no search draft or generated plan. */
-export function renderPluginDetailView({ h, state, controller }) {
+export function renderPluginDetailView({ h, state, controller, onRequestConfirm }) {
   const selection = state.catalogSelection;
   const fallback = selection?.collection === 'featured' ? featuredCatalog.find(entry => entry.id === selection.entryId) : getCommunityEntry(selection?.entryId);
   const detail = state.catalogDetail;
@@ -102,13 +102,32 @@ export function renderPluginDetailView({ h, state, controller }) {
   const terminalProblem = Object.hasOwn(problemMessages, installation?.code ?? '');
   const canInstall = detail?.installable === true && !unsupported && ['not-installed', 'installed-disabled', 'failed'].includes(phase) && !terminalProblem;
   const button = (label, onClick, props = {}) => h('button', { type: 'button', className: 'pf8_btn', onClick, ...props }, label);
+  const triggerInstall = () => {
+    if (typeof onRequestConfirm !== 'function') return controller.installCatalogPlugin();
+    const enableOnly = phase === 'installed-disabled';
+    return onRequestConfirm({
+      title: enableOnly ? '启用这个插件？' : '安装前确认',
+      body: enableOnly
+        ? '这个插件已在本机目录中，确认后会启用并尝试接入当前 DSH。'
+        : '装之前我会再核对作者、版本与当前 DSH 兼容范围；对不上会停下来告诉你，不会覆盖冲突插件。',
+      facts: [
+        { label: '插件', value: displayName(name) },
+        version ? { label: '版本', value: version } : null,
+        author ? { label: '作者', value: author } : null,
+        repository ? { label: '来源', value: repository } : null,
+      ].filter(Boolean),
+      confirmLabel: enableOnly ? '确认启用' : phase === 'failed' ? '重试安装' : '确认安装',
+      cancelLabel: '先不装',
+      onConfirm: () => controller.installCatalogPlugin(),
+    });
+  };
   const action = ready ? button('已安装', () => {}, { className: 'pf8_btn pf8_ink', disabled: true })
     : busy ? button(state.catalogBusy === 'install' ? (phase === 'installed-disabled' ? '正在启用…' : '正在安装…') : state.catalogBusy === 'status' ? '正在核对…' : '正在读取详情…', () => {}, { className: 'pf8_btn pf8_ink', disabled: true })
       : unsupported ? button('这个版本装不了', () => {}, { disabled: true })
       : primarySourceRetry ? button('重新核对来源', () => controller.refreshCatalogPlugin(), {className:'pf8_btn pf8_ink'})
       : localInstalled ? button(installation.componentOnly ? '已安装配套组件' : '已安装（来源待核对）', () => {}, {disabled:true})
       : installedConflict ? button(sameVersionConflict ? '已安装（来源不同）' : actualVersion ? '已安装其他版本' : '已安装同名插件', () => {}, { disabled: true })
-        : canInstall ? button(phase === 'installed-disabled' ? '启用插件' : phase === 'failed' ? '重试安装' : '安装插件', () => controller.installCatalogPlugin(), { className: 'pf8_btn pf8_ink' })
+        : canInstall ? button(phase === 'installed-disabled' ? '启用插件' : phase === 'failed' ? '重试安装' : '安装插件', triggerInstall, { className: 'pf8_btn pf8_ink' })
         : terminalProblem ? button('核对安装状态', () => controller.refreshCatalogPlugin(), {className:'pf8_btn pf8_ink'})
         : phase === 'unavailable' || detail && !detail.installable && !['conflict', 'unknown', 'installing'].includes(phase) ? button(unpublishedSource(detail) ? '暂未提供安装版本' : '当前版本暂不可安装', () => {}, { disabled: true })
           : button(detail ? '核对安装状态' : '重新读取详情', () => controller.refreshCatalogPlugin(), { className: 'pf8_btn pf8_ink' });
@@ -167,7 +186,22 @@ export function renderPluginDetailView({ h, state, controller }) {
               ? factRow('留意', h('ul', { className: 'pf8_detail_list' }, ...[...requirements, ...limitations].map((value, index) => h('li', { key: index }, value))))
               : null,
             repository ? factRow('来源', `GitHub 上的 ${repository}${versionLabel}。`) : null,
-            factRow('还没核对的', '上面的介绍是作者自己写的。装之前我会核对作者、版本和兼容，对不上就停下来告诉你。'))),
+            factRow('还没核对的', unsupported
+              ? '上面的介绍是作者自己写的。'
+              : '上面的介绍是作者自己写的。装之前我会核对作者、版本和兼容，对不上就停下来告诉你。')),
+          h('details', { className: 'pf8_fit_inline' },
+            h('summary', null,
+              h('span', null, '本地兼容与来源快查'),
+              h('span', {
+                className: 'pf8_fit_badge',
+                'data-tone': ready ? 'ok' : unsupported || installedConflict ? 'warn' : 'neutral',
+              }, ready ? '本机已就绪' : unsupported ? '版本不兼容' : installedConflict ? '存在同名冲突' : detail?.compatibility?.status === 'compatible' ? '目录兼容' : '安装时实机核对')),
+            h('div', { className: 'pf8_fit_grid' },
+              h('dl', { className: 'pf8_factlist' },
+                factRow('当前宿主', text(state.bootstrap?.hostVersion) || '未读取（安装时按实机版本核对）'),
+                factRow('兼容记录', unsupported ? text(detail?.unavailableReason) || '当前宿主版本不兼容' : detail?.compatibility?.status === 'compatible' ? '已记录与当前方向兼容' : '暂无额外兼容阻断，安装前会再查'),
+                factRow('目标包名', text(installation?.packageName) || repository || displayName(name) || '待确认'),
+                factRow('本机状态', ready ? '已安装并启用' : localInstalled ? `${localState}${actualVersion ? `（${actualVersion}）` : ''}` : installedConflict ? `已有同名安装（${actualVersion || '版本未知'}）` : phase === 'installed-disabled' ? '已安装，未启用' : '尚未安装'))))),
         h('div', { className: 'pf8_detail_install' },
           h('div', { className: 'pf8_detail_actions' },
             action,

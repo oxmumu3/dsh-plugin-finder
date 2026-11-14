@@ -171,6 +171,21 @@ export function hybridInstallCopy(count) {
   return '先装好现成的，再在发现好插件里补缺的。';
 }
 
+/** 真实来源漏斗：只收录有真实正数或已选状态的阶段，不编数字。 */
+export function sourceFunnelSteps({ discovery, candidates, plan } = {}) {
+  const total = sourceReadTotal(discovery);
+  const fetched = records(candidates).length;
+  const selected = items(plan?.pluginIds).length;
+  const gapCount = plan?.kind === 'gap' ? (records(plan?.gaps).length || 1) : plan?.kind === 'hybrid' ? records(plan?.gaps).length : 0;
+  const steps = [];
+  if (total > 0) steps.push({ id: 'catalog', label: '翻看目录', value: countText(total), kind: 'neutral' });
+  if (fetched > 0) steps.push({ id: 'candidates', label: '核对候选', value: `${countText(fetched)} 个`, kind: 'neutral' });
+  if (selected > 0) steps.push({ id: 'selected', label: '选中可用', value: `${countText(selected)} 个`, kind: 'selected' });
+  else if (plan?.kind === 'native' && total > 0) steps.push({ id: 'native', label: '直接可用', value: 'DSH 原生', kind: 'selected' });
+  if (gapCount > 0) steps.push({ id: 'build', label: '补齐缺口', value: `${countText(gapCount)} 块`, kind: 'warn' });
+  return steps;
+}
+
 export function createPlanSurface(React) {
   const h = React.createElement;
   const Lego = createLego(React);
@@ -187,13 +202,15 @@ export function createPlanSurface(React) {
   /** 5.8 解法卡：一张卡能单独截图讲清楚。 */
   const solution = ({
     request, understanding, quoteLabel = '你说：', plan, candidates, actions = [], discovery,
-    searchedAt, note = '', tag = '', showSignature = true, compact = false,
+    searchedAt, note = '', tag = '', showSignature = true, compact = false, embedded = false,
   }) => {
     const blocks = planBlocks({ plan, candidates, request });
     const count = sourceReadTotal(discovery);
     const read = records(candidates).length;
     const selected = new Set(items(plan?.pluginIds));
     const rejected = records(candidates).filter(candidate => !selected.has(candidate.id) && text(candidate.summary));
+    const funnel = sourceFunnelSteps({ discovery, candidates, plan });
+    const showFunnel = !compact && !embedded && funnel.length >= 2;
     const numberLine = count && read
       ? `从社区目录的 ${countText(count)} 个里筛出 ${countText(read)} 个候选。`
       : count ? `为这件事翻了社区目录里的 ${countText(count)} 个。`
@@ -205,8 +222,30 @@ export function createPlanSurface(React) {
       hybrid: ['现成的拼起来，再补一块', [...blocks.map(block => block.kind)]],
       gap: ['没有现成的，我陪你做', ['build']],
     }[plan?.kind] || ['', []];
+    const showEvolution = !compact && !embedded && (plan?.kind === 'gap' || plan?.kind === 'hybrid');
+    const blueprintRows = showEvolution ? [
+      ['目标', planShortTitle(request, 40) || text(plan?.title)],
+      ['要补的能力', records(plan?.gaps).map(gap => text(gap.capability)).filter(Boolean).join('、') || (plan?.kind === 'gap' ? planShortTitle(request, 32) : '')],
+      ['落地形态', records(plan?.steps).slice(0, 3).map(step => text(step.capability)).filter(Boolean).join(' → ') || text(plan?.rationale)],
+    ].filter(([, value]) => value) : [];
+    const blockChildren = [];
+    blocks.forEach((block, index) => {
+      if (index > 0) blockChildren.push(h('span', { key: `conn-${index}`, className: 'pf8_conn', 'aria-hidden': 'true' }, '+'));
+      blockChildren.push(h('div', { key: `${block.kind}-${index}`, className: `pf8_blk ${block.kind}` },
+        h('div', { className: 'pf8_blk_top' },
+          h('span', { className: 'pf8_blk_studs', 'aria-hidden': 'true' }, h('i', null), h('i', null)),
+          h('span', { className: 'pf8_bstat' }, BLOCK_STATE[block.kind] || '')),
+        h('code', null, text(block.name)),
+        block.note ? h('span', null, text(block.note)) : null,
+        block.version ? h('span', { className: 'pf8_blk_ver' }, `现在是 ${block.version} 版`) : null));
+    });
 
-    return h('article', { className: `pf8_card${compact ? ' pf8_card_mini' : ''}`, 'aria-label': '解法卡', id: 'pf8_card' },
+    const cardTag = embedded ? 'div' : 'article';
+    const cardProps = embedded
+      ? { className: 'pf8_tentative' }
+      : { className: `pf8_card${compact ? ' pf8_card_mini' : ''}`, 'aria-label': '解法卡', id: 'pf8_card' };
+
+    return h(cardTag, cardProps,
       text(request) ? h('p', { className: 'pf8_q' }, quoteLabel, h('b', null, `「${text(request)}」`)) : null,
       text(understanding) && understanding !== request
         ? h('p', { className: 'pf8_q pf8_under' }, '我的理解：', h('b', null, text(understanding)))
@@ -215,14 +254,18 @@ export function createPlanSurface(React) {
         types[1].length ? h(Lego, { kinds: types[1], label: types[0] }) : null,
         text(plan?.title) || types[0] || '这份方案'),
       text(plan?.rationale) ? h('p', { className: 'pf8_why' }, text(plan.rationale)) : null,
-      blocks.length ? h('div', { className: 'pf8_fit' }, ...blocks.map((block, index) => h('div', {
-        key: `${block.kind}-${index}`, className: `pf8_blk ${block.kind}`,
-      },
-      h('code', null, block.kind === 'native' ? null : brick(block.kind), text(block.name)),
-      block.note ? h('span', null, text(block.note)) : null,
-      block.version ? h('span', { className: 'pf8_blk_ver' }, `现在是 ${block.version} 版`) : null,
-      h('em', null, BLOCK_STATE[block.kind] || '')))) : null,
-      numberLine ? h('p', { className: 'pf8_count' }, numberLine) : null,
+      blocks.length ? h('div', { className: 'pf8_fit_wrap' }, h('div', { className: 'pf8_fit' }, ...blockChildren)) : null,
+      showEvolution ? h('div', { className: 'pf8_evo_bar' },
+        h('span', { className: 'pf8_evo_pill' }, plan.kind === 'hybrid' ? '接力演化 · 半成配补' : '从零补齐 · 创造蓝图'),
+        h('span', null, plan.kind === 'hybrid' ? '现有插件能扛住主流程，只按缺口补一块薄能力。' : '社区里没现成的整套插件，我先按你的目标起一份能落地的最小蓝图。')) : null,
+      blueprintRows.length ? h('dl', { className: 'pf8_blueprint' },
+        ...blueprintRows.map(([label, value]) => h('div', { key: label, className: 'pf8_bp_row' }, h('dt', null, label), h('dd', null, value)))) : null,
+      showFunnel ? h('div', { className: 'pf8_funnel', role: 'group', 'aria-label': '筛选漏斗' },
+        ...funnel.flatMap((step, index) => [
+          index > 0 ? h('span', { key: `sep-${step.id}`, className: 'pf8_fsep', 'aria-hidden': 'true' }, '→') : null,
+          h('span', { key: step.id, className: 'pf8_fstep', 'data-kind': step.kind }, step.label, ' ', h('b', null, step.value)),
+        ].filter(Boolean)))
+        : numberLine ? h('p', { className: 'pf8_count' }, numberLine) : null,
       rejected.length ? h(React.Fragment, null,
         h('p', { className: 'pf8_sub' }, '也看过这几个'),
         h('ul', { className: 'pf8_rej' }, ...rejected.map((candidate, index) => h('li', { key: text(candidate.id) || index },
@@ -265,7 +308,11 @@ export function createPlanSurface(React) {
           h('code', null, row.title), h('span', null, row.say))))
         : h('p', { className: 'pf8_fine' }, '这次没有留下可展示的来源记录。'),
       actions.length ? h('div', { className: 'pf8_acts' }, ...actions.filter(action => action && text(action.label)).map(actionButton)) : null,
-      h('p', { className: 'pf8_next' }, '再查一次通常就好。你说的话和已经读到的内容都留着，不用重新输入。'),
+      h('p', { className: 'pf8_next' }, (() => {
+        const reasons = discovery?.coverage?.excludedReasons ?? {};
+        const limited = ['author-rate-limited', 'author-source-limited'].some(reason => Number(reasons[reason]) > 0);
+        return limited ? '过几分钟再查。你说的话和已经读到的内容都留着，不用重新输入。' : '可以再查一次。你说的话和已经读到的内容都留着，不用重新输入。';
+      })()),
       tentative ? h('details', { className: 'pf8_disclosure' },
         h('summary', { className: 'pf8_lk' }, '先看读到的'),
         h('div', { className: 'pf8_disclosure_body' },
@@ -283,5 +330,5 @@ export function createPlanSurface(React) {
     }, option))),
     h('p', { className: 'pf8_fine' }, '也可以在下面补充你的想法。'));
 
-  return { solution, searching, incomplete, clarification, planBlocks, planSourceRows };
+  return { solution, searching, incomplete, clarification, planBlocks, planSourceRows, sourceFunnelSteps };
 }

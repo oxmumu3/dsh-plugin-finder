@@ -59,7 +59,7 @@ dsh plugin --profile web add @oxmumu3/dsh-plugin-finder
 
 ## 版本与兼容
 
-`@oxmumu3/dsh-plugin-finder@0.12.0-preview.22` 支持官方 Harness `0.2.1-rc.5`、`0.2.2-rc.1`、`0.2.2-rc.2` 和 `0.2.2-rc.3`，插件的 Node 范围为 `^22.19.0 || >=24.0.0`。请使用各官方宿主发行版所配套的 SDK 和 Node。当前兼容范围以[安装说明](docs/install.md)为准。
+`@oxmumu3/dsh-plugin-finder@0.13.0` 支持官方 Harness `0.2.1-rc.5`、`0.2.2-rc.1`、`0.2.2-rc.2` 和 `0.2.2-rc.3`，插件的 Node 范围为 `^22.19.0 || >=24.0.0`。请使用各官方宿主发行版所配套的 SDK 和 Node。当前兼容范围以[安装说明](docs/install.md)为准。
 
 Finder 沿用宿主配置的模型与账户，无需另填模型 Key；理解需求、检索、补齐和执行会使用相应额度。第三方插件可能另有服务、授权与费用。
 

@@ -92,6 +92,10 @@ export function createCommunityView(React) {
           note ? h('small', null, note) : null),
         h('span', { className: 'pf8_store_v' }, version || '版本未记录')));
     };
+    const shareTotal = Math.max(1, categories.reduce((sum, item) => sum + Number(item.count || 0), 0));
+    const topShares = !view.categoryId && !view.query
+      ? [...categories].filter(item => Number(item.count) > 0).sort((a, b) => Number(b.count) - Number(a.count)).slice(0, 5)
+      : [];
     return h('section', { className: 'pfv_community pf8_store pf_v8', 'aria-labelledby': 'pfv_community_title' },
       h('div', { className: 'pf8_wrap pf8_shopw' },
         h('button', { type: 'button', className: 'pf8_lk pf8_store_back', onClick: back }, '返回'),
@@ -99,7 +103,16 @@ export function createCommunityView(React) {
           h('h1', { id: 'pfv_community_title', ref: title, tabIndex: -1 }, '插件商店'),
           h('p', null, snapshot
             ? `这份目录是 ${snapshot} 存下来的，共 ${count(overview.total)} 个。介绍是作者自己写的，装之前我会再核对一遍。`
-            : '介绍是作者自己写的，装之前我会再核对一遍。')),
+            : '介绍是作者自己写的，装之前我会再核对一遍。'),
+          topShares.length ? h('div', { className: 'pf8_store_shares', 'aria-label': '主要分类占比' },
+            ...topShares.map(category => {
+              const pct = Math.max(3, Math.round((Number(category.count || 0) / shareTotal) * 100));
+              return h('div', { key: `share-${category.id}`, className: 'pf8_store_srow' },
+                h('span', null, category.label),
+                h('div', { className: 'pf8_store_sbar', 'aria-hidden': 'true' },
+                  h('span', { className: 'pf8_store_sfill', style: { width: `${pct}%` } })),
+                h('span', { className: 'pf8_store_scnt' }, `${count(category.count)} 个`));
+            })) : null),
         h('label', { className: 'pf8_store_search' }, h('span', { className: 'pf8_sr' }, '搜索插件'),
           h('input', {
             type: 'search', value: view.query, maxLength: 200, placeholder: '搜插件名、作者或用途',

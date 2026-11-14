@@ -50,7 +50,10 @@ export function experienceSourceHealth(discovery) {
   const returned = Number.isFinite(discovery.coverage?.returned) ? discovery.coverage.returned : null;
   const noneBack = returned === 0;
   const sourceTrouble = ['failed', 'partial', 'incomplete'].includes(discovery.status) || sources.some(source => ['failed', 'stale', 'partial'].includes(source.status));
-  const tail = noneBack ? '这轮没有已返回的候选，也不能据此推断供给不存在。' : '已返回的候选仍可用，不能据此说没有更合适的。';
+  const foundTail = '已经找到的照常能用，但不代表没有更合适的。';
+  const noneTail = '这次一个都没找到，但不代表没有合适的插件。';
+  const unknownTail = '当前判断仅基于已返回资料，不能据此确认没有合适的插件。';
+  const tail = noneBack ? noneTail : returned > 0 ? foundTail : unknownTail;
   const extra = sourceTrouble ? '另外，还有目录来源这次没读到，具体原因见来源明细。' : '';
   // A 403 is not GitHub throttling unless read() confirmed the rate-limit signal;
   // generic denials keep their own source-not-readable wording.
@@ -59,12 +62,12 @@ export function experienceSourceHealth(discovery) {
   if (excluded['author-unauthorized']) return { incomplete: true, message: `有 ${excluded['author-unauthorized']} 个候选的来源这次需要授权（HTTP 401），这些没算进结果；${extra}${tail}` };
   if (excluded['author-forbidden']) return { incomplete: true, message: `有 ${excluded['author-forbidden']} 个候选的来源这次拒绝访问（HTTP 403），这些没算进结果；${extra}${tail}` };
   if (excluded['author-missing']) return { incomplete: true, message: `有 ${excluded['author-missing']} 个候选的作者资料这次打不开（HTTP 404），这些没算进结果；${extra}${tail}` };
-  if (excluded['author-incompatible']) return { incomplete: true, message: `另有 ${excluded['author-incompatible']} 个候选已判为和当前宿主不兼容，没有列进结果；它们当前不能装。${noneBack ? '这轮没有已返回的候选，也不能据此推断供给不存在。' : ''}` };
-  if (sourceTrouble) return { incomplete: true, message: noneBack ? '这次没有读回可用候选：部分来源尚未查完，不能据此推断供给不存在。' : '部分来源尚未查完。当前判断仅基于已返回资料，不能据此确认没有合适的插件。' };
+  if (excluded['author-incompatible']) return { incomplete: true, message: `另有 ${excluded['author-incompatible']} 个候选已判为和当前宿主不兼容，没有列进结果；它们当前不能装。${noneBack ? '这次一个都没找到，但不代表没有合适的插件。' : ''}` };
+  if (sourceTrouble) return { incomplete: true, message: `部分来源尚未查完。${noneBack ? noneTail : returned > 0 ? foundTail : unknownTail}` };
   // A live index does not mean every match was read or its requirements verified.
   // Known exclusions (such as a required Key) are not unfinished evidence.
   if (coverage.some(item => positiveCount(item.uninspected) || ['author-read-timeout', 'author-unresolved', 'extra-key-unknown'].some(reason => positiveCount(item.excludedReasons?.[reason])))) {
-    return { incomplete: true, message: noneBack ? '部分候选尚未核对完整，这轮没有已返回的候选，也不能据此推断供给不存在。' : '部分候选尚未核对完整。当前判断仅基于已返回资料，不能据此确认没有合适的插件。' };
+    return { incomplete: true, message: `部分候选尚未核对完整。${noneBack ? noneTail : returned > 0 ? foundTail : unknownTail}` };
   }
   if (sources.some(source => source.status === 'cached')) return { incomplete: false, message: '部分来源使用缓存。可以展开搜索依据，核对资料的读取时间。' };
   return null;
@@ -106,7 +109,7 @@ export function createExperienceView(React) {
     }
   };
 
-  return function ExperienceView({ state, controller, busy = false, modelReady = false, copyText, sections = {}, more = null }) {
+  return function ExperienceView({ state, controller, busy = false, modelReady = false, copyText, sections = {}, more = null, onRequestConfirm }) {
     const homeInput = React.useRef(null);
     const startingNew = Boolean(state.searching);
     // Old saved guide routes still recover into the same creation surface.
@@ -307,14 +310,46 @@ export function createExperienceView(React) {
         ? () => controller.recommend()
         : () => { controller.setHomeRequest(request); void controller.searchHome(); },
     });
+    const confirmOrRun = (spec, run) => {
+      if (typeof onRequestConfirm === 'function') return onRequestConfirm({ ...spec, onConfirm: run });
+      return run();
+    };
+    const selectedPluginFacts = () => {
+      const selected = new Set(items(plan?.pluginIds));
+      const names = records(outcome?.candidates).filter(c => selected.has(c.id)).map(c => text(c.name) || text(c.id)).filter(Boolean);
+      const facts = [];
+      if (names.length) facts.push({ label: '用到插件', value: names.join('、') });
+      if (state.executionWorkspaceLabel) facts.push({ label: '工作区', value: text(state.executionWorkspaceLabel) });
+      return facts;
+    };
     const primaryAction = () => {
       if (uncertainGap) return retryAction();
       if (plan.kind === 'hybrid') return {
         label: '补齐并使用', primary: true, disabled: !canAct || workspacePending,
-        onClick: () => !workspacePending && (typeof controller.completeHybridPlan === 'function' ? controller.completeHybridPlan() : controller.startCreation()),
+        onClick: () => !workspacePending && confirmOrRun({
+          title: '先装现成插件，再补缺口？',
+          body: hybridInstallCopy(items(plan?.pluginIds).length),
+          facts: [
+            ...selectedPluginFacts(),
+            records(plan?.gaps).length ? { label: '待补能力', value: records(plan.gaps).map(g => text(g.capability)).filter(Boolean).join('、') } : null,
+          ].filter(Boolean),
+          showWorkspacePicker: true,
+          confirmLabel: '确认补齐并使用',
+          cancelLabel: '先看看',
+        }, () => (typeof controller.completeHybridPlan === 'function' ? controller.completeHybridPlan() : controller.startCreation())),
       };
       if (needsCreation) return { label: '创建自己的插件', primary: true, disabled: !canAct, onClick: () => controller.startCreation() };
-      return { label: '使用这个方案', primary: true, disabled: !canAct || workspacePending, onClick: () => !workspacePending && controller.runCurrentPlan() };
+      return {
+        label: '使用这个方案', primary: true, disabled: !canAct || workspacePending,
+        onClick: () => !workspacePending && confirmOrRun({
+          title: plan?.kind === 'native' ? '在工作区试跑这个方案？' : '确认使用这个方案？',
+          body: actionNote('使用这个方案'),
+          facts: selectedPluginFacts(),
+          showWorkspacePicker: true,
+          confirmLabel: plan?.kind === 'native' ? '确认执行' : '确认安装并使用',
+          cancelLabel: '先不装',
+        }, () => controller.runCurrentPlan()),
+      };
     };
 
     const solutionCard = () => {
@@ -391,7 +426,7 @@ export function createExperienceView(React) {
       ].filter(Boolean),
       tentative: plan ? planSurface.solution({
         request, understanding: '', plan, candidates: outcome.candidates, discovery, searchedAt,
-        actions: [], note: '', showSignature: false, compact: true,
+        actions: [], note: '', showSignature: false, compact: true, embedded: true,
       }) : null,
     });
 
@@ -432,7 +467,22 @@ export function createExperienceView(React) {
         clarification,
         showActions ? h(React.Fragment, null, workspacePicker, workspaceStatus,
           h('div', { className: 'pf8_acts' },
-            v8Action({ label: '开始创建', primary: true, onClick: () => !workspacePending && controller.createInWorkspace(), disabled: !canAct || workspacePending || Boolean(question) }),
+            v8Action({
+              label: '开始创建', primary: true,
+              onClick: () => !workspacePending && confirmOrRun({
+                title: '开始在工作区创建这个插件？',
+                body: '会先把当前方案存成草稿并交给执行对话，按五步陪做节奏推进。',
+                facts: [
+                  text(blueprint?.name) ? { label: '插件草稿', value: text(blueprint.name) } : null,
+                  text(blueprint?.purpose) ? { label: '目标', value: short(blueprint.purpose, 80) } : null,
+                  state.executionWorkspaceLabel ? { label: '工作区', value: text(state.executionWorkspaceLabel) } : null,
+                ].filter(Boolean),
+                showWorkspacePicker: true,
+                confirmLabel: '确认开始创建',
+                cancelLabel: '再改改',
+              }, () => controller.createInWorkspace()),
+              disabled: !canAct || workspacePending || Boolean(question),
+            }),
             v8Action({ label: '回看方案', onClick: () => controller.showFind(), disabled: locked })),
           h('p', { className: 'pf8_next' }, '会先在发现好插件里存一份草稿，再从第一步开始；随时可以回来改。')) : null,
         state.creationDirty ? h('p', { className: 'pf8_fine', role: 'status' }, '修改已保留，开始创建时会一并使用。') : null,

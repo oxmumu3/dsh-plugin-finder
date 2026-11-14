@@ -1704,6 +1704,8 @@ function createCommunityView(React2) {
         )
       );
     };
+    const shareTotal = Math.max(1, categories.reduce((sum, item) => sum + Number(item.count || 0), 0));
+    const topShares = !view.categoryId && !view.query ? [...categories].filter((item) => Number(item.count) > 0).sort((a, b) => Number(b.count) - Number(a.count)).slice(0, 5) : [];
     return h(
       "section",
       { className: "pfv_community pf8_store pf_v8", "aria-labelledby": "pfv_community_title" },
@@ -1715,7 +1717,25 @@ function createCommunityView(React2) {
           "div",
           { className: "pf8_store_title" },
           h("h1", { id: "pfv_community_title", ref: title, tabIndex: -1 }, "\u63D2\u4EF6\u5546\u5E97"),
-          h("p", null, snapshot ? `\u8FD9\u4EFD\u76EE\u5F55\u662F ${snapshot} \u5B58\u4E0B\u6765\u7684\uFF0C\u5171 ${count(overview.total)} \u4E2A\u3002\u4ECB\u7ECD\u662F\u4F5C\u8005\u81EA\u5DF1\u5199\u7684\uFF0C\u88C5\u4E4B\u524D\u6211\u4F1A\u518D\u6838\u5BF9\u4E00\u904D\u3002` : "\u4ECB\u7ECD\u662F\u4F5C\u8005\u81EA\u5DF1\u5199\u7684\uFF0C\u88C5\u4E4B\u524D\u6211\u4F1A\u518D\u6838\u5BF9\u4E00\u904D\u3002")
+          h("p", null, snapshot ? `\u8FD9\u4EFD\u76EE\u5F55\u662F ${snapshot} \u5B58\u4E0B\u6765\u7684\uFF0C\u5171 ${count(overview.total)} \u4E2A\u3002\u4ECB\u7ECD\u662F\u4F5C\u8005\u81EA\u5DF1\u5199\u7684\uFF0C\u88C5\u4E4B\u524D\u6211\u4F1A\u518D\u6838\u5BF9\u4E00\u904D\u3002` : "\u4ECB\u7ECD\u662F\u4F5C\u8005\u81EA\u5DF1\u5199\u7684\uFF0C\u88C5\u4E4B\u524D\u6211\u4F1A\u518D\u6838\u5BF9\u4E00\u904D\u3002"),
+          topShares.length ? h(
+            "div",
+            { className: "pf8_store_shares", "aria-label": "\u4E3B\u8981\u5206\u7C7B\u5360\u6BD4" },
+            ...topShares.map((category) => {
+              const pct = Math.max(3, Math.round(Number(category.count || 0) / shareTotal * 100));
+              return h(
+                "div",
+                { key: `share-${category.id}`, className: "pf8_store_srow" },
+                h("span", null, category.label),
+                h(
+                  "div",
+                  { className: "pf8_store_sbar", "aria-hidden": "true" },
+                  h("span", { className: "pf8_store_sfill", style: { width: `${pct}%` } })
+                ),
+                h("span", { className: "pf8_store_scnt" }, `${count(category.count)} \u4E2A`)
+              );
+            })
+          ) : null
         ),
         h(
           "label",
@@ -1971,7 +1991,7 @@ function canRecheckPluginSource(detail) {
   if (typeof detail?.sourceRecheckAllowed === "boolean") return detail.sourceRecheckAllowed && detail.installable === false && ["unavailable", "installed-local", "unknown"].includes(detail.installation?.status);
   return detail?.installable === false && ["unavailable", "installed-local"].includes(detail.installation?.status) && !unpublishedSource(detail) && !/不兼容|版本冲突|权限不足/.test(text3(detail.unavailableReason)) && /临时无法|暂时无法|稍后重试/.test(text3(detail.unavailableReason));
 }
-function renderPluginDetailView({ h, state, controller }) {
+function renderPluginDetailView({ h, state, controller, onRequestConfirm }) {
   const selection = state.catalogSelection;
   const fallback = selection?.collection === "featured" ? featuredCatalog.find((entry) => entry.id === selection.entryId) : getCommunityEntry(selection?.entryId);
   const detail = state.catalogDetail;
@@ -2004,12 +2024,29 @@ function renderPluginDetailView({ h, state, controller }) {
   const terminalProblem = Object.hasOwn(problemMessages, installation?.code ?? "");
   const canInstall = detail?.installable === true && !unsupported && ["not-installed", "installed-disabled", "failed"].includes(phase) && !terminalProblem;
   const button2 = (label, onClick, props = {}) => h("button", { type: "button", className: "pf8_btn", onClick, ...props }, label);
+  const triggerInstall = () => {
+    if (typeof onRequestConfirm !== "function") return controller.installCatalogPlugin();
+    const enableOnly = phase === "installed-disabled";
+    return onRequestConfirm({
+      title: enableOnly ? "\u542F\u7528\u8FD9\u4E2A\u63D2\u4EF6\uFF1F" : "\u5B89\u88C5\u524D\u786E\u8BA4",
+      body: enableOnly ? "\u8FD9\u4E2A\u63D2\u4EF6\u5DF2\u5728\u672C\u673A\u76EE\u5F55\u4E2D\uFF0C\u786E\u8BA4\u540E\u4F1A\u542F\u7528\u5E76\u5C1D\u8BD5\u63A5\u5165\u5F53\u524D DSH\u3002" : "\u88C5\u4E4B\u524D\u6211\u4F1A\u518D\u6838\u5BF9\u4F5C\u8005\u3001\u7248\u672C\u4E0E\u5F53\u524D DSH \u517C\u5BB9\u8303\u56F4\uFF1B\u5BF9\u4E0D\u4E0A\u4F1A\u505C\u4E0B\u6765\u544A\u8BC9\u4F60\uFF0C\u4E0D\u4F1A\u8986\u76D6\u51B2\u7A81\u63D2\u4EF6\u3002",
+      facts: [
+        { label: "\u63D2\u4EF6", value: displayName2(name) },
+        version ? { label: "\u7248\u672C", value: version } : null,
+        author ? { label: "\u4F5C\u8005", value: author } : null,
+        repository ? { label: "\u6765\u6E90", value: repository } : null
+      ].filter(Boolean),
+      confirmLabel: enableOnly ? "\u786E\u8BA4\u542F\u7528" : phase === "failed" ? "\u91CD\u8BD5\u5B89\u88C5" : "\u786E\u8BA4\u5B89\u88C5",
+      cancelLabel: "\u5148\u4E0D\u88C5",
+      onConfirm: () => controller.installCatalogPlugin()
+    });
+  };
   const action = ready ? button2("\u5DF2\u5B89\u88C5", () => {
   }, { className: "pf8_btn pf8_ink", disabled: true }) : busy ? button2(state.catalogBusy === "install" ? phase === "installed-disabled" ? "\u6B63\u5728\u542F\u7528\u2026" : "\u6B63\u5728\u5B89\u88C5\u2026" : state.catalogBusy === "status" ? "\u6B63\u5728\u6838\u5BF9\u2026" : "\u6B63\u5728\u8BFB\u53D6\u8BE6\u60C5\u2026", () => {
   }, { className: "pf8_btn pf8_ink", disabled: true }) : unsupported ? button2("\u8FD9\u4E2A\u7248\u672C\u88C5\u4E0D\u4E86", () => {
   }, { disabled: true }) : primarySourceRetry ? button2("\u91CD\u65B0\u6838\u5BF9\u6765\u6E90", () => controller.refreshCatalogPlugin(), { className: "pf8_btn pf8_ink" }) : localInstalled ? button2(installation.componentOnly ? "\u5DF2\u5B89\u88C5\u914D\u5957\u7EC4\u4EF6" : "\u5DF2\u5B89\u88C5\uFF08\u6765\u6E90\u5F85\u6838\u5BF9\uFF09", () => {
   }, { disabled: true }) : installedConflict ? button2(sameVersionConflict ? "\u5DF2\u5B89\u88C5\uFF08\u6765\u6E90\u4E0D\u540C\uFF09" : actualVersion ? "\u5DF2\u5B89\u88C5\u5176\u4ED6\u7248\u672C" : "\u5DF2\u5B89\u88C5\u540C\u540D\u63D2\u4EF6", () => {
-  }, { disabled: true }) : canInstall ? button2(phase === "installed-disabled" ? "\u542F\u7528\u63D2\u4EF6" : phase === "failed" ? "\u91CD\u8BD5\u5B89\u88C5" : "\u5B89\u88C5\u63D2\u4EF6", () => controller.installCatalogPlugin(), { className: "pf8_btn pf8_ink" }) : terminalProblem ? button2("\u6838\u5BF9\u5B89\u88C5\u72B6\u6001", () => controller.refreshCatalogPlugin(), { className: "pf8_btn pf8_ink" }) : phase === "unavailable" || detail && !detail.installable && !["conflict", "unknown", "installing"].includes(phase) ? button2(unpublishedSource(detail) ? "\u6682\u672A\u63D0\u4F9B\u5B89\u88C5\u7248\u672C" : "\u5F53\u524D\u7248\u672C\u6682\u4E0D\u53EF\u5B89\u88C5", () => {
+  }, { disabled: true }) : canInstall ? button2(phase === "installed-disabled" ? "\u542F\u7528\u63D2\u4EF6" : phase === "failed" ? "\u91CD\u8BD5\u5B89\u88C5" : "\u5B89\u88C5\u63D2\u4EF6", triggerInstall, { className: "pf8_btn pf8_ink" }) : terminalProblem ? button2("\u6838\u5BF9\u5B89\u88C5\u72B6\u6001", () => controller.refreshCatalogPlugin(), { className: "pf8_btn pf8_ink" }) : phase === "unavailable" || detail && !detail.installable && !["conflict", "unknown", "installing"].includes(phase) ? button2(unpublishedSource(detail) ? "\u6682\u672A\u63D0\u4F9B\u5B89\u88C5\u7248\u672C" : "\u5F53\u524D\u7248\u672C\u6682\u4E0D\u53EF\u5B89\u88C5", () => {
   }, { disabled: true }) : button2(detail ? "\u6838\u5BF9\u5B89\u88C5\u72B6\u6001" : "\u91CD\u65B0\u8BFB\u53D6\u8BE6\u60C5", () => controller.refreshCatalogPlugin(), { className: "pf8_btn pf8_ink" });
   const note = ready ? "\u5DF2\u5B89\u88C5\u5E76\u542F\u7528\uFF0C\u53EF\u4EE5\u5728 DeepSeek Harness \u4E2D\u4F7F\u7528\u3002" : primarySourceRetry ? `${text3(detail.unavailableReason) || "\u56FA\u5B9A\u5B89\u88C5\u5305\u9700\u8981\u91CD\u65B0\u6838\u5BF9\u539F\u6765\u6E90\u3002"}${phase === "unknown" ? " \u5F53\u524D\u5B89\u88C5\u72B6\u6001\u4ECD\u5F85\u6838\u5BF9\u3002" : ""}` : localInstalled ? `\u672C\u673A\u5DF2\u5B89\u88C5${installation.componentOnly ? "\u914D\u5957\u7EC4\u4EF6 " : " "}${text3(installation.packageName)}${actualVersion ? `@${actualVersion}` : ""}\uFF0C${localState}\u3002${localNewer ? `\u76EE\u5F55\u91CC\u8BB0\u7684\u662F ${version} \u7248\uFF1B\u4F60\u88C5\u7684\u6BD4\u76EE\u5F55\u91CC\u8BB0\u7684\u65B0\u3002` : ""}${text3(detail?.unavailableReason) || "\u672C\u9875\u5B89\u88C5\u6765\u6E90\u5C1A\u5F85\u6838\u5BF9\uFF0C\u4FDD\u7559\u5F53\u524D\u5B89\u88C5\u3002"}` : (conflictNote ? `${conflictNote} \u672C\u673A\u72B6\u6001\uFF1A${localState}\u3002` : "") || (unsupported ? text3(detail?.unavailableReason) : "") || (["PLUGIN_INSTALL_APPROVAL_REQUIRED", "PLUGIN_INSTALL_RESTART_REQUIRED"].includes(installation?.code) ? problemMessages[installation.code] : "") || (phase === "unknown" ? text3(installation?.message) || problemMessages[installation?.code] : "") || text3(detail?.unavailableReason) || (phase === "conflict" && installation?.installed === false ? text3(installation.message) : "") || problemMessages[installation?.code] || text3(installation?.message) || (phase === "unknown" || phase === "installing" ? "\u5B89\u88C5\u7ED3\u679C\u5C1A\u672A\u786E\u8BA4\u3002\u6838\u5BF9\u72B6\u6001\u4F1A\u7EE7\u7EED\u67E5\u770B\u8FD9\u4E00\u6B21\u5B89\u88C5\uFF0C\u4E0D\u4F1A\u91CD\u590D\u5B89\u88C5\u3002" : phase === "installed-disabled" ? "\u63D2\u4EF6\u5DF2\u5B89\u88C5\uFF0C\u542F\u7528\u540E\u5373\u53EF\u4F7F\u7528\u3002" : phase === "conflict" ? "\u5F53\u524D\u5DF2\u6709\u4E0D\u540C\u7248\u672C\u6216\u6765\u6E90\u7684\u540C\u540D\u63D2\u4EF6\uFF0C\u672C\u6B21\u6CA1\u6709\u66FF\u6362\u3002" : phase === "failed" ? "\u8FD9\u6B21\u5B89\u88C5\u6CA1\u6709\u5B8C\u6210\uFF0C\u539F\u6709\u63D2\u4EF6\u672A\u88AB\u66FF\u6362\u3002" : detail?.installable ? "\u8FD8\u6CA1\u88C5\u3002\u70B9\u300C\u5B89\u88C5\u63D2\u4EF6\u300D\u5C31\u4F1A\u88C5\u5230\u5F53\u524D DeepSeek Harness\uFF0C\u4E0D\u7528\u53BB\u63D2\u4EF6\u7BA1\u7406\u5668\u3002" : "\u6B63\u5728\u6838\u5BF9\u6240\u9009\u63D2\u4EF6\u7684\u6765\u6E90\u548C\u5B89\u88C5\u72B6\u6001\u3002");
   const nextStep = ready ? "\u5DF2\u7ECF\u88C5\u597D\u5E76\u542F\u7528\uFF0C\u53EF\u4EE5\u76F4\u63A5\u5728 DSH \u91CC\u7528\u3002" : canInstall ? "\u4F1A\u5148\u6838\u5BF9\u4F5C\u8005\u3001\u7248\u672C\u548C\u517C\u5BB9\uFF0C\u88C5\u4E4B\u524D\u518D\u95EE\u4F60\u4E00\u6B21\u3002" : primarySourceRetry ? "\u4F1A\u91CD\u65B0\u6838\u5BF9\u539F\u6765\u6E90\uFF0C\u4E0D\u4F1A\u91CD\u590D\u5B89\u88C5\u3002" : "";
@@ -2070,7 +2107,32 @@ function renderPluginDetailView({ h, state, controller }) {
             factRow("\u73B0\u5728", note, { role: "status", "aria-live": "polite" }),
             requirements.length || limitations.length ? factRow("\u7559\u610F", h("ul", { className: "pf8_detail_list" }, ...[...requirements, ...limitations].map((value, index) => h("li", { key: index }, value)))) : null,
             repository ? factRow("\u6765\u6E90", `GitHub \u4E0A\u7684 ${repository}${versionLabel}\u3002`) : null,
-            factRow("\u8FD8\u6CA1\u6838\u5BF9\u7684", "\u4E0A\u9762\u7684\u4ECB\u7ECD\u662F\u4F5C\u8005\u81EA\u5DF1\u5199\u7684\u3002\u88C5\u4E4B\u524D\u6211\u4F1A\u6838\u5BF9\u4F5C\u8005\u3001\u7248\u672C\u548C\u517C\u5BB9\uFF0C\u5BF9\u4E0D\u4E0A\u5C31\u505C\u4E0B\u6765\u544A\u8BC9\u4F60\u3002")
+            factRow("\u8FD8\u6CA1\u6838\u5BF9\u7684", unsupported ? "\u4E0A\u9762\u7684\u4ECB\u7ECD\u662F\u4F5C\u8005\u81EA\u5DF1\u5199\u7684\u3002" : "\u4E0A\u9762\u7684\u4ECB\u7ECD\u662F\u4F5C\u8005\u81EA\u5DF1\u5199\u7684\u3002\u88C5\u4E4B\u524D\u6211\u4F1A\u6838\u5BF9\u4F5C\u8005\u3001\u7248\u672C\u548C\u517C\u5BB9\uFF0C\u5BF9\u4E0D\u4E0A\u5C31\u505C\u4E0B\u6765\u544A\u8BC9\u4F60\u3002")
+          ),
+          h(
+            "details",
+            { className: "pf8_fit_inline" },
+            h(
+              "summary",
+              null,
+              h("span", null, "\u672C\u5730\u517C\u5BB9\u4E0E\u6765\u6E90\u5FEB\u67E5"),
+              h("span", {
+                className: "pf8_fit_badge",
+                "data-tone": ready ? "ok" : unsupported || installedConflict ? "warn" : "neutral"
+              }, ready ? "\u672C\u673A\u5DF2\u5C31\u7EEA" : unsupported ? "\u7248\u672C\u4E0D\u517C\u5BB9" : installedConflict ? "\u5B58\u5728\u540C\u540D\u51B2\u7A81" : detail?.compatibility?.status === "compatible" ? "\u76EE\u5F55\u517C\u5BB9" : "\u5B89\u88C5\u65F6\u5B9E\u673A\u6838\u5BF9")
+            ),
+            h(
+              "div",
+              { className: "pf8_fit_grid" },
+              h(
+                "dl",
+                { className: "pf8_factlist" },
+                factRow("\u5F53\u524D\u5BBF\u4E3B", text3(state.bootstrap?.hostVersion) || "\u672A\u8BFB\u53D6\uFF08\u5B89\u88C5\u65F6\u6309\u5B9E\u673A\u7248\u672C\u6838\u5BF9\uFF09"),
+                factRow("\u517C\u5BB9\u8BB0\u5F55", unsupported ? text3(detail?.unavailableReason) || "\u5F53\u524D\u5BBF\u4E3B\u7248\u672C\u4E0D\u517C\u5BB9" : detail?.compatibility?.status === "compatible" ? "\u5DF2\u8BB0\u5F55\u4E0E\u5F53\u524D\u65B9\u5411\u517C\u5BB9" : "\u6682\u65E0\u989D\u5916\u517C\u5BB9\u963B\u65AD\uFF0C\u5B89\u88C5\u524D\u4F1A\u518D\u67E5"),
+                factRow("\u76EE\u6807\u5305\u540D", text3(installation?.packageName) || repository || displayName2(name) || "\u5F85\u786E\u8BA4"),
+                factRow("\u672C\u673A\u72B6\u6001", ready ? "\u5DF2\u5B89\u88C5\u5E76\u542F\u7528" : localInstalled ? `${localState}${actualVersion ? `\uFF08${actualVersion}\uFF09` : ""}` : installedConflict ? `\u5DF2\u6709\u540C\u540D\u5B89\u88C5\uFF08${actualVersion || "\u7248\u672C\u672A\u77E5"}\uFF09` : phase === "installed-disabled" ? "\u5DF2\u5B89\u88C5\uFF0C\u672A\u542F\u7528" : "\u5C1A\u672A\u5B89\u88C5")
+              )
+            )
           )
         ),
         h(
@@ -3008,8 +3070,8 @@ function createHistoryView(React2) {
 
 // src/client-style.js
 var finderCss = `
-.pf_root{height:100%;overflow:auto;box-sizing:border-box;color:var(--dsw-alias-label-primary,#22262e);background:var(--dsw-alias-bg-base,#fff);font:14px/1.65 var(--dsw-font-family,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif)}
-.pf_root *{box-sizing:border-box}.pf_inner{max-width:980px;margin:0 auto;padding:24px 36px 48px}.pf_root h1,.pf_root h2,.pf_root h3,.pf_root p{margin:0}.pf_root h1{font-size:26px;line-height:1.4;font-weight:600;letter-spacing:-.3px}.pf_root h2{font-size:18px;font-weight:600;line-height:1.5}.pf_root h3{font-size:15px;font-weight:600}.pf_header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:36px;min-height:34px}.pf_header h1{font-size:14px;line-height:1.5;font-weight:600;letter-spacing:0}.pf_header .pf_btn{min-height:30px;padding:4px 8px;border-color:transparent;color:var(--dsw-alias-label-secondary,#717681);font-size:12px}.pf_eyebrow{color:var(--dsw-alias-label-tertiary,#737c8b);font-size:11px;letter-spacing:.12em;margin-bottom:6px}.pf_muted{color:var(--dsw-alias-label-secondary,#717681)}.pf_small{font-size:12px}.pf_header p{margin-top:6px}.pf_header_actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:flex-end}.pf_steps{display:flex;gap:24px;list-style:none;padding:0;margin:0 0 32px;flex-wrap:wrap;border-bottom:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_step{padding:0 0 14px;color:var(--dsw-alias-label-tertiary,#87909e);border-bottom:2px solid transparent;margin-bottom:-1px;font-size:13px}.pf_step.active{border-color:var(--dsw-alias-state-business-primary,#4d6bfe);color:var(--dsw-alias-label-primary,#22262e)}.pf_number{display:inline-flex;width:21px;height:21px;align-items:center;justify-content:center;border-radius:50%;background:var(--dsw-alias-bg-layer-2,#eef1f7);font-size:11px;margin-right:7px}.pf_step.active .pf_number{background:var(--dsw-alias-state-business-primary,#4d6bfe);color:white}.pf_section{padding:24px 0;border-bottom:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_section:first-child{padding-top:0}.pf_section:last-child{border-bottom:0}.pf_section>p,.pf_section>h2{margin-bottom:14px}.pf_section_head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px}.pf_stack{display:flex;flex-direction:column;gap:12px}.pf_actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}.pf_btn{display:inline-flex;justify-content:center;align-items:center;min-height:38px;border:1px solid var(--dsw-alias-border-l2,#d8dce5);border-radius:8px;padding:8px 14px;cursor:pointer;background:transparent;color:inherit;font:inherit;font-size:13px;line-height:1.5;text-decoration:none}.pf_btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,#f3f5f9)}.pf_btn:disabled{opacity:.45;cursor:default}.pf_btn.pf_primary{background:var(--dsw-alias-state-business-primary,#4d6bfe);border-color:transparent;color:#fff}.pf_btn.pf_primary:hover:not(:disabled){filter:brightness(.94)}.pf_btn.pf_text{border-color:transparent;padding-left:0;padding-right:0;color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_root :is(button,input,textarea,select,a):focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#4d6bfe);outline-offset:3px}.pf_root textarea,.pf_root input,.pf_root select{display:block;border:1px solid var(--dsw-alias-border-l2,#d8dce5);border-radius:8px;background:var(--dsw-alias-bg-layer-1,#fafbfc);color:inherit;font:inherit;padding:10px 12px;max-width:100%;width:100%;outline:none}.pf_root textarea:focus,.pf_root input:focus,.pf_root select:focus{border-color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_root textarea{resize:vertical;min-height:94px}.pf_request{min-height:110px!important;font-size:14px!important;padding:14px!important}.pf_label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:500;min-width:0}.pf_grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.pf_form_note{display:flex;justify-content:space-between;gap:16px;margin-top:8px;font-size:12px;color:var(--dsw-alias-label-secondary,#717681)}.pf_examples{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.pf_example{border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:7px;background:transparent;color:var(--dsw-alias-label-secondary,#717681);font:inherit;font-size:12px;text-align:left;cursor:pointer;padding:7px 10px;min-height:35px}.pf_example:hover{background:var(--dsw-alias-interactive-bg-hover,#f4f6fa)}.pf_banner{border-left:3px solid var(--dsw-alias-state-business-primary,#4d6bfe);padding:11px 14px;background:var(--dsw-alias-bg-layer-1,#f5f7fb);margin:16px 0;white-space:pre-wrap;overflow-wrap:anywhere}.pf_error{color:var(--dsw-alias-state-error-primary,#c43c3c);border-left-color:currentColor}.pf_status{display:flex;gap:9px;align-items:center;color:var(--dsw-alias-label-secondary,#717681);margin:16px 0}.pf_spinner{width:14px;height:14px;border:2px solid var(--dsw-alias-border-l2,#d8dce5);border-top-color:var(--dsw-alias-state-business-primary,#4d6bfe);border-radius:50%;animation:pf_spin 1s linear infinite;flex:none}.pf_model{display:inline-block;border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--dsw-alias-label-secondary,#717681)}.pf_list{padding-left:21px;margin:10px 0}.pf_list li{margin:5px 0;overflow-wrap:anywhere}.pf_plan{border:1px solid var(--dsw-alias-border-l2,#d8dce5);border-radius:10px;padding:20px}.pf_plan h2{margin:8px 0}.pf_plan_steps{list-style:none;padding:0;margin:20px 0 0}.pf_plan_step{display:grid;grid-template-columns:25px 1fr;gap:10px;padding:14px 0;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_plan_step strong{font-weight:550}.pf_plan_step p{margin-top:4px;overflow-wrap:anywhere}.pf_tag{display:inline-block;border-radius:5px;background:var(--dsw-alias-bg-layer-2,#f0f2f7);padding:2px 7px;font-size:11px;color:var(--dsw-alias-label-secondary,#717681)}.pf_tag.pf_selected{color:var(--dsw-alias-state-business-primary,#4d6bfe);border:1px solid var(--dsw-alias-border-l3,#dbe2ff);background:transparent}.pf_tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.pf_candidates{display:flex;flex-direction:column;gap:14px}.pf_candidate{border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:10px;padding:18px;min-width:0}.pf_candidate.pf_chosen{border-color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_candidate_head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.pf_candidate h3{overflow-wrap:anywhere}.pf_candidate p{margin-top:7px}.pf_candidate code{font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;white-space:pre-wrap}.pf_install{background:var(--dsw-alias-bg-layer-1,#f5f6f9);border:1px solid var(--dsw-alias-border-l4,#ecedf1);border-radius:7px;padding:10px 12px;margin-top:12px}.pf_links{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}.pf_links a{font-size:12px;color:var(--dsw-alias-state-business-primary,#4d6bfe);text-decoration:none;overflow-wrap:anywhere}.pf_links a:hover{text-decoration:underline}.pf_evidence{margin-top:12px;font-size:12px;color:var(--dsw-alias-label-secondary,#717681);display:flex;gap:14px;flex-wrap:wrap}.pf_details{margin-top:12px}.pf_details summary{cursor:pointer;color:var(--dsw-alias-label-secondary,#717681);font-size:12px}.pf_code{white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:8px;padding:14px;background:var(--dsw-alias-bg-layer-1,#f7f8fa);font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;max-height:320px;overflow:auto}.pf_workspace{max-width:560px}.pf_feedback{display:flex;gap:8px;flex-wrap:wrap}.pf_btn[aria-pressed=true]{border-color:var(--dsw-alias-state-business-primary,#4d6bfe);color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_footer{margin-top:24px;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed);padding-top:18px;color:var(--dsw-alias-label-tertiary,#87909e);font-size:11px}.pf_preline{white-space:pre-wrap;overflow-wrap:anywhere}.pf_empty{padding:24px 0;color:var(--dsw-alias-label-secondary,#717681)}
+.pf_root{position:relative;flex:1 1 0;height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;container-type:inline-size;container-name:finder;color-scheme:light dark;box-sizing:border-box;color:var(--dsw-alias-label-primary,#22262e);background:var(--dsw-alias-bg-base,#fff);font:14px/1.65 var(--dsw-font-family,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif)}
+:where(.pf_root :is(div,section,article,header,footer,main,nav,aside,form,fieldset,details,summary,dialog,ul,ol,li,dl,dt,dd,h1,h2,h3,h4,p,span,b,strong,i,em,a,code,pre,button,input,textarea,select,label,svg)){box-sizing:border-box}.pf_inner{max-width:980px;margin:0 auto;padding:24px 36px 48px}.pf_root h1,.pf_root h2,.pf_root h3,.pf_root p{margin:0}.pf_root h1{font-size:26px;line-height:1.4;font-weight:600;letter-spacing:-.3px}.pf_root h2{font-size:18px;font-weight:600;line-height:1.5}.pf_root h3{font-size:15px;font-weight:600}.pf_header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:36px;min-height:34px}.pf_header h1{font-size:14px;line-height:1.5;font-weight:600;letter-spacing:0}.pf_header .pf_btn{min-height:30px;padding:4px 8px;border-color:transparent;color:var(--dsw-alias-label-secondary,#717681);font-size:12px}.pf_eyebrow{color:var(--dsw-alias-label-tertiary,#737c8b);font-size:11px;letter-spacing:.12em;margin-bottom:6px}.pf_muted{color:var(--dsw-alias-label-secondary,#717681)}.pf_small{font-size:12px}.pf_header p{margin-top:6px}.pf_header_actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:flex-end}.pf_steps{display:flex;gap:24px;list-style:none;padding:0;margin:0 0 32px;flex-wrap:wrap;border-bottom:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_step{padding:0 0 14px;color:var(--dsw-alias-label-tertiary,#87909e);border-bottom:2px solid transparent;margin-bottom:-1px;font-size:13px}.pf_step.active{border-color:var(--dsw-alias-state-business-primary,#4d6bfe);color:var(--dsw-alias-label-primary,#22262e)}.pf_number{display:inline-flex;width:21px;height:21px;align-items:center;justify-content:center;border-radius:50%;background:var(--dsw-alias-bg-layer-2,#eef1f7);font-size:11px;margin-right:7px}.pf_step.active .pf_number{background:var(--dsw-alias-state-business-primary,#4d6bfe);color:white}.pf_section{padding:24px 0;border-bottom:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_section:first-child{padding-top:0}.pf_section:last-child{border-bottom:0}.pf_section>p,.pf_section>h2{margin-bottom:14px}.pf_section_head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px}.pf_stack{display:flex;flex-direction:column;gap:12px}.pf_actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}.pf_btn{display:inline-flex;justify-content:center;align-items:center;min-height:38px;border:1px solid var(--dsw-alias-border-l2,#d8dce5);border-radius:8px;padding:8px 14px;cursor:pointer;background:transparent;color:inherit;font:inherit;font-size:13px;line-height:1.5;text-decoration:none}.pf_btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,#f3f5f9)}.pf_btn:disabled{opacity:.45;cursor:default}.pf_btn.pf_primary{background:var(--dsw-alias-state-business-primary,#4d6bfe);border-color:transparent;color:#fff}.pf_btn.pf_primary:hover:not(:disabled){filter:brightness(.94)}.pf_btn.pf_text{border-color:transparent;padding-left:0;padding-right:0;color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_root :is(button,input,textarea,select,a):focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#4d6bfe);outline-offset:3px}.pf_root textarea,.pf_root input,.pf_root select{display:block;border:1px solid var(--dsw-alias-border-l2,#d8dce5);border-radius:8px;background:var(--dsw-alias-bg-layer-1,#fafbfc);color:inherit;font:inherit;padding:10px 12px;max-width:100%;width:100%;outline:none}.pf_root textarea:focus,.pf_root input:focus,.pf_root select:focus{border-color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_root textarea{resize:vertical;min-height:94px}.pf_request{min-height:110px!important;font-size:14px!important;padding:14px!important}.pf_label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:500;min-width:0}.pf_grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.pf_form_note{display:flex;justify-content:space-between;gap:16px;margin-top:8px;font-size:12px;color:var(--dsw-alias-label-secondary,#717681)}.pf_examples{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.pf_example{border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:7px;background:transparent;color:var(--dsw-alias-label-secondary,#717681);font:inherit;font-size:12px;text-align:left;cursor:pointer;padding:7px 10px;min-height:35px}.pf_example:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,#f4f6fa)}.pf_banner{border-left:3px solid var(--dsw-alias-state-business-primary,#4d6bfe);padding:11px 14px;background:var(--dsw-alias-bg-layer-1,#f5f7fb);margin:16px 0;white-space:pre-wrap;overflow-wrap:anywhere}.pf_error{color:var(--dsw-alias-state-error-primary,#c43c3c);border-left-color:currentColor}.pf_status{display:flex;gap:9px;align-items:center;color:var(--dsw-alias-label-secondary,#717681);margin:16px 0}.pf_spinner{width:14px;height:14px;border:2px solid var(--dsw-alias-border-l2,#d8dce5);border-top-color:var(--dsw-alias-state-business-primary,#4d6bfe);border-radius:50%;animation:pf_spin 1s linear infinite;flex:none}.pf_model{display:inline-block;border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--dsw-alias-label-secondary,#717681)}.pf_list{padding-left:21px;margin:10px 0}.pf_list li{margin:5px 0;overflow-wrap:anywhere}.pf_plan{border:1px solid var(--dsw-alias-border-l2,#d8dce5);border-radius:10px;padding:20px}.pf_plan h2{margin:8px 0}.pf_plan_steps{list-style:none;padding:0;margin:20px 0 0}.pf_plan_step{display:grid;grid-template-columns:25px 1fr;gap:10px;padding:14px 0;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_plan_step strong{font-weight:550}.pf_plan_step p{margin-top:4px;overflow-wrap:anywhere}.pf_tag{display:inline-block;border-radius:5px;background:var(--dsw-alias-bg-layer-2,#f0f2f7);padding:2px 7px;font-size:11px;color:var(--dsw-alias-label-secondary,#717681)}.pf_tag.pf_selected{color:var(--dsw-alias-state-business-primary,#4d6bfe);border:1px solid var(--dsw-alias-border-l3,#dbe2ff);background:transparent}.pf_tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.pf_candidates{display:flex;flex-direction:column;gap:14px}.pf_candidate{border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:10px;padding:18px;min-width:0}.pf_candidate.pf_chosen{border-color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_candidate_head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.pf_candidate h3{overflow-wrap:anywhere}.pf_candidate p{margin-top:7px}.pf_candidate code{font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;white-space:pre-wrap}.pf_install{background:var(--dsw-alias-bg-layer-1,#f5f6f9);border:1px solid var(--dsw-alias-border-l4,#ecedf1);border-radius:7px;padding:10px 12px;margin-top:12px}.pf_links{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}.pf_links a{font-size:12px;color:var(--dsw-alias-state-business-primary,#4d6bfe);text-decoration:none;overflow-wrap:anywhere}.pf_links a:hover{text-decoration:underline}.pf_evidence{margin-top:12px;font-size:12px;color:var(--dsw-alias-label-secondary,#717681);display:flex;gap:14px;flex-wrap:wrap}.pf_details{margin-top:12px}.pf_details summary{cursor:pointer;color:var(--dsw-alias-label-secondary,#717681);font-size:12px}.pf_code{white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:8px;padding:14px;background:var(--dsw-alias-bg-layer-1,#f7f8fa);font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;max-height:320px;overflow:auto}.pf_workspace{max-width:560px}.pf_feedback{display:flex;gap:8px;flex-wrap:wrap}.pf_btn[aria-pressed=true]{border-color:var(--dsw-alias-state-business-primary,#4d6bfe);color:var(--dsw-alias-state-business-primary,#4d6bfe)}.pf_footer{margin-top:24px;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed);padding-top:18px;color:var(--dsw-alias-label-tertiary,#87909e);font-size:11px}.pf_preline{white-space:pre-wrap;overflow-wrap:anywhere}.pf_empty{padding:24px 0;color:var(--dsw-alias-label-secondary,#717681)}
 .pf_sources{list-style:none;padding:0;margin:12px 0}.pf_source_row{padding:11px 0;border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_source_head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.pf_source_head a{color:var(--dsw-alias-state-business-primary,#4d6bfe);text-decoration:none;overflow-wrap:anywhere}.pf_source_head a:hover{text-decoration:underline}.pf_source_row p{margin-top:5px;overflow-wrap:anywhere}.pf_source_warn{border:1px solid var(--dsw-alias-border-l2,#d8dce5);background:transparent}.pf_search_scope .pf_sources{margin-top:10px}.pf_search_scope .pf_source_row{font-size:12px}
 .pf_history_list{display:grid;gap:14px}.pf_history_card{border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:10px;padding:18px}.pf_history_card p{margin-top:8px;overflow-wrap:anywhere}.pf_history_card>.pf_btn{margin-top:14px}.pf_task_history{border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:10px;padding:18px;margin:18px 0 24px}.pf_saved_feedback{border-top:1px solid var(--dsw-alias-border-l3,#e4e7ed);padding:10px 0}.pf_saved_feedback p+p{margin-top:4px}
 .pf_coverage{margin-top:18px;padding:16px;border:1px solid var(--dsw-alias-border-l3,#e4e7ed);border-radius:8px}.pf_coverage>p{margin-top:8px}.pf_coverage_stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}.pf_coverage_stats>div{min-width:0}.pf_coverage_stats dt{font-size:12px;color:var(--dsw-alias-label-secondary,#717681)}.pf_coverage_stats dd{margin:3px 0 0;font-size:21px;line-height:1.35;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.pf_coverage .pf_details{margin-top:10px}
@@ -3025,6 +3087,9 @@ var finderCss = `
 .pf_featured_home{margin-top:30px}.pf_featured_group+.pf_featured_group{margin-top:28px}.pf_featured_group>.pf_section_head{margin-bottom:12px}.pf_featured_group h2{font-size:15px;line-height:1.5}.pf_featured_settings{margin-top:18px;color:var(--dsw-alias-label-secondary,#717681);font-size:12px}.pf_featured_settings>summary{display:list-item;cursor:pointer;width:fit-content}.pf_featured_settings>summary:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#4d6bfe);outline-offset:3px}.pf_featured_settings[open]{padding-bottom:16px;border-bottom:1px solid var(--dsw-alias-border-l3,#e4e7ed)}.pf_featured_settings .pf_btn{font-size:12px;min-height:30px;padding-top:4px;padding-bottom:4px}.pf_featured_hidden{margin-top:18px}.pf_featured_hidden_list{list-style:none;margin:10px 0 4px;padding:0;max-width:440px}.pf_featured_hidden_list li{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:34px}.pf_featured_disclosure{font-size:11px;line-height:1.7;color:var(--dsw-alias-label-tertiary,#87909e)}
 @media(max-width:700px){.pf_home_heading,.pf_home_heading h1,.pf_home_heading h2{font-size:24px}.pf_home_resume{align-items:flex-start;flex-wrap:wrap}.pf_featured_home{margin-top:26px}.pf_featured_group>.pf_section_head{flex-direction:row;align-items:center}.pf_featured_card{padding:14px 14px 9px}.pf_options .pf_actions .pf_btn{flex-grow:0}.pf_creation_invitation .pf_actions .pf_btn{flex-grow:0}.pf_header .pf_btn{padding-left:5px;padding-right:5px}.pf_header h1{white-space:nowrap}}
 @keyframes pf_spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.pf_spinner{animation:none}}@media(max-width:700px){.pf_inner{padding:18px 18px 36px}.pf_header{gap:12px;margin-bottom:28px}.pf_header_actions{gap:2px}.pf_steps{gap:14px;margin-bottom:24px}.pf_step{font-size:12px}.pf_grid{grid-template-columns:1fr}.pf_plan,.pf_candidate{padding:15px}.pf_actions .pf_btn{flex-grow:1}.pf_form_note{flex-direction:column;gap:3px}.pf_candidate_head{flex-wrap:wrap}.pf_section_head{align-items:flex-start;flex-direction:column;gap:8px}}
+dialog.pf_modal{margin:auto;width:min(460px,calc(100vw - 32px));max-width:calc(100vw - 32px);max-height:min(85vh,640px);overflow-y:auto;padding:24px 26px 22px;border:1px solid var(--line2,var(--dsw-alias-border-l4,#d0d0c9));border-radius:20px;background:var(--card,var(--dsw-alias-bg-layer-2,#fff));color:var(--ink,var(--dsw-alias-label-primary,#191b1f));box-shadow:var(--f-modal-shadow,0 24px 60px rgba(25,27,31,.16))}
+dialog.pf_modal:modal{overscroll-behavior:contain}
+dialog.pf_modal::backdrop{overflow:hidden;overscroll-behavior:contain;background:rgba(15,17,22,.46);backdrop-filter:blur(2px)}
 `;
 
 // src/opportunity-view.js
@@ -3268,6 +3333,19 @@ function hybridInstallCopy(count2) {
   if (n >= 2) return `\u5148\u88C5\u597D\u73B0\u6210\u7684 ${n} \u5757\uFF0C\u518D\u5728\u53D1\u73B0\u597D\u63D2\u4EF6\u91CC\u8865\u7F3A\u7684\u3002`;
   return "\u5148\u88C5\u597D\u73B0\u6210\u7684\uFF0C\u518D\u5728\u53D1\u73B0\u597D\u63D2\u4EF6\u91CC\u8865\u7F3A\u7684\u3002";
 }
+function sourceFunnelSteps({ discovery, candidates, plan } = {}) {
+  const total = sourceReadTotal(discovery);
+  const fetched = records(candidates).length;
+  const selected = items6(plan?.pluginIds).length;
+  const gapCount = plan?.kind === "gap" ? records(plan?.gaps).length || 1 : plan?.kind === "hybrid" ? records(plan?.gaps).length : 0;
+  const steps = [];
+  if (total > 0) steps.push({ id: "catalog", label: "\u7FFB\u770B\u76EE\u5F55", value: countText2(total), kind: "neutral" });
+  if (fetched > 0) steps.push({ id: "candidates", label: "\u6838\u5BF9\u5019\u9009", value: `${countText2(fetched)} \u4E2A`, kind: "neutral" });
+  if (selected > 0) steps.push({ id: "selected", label: "\u9009\u4E2D\u53EF\u7528", value: `${countText2(selected)} \u4E2A`, kind: "selected" });
+  else if (plan?.kind === "native" && total > 0) steps.push({ id: "native", label: "\u76F4\u63A5\u53EF\u7528", value: "DSH \u539F\u751F", kind: "selected" });
+  if (gapCount > 0) steps.push({ id: "build", label: "\u8865\u9F50\u7F3A\u53E3", value: `${countText2(gapCount)} \u5757`, kind: "warn" });
+  return steps;
+}
 function createPlanSurface(React2) {
   const h = React2.createElement;
   const Lego = createLego(React2);
@@ -3291,13 +3369,16 @@ function createPlanSurface(React2) {
     note = "",
     tag = "",
     showSignature = true,
-    compact = false
+    compact = false,
+    embedded = false
   }) => {
     const blocks = planBlocks({ plan, candidates, request });
     const count2 = sourceReadTotal(discovery);
     const read = records(candidates).length;
     const selected = new Set(items6(plan?.pluginIds));
     const rejected = records(candidates).filter((candidate) => !selected.has(candidate.id) && text10(candidate.summary));
+    const funnel = sourceFunnelSteps({ discovery, candidates, plan });
+    const showFunnel = !compact && !embedded && funnel.length >= 2;
     const numberLine = count2 && read ? `\u4ECE\u793E\u533A\u76EE\u5F55\u7684 ${countText2(count2)} \u4E2A\u91CC\u7B5B\u51FA ${countText2(read)} \u4E2A\u5019\u9009\u3002` : count2 ? `\u4E3A\u8FD9\u4EF6\u4E8B\u7FFB\u4E86\u793E\u533A\u76EE\u5F55\u91CC\u7684 ${countText2(count2)} \u4E2A\u3002` : read ? `\u7B5B\u51FA ${countText2(read)} \u4E2A\u5019\u9009\u3002` : "";
     const types = {
       native: ["\u4E0D\u7528\u88C5\uFF0CDSH \u81EA\u5DF1\u5C31\u4F1A", []],
@@ -3306,9 +3387,34 @@ function createPlanSurface(React2) {
       hybrid: ["\u73B0\u6210\u7684\u62FC\u8D77\u6765\uFF0C\u518D\u8865\u4E00\u5757", [...blocks.map((block) => block.kind)]],
       gap: ["\u6CA1\u6709\u73B0\u6210\u7684\uFF0C\u6211\u966A\u4F60\u505A", ["build"]]
     }[plan?.kind] || ["", []];
+    const showEvolution = !compact && !embedded && (plan?.kind === "gap" || plan?.kind === "hybrid");
+    const blueprintRows = showEvolution ? [
+      ["\u76EE\u6807", planShortTitle(request, 40) || text10(plan?.title)],
+      ["\u8981\u8865\u7684\u80FD\u529B", records(plan?.gaps).map((gap) => text10(gap.capability)).filter(Boolean).join("\u3001") || (plan?.kind === "gap" ? planShortTitle(request, 32) : "")],
+      ["\u843D\u5730\u5F62\u6001", records(plan?.steps).slice(0, 3).map((step) => text10(step.capability)).filter(Boolean).join(" \u2192 ") || text10(plan?.rationale)]
+    ].filter(([, value]) => value) : [];
+    const blockChildren = [];
+    blocks.forEach((block, index) => {
+      if (index > 0) blockChildren.push(h("span", { key: `conn-${index}`, className: "pf8_conn", "aria-hidden": "true" }, "+"));
+      blockChildren.push(h(
+        "div",
+        { key: `${block.kind}-${index}`, className: `pf8_blk ${block.kind}` },
+        h(
+          "div",
+          { className: "pf8_blk_top" },
+          h("span", { className: "pf8_blk_studs", "aria-hidden": "true" }, h("i", null), h("i", null)),
+          h("span", { className: "pf8_bstat" }, BLOCK_STATE[block.kind] || "")
+        ),
+        h("code", null, text10(block.name)),
+        block.note ? h("span", null, text10(block.note)) : null,
+        block.version ? h("span", { className: "pf8_blk_ver" }, `\u73B0\u5728\u662F ${block.version} \u7248`) : null
+      ));
+    });
+    const cardTag = embedded ? "div" : "article";
+    const cardProps = embedded ? { className: "pf8_tentative" } : { className: `pf8_card${compact ? " pf8_card_mini" : ""}`, "aria-label": "\u89E3\u6CD5\u5361", id: "pf8_card" };
     return h(
-      "article",
-      { className: `pf8_card${compact ? " pf8_card_mini" : ""}`, "aria-label": "\u89E3\u6CD5\u5361", id: "pf8_card" },
+      cardTag,
+      cardProps,
       text10(request) ? h("p", { className: "pf8_q" }, quoteLabel, h("b", null, `\u300C${text10(request)}\u300D`)) : null,
       text10(understanding) && understanding !== request ? h("p", { className: "pf8_q pf8_under" }, "\u6211\u7684\u7406\u89E3\uFF1A", h("b", null, text10(understanding))) : null,
       h(
@@ -3318,18 +3424,26 @@ function createPlanSurface(React2) {
         text10(plan?.title) || types[0] || "\u8FD9\u4EFD\u65B9\u6848"
       ),
       text10(plan?.rationale) ? h("p", { className: "pf8_why" }, text10(plan.rationale)) : null,
-      blocks.length ? h("div", { className: "pf8_fit" }, ...blocks.map((block, index) => h(
+      blocks.length ? h("div", { className: "pf8_fit_wrap" }, h("div", { className: "pf8_fit" }, ...blockChildren)) : null,
+      showEvolution ? h(
         "div",
-        {
-          key: `${block.kind}-${index}`,
-          className: `pf8_blk ${block.kind}`
-        },
-        h("code", null, block.kind === "native" ? null : brick(block.kind), text10(block.name)),
-        block.note ? h("span", null, text10(block.note)) : null,
-        block.version ? h("span", { className: "pf8_blk_ver" }, `\u73B0\u5728\u662F ${block.version} \u7248`) : null,
-        h("em", null, BLOCK_STATE[block.kind] || "")
-      ))) : null,
-      numberLine ? h("p", { className: "pf8_count" }, numberLine) : null,
+        { className: "pf8_evo_bar" },
+        h("span", { className: "pf8_evo_pill" }, plan.kind === "hybrid" ? "\u63A5\u529B\u6F14\u5316 \xB7 \u534A\u6210\u914D\u8865" : "\u4ECE\u96F6\u8865\u9F50 \xB7 \u521B\u9020\u84DD\u56FE"),
+        h("span", null, plan.kind === "hybrid" ? "\u73B0\u6709\u63D2\u4EF6\u80FD\u625B\u4F4F\u4E3B\u6D41\u7A0B\uFF0C\u53EA\u6309\u7F3A\u53E3\u8865\u4E00\u5757\u8584\u80FD\u529B\u3002" : "\u793E\u533A\u91CC\u6CA1\u73B0\u6210\u7684\u6574\u5957\u63D2\u4EF6\uFF0C\u6211\u5148\u6309\u4F60\u7684\u76EE\u6807\u8D77\u4E00\u4EFD\u80FD\u843D\u5730\u7684\u6700\u5C0F\u84DD\u56FE\u3002")
+      ) : null,
+      blueprintRows.length ? h(
+        "dl",
+        { className: "pf8_blueprint" },
+        ...blueprintRows.map(([label, value]) => h("div", { key: label, className: "pf8_bp_row" }, h("dt", null, label), h("dd", null, value)))
+      ) : null,
+      showFunnel ? h(
+        "div",
+        { className: "pf8_funnel", role: "group", "aria-label": "\u7B5B\u9009\u6F0F\u6597" },
+        ...funnel.flatMap((step, index) => [
+          index > 0 ? h("span", { key: `sep-${step.id}`, className: "pf8_fsep", "aria-hidden": "true" }, "\u2192") : null,
+          h("span", { key: step.id, className: "pf8_fstep", "data-kind": step.kind }, step.label, " ", h("b", null, step.value))
+        ].filter(Boolean))
+      ) : numberLine ? h("p", { className: "pf8_count" }, numberLine) : null,
       rejected.length ? h(
         React2.Fragment,
         null,
@@ -3398,7 +3512,11 @@ function createPlanSurface(React2) {
         h("span", null, row.say)
       ))) : h("p", { className: "pf8_fine" }, "\u8FD9\u6B21\u6CA1\u6709\u7559\u4E0B\u53EF\u5C55\u793A\u7684\u6765\u6E90\u8BB0\u5F55\u3002"),
       actions.length ? h("div", { className: "pf8_acts" }, ...actions.filter((action) => action && text10(action.label)).map(actionButton)) : null,
-      h("p", { className: "pf8_next" }, "\u518D\u67E5\u4E00\u6B21\u901A\u5E38\u5C31\u597D\u3002\u4F60\u8BF4\u7684\u8BDD\u548C\u5DF2\u7ECF\u8BFB\u5230\u7684\u5185\u5BB9\u90FD\u7559\u7740\uFF0C\u4E0D\u7528\u91CD\u65B0\u8F93\u5165\u3002"),
+      h("p", { className: "pf8_next" }, (() => {
+        const reasons = discovery?.coverage?.excludedReasons ?? {};
+        const limited = ["author-rate-limited", "author-source-limited"].some((reason) => Number(reasons[reason]) > 0);
+        return limited ? "\u8FC7\u51E0\u5206\u949F\u518D\u67E5\u3002\u4F60\u8BF4\u7684\u8BDD\u548C\u5DF2\u7ECF\u8BFB\u5230\u7684\u5185\u5BB9\u90FD\u7559\u7740\uFF0C\u4E0D\u7528\u91CD\u65B0\u8F93\u5165\u3002" : "\u53EF\u4EE5\u518D\u67E5\u4E00\u6B21\u3002\u4F60\u8BF4\u7684\u8BDD\u548C\u5DF2\u7ECF\u8BFB\u5230\u7684\u5185\u5BB9\u90FD\u7559\u7740\uFF0C\u4E0D\u7528\u91CD\u65B0\u8F93\u5165\u3002";
+      })()),
       tentative ? h(
         "details",
         { className: "pf8_disclosure" },
@@ -3427,7 +3545,7 @@ function createPlanSurface(React2) {
     }, option))),
     h("p", { className: "pf8_fine" }, "\u4E5F\u53EF\u4EE5\u5728\u4E0B\u9762\u8865\u5145\u4F60\u7684\u60F3\u6CD5\u3002")
   );
-  return { solution, searching, incomplete, clarification, planBlocks, planSourceRows };
+  return { solution, searching, incomplete, clarification, planBlocks, planSourceRows, sourceFunnelSteps };
 }
 
 // src/experience-view.js
@@ -3464,17 +3582,20 @@ function experienceSourceHealth(discovery) {
   const returned = Number.isFinite(discovery.coverage?.returned) ? discovery.coverage.returned : null;
   const noneBack = returned === 0;
   const sourceTrouble = ["failed", "partial", "incomplete"].includes(discovery.status) || sources.some((source) => ["failed", "stale", "partial"].includes(source.status));
-  const tail = noneBack ? "\u8FD9\u8F6E\u6CA1\u6709\u5DF2\u8FD4\u56DE\u7684\u5019\u9009\uFF0C\u4E5F\u4E0D\u80FD\u636E\u6B64\u63A8\u65AD\u4F9B\u7ED9\u4E0D\u5B58\u5728\u3002" : "\u5DF2\u8FD4\u56DE\u7684\u5019\u9009\u4ECD\u53EF\u7528\uFF0C\u4E0D\u80FD\u636E\u6B64\u8BF4\u6CA1\u6709\u66F4\u5408\u9002\u7684\u3002";
+  const foundTail = "\u5DF2\u7ECF\u627E\u5230\u7684\u7167\u5E38\u80FD\u7528\uFF0C\u4F46\u4E0D\u4EE3\u8868\u6CA1\u6709\u66F4\u5408\u9002\u7684\u3002";
+  const noneTail = "\u8FD9\u6B21\u4E00\u4E2A\u90FD\u6CA1\u627E\u5230\uFF0C\u4F46\u4E0D\u4EE3\u8868\u6CA1\u6709\u5408\u9002\u7684\u63D2\u4EF6\u3002";
+  const unknownTail = "\u5F53\u524D\u5224\u65AD\u4EC5\u57FA\u4E8E\u5DF2\u8FD4\u56DE\u8D44\u6599\uFF0C\u4E0D\u80FD\u636E\u6B64\u786E\u8BA4\u6CA1\u6709\u5408\u9002\u7684\u63D2\u4EF6\u3002";
+  const tail = noneBack ? noneTail : returned > 0 ? foundTail : unknownTail;
   const extra = sourceTrouble ? "\u53E6\u5916\uFF0C\u8FD8\u6709\u76EE\u5F55\u6765\u6E90\u8FD9\u6B21\u6CA1\u8BFB\u5230\uFF0C\u5177\u4F53\u539F\u56E0\u89C1\u6765\u6E90\u660E\u7EC6\u3002" : "";
   if (excluded["author-rate-limited"]) return { incomplete: true, message: `GitHub \u8FD9\u6B21\u9650\u5236\u4E86 ${excluded["author-rate-limited"]} \u4E2A\u5019\u9009\u7684\u4F5C\u8005\u8D44\u6599\u6838\u5BF9\uFF08\u8BF7\u6C42\u8FC7\u5FEB\uFF09\uFF0C\u8FD9\u4E9B\u6CA1\u7B97\u8FDB\u7ED3\u679C\uFF1B${extra}${tail}` };
   if (excluded["author-source-limited"]) return { incomplete: true, message: `\u6709 ${excluded["author-source-limited"]} \u4E2A\u5019\u9009\u7684\u6765\u6E90\u8FD9\u6B21\u8FD4\u56DE\u9650\u6D41\uFF08HTTP 429\uFF09\uFF0C\u8FD9\u4E9B\u6CA1\u7B97\u8FDB\u7ED3\u679C\uFF1B${extra}${tail}` };
   if (excluded["author-unauthorized"]) return { incomplete: true, message: `\u6709 ${excluded["author-unauthorized"]} \u4E2A\u5019\u9009\u7684\u6765\u6E90\u8FD9\u6B21\u9700\u8981\u6388\u6743\uFF08HTTP 401\uFF09\uFF0C\u8FD9\u4E9B\u6CA1\u7B97\u8FDB\u7ED3\u679C\uFF1B${extra}${tail}` };
   if (excluded["author-forbidden"]) return { incomplete: true, message: `\u6709 ${excluded["author-forbidden"]} \u4E2A\u5019\u9009\u7684\u6765\u6E90\u8FD9\u6B21\u62D2\u7EDD\u8BBF\u95EE\uFF08HTTP 403\uFF09\uFF0C\u8FD9\u4E9B\u6CA1\u7B97\u8FDB\u7ED3\u679C\uFF1B${extra}${tail}` };
   if (excluded["author-missing"]) return { incomplete: true, message: `\u6709 ${excluded["author-missing"]} \u4E2A\u5019\u9009\u7684\u4F5C\u8005\u8D44\u6599\u8FD9\u6B21\u6253\u4E0D\u5F00\uFF08HTTP 404\uFF09\uFF0C\u8FD9\u4E9B\u6CA1\u7B97\u8FDB\u7ED3\u679C\uFF1B${extra}${tail}` };
-  if (excluded["author-incompatible"]) return { incomplete: true, message: `\u53E6\u6709 ${excluded["author-incompatible"]} \u4E2A\u5019\u9009\u5DF2\u5224\u4E3A\u548C\u5F53\u524D\u5BBF\u4E3B\u4E0D\u517C\u5BB9\uFF0C\u6CA1\u6709\u5217\u8FDB\u7ED3\u679C\uFF1B\u5B83\u4EEC\u5F53\u524D\u4E0D\u80FD\u88C5\u3002${noneBack ? "\u8FD9\u8F6E\u6CA1\u6709\u5DF2\u8FD4\u56DE\u7684\u5019\u9009\uFF0C\u4E5F\u4E0D\u80FD\u636E\u6B64\u63A8\u65AD\u4F9B\u7ED9\u4E0D\u5B58\u5728\u3002" : ""}` };
-  if (sourceTrouble) return { incomplete: true, message: noneBack ? "\u8FD9\u6B21\u6CA1\u6709\u8BFB\u56DE\u53EF\u7528\u5019\u9009\uFF1A\u90E8\u5206\u6765\u6E90\u5C1A\u672A\u67E5\u5B8C\uFF0C\u4E0D\u80FD\u636E\u6B64\u63A8\u65AD\u4F9B\u7ED9\u4E0D\u5B58\u5728\u3002" : "\u90E8\u5206\u6765\u6E90\u5C1A\u672A\u67E5\u5B8C\u3002\u5F53\u524D\u5224\u65AD\u4EC5\u57FA\u4E8E\u5DF2\u8FD4\u56DE\u8D44\u6599\uFF0C\u4E0D\u80FD\u636E\u6B64\u786E\u8BA4\u6CA1\u6709\u5408\u9002\u7684\u63D2\u4EF6\u3002" };
+  if (excluded["author-incompatible"]) return { incomplete: true, message: `\u53E6\u6709 ${excluded["author-incompatible"]} \u4E2A\u5019\u9009\u5DF2\u5224\u4E3A\u548C\u5F53\u524D\u5BBF\u4E3B\u4E0D\u517C\u5BB9\uFF0C\u6CA1\u6709\u5217\u8FDB\u7ED3\u679C\uFF1B\u5B83\u4EEC\u5F53\u524D\u4E0D\u80FD\u88C5\u3002${noneBack ? "\u8FD9\u6B21\u4E00\u4E2A\u90FD\u6CA1\u627E\u5230\uFF0C\u4F46\u4E0D\u4EE3\u8868\u6CA1\u6709\u5408\u9002\u7684\u63D2\u4EF6\u3002" : ""}` };
+  if (sourceTrouble) return { incomplete: true, message: `\u90E8\u5206\u6765\u6E90\u5C1A\u672A\u67E5\u5B8C\u3002${noneBack ? noneTail : returned > 0 ? foundTail : unknownTail}` };
   if (coverage.some((item) => positiveCount(item.uninspected) || ["author-read-timeout", "author-unresolved", "extra-key-unknown"].some((reason) => positiveCount(item.excludedReasons?.[reason])))) {
-    return { incomplete: true, message: noneBack ? "\u90E8\u5206\u5019\u9009\u5C1A\u672A\u6838\u5BF9\u5B8C\u6574\uFF0C\u8FD9\u8F6E\u6CA1\u6709\u5DF2\u8FD4\u56DE\u7684\u5019\u9009\uFF0C\u4E5F\u4E0D\u80FD\u636E\u6B64\u63A8\u65AD\u4F9B\u7ED9\u4E0D\u5B58\u5728\u3002" : "\u90E8\u5206\u5019\u9009\u5C1A\u672A\u6838\u5BF9\u5B8C\u6574\u3002\u5F53\u524D\u5224\u65AD\u4EC5\u57FA\u4E8E\u5DF2\u8FD4\u56DE\u8D44\u6599\uFF0C\u4E0D\u80FD\u636E\u6B64\u786E\u8BA4\u6CA1\u6709\u5408\u9002\u7684\u63D2\u4EF6\u3002" };
+    return { incomplete: true, message: `\u90E8\u5206\u5019\u9009\u5C1A\u672A\u6838\u5BF9\u5B8C\u6574\u3002${noneBack ? noneTail : returned > 0 ? foundTail : unknownTail}` };
   }
   if (sources.some((source) => source.status === "cached")) return { incomplete: false, message: "\u90E8\u5206\u6765\u6E90\u4F7F\u7528\u7F13\u5B58\u3002\u53EF\u4EE5\u5C55\u5F00\u641C\u7D22\u4F9D\u636E\uFF0C\u6838\u5BF9\u8D44\u6599\u7684\u8BFB\u53D6\u65F6\u95F4\u3002" };
   return null;
@@ -3511,7 +3632,7 @@ function createExperienceView(React2) {
       event.currentTarget.form?.requestSubmit();
     }
   };
-  return function ExperienceView({ state, controller, busy = false, modelReady = false, copyText, sections = {}, more = null }) {
+  return function ExperienceView({ state, controller, busy = false, modelReady = false, copyText, sections = {}, more = null, onRequestConfirm }) {
     const homeInput = React2.useRef(null);
     const startingNew = Boolean(state.searching);
     const isCreating = !startingNew && ["create", "creation-guide"].includes(state.view);
@@ -3777,16 +3898,50 @@ function createExperienceView(React2) {
         void controller.searchHome();
       }
     });
+    const confirmOrRun = (spec, run) => {
+      if (typeof onRequestConfirm === "function") return onRequestConfirm({ ...spec, onConfirm: run });
+      return run();
+    };
+    const selectedPluginFacts = () => {
+      const selected = new Set(items7(plan?.pluginIds));
+      const names = records2(outcome?.candidates).filter((c) => selected.has(c.id)).map((c) => text11(c.name) || text11(c.id)).filter(Boolean);
+      const facts = [];
+      if (names.length) facts.push({ label: "\u7528\u5230\u63D2\u4EF6", value: names.join("\u3001") });
+      if (state.executionWorkspaceLabel) facts.push({ label: "\u5DE5\u4F5C\u533A", value: text11(state.executionWorkspaceLabel) });
+      return facts;
+    };
     const primaryAction = () => {
       if (uncertainGap) return retryAction();
       if (plan.kind === "hybrid") return {
         label: "\u8865\u9F50\u5E76\u4F7F\u7528",
         primary: true,
         disabled: !canAct || workspacePending,
-        onClick: () => !workspacePending && (typeof controller.completeHybridPlan === "function" ? controller.completeHybridPlan() : controller.startCreation())
+        onClick: () => !workspacePending && confirmOrRun({
+          title: "\u5148\u88C5\u73B0\u6210\u63D2\u4EF6\uFF0C\u518D\u8865\u7F3A\u53E3\uFF1F",
+          body: hybridInstallCopy(items7(plan?.pluginIds).length),
+          facts: [
+            ...selectedPluginFacts(),
+            records2(plan?.gaps).length ? { label: "\u5F85\u8865\u80FD\u529B", value: records2(plan.gaps).map((g) => text11(g.capability)).filter(Boolean).join("\u3001") } : null
+          ].filter(Boolean),
+          showWorkspacePicker: true,
+          confirmLabel: "\u786E\u8BA4\u8865\u9F50\u5E76\u4F7F\u7528",
+          cancelLabel: "\u5148\u770B\u770B"
+        }, () => typeof controller.completeHybridPlan === "function" ? controller.completeHybridPlan() : controller.startCreation())
       };
       if (needsCreation) return { label: "\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6", primary: true, disabled: !canAct, onClick: () => controller.startCreation() };
-      return { label: "\u4F7F\u7528\u8FD9\u4E2A\u65B9\u6848", primary: true, disabled: !canAct || workspacePending, onClick: () => !workspacePending && controller.runCurrentPlan() };
+      return {
+        label: "\u4F7F\u7528\u8FD9\u4E2A\u65B9\u6848",
+        primary: true,
+        disabled: !canAct || workspacePending,
+        onClick: () => !workspacePending && confirmOrRun({
+          title: plan?.kind === "native" ? "\u5728\u5DE5\u4F5C\u533A\u8BD5\u8DD1\u8FD9\u4E2A\u65B9\u6848\uFF1F" : "\u786E\u8BA4\u4F7F\u7528\u8FD9\u4E2A\u65B9\u6848\uFF1F",
+          body: actionNote("\u4F7F\u7528\u8FD9\u4E2A\u65B9\u6848"),
+          facts: selectedPluginFacts(),
+          showWorkspacePicker: true,
+          confirmLabel: plan?.kind === "native" ? "\u786E\u8BA4\u6267\u884C" : "\u786E\u8BA4\u5B89\u88C5\u5E76\u4F7F\u7528",
+          cancelLabel: "\u5148\u4E0D\u88C5"
+        }, () => controller.runCurrentPlan())
+      };
     };
     const solutionCard = () => {
       const primaryChoice = primaryAction();
@@ -3902,7 +4057,8 @@ function createExperienceView(React2) {
         actions: [],
         note: "",
         showSignature: false,
-        compact: true
+        compact: true,
+        embedded: true
       }) : null
     });
     const planCardArea = () => {
@@ -3967,7 +4123,23 @@ function createExperienceView(React2) {
           h(
             "div",
             { className: "pf8_acts" },
-            v8Action({ label: "\u5F00\u59CB\u521B\u5EFA", primary: true, onClick: () => !workspacePending && controller.createInWorkspace(), disabled: !canAct || workspacePending || Boolean(question) }),
+            v8Action({
+              label: "\u5F00\u59CB\u521B\u5EFA",
+              primary: true,
+              onClick: () => !workspacePending && confirmOrRun({
+                title: "\u5F00\u59CB\u5728\u5DE5\u4F5C\u533A\u521B\u5EFA\u8FD9\u4E2A\u63D2\u4EF6\uFF1F",
+                body: "\u4F1A\u5148\u628A\u5F53\u524D\u65B9\u6848\u5B58\u6210\u8349\u7A3F\u5E76\u4EA4\u7ED9\u6267\u884C\u5BF9\u8BDD\uFF0C\u6309\u4E94\u6B65\u966A\u505A\u8282\u594F\u63A8\u8FDB\u3002",
+                facts: [
+                  text11(blueprint?.name) ? { label: "\u63D2\u4EF6\u8349\u7A3F", value: text11(blueprint.name) } : null,
+                  text11(blueprint?.purpose) ? { label: "\u76EE\u6807", value: short2(blueprint.purpose, 80) } : null,
+                  state.executionWorkspaceLabel ? { label: "\u5DE5\u4F5C\u533A", value: text11(state.executionWorkspaceLabel) } : null
+                ].filter(Boolean),
+                showWorkspacePicker: true,
+                confirmLabel: "\u786E\u8BA4\u5F00\u59CB\u521B\u5EFA",
+                cancelLabel: "\u518D\u6539\u6539"
+              }, () => controller.createInWorkspace()),
+              disabled: !canAct || workspacePending || Boolean(question)
+            }),
             v8Action({ label: "\u56DE\u770B\u65B9\u6848", onClick: () => controller.showFind(), disabled: locked })
           ),
           h("p", { className: "pf8_next" }, "\u4F1A\u5148\u5728\u53D1\u73B0\u597D\u63D2\u4EF6\u91CC\u5B58\u4E00\u4EFD\u8349\u7A3F\uFF0C\u518D\u4ECE\u7B2C\u4E00\u6B65\u5F00\u59CB\uFF1B\u968F\u65F6\u53EF\u4EE5\u56DE\u6765\u6539\u3002")
@@ -4069,15 +4241,135 @@ function createMoreMenu(React2) {
     );
   };
 }
+function attachDialogLightDismiss(dialog, onDismiss) {
+  if (!dialog || typeof HTMLDialogElement !== "undefined" && "closedBy" in HTMLDialogElement.prototype) {
+    return () => {
+    };
+  }
+  const outside = (event) => {
+    const r = dialog.getBoundingClientRect?.();
+    if (!r) return false;
+    return event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom;
+  };
+  let pressedOutside = false;
+  const onDown = (event) => {
+    pressedOutside = outside(event);
+  };
+  const onUp = (event) => {
+    if (pressedOutside && outside(event)) {
+      pressedOutside = false;
+      if (typeof dialog.close === "function" && dialog.open) dialog.close();
+      onDismiss?.();
+    }
+  };
+  dialog.addEventListener?.("pointerdown", onDown);
+  dialog.addEventListener?.("pointerup", onUp);
+  return () => {
+    dialog.removeEventListener?.("pointerdown", onDown);
+    dialog.removeEventListener?.("pointerup", onUp);
+  };
+}
+function createConfirmDialog(React2) {
+  const h = React2.createElement;
+  return function ConfirmDialog({ modal, workspaceId = "", workspaces = [], onSelectWorkspace, onDismiss }) {
+    const dialogRef = React2.useRef(null);
+    const closedByAction = React2.useRef("");
+    React2.useEffect(() => {
+      const dialog = dialogRef.current;
+      if (!modal || !dialog) return void 0;
+      closedByAction.current = "";
+      dialog.setAttribute?.("closedby", "any");
+      if (!dialog.open && typeof dialog.showModal === "function") dialog.showModal();
+      const detach = attachDialogLightDismiss(dialog, () => {
+        if (closedByAction.current === "confirm") return;
+        onDismiss?.();
+      });
+      return () => {
+        detach?.();
+        if (dialog.open && typeof dialog.close === "function") dialog.close();
+      };
+    }, [modal]);
+    if (!modal) return null;
+    const facts = Array.isArray(modal.facts) ? modal.facts.filter((item) => item && item.label && item.value) : [];
+    const needWorkspace = Boolean(modal.requireWorkspace) && Array.isArray(workspaces) && workspaces.length > 0 && !workspaceId;
+    const finishCancel = () => {
+      closedByAction.current = "cancel";
+      const dialog = dialogRef.current;
+      if (dialog) dialog.returnValue = "";
+      if (dialog?.open && typeof dialog.close === "function") dialog.close("cancel");
+      onDismiss?.();
+    };
+    const finishConfirm = () => {
+      if (needWorkspace) return;
+      closedByAction.current = "confirm";
+      const dialog = dialogRef.current;
+      if (dialog) dialog.returnValue = "";
+      if (dialog?.open && typeof dialog.close === "function") dialog.close("confirm");
+      onDismiss?.();
+      modal.onConfirm?.();
+    };
+    return h(
+      "dialog",
+      {
+        ref: dialogRef,
+        className: "pf_modal pf_v8",
+        closedby: "any",
+        "aria-labelledby": "pf_modal_title",
+        onClose: (event) => {
+          const dialog = event?.currentTarget || dialogRef.current;
+          const rv = dialog?.returnValue || "";
+          if (dialog) dialog.returnValue = "";
+          if (closedByAction.current === "confirm" || rv === "confirm") return;
+          onDismiss?.();
+        }
+      },
+      h(
+        "div",
+        { className: "pf_modal_head" },
+        h("h2", { id: "pf_modal_title" }, modal.title || "\u786E\u8BA4\u7EE7\u7EED"),
+        h("button", { type: "button", className: "pf_modal_x", "aria-label": "\u5173\u95ED\u5BF9\u8BDD\u6846", onClick: finishCancel }, "\xD7")
+      ),
+      modal.body ? h("p", { className: "pf_modal_body" }, modal.body) : null,
+      facts.length ? h(
+        "dl",
+        { className: "pf_modal_facts" },
+        ...facts.map((item) => h("div", { key: item.label }, h("dt", null, item.label), h("dd", null, item.value)))
+      ) : null,
+      modal.showWorkspacePicker && Array.isArray(workspaces) && workspaces.length ? h(
+        "label",
+        { className: "pf_modal_ws" },
+        "\u5728\u54EA\u4E2A\u5DE5\u4F5C\u533A\u6267\u884C",
+        h(
+          "select",
+          {
+            "aria-label": "\u786E\u8BA4\u5F39\u7A97\u4E2D\u7684\u5DE5\u4F5C\u533A\u9009\u62E9",
+            value: workspaceId || "",
+            onChange: (event) => onSelectWorkspace?.(event.target.value)
+          },
+          h("option", { value: "" }, "\u9009\u62E9\u76EE\u6807\u5DE5\u4F5C\u533A"),
+          ...workspaces.map((item) => h("option", { key: item.workspaceId, value: item.workspaceId }, item.title))
+        )
+      ) : null,
+      h(
+        "div",
+        { className: "pf_modal_acts" },
+        h("button", { type: "button", className: "pf8_btn", autoFocus: true, onClick: finishCancel }, modal.cancelLabel || "\u5148\u53D6\u6D88"),
+        h("button", { type: "button", className: "pf8_btn pf8_ink", disabled: needWorkspace, onClick: finishConfirm }, modal.confirmLabel || "\u786E\u8BA4\u7EE7\u7EED")
+      )
+    );
+  };
+}
 
 // src/v8-tokens.js
 var v8TokensCss = `
-.pf_v8 {
+:where(.pf_root, .pf_v8) {
+  color-scheme: light dark;
   --ink: var(--dsw-alias-label-primary, #191b1f);
   --ink2: var(--dsw-alias-label-secondary, #4b5058);
   --ink3: var(--dsw-alias-label-tertiary, #868c95);
   --ink4: var(--dsw-alias-label-caption, #b9bdc3);
   --bg: var(--dsw-alias-bg-base, #f8f8f6);
+  --subtle: var(--dsw-alias-bg-layer-1, #f3f3f0);
   --card: var(--dsw-alias-bg-layer-2, #ffffff);
   --line: var(--dsw-alias-border-l2, #e7e7e2);
   --line2: var(--dsw-alias-border-l4, #d0d0c9);
@@ -4087,10 +4379,57 @@ var v8TokensCss = `
   --have: var(--dsw-alias-link, #4d6bfe);
   --build: var(--dsw-alias-state-warn-primary, #dd8500);
   --ok: var(--dsw-alias-state-success-primary, #2fa36b);
+  --err: var(--dsw-alias-state-error-primary, #c43c3c);
+  --f-shadow: 0 2px 10px rgba(25, 27, 31, .06);
+  --f-modal-shadow: 0 24px 60px rgba(25, 27, 31, .16);
   --serif: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
   --sans: var(--dsw-font-family, -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif);
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --ease: cubic-bezier(.2, .8, .2, 1);
+}
+`;
+var v8DarkFallbackCss = `
+:where(.pf_root, .pf_v8)[data-theme="dark"], .dark :where(.pf_root, .pf_v8) {
+  --ink: var(--dsw-alias-label-primary, #eceded);
+  --ink2: var(--dsw-alias-label-secondary, #b5b9bf);
+  --ink3: var(--dsw-alias-label-tertiary, #7e848d);
+  --ink4: var(--dsw-alias-label-caption, #4f545b);
+  --bg: var(--dsw-alias-bg-base, #141517);
+  --subtle: var(--dsw-alias-bg-layer-1, #1a1b1e);
+  --card: var(--dsw-alias-bg-layer-2, #1d1f22);
+  --line: var(--dsw-alias-border-l2, #2a2c30);
+  --line2: var(--dsw-alias-border-l4, #3b3e43);
+  --hover: var(--dsw-alias-interactive-bg-hover, rgba(236, 237, 237, .07));
+  --primary: var(--dsw-alias-button-primary-fill, #eceded);
+  --on-primary: var(--dsw-alias-label-primary-inverted, #141517);
+  --have: var(--dsw-alias-link, #8198ff);
+  --build: var(--dsw-alias-state-warn-primary, #f0a530);
+  --ok: var(--dsw-alias-state-success-primary, #4cc38a);
+  --err: var(--dsw-alias-state-error-primary, #f27878);
+  --f-shadow: 0 2px 10px rgba(0, 0, 0, .28);
+  --f-modal-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+}
+@media (prefers-color-scheme: dark) {
+  :where(.pf_root, .pf_v8):not([data-theme="light"]) {
+    --ink: var(--dsw-alias-label-primary, #eceded);
+    --ink2: var(--dsw-alias-label-secondary, #b5b9bf);
+    --ink3: var(--dsw-alias-label-tertiary, #7e848d);
+    --ink4: var(--dsw-alias-label-caption, #4f545b);
+    --bg: var(--dsw-alias-bg-base, #141517);
+    --subtle: var(--dsw-alias-bg-layer-1, #1a1b1e);
+    --card: var(--dsw-alias-bg-layer-2, #1d1f22);
+    --line: var(--dsw-alias-border-l2, #2a2c30);
+    --line2: var(--dsw-alias-border-l4, #3b3e43);
+    --hover: var(--dsw-alias-interactive-bg-hover, rgba(236, 237, 237, .07));
+    --primary: var(--dsw-alias-button-primary-fill, #eceded);
+    --on-primary: var(--dsw-alias-label-primary-inverted, #141517);
+    --have: var(--dsw-alias-link, #8198ff);
+    --build: var(--dsw-alias-state-warn-primary, #f0a530);
+    --ok: var(--dsw-alias-state-success-primary, #4cc38a);
+    --err: var(--dsw-alias-state-error-primary, #f27878);
+    --f-shadow: 0 2px 10px rgba(0, 0, 0, .28);
+    --f-modal-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+  }
 }
 `;
 
@@ -4098,7 +4437,7 @@ var v8TokensCss = `
 var v8Css = `
 /* \u2014\u2014 \u5E95\u5EA7 \u2014\u2014 */
 .pf_v8 { font: 15px/1.6 var(--sans); color: var(--ink); background: transparent; -webkit-font-smoothing: antialiased; }
-.pf_v8 * { box-sizing: border-box; }
+:where(.pf_v8 :is(div, section, article, header, footer, main, nav, aside, form, fieldset, details, summary, dialog, ul, ol, li, dl, dt, dd, h1, h2, h3, h4, p, span, b, strong, i, em, a, code, pre, button, input, textarea, select, label, svg)) { box-sizing: border-box; }
 .pf_v8 h1, .pf_v8 h2, .pf_v8 h3, .pf_v8 p, .pf_v8 ul, .pf_v8 ol { margin: 0; padding: 0; }
 .pf_v8 ul, .pf_v8 ol { list-style: none; }
 .pf_v8 button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; padding: 0; }
@@ -4154,7 +4493,7 @@ var v8Css = `
 .pf_v8 .pf8_key .pf8_pc { --h: 19px; margin: 0 7px 0 0; }
 .pf_v8 .pf8_tries { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; align-items: center; font-size: 13px; color: var(--ink3); }
 .pf_v8 .pf8_pill { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 15px; border: 1px solid var(--line); color: var(--ink2); font-size: 13px; white-space: nowrap; }
-.pf_v8 .pf8_pill:hover { background: var(--hover); }
+.pf_v8 .pf8_pill:hover:not(:disabled) { background: var(--hover); }
 .pf_v8 .pf8_eglead { margin-top: 26px; font-size: 13px; color: var(--ink3); }
 .pf_v8 .pf8_eglead .pf8_lk { font-size: 13px; }
 /* \u793A\u4F8B\u533A\uFF1A\u4F8B\u53E5\u662F\u53EF\u70B9\u7684\u80F6\u56CA\uFF0C\u53EA\u793A\u8303\u300C\u53EF\u4EE5\u8FD9\u6837\u8BF4\u300D\uFF0C\u4E0D\u548C\u7ED3\u679C\u914D\u5BF9\u3002
@@ -4248,7 +4587,7 @@ var v8Css = `
 
 /* \u2014\u2014 \u6309\u94AE \u2014\u2014 */
 .pf_v8 .pf8_btn { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 18px; font-size: 13.5px; white-space: nowrap; border: 1px solid var(--line2); color: var(--ink); }
-.pf_v8 .pf8_btn:hover { background: var(--hover); }
+.pf_v8 .pf8_btn:hover:not(:disabled) { background: var(--hover); }
 .pf_v8 .pf8_btn.pf8_ink { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .pf_v8 .pf8_btn.pf8_ink:hover { opacity: .88; background: var(--primary); }
 .pf_v8 .pf8_btn.pf8_big { height: 42px; border-radius: 21px; padding: 0 20px; font-size: 14.5px; }
@@ -4362,6 +4701,7 @@ var v8Css = `
 .pf_v8 .pf8_store_page:disabled { opacity: .4; cursor: default; }
 /* \u2014\u2014 \u5916\u58F3\u5269\u4E0B\u7684\u4E1C\u897F\uFF08SPEC 5.13\uFF09\uFF1A\u4E00\u4E2A\u5E95\u8272\u3001\u63D0\u793A\u6761\u3001\u9875\u5E95\u4E24\u4E2A\u6298\u53E0\u5165\u53E3\u3002 \u2014\u2014 */
 .pf_root.pf_v2, .pf_root.pf_v2:has(.pfv_home), .pf_root.pf_v2:has(.pf8_hero) { background: var(--dsw-alias-bg-base, #f8f8f6); }
+.pf_root.pf_v2 > .pf_inner { max-width: none; padding: 16px 0 0; }
 /* \u5916\u58F3\u63D0\u793A\u6761\uFF1A\u4E0D\u4F9D\u8D56 .pf_v8 \u5185\u90E8\u7684\u53D8\u91CF\uFF0C\u76F4\u63A5\u5F15\u7528\u5BBF\u4E3B token \u5E76\u5E26\u6D45\u8272\u56DE\u9000\uFF1B
    \u5BBD\u5EA6\u7B49\u4E8E\u5404\u9875\u6B63\u6587\u7684\u7248\u5FC3\u5BBD\u5EA6\uFF08\u9996\u9875 1080-80\u3001\u65B9\u6848 860-80\u3001\u5546\u5E97/\u5386\u53F2 920-80\uFF09\uFF0C
    left \u4E0E\u9875\u5185\u6587\u5B57\u5BF9\u9F50\uFF1B\u7A84\u5C4F\u548C\u7248\u5FC3\u7528\u540C\u4E00\u4FA7\u5185\u7F29\u3002 */
@@ -4433,7 +4773,7 @@ var v8Css = `
 .pf_v8 .pf8_detail_head h1 { font: 400 clamp(26px, 4cqw, 38px)/1.35 var(--serif); letter-spacing: .01em; }
 .pf_v8 .pf8_detail_head h1.pf8_detail_long { font: 400 clamp(21px, 3.2cqw, 26px)/1.5 var(--serif); }
 .pf_v8 .pf8_detail_lead { margin-top: 12px; max-width: 720px; color: var(--ink2); font-size: 15px; line-height: 1.75; }
-.pf_v8 .pf8_detail_block { margin-top: 22px; padding: 18px 20px; border: 1px solid color-mix(in srgb, var(--have) 24%, var(--line)); border-radius: 14px; background: color-mix(in srgb, var(--have) 7%, var(--card)); }
+.pf_v8 .pf8_detail_block { margin-top: 22px; padding: 16px 20px; border: 0; border-left: 2.5px solid var(--have); border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--have) 7%, var(--card)); }
 .pf_v8 .pf8_detail_block code { font: 15px/1.6 var(--mono); overflow-wrap: anywhere; }
 .pf_v8 .pf8_detail_block p { margin-top: 5px; color: var(--ink2); font-size: 12.5px; }
 .pf_v8 .pf8_detail_install { margin-top: 26px; }
@@ -4480,17 +4820,29 @@ var v8Css = `
 .pf_v8 .pf8_card_mini .pf8_verdict { font-size: clamp(21px, 3.2cqw, 26px); }
 .pf_v8 .pf8_card_mini .pf8_fit { margin-top: 18px; }
 
-/* \u62FC\u51FA\u6765\u7684\u90A3\u4E00\u6392\uFF1A\u5757\u4E0E\u5757\u4E4B\u95F4\u7559 8px\uFF0C\u4E0D\u4E92\u76F8\u538B\u4F4F\u3002 */
-.pf_v8 .pf8_fit { display: flex; gap: 8px; margin-top: 28px; }
-.pf_v8 .pf8_blk { position: relative; flex: 1 1 0; min-width: 0; padding: 16px 20px 15px; border-radius: 18px; border: 1.3px solid transparent; }
-.pf_v8 .pf8_blk code { display: block; font: 600 14px/1.45 var(--mono); overflow-wrap: anywhere; }
+/* \u62FC\u51FA\u6765\u7684\u90A3\u4E00\u6392\uFF1A\u6574\u884C\u5305\u5728 @container bricks \u5185\uFF0C\u5168\u5BBD code \u5728\u72B6\u6001\u5FBD\u6807\u4E0B\u4E00\u884C\u5B8C\u6574\u5C55\u793A\uFF0C\u4E0D\u65AD\u8BCD\u3002 */
+.pf_v8 .pf8_fit_wrap { margin-top: 28px; container-type: inline-size; container-name: bricks; }
+.pf_v8 .pf8_card_mini .pf8_fit_wrap, .pf_v8 .pf8_tentative .pf8_fit_wrap { margin-top: 18px; }
+.pf_v8 .pf8_fit { display: flex; align-items: stretch; gap: 0; margin-top: 0; }
+.pf_v8 .pf8_blk { position: relative; flex: 1 1 0; min-width: 0; padding: 14px 18px; border-radius: 16px; border: 1.3px solid transparent; display: flex; flex-direction: column; gap: 4px; }
+.pf_v8 .pf8_blk_top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.pf_v8 .pf8_blk_studs { display: inline-flex; gap: 5px; align-items: center; flex: none; }
+.pf_v8 .pf8_blk_studs i { display: block; width: 9px; height: 4px; border-radius: 2px 2px 0 0; }
+.pf_v8 .pf8_blk.have .pf8_blk_studs i { background: var(--have); opacity: .75; }
+.pf_v8 .pf8_blk.build .pf8_blk_studs i { border: 1px dashed var(--build); background: transparent; height: 5px; }
+.pf_v8 .pf8_blk.native .pf8_blk_studs i { background: var(--line2); }
+.pf_v8 .pf8_bstat { font-size: 11px; line-height: 1.3; font-weight: 500; white-space: nowrap; color: var(--ink3); }
+.pf_v8 .pf8_blk.have .pf8_bstat { color: color-mix(in srgb, var(--have) 88%, var(--ink)); }
+.pf_v8 .pf8_blk.build .pf8_bstat { color: color-mix(in srgb, var(--build) 78%, var(--ink)); }
+.pf_v8 .pf8_blk code { display: block; width: 100%; font: 600 13.5px/1.45 var(--mono); word-break: keep-all; overflow-wrap: break-word; }
 .pf_v8 .pf8_blk code .pf8_pc { --h: 19px; margin: -3px 5px -3px -3px; vertical-align: -3px; }
-.pf_v8 .pf8_blk span { display: block; margin-top: 4px; font-size: 13px; line-height: 1.5; color: var(--ink2); }
-.pf_v8 .pf8_blk .pf8_blk_ver { color: var(--ink2); font-size: 12px; font-variant-numeric: tabular-nums; }
-.pf_v8 .pf8_blk em { display: block; margin-top: 8px; font-style: normal; font-size: 11.5px; color: var(--ink2); }
+.pf_v8 .pf8_blk span { display: block; margin-top: 2px; font-size: 13px; line-height: 1.5; color: var(--ink2); }
+.pf_v8 .pf8_blk .pf8_blk_ver { color: var(--ink3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pf_v8 .pf8_blk em { display: block; margin-top: auto; padding-top: 4px; font-style: normal; font-size: 11.5px; color: var(--ink2); }
+.pf_v8 .pf8_conn { display: flex; align-items: center; justify-content: center; flex: none; width: 22px; font: 600 15px/1 var(--sans); color: var(--ink4); user-select: none; }
 .pf_v8 .pf8_blk.have { background: color-mix(in srgb, var(--have) 9%, transparent); border-color: color-mix(in srgb, var(--have) 55%, transparent); }
 .pf_v8 .pf8_blk.build { background: color-mix(in srgb, var(--build) 8%, transparent); border: 1.3px dashed var(--build); }
-.pf_v8 .pf8_blk.build code { font-family: var(--sans); color: var(--build); }
+.pf_v8 .pf8_blk.build code { font-family: var(--sans); color: color-mix(in srgb, var(--build) 78%, var(--ink)); }
 .pf_v8 .pf8_blk.native { border-color: var(--line2); }
 
 .pf_v8 .pf8_sub { margin-top: 26px; font-size: 13px; font-weight: 600; color: var(--ink2); }
@@ -4568,9 +4920,7 @@ var v8Css = `
 @container finder (max-width: 700px) {
   .pf_v8 .pf8_card { padding: 24px 20px 20px; border-radius: 20px; }
   .pf_v8 .pf8_card.pf8_revise { padding: 20px 18px 16px; }
-  .pf_v8 .pf8_fit { flex-direction: column; gap: 8px; margin-top: 22px; }
-  .pf_v8 .pf8_blk { flex: none; min-width: 0; }
-  .pf_v8 .pf8_blk + .pf8_blk { margin-left: 0; margin-top: 0; padding-left: 20px; padding-top: 16px; }
+  .pf_v8 .pf8_fit_wrap { margin-top: 22px; }
   .pf_v8 .pf8_rej li { grid-template-columns: 22px minmax(0, 1fr); }
   .pf_v8 .pf8_rej span { grid-column: 2; }
   .pf_v8 .pf8_src li { grid-template-columns: 22px minmax(0, 1fr); }
@@ -4582,7 +4932,57 @@ var v8Css = `
   .pf_v8 .pf8_top nav { margin-left: 0; }
   .pf_v8 .pf8_verdict { font-size: clamp(23px, 7cqw, 30px); }
   .pf_v8 .pf8_acts .pf8_btn { width: 100%; justify-content: center; }
+  .pf_v8 .pf8_bp_row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }
+@container bricks (max-width: 520px) {
+  .pf_v8 .pf8_fit { flex-direction: column; gap: 6px; }
+  .pf_v8 .pf8_conn { width: auto; height: 14px; font-size: 13px; }
+  .pf_v8 .pf8_blk { flex: none; min-width: 0; }
+}
+
+/* \u2014\u2014 v9.2 \u7EDF\u4E00\u89C6\u89C9\u7275\u5F15\uFF1A\u6F0F\u6597\u3001\u6F14\u5316\u5361\u3001\u5546\u5E97\u5360\u6BD4\u3001\u8BE6\u60C5\u5FEB\u901F\u6838\u5BF9\u3001\u6241\u5E73\u5355\u5C42\u3001\u539F\u751F\u5F39\u7A97 \u2014\u2014 */
+.pf_v8 .pf8_tentative { margin-top: 14px; padding: 14px 16px; border: 0; border-left: 2px solid var(--line2); border-radius: 0 12px 12px 0; background: var(--subtle); }
+.pf_v8 .pf8_tentative .pf8_verdict { font-size: clamp(19px, 3cqw, 23px); }
+.pf_v8 .pf8_funnel { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 20px; padding: 10px 14px; border-radius: 12px; background: var(--subtle); font-size: 12.5px; color: var(--ink2); }
+.pf_v8 .pf8_fstep { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
+.pf_v8 .pf8_fstep b { font: 600 12.5px/1.2 var(--sans); font-variant-numeric: tabular-nums; color: var(--ink); }
+.pf_v8 .pf8_fstep[data-kind="selected"] b { color: color-mix(in srgb, var(--have) 88%, var(--ink)); }
+.pf_v8 .pf8_fstep[data-kind="warn"] b { color: color-mix(in srgb, var(--build) 78%, var(--ink)); }
+.pf_v8 .pf8_fsep { color: var(--ink4); font-size: 12px; }
+.pf_v8 .pf8_evo_bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 22px; padding: 10px 14px; border-left: 2.5px solid var(--build); border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--build) 7%, var(--card)); font-size: 13px; color: var(--ink2); }
+.pf_v8 .pf8_evo_pill { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: color-mix(in srgb, var(--build) 16%, transparent); color: color-mix(in srgb, var(--build) 78%, var(--ink)); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.pf_v8 .pf8_blueprint { margin-top: 12px; padding: 14px 16px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+.pf_v8 .pf8_bp_row { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; align-items: baseline; font-size: 13px; line-height: 1.65; }
+.pf_v8 .pf8_bp_row dt { color: var(--ink3); font-size: 12px; }
+.pf_v8 .pf8_bp_row dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.pf_v8 .pf8_store_shares { margin-top: 18px; display: grid; gap: 7px; max-width: 520px; }
+.pf_v8 .pf8_store_srow { display: grid; grid-template-columns: minmax(76px, auto) minmax(0, 1fr) auto; align-items: center; gap: 10px; font-size: 12px; color: var(--ink3); }
+.pf_v8 .pf8_store_sbar { height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.pf_v8 .pf8_store_sfill { display: block; height: 100%; border-radius: inherit; background: color-mix(in srgb, var(--have) 62%, transparent); }
+.pf_v8 .pf8_store_scnt { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pf_v8 .pf8_fit_inline { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+.pf_v8 .pf8_fit_inline > summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; cursor: pointer; list-style: none; font-size: 13px; color: var(--ink2); }
+.pf_v8 .pf8_fit_inline > summary::-webkit-details-marker { display: none; }
+.pf_v8 .pf8_fit_inline > summary::before { content: ""; display: inline-block; width: 0; height: 0; border-left: 5px solid currentColor; border-top: 4px solid transparent; border-bottom: 4px solid transparent; }
+.pf_v8 .pf8_fit_inline[open] > summary::before { vertical-align: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid currentColor; border-bottom: 0; }
+.pf_v8 .pf8_fit_badge { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11.5px; font-weight: 500; background: var(--subtle); color: var(--ink2); }
+.pf_v8 .pf8_fit_badge[data-tone="ok"] { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+.pf_v8 .pf8_fit_badge[data-tone="warn"] { color: color-mix(in srgb, var(--build) 78%, var(--ink)); background: color-mix(in srgb, var(--build) 12%, transparent); }
+.pf_v8 .pf8_fit_grid { margin-top: 12px; }
+.pf_v8 .pfv_plugin_error { margin-top: 18px; padding: 12px 16px; border: 0; border-left: 2.5px solid var(--err); border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--err) 7%, var(--card)); font-size: 13.5px; }
+.pf_v8 .pf8_folds :is(.pf_coverage, .pf_task_history, .pf_candidate, .pf_install) { border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 14px 0; margin: 10px 0 0; background: transparent; box-shadow: none; }
+.pf_modal_head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pf_modal_head h2 { margin: 0; font: 400 22px/1.4 var(--serif); color: var(--ink); }
+.pf_modal_x { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); color: var(--ink2); display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.pf_modal_x:hover:not(:disabled) { background: var(--hover); color: var(--ink); }
+.pf_modal_body { margin-top: 10px; font-size: 14px; line-height: 1.7; color: var(--ink2); }
+.pf_modal_facts { margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--subtle); display: grid; gap: 6px; font-size: 13px; }
+.pf_modal_facts > div { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; }
+.pf_modal_facts dt { color: var(--ink3); }
+.pf_modal_facts dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.pf_modal_ws { margin-top: 14px; display: grid; gap: 6px; font-size: 13px; color: var(--ink2); }
+.pf_modal_ws select { width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; }
+.pf_modal_acts { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 
 `;
 
@@ -5383,6 +5783,7 @@ var experienceV3Css = `
 `;
 var experienceCss = `${experienceV3Css}
 ${v8TokensCss}
+${v8DarkFallbackCss}
 ${v8Css}`;
 
 // src/creator-feedback.js
@@ -5485,8 +5886,33 @@ function creatorHandoffPrompt(steps) {
     "\u8BF7\u5148\u8C03\u7528 finder_creator_guide \u8BFB\u53D6\u521B\u9020\u7ECF\u9A8C\uFF0C\u518D\u4ECE\u6700\u540E\u4E00\u6B65\u7EE7\u7EED\uFF1B\u5DF2\u7ECF\u8DD1\u901A\u7684\u90E8\u5206\u4E0D\u8981\u91CD\u5199\u3002\u9700\u8981\u4E0A\u4E2A\u7A97\u53E3\u7684\u7EC6\u8282\u65F6\u5148\u95EE\u6211\u3002"
   ].join("\n");
 }
+var STAGE_LESSONS = Object.freeze({
+  search: [
+    "\u5199\u4EE3\u7801\u524D\u5148\u7528 cordis_inspect \u67E5\u5C55\u4F4D\u548C\u63A5\u53E3\uFF0C\u627E\u7ED3\u6784\u76F8\u8FD1\u7684\u5DF2\u8DD1\u901A\u63D2\u4EF6\u7167\u7740\u6539\u3002",
+    "\u53EA\u8BFB\u5BBF\u4E3B\u5305\u91CC\u7684 api-catalog \u548C slots \u5B9A\u4E49\uFF0C\u4E0D\u51ED\u8BB0\u5FC6\u731C\u63A5\u53E3\u3002"
+  ],
+  design: [
+    "\u52A8\u624B\u524D\u7528\u4E09\u4E94\u53E5\u5927\u767D\u8BDD\u5BF9\u9F50\uFF1A\u6302\u5728\u54EA\u3001\u51E0\u4E2A\u6587\u4EF6\u3001\u6570\u636E\u5B58\u54EA\u3002",
+    "\u53EF\u9009\u670D\u52A1\u5199\u8FDB inject\uFF0C\u72B6\u6001\u6536\u5728\u4E00\u4E2A\u5730\u65B9\uFF0C\u5199\u63A5\u53E3\u62D2\u7EDD\u8DE8\u7AD9\u8BF7\u6C42\u3002"
+  ],
+  skeleton: [
+    "\u7B2C\u4E00\u7248\u53EA\u505A\u80FD\u70B9\u5F00\u3001\u4E0D\u767D\u5C4F\u7684\u7A7A\u67B6\u5B50\uFF0C\u6240\u6709\u6CE8\u518C\u653E\u8FDB ctx.effect\u3002",
+    "main \u9762\u677F\u7528 flex \u6491\u6EE1\u5E76\u81EA\u5DF1\u5F53\u6EDA\u52A8\u53E3\uFF1BReact \u7528\u5BBF\u4E3B\u90A3\u4EFD\uFF0C\u4E0D\u5F15\u5BBF\u4E3B UI \u5305\u3002"
+  ],
+  feature: [
+    "\u4E00\u8F6E\u53EA\u52A0\u4E00\u4E2A\u529F\u80FD\uFF1B@container \u91CF\u81EA\u8EAB\u5BBD\u5EA6\uFF0C\u989C\u8272\u53EA\u7528 --dsw-alias-* \u53D8\u91CF\u3002",
+    "\u6309\u94AE\u548C\u6A21\u578B\u5DE5\u5177\u8D70\u540C\u4E00\u5957\u5B9E\u73B0\uFF1B\u5BA2\u6237\u7AEF\u5165\u53E3\u5305\u8FDB window.__ModuleLoader__.load\u3002"
+  ],
+  verify: [
+    "\u5148\u6253\u5305\u5E76\u5728\u6D45\u8272/\u6DF1\u8272/\u7A84\u5C4F\u4E0B\u91CF\u771F\u5B9E\u6E32\u67D3\uFF0C\u518D\u8FDB\u9694\u79BB\u5BBF\u4E3B\u771F\u70B9\u5F00\u9A8C\u3002",
+    "\u5F39\u7A97\u548C\u5217\u8868\u884C\u5FC5\u987B\u6709\u72B6\u6001\u6587\u5B57\uFF0C\u4E0D\u5355\u9760\u989C\u8272\uFF1B\u6362\u5305\u540E\u5F7B\u5E95\u9000\u51FA\u684C\u9762\u7AEF\u91CD\u5F00\u3002"
+  ],
+  blocked: [
+    "\u540C\u4E00\u95EE\u9898\u8FDE\u6539\u4E09\u8F6E\u6CA1\u597D\u5C31\u505C\u4E0B\u6765\u5199\u6E05\u5C1D\u8BD5\u548C\u5361\u70B9\uFF0C\u5F00\u5E72\u51C0\u7A97\u53E3\u63A5\u7740\u505A\u3002"
+  ]
+});
 var css = `
-.pfc_dock, .pfc_closed { box-sizing: border-box;
+.pfc_dock, .pfc_closed { box-sizing: border-box; color-scheme: light dark;
   --pfc_ink: var(--dsw-alias-label-primary, #191b1f);
   --pfc_ink2: var(--dsw-alias-label-secondary, #4b5058);
   --pfc_ink3: var(--dsw-alias-label-tertiary, #868c95);
@@ -5500,6 +5926,32 @@ var css = `
   --pfc_serif: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
   --pfc_sans: var(--dsw-font-family, -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif);
   font-family: var(--pfc_sans); color: var(--pfc_ink); }
+:where(.pfc_dock, .pfc_closed)[data-theme="dark"], .dark :where(.pfc_dock, .pfc_closed) {
+  --pfc_ink: var(--dsw-alias-label-primary, #eceded);
+  --pfc_ink2: var(--dsw-alias-label-secondary, #b5b9bf);
+  --pfc_ink3: var(--dsw-alias-label-tertiary, #7e848d);
+  --pfc_card: var(--dsw-alias-bg-layer-2, #1d1f22);
+  --pfc_line: var(--dsw-alias-border-l2, #2a2c30);
+  --pfc_line2: var(--dsw-alias-border-l4, #3b3e43);
+  --pfc_build: var(--dsw-alias-state-warn-primary, #f0a530);
+  --pfc_ok: var(--dsw-alias-state-success-primary, #4cc38a);
+  --pfc_primary: var(--dsw-alias-button-primary-fill, #eceded);
+  --pfc_on_primary: var(--dsw-alias-label-primary-inverted, #141517);
+}
+@media (prefers-color-scheme: dark) {
+  :where(.pfc_dock, .pfc_closed):not([data-theme="light"]) {
+    --pfc_ink: var(--dsw-alias-label-primary, #eceded);
+    --pfc_ink2: var(--dsw-alias-label-secondary, #b5b9bf);
+    --pfc_ink3: var(--dsw-alias-label-tertiary, #7e848d);
+    --pfc_card: var(--dsw-alias-bg-layer-2, #1d1f22);
+    --pfc_line: var(--dsw-alias-border-l2, #2a2c30);
+    --pfc_line2: var(--dsw-alias-border-l4, #3b3e43);
+    --pfc_build: var(--dsw-alias-state-warn-primary, #f0a530);
+    --pfc_ok: var(--dsw-alias-state-success-primary, #4cc38a);
+    --pfc_primary: var(--dsw-alias-button-primary-fill, #eceded);
+    --pfc_on_primary: var(--dsw-alias-label-primary-inverted, #141517);
+  }
+}
 .pfc_dock { width: 100%; margin: 0 0 8px; padding: 16px 20px 18px; border: 1px solid var(--pfc_line2); border-radius: 20px; background: var(--pfc_card); }
 .pfc_dock[data-stuck="true"] { border-color: var(--pfc_build); }
 .pfc_hd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -5530,7 +5982,16 @@ var css = `
 .pfc_notice { font-size: 12.5px; color: var(--pfc_ink3); }
 .pfc_closed { width: 100%; margin: 0 0 8px; padding: 10px 14px; border: 1px solid var(--pfc_line); border-radius: 14px;
   display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--pfc_ink3); background: var(--pfc_card); }
-.pfc_button:focus-visible, .pfc_link:focus-visible { outline: 2px solid var(--pfc_ink); outline-offset: 2px; border-radius: 6px; }@media (max-width: 560px) {
+.pfc_button:focus-visible, .pfc_link:focus-visible { outline: 2px solid var(--pfc_ink); outline-offset: 2px; border-radius: 6px; }
+.pfc_lessons { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--pfc_line); }
+.pfc_lessons > summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; font-size: 12.5px; color: var(--pfc_ink2); }
+.pfc_lessons > summary::-webkit-details-marker { display: none; }
+.pfc_lessons > summary::before { content: ""; display: inline-block; width: 0; height: 0; border-left: 4.5px solid currentColor; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent; }
+.pfc_lessons[open] > summary::before { border-left: 3.5px solid transparent; border-right: 3.5px solid transparent; border-top: 4.5px solid currentColor; border-bottom: 0; }
+.pfc_lessons > summary:hover { color: var(--pfc_ink); }
+.pfc_lessons_list { margin: 8px 0 0; padding-left: 18px; list-style: disc; font-size: 12.5px; line-height: 1.65; color: var(--pfc_ink2); }
+.pfc_lessons_list li + li { margin-top: 4px; }
+@media (max-width: 560px) {
   .pfc_dock { padding: 14px 16px 16px; }
   .pfc_five span { font-size: 11px; }
 }
@@ -5603,6 +6064,15 @@ function createCreatorDock(React2) {
         )
       );
     }
+    const lessonList = (stageId, label) => {
+      const items8 = STAGE_LESSONS[stageId] ?? STAGE_LESSONS.search;
+      return h(
+        "details",
+        { className: "pfc_lessons" },
+        h("summary", { className: "pfc_lessons_sum" }, h("span", null, label ? `\u672C\u6B65\u907F\u5751\u94C1\u5F8B \xB7 ${label}` : "\u672C\u6B65\u907F\u5751\u94C1\u5F8B")),
+        h("ul", { className: "pfc_lessons_list" }, ...items8.map((item, idx) => h("li", { key: idx }, item)))
+      );
+    };
     if (mode === "stuck") {
       const blockedStep = progress?.blockedStep;
       const heading = blockedStep ? `\u5361\u5728\u7B2C ${blockedStep} \u6B65${last?.summary ? `\uFF1A${last.summary}` : ""}` : `\u5361\u4F4F\u4E86${last?.summary ? `\uFF1A${last.summary}` : ""}`;
@@ -5617,6 +6087,7 @@ function createCreatorDock(React2) {
         ),
         h("p", null, "\u540C\u4E00\u4E2A\u95EE\u9898\u5728\u4E00\u4E2A\u5BF9\u8BDD\u91CC\u53CD\u590D\u6539\uFF0C\u53EA\u4F1A\u8D8A\u6539\u8D8A\u8D35\u3002\u5F00\u4E2A\u65B0\u7A97\u53E3\uFF0C\u628A\u8BD5\u8FC7\u4EC0\u4E48\u3001\u5361\u5728\u54EA\u4E00\u8D77\u5E26\u8FC7\u53BB\u3002"),
         five(),
+        lessonList("blocked", "\u6B62\u635F\u6362\u7A97"),
         h(
           "div",
           { className: "pfc_acts" },
@@ -5640,6 +6111,7 @@ function createCreatorDock(React2) {
       ),
       h("p", null, last?.summary ? last.summary : "\u6BCF\u4E00\u6B65\u90FD\u5148\u95EE\u4F60\uFF0C\u4F60\u8BF4\u4E86\u624D\u5F80\u4E0B\u8D70\u3002"),
       five(),
+      lessonList(current?.id || "search", current?.label || ""),
       notice ? h("span", { className: "pfc_notice", role: "status" }, notice) : null
     );
   };
@@ -7727,6 +8199,7 @@ function apply(ctx) {
   const ExperienceView = createExperienceView(import_react.default);
   const MoreMenu = createMoreMenu(import_react.default);
   const HistoryView = createHistoryView(import_react.default);
+  const ConfirmDialog = createConfirmDialog(import_react.default);
   function FixedExecutionChat(props) {
     const markdown = require("@deepseek-ai/dsh-client-ui-primitives");
     const value = useState();
@@ -7880,6 +8353,8 @@ function apply(ctx) {
     }, [state.taskId]);
     const [feedbackOutcome, setFeedbackOutcome] = import_react.default.useState("");
     const [feedbackNote, setFeedbackNote] = import_react.default.useState("");
+    const [confirmModal, setConfirmModal] = import_react.default.useState(null);
+    const onRequestConfirm = typeof HTMLDialogElement !== "undefined" ? (spec) => setConfirmModal(spec) : null;
     const active = import_react.default.useRef(true);
     const importInput = import_react.default.useRef(null);
     const telemetrySettings = import_react.default.useRef(null);
@@ -8102,7 +8577,7 @@ function apply(ctx) {
           h("p", { className: "pf_small pf_muted" }, `\u7248\u672C ${version || "\u672A\u58F0\u660E"}${commit ? ` \xB7 \u63D0\u4EA4 ${commit.slice(0, 12)}` : ""}${details.compatibility ? ` \xB7 DSH ${details.compatibility}` : ""}${details.node ? ` \xB7 Node ${details.node}` : ""}`),
           requirements.length ? h("ul", { className: "pf_list pf_small" }, ...requirements.map((item, index) => h("li", { key: index }, item))) : h("p", { className: "pf_small pf_muted" }, "\u6587\u6863\u672A\u5217\u51FA\u5B8C\u6574\u4F7F\u7528\u524D\u63D0\uFF0C\u5B89\u88C5\u524D\u8BF7\u56DE\u6765\u6E90\u6838\u5BF9\u3002"),
           spec ? h("div", { className: "pf_install" }, h("div", { className: "pf_small pf_muted" }, "\u7CBE\u786E\u5B89\u88C5\u6765\u6E90"), h("code", null, spec), h("div", { className: "pf_actions" }, button2("\u590D\u5236\u6765\u6E90", () => copyText(spec)), button2("\u53BB DSH \u63D2\u4EF6\u9875\u6838\u5BF9", () => controller.openPluginManager()))) : h("p", { className: "pf_small pf_muted" }, "\u6682\u65E0\u53EF\u5C55\u793A\u7684\u7CBE\u786E\u5B89\u88C5\u6765\u6E90\uFF0C\u8BF7\u5148\u67E5\u770B\u4F5C\u8005\u6587\u6863\u3002"),
-          git ? h("p", { className: "pf_small pf_muted" }, `\u56FA\u5B9A\u5728 ${git.commit.slice(0, 12)} \u7684\u4ED3\u5E93\u6E90\u7801\uFF0C\u5B89\u88C5\u65F6\u7531 DSH \u4ECE\u4ED3\u5E93\u62C9\u53D6\u3002Finder \u6CA1\u6709\u6838\u5BF9\u5B83\u7684\u6253\u5305\u6821\u9A8C\u503C\u3002`) : null,
+          git ? h("p", { className: "pf_small pf_muted" }, `\u56FA\u5B9A\u5728 ${git.commit.slice(0, 12)} \u7684\u4ED3\u5E93\u6E90\u7801\uFF0C\u5B89\u88C5\u65F6\u7531 DSH \u4ECE\u4ED3\u5E93\u62C9\u53D6\u3002\u6211\u6CA1\u6709\u6838\u5BF9\u5B83\u7684\u6253\u5305\u6821\u9A8C\u503C\u3002`) : null,
           details.lifecycleWarning ? h("p", { className: "pf_banner pf_small" }, details.lifecycleWarning) : null,
           details.buildPrerequisite ? h("p", { className: "pf_banner pf_small" }, details.buildPrerequisite) : null,
           text13(candidate.documentation?.readAt) ? h("p", { className: "pf_small pf_muted" }, `\u4F5C\u8005\u8D44\u6599\u8BFB\u53D6\uFF1A${candidate.documentation.readAt}${candidate.documentation.truncated ? " \xB7 \u6709\u754C\u8282\u9009\uFF0C\u975E\u5168\u6587" : ""}`) : null,
@@ -8130,7 +8605,7 @@ function apply(ctx) {
             h("strong", null, text13(candidate.name) || text13(candidate.title) || candidate.id),
             h("p", { className: "pf_small pf_muted" }, `\u7248\u672C ${details.version || "\u672A\u58F0\u660E"}${details.commit ? ` \xB7 \u63D0\u4EA4 ${details.commit}` : ""}`),
             details.spec ? h("div", { className: "pf_install" }, h("code", null, details.spec), button2("\u590D\u5236\u5B89\u88C5\u6765\u6E90", () => copyText(details.spec), { disabled: busy })) : h("p", { className: "pf_small pf_error" }, "\u6682\u65E0\u7CBE\u786E\u5B89\u88C5\u6765\u6E90\uFF0C\u8BF7\u5148\u5C55\u5F00\u5019\u9009\u8D44\u6599\u5E76\u6838\u5BF9\u4F5C\u8005\u8BF4\u660E\uFF0C\u4E0D\u80FD\u636E\u6B64\u786E\u8BA4\u53EF\u5B89\u88C5\u3002"),
-            git ? h("p", { className: "pf_small pf_muted" }, `\u56FA\u5B9A\u5728 ${git.commit.slice(0, 12)} \u7684\u4ED3\u5E93\u6E90\u7801\uFF0C\u5B89\u88C5\u65F6\u7531 DSH \u4ECE\u4ED3\u5E93\u62C9\u53D6\u3002Finder \u6CA1\u6709\u6838\u5BF9\u5B83\u7684\u6253\u5305\u6821\u9A8C\u503C\u3002`) : null,
+            git ? h("p", { className: "pf_small pf_muted" }, `\u56FA\u5B9A\u5728 ${git.commit.slice(0, 12)} \u7684\u4ED3\u5E93\u6E90\u7801\uFF0C\u5B89\u88C5\u65F6\u7531 DSH \u4ECE\u4ED3\u5E93\u62C9\u53D6\u3002\u6211\u6CA1\u6709\u6838\u5BF9\u5B83\u7684\u6253\u5305\u6821\u9A8C\u503C\u3002`) : null,
             details.lifecycleWarning ? h("p", { className: "pf_banner pf_small" }, details.lifecycleWarning) : null,
             details.buildPrerequisite ? h("p", { className: "pf_banner pf_small" }, details.buildPrerequisite) : null
           );
@@ -8199,9 +8674,10 @@ function apply(ctx) {
       !state.catalogOpen && state.followupWarning ? h("p", { className: "pf_banner pf_small", role: "status" }, state.followupWarning) : null,
       !state.catalogOpen && state.resetPending && state.busy !== "reset" ? h("div", { className: "pf_banner pf_small", role: "status" }, "\u5F00\u59CB\u65B0\u9700\u6C42\u5C1A\u672A\u786E\u8BA4\uFF0C\u5DF2\u6709\u65B9\u6848\u4ECD\u4FDD\u7559\u3002", button2("\u91CD\u8BD5\u5F00\u59CB\u65B0\u9700\u6C42", () => controller.retryReset(), { disabled: busy })) : null,
       !state.catalogOpen && busy && ["home", "featured", "history", "creation-guide"].includes(state.view) && !state.searching ? h("div", { className: "pf_status", role: "status" }, h("span", { className: "pf_spinner", "aria-hidden": true }), { "opportunity-adopt": "\u6B63\u5728\u6838\u5BF9\u5EFA\u8BAE\u5E76\u67E5\u627E\u65B9\u6848\u2026", "creation-start": "\u6B63\u5728\u8BC4\u4F30\u590D\u7528\u673A\u4F1A\u5E76\u751F\u6210\u5171\u521B\u8349\u6848\u2026", "creation-update": "\u6B63\u5728\u4FDD\u5B58\u84DD\u56FE\u5E76\u6309\u9700\u91CD\u65B0\u6838\u5BF9\u4F9B\u7ED9\u2026", "creation-refine": "\u6B63\u5728\u6839\u636E\u4F60\u7684\u63CF\u8FF0\u4FEE\u6539\u84DD\u56FE\u2026", creator: "\u6B63\u5728\u8FDE\u63A5\u5B98\u65B9 Creator \u5E76\u4FDD\u7559\u4F1A\u8BDD\u5173\u8054\u2026", "creator-save": "\u6B63\u5728\u4FDD\u5B58 Creator \u539F\u4F1A\u8BDD\u5173\u8054\u2026", bootstrap: "\u6B63\u5728\u8BFB\u53D6\u8FDE\u63A5\u4E0E\u914D\u7F6E\u2026", analyze: "\u6B63\u5728\u7406\u89E3\u76EE\u6807\u3001\u6750\u6599\u4E0E\u7EA6\u675F\u2026", recommend: "\u6B63\u5728\u641C\u7D22\u6765\u6E90\u3001\u8BFB\u53D6\u5019\u9009\u8D44\u6599\u5E76\u63A8\u8350\u2026", handoff: "\u6B63\u5728\u8FDE\u63A5\u9009\u5B9A\u5DE5\u4F5C\u533A\u5E76\u51C6\u5907\u672A\u53D1\u9001\u8349\u7A3F\u2026", feedback: "\u6B63\u5728\u4FDD\u5B58\u5230\u672C\u673A\u2026", reset: "\u6B63\u5728\u4FDD\u5B58\u5E76\u5F00\u59CB\u65B0\u9700\u6C42\u2026", history: "\u6B63\u5728\u8BFB\u53D6\u672C\u673A\u5386\u53F2\u65B9\u6848\u2026", open: "\u6B63\u5728\u6253\u5F00\u6240\u9009\u65B9\u6848\u4E0E\u7248\u672C\u2026", refine: "\u6B63\u5728\u6839\u636E\u53CD\u9988\u91CD\u65B0\u7406\u89E3\u9700\u6C42\u2026", import: "\u6B63\u5728\u5BFC\u5165\u672C\u673A\u5907\u4EFD\u2026", export: "\u6B63\u5728\u5BFC\u51FA\u4EFB\u52A1\u5907\u4EFD\u2026", continue: "\u6B63\u5728\u6838\u5BF9\u539F\u4F1A\u8BDD\u7ED1\u5B9A\u2026", "handoff-save": "\u6B63\u5728\u4FDD\u5B58\u539F\u4F1A\u8BDD\u5173\u8054\u2026", "telemetry-status": "\u6B63\u5728\u8BFB\u53D6\u540C\u6B65\u72B6\u6001\u2026", "telemetry-consent": "\u6B63\u5728\u4FDD\u5B58\u81EA\u52A8\u56DE\u4F20\u9009\u62E9\u2026", "telemetry-delete": "\u6B63\u5728\u505C\u6B62\u56DE\u4F20\u5E76\u7533\u8BF7\u5220\u9664\u8BB0\u5F55\u2026" }[state.busy], button2("\u53D6\u6D88", () => controller.cancel(), { className: "pf_btn pf_text" })) : null,
-      h("div", { className: "pfv_catalog_background", style: { display: state.catalogOpen ? "none" : void 0 }, "aria-hidden": state.catalogOpen ? true : void 0 }, state.view === "featured" ? renderFeaturedView({ h, state, controller, copyText, busy, mode: "detail" }) : state.view === "history" ? h("div", null, h(HistoryView, { state, controller, busy, drafts: renderFeaturedView({ h, state, controller, copyText, busy, mode: "drafts" }) })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, more: moreMenu, sections: { expertConversation: state.expertReference && SessionProvider && renderSlot ? h("div", { className: "pf_expert_conversation", style: { minHeight: 420, height: "min(70vh, 760px)", display: "flex", flexDirection: "column", position: "relative" } }, h(SessionProvider, { session: state.expertReference }, renderSlot("plugin-finder.expert", {}))) : null, executionConversation: state.executionReference && SessionProvider && renderSlot ? h("div", { className: "pf_execution_conversation", style: { minHeight: 400, height: "min(68vh, 720px)", display: "flex", flexDirection: "column", position: "relative" } }, h(SessionProvider, { session: state.executionReference }, renderSlot("plugin-finder.execution", {}))) : null, workspacePicker: !state.workspaceId ? h("label", { className: "pf_label" }, "\u5728\u54EA\u4E2A\u5DE5\u4F5C\u533A\u5B8C\u6210", h("select", { "aria-label": "\u4EFB\u52A1\u5DE5\u4F5C\u533A", value: state.workspaceId, disabled: busy || state.workspacePhase !== "ready", onChange: (event) => controller.selectWorkspace(event.target.value) }, h("option", { value: "" }, "\u9009\u62E9\u4EFB\u52A1\u6750\u6599\u6240\u5728\u7684\u5DE5\u4F5C\u533A"), ...state.workspaces.map((item) => h("option", { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } })),
-      state.catalogOpen ? renderPluginDetailView({ h, state, controller }) : null,
+      h("div", { className: "pfv_catalog_background", style: { display: state.catalogOpen ? "none" : void 0 }, "aria-hidden": state.catalogOpen ? true : void 0 }, state.view === "featured" ? renderFeaturedView({ h, state, controller, copyText, busy, mode: "detail" }) : state.view === "history" ? h("div", null, h(HistoryView, { state, controller, busy, drafts: renderFeaturedView({ h, state, controller, copyText, busy, mode: "drafts" }) })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, more: moreMenu, onRequestConfirm, sections: { expertConversation: state.expertReference && SessionProvider && renderSlot ? h("div", { className: "pf_expert_conversation", style: { minHeight: 420, height: "min(70vh, 760px)", display: "flex", flexDirection: "column", position: "relative" } }, h(SessionProvider, { session: state.expertReference }, renderSlot("plugin-finder.expert", {}))) : null, executionConversation: state.executionReference && SessionProvider && renderSlot ? h("div", { className: "pf_execution_conversation", style: { minHeight: 400, height: "min(68vh, 720px)", display: "flex", flexDirection: "column", position: "relative" } }, h(SessionProvider, { session: state.executionReference }, renderSlot("plugin-finder.execution", {}))) : null, workspacePicker: !state.workspaceId ? h("label", { className: "pf_label" }, "\u5728\u54EA\u4E2A\u5DE5\u4F5C\u533A\u5B8C\u6210", h("select", { "aria-label": "\u4EFB\u52A1\u5DE5\u4F5C\u533A", value: state.workspaceId, disabled: busy || state.workspacePhase !== "ready", onChange: (event) => controller.selectWorkspace(event.target.value) }, h("option", { value: "" }, "\u9009\u62E9\u4EFB\u52A1\u6750\u6599\u6240\u5728\u7684\u5DE5\u4F5C\u533A"), ...state.workspaces.map((item) => h("option", { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } })),
+      state.catalogOpen ? renderPluginDetailView({ h, state, controller, onRequestConfirm }) : null,
       state.telemetrySettingsOpen ? telemetryView : null,
+      h(ConfirmDialog, { modal: confirmModal, workspaceId: state.workspaceId, workspaces: state.workspaces, onSelectWorkspace: (id) => controller.selectWorkspace(id), onDismiss: () => setConfirmModal(null) }),
       h("footer", { className: "pf_footer" }, h(CreatorSettings), h(
         "details",
         { className: "pf_details" },

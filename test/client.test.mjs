@@ -1702,7 +1702,7 @@ test('only a real fixed git candidate explains source fetching and keeps the exa
   const controller = module.createFinderController(h.ctx, { fetch: api.fetch }); await controller.bootstrap(); controller.showFind();
   const copied = [];
   const rendered = await renderWorkbench(controller.getSnapshot(), { keepAlive: true, openEvidence: true, navigator: { clipboard: { writeText: async value => copied.push(value) } } });
-  assert.ok(rendered.visibleText.includes(`固定在 ${sha.slice(0, 12)} 的仓库源码，安装时由 DSH 从仓库拉取。Finder 没有核对它的打包校验值。`));
+  assert.ok(rendered.visibleText.includes(`固定在 ${sha.slice(0, 12)} 的仓库源码，安装时由 DSH 从仓库拉取。我没有核对它的打包校验值。`));
   assert.ok(rendered.visibleText.includes(gitSpec));
   assert.doesNotMatch(rendered.visibleText, /已验|安全|签名通过/);
   const copyAction = rendered.visibleNodes.find(node => node.type === 'button' && node.children.includes('复制安装来源'));

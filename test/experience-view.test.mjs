@@ -643,11 +643,11 @@ test('a confirmed GitHub limit survives another failed source and names zero ret
   const mixed = experienceSourceHealth({ status: 'partial', sources: [{ status: 'failed' }], coverage: { returned: 1, excludedReasons: { 'author-rate-limited': 1 } } });
   assert.match(mixed.message, /GitHub 这次限制了 1 个候选/);
   assert.match(mixed.message, /另外，还有目录来源这次没读到/);
-  assert.match(mixed.message, /已返回的候选仍可用/);
+  assert.match(mixed.message, /已经找到的照常能用/);
 
   const zero = experienceSourceHealth({ sources: [{ status: 'live' }], coverage: { returned: 0, excludedReasons: { 'author-rate-limited': 1 } } });
-  assert.match(zero.message, /这轮没有已返回的候选/);
-  assert.doesNotMatch(zero.message, /已返回的候选仍可用/);
+  assert.match(zero.message, /这次一个都没找到/);
+  assert.doesNotMatch(zero.message, /已经找到的照常能用/);
 
   const forbidden = experienceSourceHealth({ coverage: { returned: 1, excludedReasons: { 'author-forbidden': 1 } } });
   assert.match(forbidden.message, /HTTP 403/);
@@ -661,5 +661,5 @@ test('generic source limits and 401 keep their own wording', () => {
   const unauthorized = experienceSourceHealth({ coverage: { returned: 0, excludedReasons: { 'author-unauthorized': 1 } } });
   assert.match(unauthorized.message, /HTTP 401/);
   assert.doesNotMatch(unauthorized.message, /HTTP 403/);
-  assert.match(unauthorized.message, /这轮没有已返回的候选/);
+  assert.match(unauthorized.message, /这次一个都没找到/);
 });

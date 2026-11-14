@@ -52,8 +52,34 @@ export function creatorHandoffPrompt(steps) {
   ].join('\n');
 }
 
+const STAGE_LESSONS = Object.freeze({
+  search: [
+    '写代码前先用 cordis_inspect 查展位和接口，找结构相近的已跑通插件照着改。',
+    '只读宿主包里的 api-catalog 和 slots 定义，不凭记忆猜接口。',
+  ],
+  design: [
+    '动手前用三五句大白话对齐：挂在哪、几个文件、数据存哪。',
+    '可选服务写进 inject，状态收在一个地方，写接口拒绝跨站请求。',
+  ],
+  skeleton: [
+    '第一版只做能点开、不白屏的空架子，所有注册放进 ctx.effect。',
+    'main 面板用 flex 撑满并自己当滚动口；React 用宿主那份，不引宿主 UI 包。',
+  ],
+  feature: [
+    '一轮只加一个功能；@container 量自身宽度，颜色只用 --dsw-alias-* 变量。',
+    '按钮和模型工具走同一套实现；客户端入口包进 window.__ModuleLoader__.load。',
+  ],
+  verify: [
+    '先打包并在浅色/深色/窄屏下量真实渲染，再进隔离宿主真点开验。',
+    '弹窗和列表行必须有状态文字，不单靠颜色；换包后彻底退出桌面端重开。',
+  ],
+  blocked: [
+    '同一问题连改三轮没好就停下来写清尝试和卡点，开干净窗口接着做。',
+  ],
+});
+
 const css = `
-.pfc_dock, .pfc_closed { box-sizing: border-box;
+.pfc_dock, .pfc_closed { box-sizing: border-box; color-scheme: light dark;
   --pfc_ink: var(--dsw-alias-label-primary, #191b1f);
   --pfc_ink2: var(--dsw-alias-label-secondary, #4b5058);
   --pfc_ink3: var(--dsw-alias-label-tertiary, #868c95);
@@ -67,6 +93,32 @@ const css = `
   --pfc_serif: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
   --pfc_sans: var(--dsw-font-family, -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif);
   font-family: var(--pfc_sans); color: var(--pfc_ink); }
+:where(.pfc_dock, .pfc_closed)[data-theme="dark"], .dark :where(.pfc_dock, .pfc_closed) {
+  --pfc_ink: var(--dsw-alias-label-primary, #eceded);
+  --pfc_ink2: var(--dsw-alias-label-secondary, #b5b9bf);
+  --pfc_ink3: var(--dsw-alias-label-tertiary, #7e848d);
+  --pfc_card: var(--dsw-alias-bg-layer-2, #1d1f22);
+  --pfc_line: var(--dsw-alias-border-l2, #2a2c30);
+  --pfc_line2: var(--dsw-alias-border-l4, #3b3e43);
+  --pfc_build: var(--dsw-alias-state-warn-primary, #f0a530);
+  --pfc_ok: var(--dsw-alias-state-success-primary, #4cc38a);
+  --pfc_primary: var(--dsw-alias-button-primary-fill, #eceded);
+  --pfc_on_primary: var(--dsw-alias-label-primary-inverted, #141517);
+}
+@media (prefers-color-scheme: dark) {
+  :where(.pfc_dock, .pfc_closed):not([data-theme="light"]) {
+    --pfc_ink: var(--dsw-alias-label-primary, #eceded);
+    --pfc_ink2: var(--dsw-alias-label-secondary, #b5b9bf);
+    --pfc_ink3: var(--dsw-alias-label-tertiary, #7e848d);
+    --pfc_card: var(--dsw-alias-bg-layer-2, #1d1f22);
+    --pfc_line: var(--dsw-alias-border-l2, #2a2c30);
+    --pfc_line2: var(--dsw-alias-border-l4, #3b3e43);
+    --pfc_build: var(--dsw-alias-state-warn-primary, #f0a530);
+    --pfc_ok: var(--dsw-alias-state-success-primary, #4cc38a);
+    --pfc_primary: var(--dsw-alias-button-primary-fill, #eceded);
+    --pfc_on_primary: var(--dsw-alias-label-primary-inverted, #141517);
+  }
+}
 .pfc_dock { width: 100%; margin: 0 0 8px; padding: 16px 20px 18px; border: 1px solid var(--pfc_line2); border-radius: 20px; background: var(--pfc_card); }
 .pfc_dock[data-stuck="true"] { border-color: var(--pfc_build); }
 .pfc_hd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -97,7 +149,16 @@ const css = `
 .pfc_notice { font-size: 12.5px; color: var(--pfc_ink3); }
 .pfc_closed { width: 100%; margin: 0 0 8px; padding: 10px 14px; border: 1px solid var(--pfc_line); border-radius: 14px;
   display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--pfc_ink3); background: var(--pfc_card); }
-.pfc_button:focus-visible, .pfc_link:focus-visible { outline: 2px solid var(--pfc_ink); outline-offset: 2px; border-radius: 6px; }@media (max-width: 560px) {
+.pfc_button:focus-visible, .pfc_link:focus-visible { outline: 2px solid var(--pfc_ink); outline-offset: 2px; border-radius: 6px; }
+.pfc_lessons { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--pfc_line); }
+.pfc_lessons > summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; font-size: 12.5px; color: var(--pfc_ink2); }
+.pfc_lessons > summary::-webkit-details-marker { display: none; }
+.pfc_lessons > summary::before { content: ""; display: inline-block; width: 0; height: 0; border-left: 4.5px solid currentColor; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent; }
+.pfc_lessons[open] > summary::before { border-left: 3.5px solid transparent; border-right: 3.5px solid transparent; border-top: 4.5px solid currentColor; border-bottom: 0; }
+.pfc_lessons > summary:hover { color: var(--pfc_ink); }
+.pfc_lessons_list { margin: 8px 0 0; padding-left: 18px; list-style: disc; font-size: 12.5px; line-height: 1.65; color: var(--pfc_ink2); }
+.pfc_lessons_list li + li { margin-top: 4px; }
+@media (max-width: 560px) {
   .pfc_dock { padding: 14px 16px 16px; }
   .pfc_five span { font-size: 11px; }
 }
@@ -142,6 +203,13 @@ export function createCreatorDock(React) {
           h('button', { type: 'button', className: 'pfc_link', onClick: onSkip }, '这个对话不用陪')));
     }
 
+    const lessonList = (stageId, label) => {
+      const items = STAGE_LESSONS[stageId] ?? STAGE_LESSONS.search;
+      return h('details', { className: 'pfc_lessons' },
+        h('summary', { className: 'pfc_lessons_sum' }, h('span', null, label ? `本步避坑铁律 · ${label}` : '本步避坑铁律')),
+        h('ul', { className: 'pfc_lessons_list' }, ...items.map((item, idx) => h('li', { key: idx }, item))));
+    };
+
     if (mode === 'stuck') {
       const blockedStep = progress?.blockedStep;
       const heading = blockedStep
@@ -152,6 +220,7 @@ export function createCreatorDock(React) {
           h('b', null, heading)),
         h('p', null, '同一个问题在一个对话里反复改，只会越改越贵。开个新窗口，把试过什么、卡在哪一起带过去。'),
         five(),
+        lessonList('blocked', '止损换窗'),
         h('div', { className: 'pfc_acts' },
           h('button', { type: 'button', className: 'pfc_button', 'data-primary': 'true', disabled: busy !== '', onClick: onOpenNext, title: '新建一个干净的创造模式窗口，把这里记下的进展带过去' }, '开新窗口接着做'),
           h('button', { type: 'button', className: 'pfc_link', onClick: onDismiss }, '先不用'),
@@ -166,6 +235,7 @@ export function createCreatorDock(React) {
         links(true)),
       h('p', null, last?.summary ? last.summary : '每一步都先问你，你说了才往下走。'),
       five(),
+      lessonList(current?.id || 'search', current?.label || ''),
       notice ? h('span', { className: 'pfc_notice', role: 'status' }, notice) : null);
   };
 }

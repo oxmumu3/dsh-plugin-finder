@@ -1,4 +1,4 @@
-import { v8TokensCss } from "./v8-tokens.js";
+import { v8DarkFallbackCss, v8TokensCss } from "./v8-tokens.js";
 import { v8Css } from "./v8-style.js";
 
 /** Finder-owned V2 layer. Host aliases supply both light and dark colors. */
@@ -797,4 +797,4 @@ const experienceV3Css = `
 }
 `;
 
-export const experienceCss = `${experienceV3Css}\n${v8TokensCss}\n${v8Css}`;
+export const experienceCss = `${experienceV3Css}\n${v8TokensCss}\n${v8DarkFallbackCss}\n${v8Css}`;
