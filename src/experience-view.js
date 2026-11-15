@@ -202,14 +202,20 @@ export function createExperienceView(React) {
     if (state.view === 'home' && !state.searching) return home();
     if (state.view === 'find' && state.stage === 'describe' && !busy && !state.request && !plan) return home();
 
+    const executionTitle = execution ? ({
+      preparing: '正在准备', running: execution.kind === 'create' ? '正在创建' : '正在使用方案', waiting: '等待继续',
+      completed: '本次运行已结束', failed: '这次没有完成', cancelled: '已停止',
+    }[execution.phase] || '当前状态') : '';
+    const rawExecSummary = execution ? text(execution.summary).trim() : '';
+    const executionSummary = rawExecSummary && rawExecSummary !== executionTitle && !(execution?.phase === 'completed' && rawExecSummary === '执行已结束')
+      ? execution.summary
+      : '';
     const executionView = execution ? h('section', { className: `pfv_execution pfv_execution_${execution.phase}`, role: execution.phase === 'failed' ? 'alert' : 'status', 'aria-label': '当前执行状态' },
-      h('div', { className: 'pfv_execution_heading' }, h('h3', null, {
-        preparing: '正在准备', running: execution.kind === 'create' ? '正在创建' : '正在使用方案', waiting: '等待继续',
-        completed: '本次运行已结束', failed: '这次没有完成', cancelled: '已停止',
-      }[execution.phase] || '当前状态'), executionActive ? button('停止', () => controller.cancelExecution(), { className: 'pfv_button pfv_quiet', 'aria-label': '停止当前执行' }) : null),
-      paragraph(execution.summary),
-      text(execution.details) ? paragraph(execution.details, { className: 'pfv_hint pfv_execution_details' }) : list(strings(execution.details)),
-      execution.canContinue ? primary('继续执行', () => controller.continueExecution(), { disabled: busy }) : null,
+      h('div', { className: 'pfv_execution_head_band' },
+        h('div', { className: 'pfv_execution_heading' }, h('h3', null, executionTitle), executionActive ? button('停止', () => controller.cancelExecution(), { className: 'pfv_button pfv_quiet', 'aria-label': '停止当前执行' }) : null),
+        paragraph(executionSummary),
+        text(execution.details) ? paragraph(execution.details, { className: 'pfv_hint pfv_execution_details' }) : list(strings(execution.details)),
+        execution.canContinue ? primary('继续执行', () => controller.continueExecution(), { disabled: busy }) : null),
       sections.executionConversation) : null;
 
     const clarification = isCreating && question ? planSurface.clarification({
@@ -446,15 +452,42 @@ export function createExperienceView(React) {
         h('span', { className: 'pf8_fine' }, expertMode ? '我看得到你的工作区和已经装的插件' : '接着说，这份方案会跟着改')),
       expertSection || followup);
 
+    const creationSummaryRows = () => [
+      ['首版做什么', blueprint.scope], ['怎样使用', blueprint.workflow], ['得到什么', blueprint.outputs],
+      ['数据与权限', unique([text(blueprint.data), text(blueprint.tools)]).join('；')], ['完成标准', blueprint.acceptance],
+    ].filter(([, value]) => text(value));
+
+    const startBlueprintAction = () => ({
+      label: '开始创建', primary: true,
+      onClick: () => !workspacePending && confirmOrRun({
+        title: '开始在工作区创建这个插件？',
+        body: '会先把当前方案存成草稿并交给执行对话，按五步陪做节奏推进。',
+        facts: [
+          text(blueprint?.name) ? { label: '插件草稿', value: text(blueprint.name) } : null,
+          text(blueprint?.purpose) ? { label: '目标', value: short(blueprint.purpose, 80) } : null,
+          state.executionWorkspaceLabel ? { label: '工作区', value: text(state.executionWorkspaceLabel) } : null,
+        ].filter(Boolean),
+        showWorkspacePicker: true,
+        confirmLabel: '确认开始创建',
+        cancelLabel: '再改改',
+      }, () => controller.createInWorkspace()),
+      disabled: !canAct || workspacePending || Boolean(question),
+    });
+
+    const blueprintEditorDisclosure = () => disclosure('查看与编辑详细方案', h(React.Fragment, null,
+      ...blueprintGroups.map((group, index) => h('section', { className: 'pfv_blueprint_block', key: group.title },
+        h('h3', null, group.title), h('dl', { className: 'pfv_blueprint_values' }, ...group.fields.map(([key, label]) => h('div', { key }, h('dt', null, label), h('dd', null, text(blueprint[key]) || '待补充')))),
+        disclosure(`编辑${group.title}`, h('div', { className: 'pfv_block_editor' }, ...group.fields.map(([key, label]) => h('label', { key, className: 'pfv_field', htmlFor: `pfv_field_${key}` }, label, h('textarea', { id: `pfv_field_${key}`, 'aria-label': label, value: text(blueprint[key]), maxLength: 4000, disabled: locked, onChange: event => controller.editCreation({ blueprint: { [key]: event.target.value } }) })))), { key: `edit-${index}`, className: 'pfv_disclosure pfv_edit_block' }))),
+      paragraph(creation.reuseAssessment), list(records(creation.candidateDecisions).map(item => `${records(state.candidates).find(candidate => candidate.id === item.pluginId)?.name || item.pluginId}：${text(item.reason)}`)),
+      h('label', { className: 'pfv_field', htmlFor: 'pfv_assumptions' }, '假设，每行一项', h('textarea', { id: 'pfv_assumptions', value: items(form?.assumptions || creation.assumptions).filter(item => typeof item === 'string').join('\n'), maxLength: 6000, disabled: locked, onChange: event => controller.editCreation({ assumptions: event.target.value.split('\n') }) })),
+      state.creationDirty ? button('保存草稿', () => controller.updateCreation(), { disabled: locked }) : null));
+
     const blueprintView = () => {
       if (!creation) return h('article', { className: 'pf8_card' },
         h('h1', { className: 'pf8_verdict' }, busy ? '正在整理插件方案' : '创建自己的插件'),
         h('p', { className: 'pf8_why' }, '根据这次需求，整理首版要做什么。'),
         !busy ? h('div', { className: 'pf8_acts' }, v8Action({ label: '创建自己的插件', primary: true, onClick: () => controller.startCreation(), disabled: !modelReady || !state.plan })) : null);
-      const summaryRows = [
-        ['首版做什么', blueprint.scope], ['怎样使用', blueprint.workflow], ['得到什么', blueprint.outputs],
-        ['数据与权限', unique([text(blueprint.data), text(blueprint.tools)]).join('；')], ['完成标准', blueprint.acceptance],
-      ].filter(([, value]) => text(value));
+      const summaryRows = creationSummaryRows();
       const capabilities = capabilityMap();
       return h('article', { className: 'pf8_card', 'aria-label': '插件方案' },
         h('p', { className: 'pf8_q' }, '创建自己的插件'),
@@ -467,45 +500,97 @@ export function createExperienceView(React) {
         clarification,
         showActions ? h(React.Fragment, null, workspacePicker, workspaceStatus,
           h('div', { className: 'pf8_acts' },
-            v8Action({
-              label: '开始创建', primary: true,
-              onClick: () => !workspacePending && confirmOrRun({
-                title: '开始在工作区创建这个插件？',
-                body: '会先把当前方案存成草稿并交给执行对话，按五步陪做节奏推进。',
-                facts: [
-                  text(blueprint?.name) ? { label: '插件草稿', value: text(blueprint.name) } : null,
-                  text(blueprint?.purpose) ? { label: '目标', value: short(blueprint.purpose, 80) } : null,
-                  state.executionWorkspaceLabel ? { label: '工作区', value: text(state.executionWorkspaceLabel) } : null,
-                ].filter(Boolean),
-                showWorkspacePicker: true,
-                confirmLabel: '确认开始创建',
-                cancelLabel: '再改改',
-              }, () => controller.createInWorkspace()),
-              disabled: !canAct || workspacePending || Boolean(question),
-            }),
+            v8Action(startBlueprintAction()),
             v8Action({ label: '回看方案', onClick: () => controller.showFind(), disabled: locked })),
           h('p', { className: 'pf8_next' }, '会先在发现好插件里存一份草稿，再从第一步开始；随时可以回来改。')) : null,
         state.creationDirty ? h('p', { className: 'pf8_fine', role: 'status' }, '修改已保留，开始创建时会一并使用。') : null,
-        disclosure('查看与编辑详细方案', h(React.Fragment, null,
-          ...blueprintGroups.map((group, index) => h('section', { className: 'pfv_blueprint_block', key: group.title },
-            h('h3', null, group.title), h('dl', { className: 'pfv_blueprint_values' }, ...group.fields.map(([key, label]) => h('div', { key }, h('dt', null, label), h('dd', null, text(blueprint[key]) || '待补充')))),
-            disclosure(`编辑${group.title}`, h('div', { className: 'pfv_block_editor' }, ...group.fields.map(([key, label]) => h('label', { key, className: 'pfv_field', htmlFor: `pfv_field_${key}` }, label, h('textarea', { id: `pfv_field_${key}`, 'aria-label': label, value: text(blueprint[key]), maxLength: 4000, disabled: locked, onChange: event => controller.editCreation({ blueprint: { [key]: event.target.value } }) })))), { key: `edit-${index}`, className: 'pfv_disclosure pfv_edit_block' }))),
-          paragraph(creation.reuseAssessment), list(records(creation.candidateDecisions).map(item => `${records(state.candidates).find(candidate => candidate.id === item.pluginId)?.name || item.pluginId}：${text(item.reason)}`)),
-          h('label', { className: 'pfv_field', htmlFor: 'pfv_assumptions' }, '假设，每行一项', h('textarea', { id: 'pfv_assumptions', value: items(form?.assumptions || creation.assumptions).filter(item => typeof item === 'string').join('\n'), maxLength: 6000, disabled: locked, onChange: event => controller.editCreation({ assumptions: event.target.value.split('\n') }) })),
-          state.creationDirty ? button('保存草稿', () => controller.updateCreation(), { disabled: locked }) : null)));
+        blueprintEditorDisclosure());
     };
 
-    const completedCreation = execution?.phase === 'completed' && execution.kind === 'use'
-      ? h('div', { className: 'pf8_acts' }, v8Action({ label: '创建自己的插件', onClick: () => controller.startCreation(), disabled: locked || !modelReady }))
+    const execActionBtn = action => h('button', {
+      key: action.label, type: 'button',
+      className: action.primary ? 'pf8_btn pf8_ink pfv_primary' : 'pf8_btn',
+      disabled: Boolean(action.disabled), onClick: action.onClick,
+    }, action.label);
+
+    const execBar = ({ kicker, title, chips = [], actions = [] }) => h('div', { className: 'pf8_exec_bar' },
+      h('div', { className: 'pf8_exec_plan_main' },
+        h('span', { className: 'pf8_exec_kicker' }, kicker),
+        h('strong', { className: 'pf8_exec_title' }, title),
+        chips.length ? h('span', { className: 'pf8_exec_chips' }, ...chips.map((block, index) => h('span', { key: `${block.kind}-${index}`, className: `pf8_exec_chip ${block.kind}` }, h('code', null, text(block.name))))) : null),
+      actions.length ? h('div', { className: 'pf8_exec_acts' }, ...actions.map(execActionBtn)) : null);
+
+    const execDetailsFold = content => content ? h('details', { className: 'pf8_disclosure pf8_exec_details' },
+      h('summary', { className: 'pf8_lk' }, '查看本次方案详情'),
+      h('div', { className: 'pf8_disclosure_body' }, content)) : null;
+
+    const completedCreationAction = execution?.phase === 'completed' && execution.kind === 'use'
+      ? { label: '创建自己的插件', onClick: () => controller.startCreation(), disabled: locked || !modelReady }
       : null;
+
+    const executionOverview = () => {
+      if (isCreating) {
+        if (!creation) {
+          return execBar({
+            kicker: '插件方案',
+            title: busy ? '正在整理插件方案' : '创建自己的插件',
+            actions: !busy ? [{ label: '创建自己的插件', primary: true, onClick: () => controller.startCreation(), disabled: !modelReady || !state.plan }] : [],
+          });
+        }
+        const summaryRows = creationSummaryRows();
+        const capabilities = capabilityMap();
+        const actions = showActions ? [startBlueprintAction(), { label: '回看方案', onClick: () => controller.showFind(), disabled: locked }] : [];
+        return h(React.Fragment, null,
+          execBar({ kicker: '插件方案', title: text(blueprint.name) || '我的插件', actions }),
+          clarification,
+          showActions && (workspacePicker || workspaceStatus) ? h('div', { className: 'pf8_exec_recovery' }, workspacePicker, workspaceStatus) : null,
+          state.creationDirty ? h('p', { className: 'pf8_fine', role: 'status' }, '修改已保留，开始创建时会一并使用。') : null,
+          execDetailsFold(h(React.Fragment, null,
+            text(blueprint.purpose) ? h('p', { className: 'pf8_why' }, short(blueprint.purpose, 260)) : null,
+            summaryRows.length ? h('dl', { className: 'pfv_creation_summary' }, ...summaryRows.map(([label, value]) => h('div', { key: label }, h('dt', null, label), h('dd', null, short(value, 200))))) : null,
+            capabilities,
+            blueprintEditorDisclosure())));
+      }
+      if (uncertainGap) {
+        const actions = showActions
+          ? [retryAction(), plan ? { label: '创建自己的插件', onClick: () => controller.startCreation(), disabled: !canAct } : null].filter(Boolean)
+          : (completedCreationAction ? [completedCreationAction] : []);
+        return h(React.Fragment, null,
+          execBar({ kicker: '来源待核对', title: '这次没查完，先不给你结论', actions }),
+          execDetailsFold(h(React.Fragment, null,
+            h('p', { className: 'pf8_why' }, text(health?.message) || '部分来源没有读回来，只凭已经读到的内容下结论，容易让你装错。'),
+            plan ? planSurface.solution({ request, understanding: '', plan, candidates: outcome.candidates, discovery, searchedAt, actions: [], note: '', showSignature: false, compact: true, embedded: true }) : null)));
+      }
+      if (plan) {
+        const execBlocks = planSurface.planBlocks({ plan, candidates: outcome.candidates, request });
+        const secondary = !needsCreation || uncertainGap
+          ? { label: '创建自己的插件', onClick: () => controller.startCreation(), disabled: !canAct }
+          : null;
+        const execActions = showActions
+          ? [primaryAction(), secondary].filter(Boolean)
+          : (completedCreationAction ? [completedCreationAction] : []);
+        return h(React.Fragment, null,
+          execBar({ kicker: '本次方案', title: text(plan.title) || '当前方案', chips: execBlocks, actions: execActions }),
+          showActions && (workspacePicker || workspaceStatus) ? h('div', { className: 'pf8_exec_recovery' }, workspacePicker, workspaceStatus) : null,
+          execDetailsFold(planSurface.solution({
+            request, understanding: '', plan, candidates: outcome.candidates, discovery, searchedAt,
+            actions: [], note: '', showSignature: true, compact: true, embedded: true,
+          })));
+      }
+      const fallbackActions = !showFindCard && showActions && (state.intent || request) ? [retryAction()] : [];
+      return execBar({
+        kicker: '本次方案',
+        title: showFindCard ? '正在替你找' : '继续查找方案',
+        actions: fallbackActions,
+      });
+    };
 
     const body = startingNew
       ? searchingCard()
       : execution
         ? h('div', { className: 'pfv_result_grid' },
           h('div', { className: 'pfv_result_primary' }, executionView),
-          h('aside', { className: 'pfv_solution_overview', 'aria-label': '本次能力方案' },
-            isCreating ? blueprintView() : h(React.Fragment, null, planCardArea(), completedCreation)))
+          h('aside', { className: 'pfv_solution_overview', 'aria-label': '本次能力方案' }, executionOverview()))
         : isCreating
           ? blueprintView()
           : h('section', { className: 'pf8_planwrap', 'aria-label': '当前方案' }, expertPlanCard, planCardArea());

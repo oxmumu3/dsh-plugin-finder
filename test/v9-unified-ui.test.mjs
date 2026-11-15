@@ -9,6 +9,7 @@ import { createPlanSurface, sourceFunnelSteps } from '../src/v8-plan-view.js';
 import { createCommunityView } from '../src/community-view.js';
 import { renderPluginDetailView } from '../src/plugin-detail-view.js';
 import { createCreatorDock, creatorProgress, creatorStripCss } from '../src/creator-strip.js';
+import { createExperienceView } from '../src/experience-view.js';
 
 const h = (type, props, ...children) => ({ type, props: props ?? {}, children });
 const nodes = node => Array.isArray(node)
@@ -199,4 +200,92 @@ test('ConfirmDialog uses native closedby="any" without role="dialog" or aria-mod
     assert.equal(callbackDismiss, 1);
   }
   detach();
+});
+
+test('execution view stacks full-width result over compact expandable plan bar with dynamic viewport height', () => {
+  assert.match(experienceCss, /\.pfv_result_grid\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+  assert.match(experienceCss, /\.pfv_result_primary\s+\.pf_execution_conversation\s*\{[^}]*100vh[^}]*100dvh/);
+
+  const ExperienceView = createExperienceView(fakeReact());
+  const noopCtrl = new Proxy({}, { get: () => () => {} });
+  const baseState = {
+    view: 'find',
+    taskId: 'task-exec-1',
+    revisionId: 'rev-1',
+    revisionNumber: 1,
+    request: '把会议记录整理成可核对的待办',
+    intent: { goal: '把会议记录整理成可核对的待办' },
+    plan: {
+      kind: 'hybrid',
+      title: 'DSH 原生提取定位 + TODO 便签写入',
+      rationale: '主流程由 DSH 完成，写入便签由插件补充。',
+      pluginIds: ['c-todo'],
+      gaps: [{ capability: '确认后再写入任务工具', reason: '需审批写入' }],
+      steps: [{ owner: 'dsh', capability: '提取待办', action: '标注原文位置' }],
+      limits: [],
+    },
+    candidates: [{ id: 'c-todo', name: 'dsh-todo-notes', version: '0.2.0', summary: '写入本地 TODO 便签' }],
+    discovery: { sources: [{ id: 'awesome', title: '社区目录', status: 'live', total: 406, used: 1, fetchedAt: new Date().toISOString() }] },
+    conversation: [],
+    followupText: '',
+  };
+
+  const completedView = ExperienceView({
+    state: { ...baseState, execution: { phase: 'completed', kind: 'use', summary: '执行已结束' } },
+    controller: noopCtrl,
+    busy: false,
+    modelReady: true,
+    copyText: () => {},
+    sections: { executionConversation: h('div', { className: 'pf_execution_conversation' }, '真实执行对话内容') },
+  });
+  const all = nodes(completedView);
+  const primary = all.find(n => hasClass(n, 'pfv_result_primary'));
+  const aside = all.find(n => n.type === 'aside' && n.props['aria-label'] === '本次能力方案');
+  assert.ok(primary);
+  assert.ok(aside);
+  assert.ok(all.indexOf(primary) < all.indexOf(aside));
+
+  const primaryHead = nodes(primary).find(n => hasClass(n, 'pfv_execution_head_band'));
+  assert.ok(primaryHead);
+  assert.match(content(primaryHead), /本次运行已结束/);
+  assert.doesNotMatch(content(primaryHead), /执行已结束/);
+
+  const asideNodes = nodes(aside);
+  assert.equal(asideNodes.filter(n => hasClass(n, 'pf8_card')).length, 0);
+  const execBar = asideNodes.find(n => hasClass(n, 'pf8_exec_bar'));
+  const details = asideNodes.find(n => n.type === 'details' && hasClass(n, 'pf8_exec_details'));
+  assert.ok(execBar);
+  assert.ok(details);
+  const detailsSummary = nodes(details).find(n => n.type === 'summary');
+  assert.ok(detailsSummary);
+  assert.equal(nodes(detailsSummary).filter(n => /^h[1-6]$/.test(String(n.type))).length, 0);
+  assert.ok(nodes(execBar).find(n => n.type === 'button' && content(n) === '创建自己的插件'));
+
+  const failedView = ExperienceView({
+    state: { ...baseState, execution: { phase: 'failed', kind: 'use', summary: '超时' } },
+    controller: noopCtrl,
+    busy: false,
+    modelReady: true,
+    copyText: () => {},
+    sections: { executionConversation: h('div', { className: 'pf_execution_conversation' }, '失败记录') },
+  });
+  const failedAside = nodes(failedView).find(n => n.type === 'aside' && n.props['aria-label'] === '本次能力方案');
+  const failedBar = nodes(failedAside).find(n => hasClass(n, 'pf8_exec_bar'));
+  assert.ok(nodes(failedBar).find(n => n.type === 'button' && content(n) === '补齐并使用'));
+
+  const nativeFailedView = ExperienceView({
+    state: {
+      ...baseState,
+      plan: { kind: 'native', title: 'DSH 直接处理', rationale: '原生能力已足够', pluginIds: [], steps: [], limits: [] },
+      execution: { phase: 'failed', kind: 'use', summary: '超时' },
+    },
+    controller: noopCtrl,
+    busy: false,
+    modelReady: true,
+    copyText: () => {},
+    sections: { executionConversation: h('div', { className: 'pf_execution_conversation' }, '失败记录') },
+  });
+  const nativeFailedAside = nodes(nativeFailedView).find(n => n.type === 'aside' && n.props['aria-label'] === '本次能力方案');
+  const nativeFailedBar = nodes(nativeFailedAside).find(n => hasClass(n, 'pf8_exec_bar'));
+  assert.ok(nodes(nativeFailedBar).find(n => n.type === 'button' && content(n) === '使用这个方案'));
 });

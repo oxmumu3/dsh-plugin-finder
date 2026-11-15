@@ -1,3 +1,9 @@
+# 0.13.1（2026-11-15）
+
+- 修复执行态页面双栏挤压与嵌套滚动错位：将 `.pfv_result_grid` 改为单栏纵向排布（`grid-template-columns: minmax(0, 1fr)`），执行对话与结果卡片独占整行可读宽度；右侧原 230px 窄栏改为底部一行紧凑方案条（`.pf8_exec_bar`），详细解法收进 `<details class="pf8_disclosure pf8_exec_details">`，消除长方案把右侧拉到 ~2000px 导致执行框划走消失的问题。
+- 使用 `100dvh`（带 `100vh` 回退）动态约束 `.pf_execution_conversation` 高度并收紧执行页上下留白与 `.pfv_execution_head_band` 重复状态摘要，让收起状态下执行屏可完整落在一屏内流畅阅读。
+- 对齐 `docs/install.md`、`README.md` 与 `0.13.1` 正式发行版本标识。
+
 # 0.13.0（2026-11-14）
 
 - 围绕 `v9.2` 用户动线重构视觉与前端架构：统一 `--dsw-alias-*` 语义色板（`color-scheme: light dark` 与深浅回退）、零权重 `:where()` 基础重置、`@container finder` / `@container bricks` 自适应栅格与 `.pf_root` 滚动视口拥有权（`height: 100%; min-height: 0; overflow-y: auto; overscroll-behavior: contain`）。

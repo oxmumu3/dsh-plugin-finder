@@ -3745,20 +3745,27 @@ function createExperienceView(React2) {
     }
     if (state.view === "home" && !state.searching) return home();
     if (state.view === "find" && state.stage === "describe" && !busy && !state.request && !plan) return home();
+    const executionTitle = execution ? {
+      preparing: "\u6B63\u5728\u51C6\u5907",
+      running: execution.kind === "create" ? "\u6B63\u5728\u521B\u5EFA" : "\u6B63\u5728\u4F7F\u7528\u65B9\u6848",
+      waiting: "\u7B49\u5F85\u7EE7\u7EED",
+      completed: "\u672C\u6B21\u8FD0\u884C\u5DF2\u7ED3\u675F",
+      failed: "\u8FD9\u6B21\u6CA1\u6709\u5B8C\u6210",
+      cancelled: "\u5DF2\u505C\u6B62"
+    }[execution.phase] || "\u5F53\u524D\u72B6\u6001" : "";
+    const rawExecSummary = execution ? text11(execution.summary).trim() : "";
+    const executionSummary = rawExecSummary && rawExecSummary !== executionTitle && !(execution?.phase === "completed" && rawExecSummary === "\u6267\u884C\u5DF2\u7ED3\u675F") ? execution.summary : "";
     const executionView = execution ? h(
       "section",
       { className: `pfv_execution pfv_execution_${execution.phase}`, role: execution.phase === "failed" ? "alert" : "status", "aria-label": "\u5F53\u524D\u6267\u884C\u72B6\u6001" },
-      h("div", { className: "pfv_execution_heading" }, h("h3", null, {
-        preparing: "\u6B63\u5728\u51C6\u5907",
-        running: execution.kind === "create" ? "\u6B63\u5728\u521B\u5EFA" : "\u6B63\u5728\u4F7F\u7528\u65B9\u6848",
-        waiting: "\u7B49\u5F85\u7EE7\u7EED",
-        completed: "\u672C\u6B21\u8FD0\u884C\u5DF2\u7ED3\u675F",
-        failed: "\u8FD9\u6B21\u6CA1\u6709\u5B8C\u6210",
-        cancelled: "\u5DF2\u505C\u6B62"
-      }[execution.phase] || "\u5F53\u524D\u72B6\u6001"), executionActive ? button2("\u505C\u6B62", () => controller.cancelExecution(), { className: "pfv_button pfv_quiet", "aria-label": "\u505C\u6B62\u5F53\u524D\u6267\u884C" }) : null),
-      paragraph(execution.summary),
-      text11(execution.details) ? paragraph(execution.details, { className: "pfv_hint pfv_execution_details" }) : list2(strings2(execution.details)),
-      execution.canContinue ? primary("\u7EE7\u7EED\u6267\u884C", () => controller.continueExecution(), { disabled: busy }) : null,
+      h(
+        "div",
+        { className: "pfv_execution_head_band" },
+        h("div", { className: "pfv_execution_heading" }, h("h3", null, executionTitle), executionActive ? button2("\u505C\u6B62", () => controller.cancelExecution(), { className: "pfv_button pfv_quiet", "aria-label": "\u505C\u6B62\u5F53\u524D\u6267\u884C" }) : null),
+        paragraph(executionSummary),
+        text11(execution.details) ? paragraph(execution.details, { className: "pfv_hint pfv_execution_details" }) : list2(strings2(execution.details)),
+        execution.canContinue ? primary("\u7EE7\u7EED\u6267\u884C", () => controller.continueExecution(), { disabled: busy }) : null
+      ),
       sections.executionConversation
     ) : null;
     const clarification = isCreating && question ? planSurface.clarification({
@@ -4085,6 +4092,45 @@ function createExperienceView(React2) {
       ),
       expertSection || followup
     );
+    const creationSummaryRows = () => [
+      ["\u9996\u7248\u505A\u4EC0\u4E48", blueprint.scope],
+      ["\u600E\u6837\u4F7F\u7528", blueprint.workflow],
+      ["\u5F97\u5230\u4EC0\u4E48", blueprint.outputs],
+      ["\u6570\u636E\u4E0E\u6743\u9650", unique([text11(blueprint.data), text11(blueprint.tools)]).join("\uFF1B")],
+      ["\u5B8C\u6210\u6807\u51C6", blueprint.acceptance]
+    ].filter(([, value]) => text11(value));
+    const startBlueprintAction = () => ({
+      label: "\u5F00\u59CB\u521B\u5EFA",
+      primary: true,
+      onClick: () => !workspacePending && confirmOrRun({
+        title: "\u5F00\u59CB\u5728\u5DE5\u4F5C\u533A\u521B\u5EFA\u8FD9\u4E2A\u63D2\u4EF6\uFF1F",
+        body: "\u4F1A\u5148\u628A\u5F53\u524D\u65B9\u6848\u5B58\u6210\u8349\u7A3F\u5E76\u4EA4\u7ED9\u6267\u884C\u5BF9\u8BDD\uFF0C\u6309\u4E94\u6B65\u966A\u505A\u8282\u594F\u63A8\u8FDB\u3002",
+        facts: [
+          text11(blueprint?.name) ? { label: "\u63D2\u4EF6\u8349\u7A3F", value: text11(blueprint.name) } : null,
+          text11(blueprint?.purpose) ? { label: "\u76EE\u6807", value: short2(blueprint.purpose, 80) } : null,
+          state.executionWorkspaceLabel ? { label: "\u5DE5\u4F5C\u533A", value: text11(state.executionWorkspaceLabel) } : null
+        ].filter(Boolean),
+        showWorkspacePicker: true,
+        confirmLabel: "\u786E\u8BA4\u5F00\u59CB\u521B\u5EFA",
+        cancelLabel: "\u518D\u6539\u6539"
+      }, () => controller.createInWorkspace()),
+      disabled: !canAct || workspacePending || Boolean(question)
+    });
+    const blueprintEditorDisclosure = () => disclosure("\u67E5\u770B\u4E0E\u7F16\u8F91\u8BE6\u7EC6\u65B9\u6848", h(
+      React2.Fragment,
+      null,
+      ...blueprintGroups.map((group, index) => h(
+        "section",
+        { className: "pfv_blueprint_block", key: group.title },
+        h("h3", null, group.title),
+        h("dl", { className: "pfv_blueprint_values" }, ...group.fields.map(([key, label]) => h("div", { key }, h("dt", null, label), h("dd", null, text11(blueprint[key]) || "\u5F85\u8865\u5145")))),
+        disclosure(`\u7F16\u8F91${group.title}`, h("div", { className: "pfv_block_editor" }, ...group.fields.map(([key, label]) => h("label", { key, className: "pfv_field", htmlFor: `pfv_field_${key}` }, label, h("textarea", { id: `pfv_field_${key}`, "aria-label": label, value: text11(blueprint[key]), maxLength: 4e3, disabled: locked, onChange: (event) => controller.editCreation({ blueprint: { [key]: event.target.value } }) })))), { key: `edit-${index}`, className: "pfv_disclosure pfv_edit_block" })
+      )),
+      paragraph(creation.reuseAssessment),
+      list2(records2(creation.candidateDecisions).map((item) => `${records2(state.candidates).find((candidate) => candidate.id === item.pluginId)?.name || item.pluginId}\uFF1A${text11(item.reason)}`)),
+      h("label", { className: "pfv_field", htmlFor: "pfv_assumptions" }, "\u5047\u8BBE\uFF0C\u6BCF\u884C\u4E00\u9879", h("textarea", { id: "pfv_assumptions", value: items7(form?.assumptions || creation.assumptions).filter((item) => typeof item === "string").join("\n"), maxLength: 6e3, disabled: locked, onChange: (event) => controller.editCreation({ assumptions: event.target.value.split("\n") }) })),
+      state.creationDirty ? button2("\u4FDD\u5B58\u8349\u7A3F", () => controller.updateCreation(), { disabled: locked }) : null
+    ));
     const blueprintView = () => {
       if (!creation) return h(
         "article",
@@ -4093,13 +4139,7 @@ function createExperienceView(React2) {
         h("p", { className: "pf8_why" }, "\u6839\u636E\u8FD9\u6B21\u9700\u6C42\uFF0C\u6574\u7406\u9996\u7248\u8981\u505A\u4EC0\u4E48\u3002"),
         !busy ? h("div", { className: "pf8_acts" }, v8Action({ label: "\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6", primary: true, onClick: () => controller.startCreation(), disabled: !modelReady || !state.plan })) : null
       );
-      const summaryRows = [
-        ["\u9996\u7248\u505A\u4EC0\u4E48", blueprint.scope],
-        ["\u600E\u6837\u4F7F\u7528", blueprint.workflow],
-        ["\u5F97\u5230\u4EC0\u4E48", blueprint.outputs],
-        ["\u6570\u636E\u4E0E\u6743\u9650", unique([text11(blueprint.data), text11(blueprint.tools)]).join("\uFF1B")],
-        ["\u5B8C\u6210\u6807\u51C6", blueprint.acceptance]
-      ].filter(([, value]) => text11(value));
+      const summaryRows = creationSummaryRows();
       const capabilities = capabilityMap();
       return h(
         "article",
@@ -4123,55 +4163,120 @@ function createExperienceView(React2) {
           h(
             "div",
             { className: "pf8_acts" },
-            v8Action({
-              label: "\u5F00\u59CB\u521B\u5EFA",
-              primary: true,
-              onClick: () => !workspacePending && confirmOrRun({
-                title: "\u5F00\u59CB\u5728\u5DE5\u4F5C\u533A\u521B\u5EFA\u8FD9\u4E2A\u63D2\u4EF6\uFF1F",
-                body: "\u4F1A\u5148\u628A\u5F53\u524D\u65B9\u6848\u5B58\u6210\u8349\u7A3F\u5E76\u4EA4\u7ED9\u6267\u884C\u5BF9\u8BDD\uFF0C\u6309\u4E94\u6B65\u966A\u505A\u8282\u594F\u63A8\u8FDB\u3002",
-                facts: [
-                  text11(blueprint?.name) ? { label: "\u63D2\u4EF6\u8349\u7A3F", value: text11(blueprint.name) } : null,
-                  text11(blueprint?.purpose) ? { label: "\u76EE\u6807", value: short2(blueprint.purpose, 80) } : null,
-                  state.executionWorkspaceLabel ? { label: "\u5DE5\u4F5C\u533A", value: text11(state.executionWorkspaceLabel) } : null
-                ].filter(Boolean),
-                showWorkspacePicker: true,
-                confirmLabel: "\u786E\u8BA4\u5F00\u59CB\u521B\u5EFA",
-                cancelLabel: "\u518D\u6539\u6539"
-              }, () => controller.createInWorkspace()),
-              disabled: !canAct || workspacePending || Boolean(question)
-            }),
+            v8Action(startBlueprintAction()),
             v8Action({ label: "\u56DE\u770B\u65B9\u6848", onClick: () => controller.showFind(), disabled: locked })
           ),
           h("p", { className: "pf8_next" }, "\u4F1A\u5148\u5728\u53D1\u73B0\u597D\u63D2\u4EF6\u91CC\u5B58\u4E00\u4EFD\u8349\u7A3F\uFF0C\u518D\u4ECE\u7B2C\u4E00\u6B65\u5F00\u59CB\uFF1B\u968F\u65F6\u53EF\u4EE5\u56DE\u6765\u6539\u3002")
         ) : null,
         state.creationDirty ? h("p", { className: "pf8_fine", role: "status" }, "\u4FEE\u6539\u5DF2\u4FDD\u7559\uFF0C\u5F00\u59CB\u521B\u5EFA\u65F6\u4F1A\u4E00\u5E76\u4F7F\u7528\u3002") : null,
-        disclosure("\u67E5\u770B\u4E0E\u7F16\u8F91\u8BE6\u7EC6\u65B9\u6848", h(
-          React2.Fragment,
-          null,
-          ...blueprintGroups.map((group, index) => h(
-            "section",
-            { className: "pfv_blueprint_block", key: group.title },
-            h("h3", null, group.title),
-            h("dl", { className: "pfv_blueprint_values" }, ...group.fields.map(([key, label]) => h("div", { key }, h("dt", null, label), h("dd", null, text11(blueprint[key]) || "\u5F85\u8865\u5145")))),
-            disclosure(`\u7F16\u8F91${group.title}`, h("div", { className: "pfv_block_editor" }, ...group.fields.map(([key, label]) => h("label", { key, className: "pfv_field", htmlFor: `pfv_field_${key}` }, label, h("textarea", { id: `pfv_field_${key}`, "aria-label": label, value: text11(blueprint[key]), maxLength: 4e3, disabled: locked, onChange: (event) => controller.editCreation({ blueprint: { [key]: event.target.value } }) })))), { key: `edit-${index}`, className: "pfv_disclosure pfv_edit_block" })
-          )),
-          paragraph(creation.reuseAssessment),
-          list2(records2(creation.candidateDecisions).map((item) => `${records2(state.candidates).find((candidate) => candidate.id === item.pluginId)?.name || item.pluginId}\uFF1A${text11(item.reason)}`)),
-          h("label", { className: "pfv_field", htmlFor: "pfv_assumptions" }, "\u5047\u8BBE\uFF0C\u6BCF\u884C\u4E00\u9879", h("textarea", { id: "pfv_assumptions", value: items7(form?.assumptions || creation.assumptions).filter((item) => typeof item === "string").join("\n"), maxLength: 6e3, disabled: locked, onChange: (event) => controller.editCreation({ assumptions: event.target.value.split("\n") }) })),
-          state.creationDirty ? button2("\u4FDD\u5B58\u8349\u7A3F", () => controller.updateCreation(), { disabled: locked }) : null
-        ))
+        blueprintEditorDisclosure()
       );
     };
-    const completedCreation = execution?.phase === "completed" && execution.kind === "use" ? h("div", { className: "pf8_acts" }, v8Action({ label: "\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6", onClick: () => controller.startCreation(), disabled: locked || !modelReady })) : null;
+    const execActionBtn = (action) => h("button", {
+      key: action.label,
+      type: "button",
+      className: action.primary ? "pf8_btn pf8_ink pfv_primary" : "pf8_btn",
+      disabled: Boolean(action.disabled),
+      onClick: action.onClick
+    }, action.label);
+    const execBar = ({ kicker, title, chips = [], actions = [] }) => h(
+      "div",
+      { className: "pf8_exec_bar" },
+      h(
+        "div",
+        { className: "pf8_exec_plan_main" },
+        h("span", { className: "pf8_exec_kicker" }, kicker),
+        h("strong", { className: "pf8_exec_title" }, title),
+        chips.length ? h("span", { className: "pf8_exec_chips" }, ...chips.map((block, index) => h("span", { key: `${block.kind}-${index}`, className: `pf8_exec_chip ${block.kind}` }, h("code", null, text11(block.name))))) : null
+      ),
+      actions.length ? h("div", { className: "pf8_exec_acts" }, ...actions.map(execActionBtn)) : null
+    );
+    const execDetailsFold = (content) => content ? h(
+      "details",
+      { className: "pf8_disclosure pf8_exec_details" },
+      h("summary", { className: "pf8_lk" }, "\u67E5\u770B\u672C\u6B21\u65B9\u6848\u8BE6\u60C5"),
+      h("div", { className: "pf8_disclosure_body" }, content)
+    ) : null;
+    const completedCreationAction = execution?.phase === "completed" && execution.kind === "use" ? { label: "\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6", onClick: () => controller.startCreation(), disabled: locked || !modelReady } : null;
+    const executionOverview = () => {
+      if (isCreating) {
+        if (!creation) {
+          return execBar({
+            kicker: "\u63D2\u4EF6\u65B9\u6848",
+            title: busy ? "\u6B63\u5728\u6574\u7406\u63D2\u4EF6\u65B9\u6848" : "\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6",
+            actions: !busy ? [{ label: "\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6", primary: true, onClick: () => controller.startCreation(), disabled: !modelReady || !state.plan }] : []
+          });
+        }
+        const summaryRows = creationSummaryRows();
+        const capabilities = capabilityMap();
+        const actions = showActions ? [startBlueprintAction(), { label: "\u56DE\u770B\u65B9\u6848", onClick: () => controller.showFind(), disabled: locked }] : [];
+        return h(
+          React2.Fragment,
+          null,
+          execBar({ kicker: "\u63D2\u4EF6\u65B9\u6848", title: text11(blueprint.name) || "\u6211\u7684\u63D2\u4EF6", actions }),
+          clarification,
+          showActions && (workspacePicker || workspaceStatus) ? h("div", { className: "pf8_exec_recovery" }, workspacePicker, workspaceStatus) : null,
+          state.creationDirty ? h("p", { className: "pf8_fine", role: "status" }, "\u4FEE\u6539\u5DF2\u4FDD\u7559\uFF0C\u5F00\u59CB\u521B\u5EFA\u65F6\u4F1A\u4E00\u5E76\u4F7F\u7528\u3002") : null,
+          execDetailsFold(h(
+            React2.Fragment,
+            null,
+            text11(blueprint.purpose) ? h("p", { className: "pf8_why" }, short2(blueprint.purpose, 260)) : null,
+            summaryRows.length ? h("dl", { className: "pfv_creation_summary" }, ...summaryRows.map(([label, value]) => h("div", { key: label }, h("dt", null, label), h("dd", null, short2(value, 200))))) : null,
+            capabilities,
+            blueprintEditorDisclosure()
+          ))
+        );
+      }
+      if (uncertainGap) {
+        const actions = showActions ? [retryAction(), plan ? { label: "\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6", onClick: () => controller.startCreation(), disabled: !canAct } : null].filter(Boolean) : completedCreationAction ? [completedCreationAction] : [];
+        return h(
+          React2.Fragment,
+          null,
+          execBar({ kicker: "\u6765\u6E90\u5F85\u6838\u5BF9", title: "\u8FD9\u6B21\u6CA1\u67E5\u5B8C\uFF0C\u5148\u4E0D\u7ED9\u4F60\u7ED3\u8BBA", actions }),
+          execDetailsFold(h(
+            React2.Fragment,
+            null,
+            h("p", { className: "pf8_why" }, text11(health?.message) || "\u90E8\u5206\u6765\u6E90\u6CA1\u6709\u8BFB\u56DE\u6765\uFF0C\u53EA\u51ED\u5DF2\u7ECF\u8BFB\u5230\u7684\u5185\u5BB9\u4E0B\u7ED3\u8BBA\uFF0C\u5BB9\u6613\u8BA9\u4F60\u88C5\u9519\u3002"),
+            plan ? planSurface.solution({ request, understanding: "", plan, candidates: outcome.candidates, discovery, searchedAt, actions: [], note: "", showSignature: false, compact: true, embedded: true }) : null
+          ))
+        );
+      }
+      if (plan) {
+        const execBlocks = planSurface.planBlocks({ plan, candidates: outcome.candidates, request });
+        const secondary = !needsCreation || uncertainGap ? { label: "\u521B\u5EFA\u81EA\u5DF1\u7684\u63D2\u4EF6", onClick: () => controller.startCreation(), disabled: !canAct } : null;
+        const execActions = showActions ? [primaryAction(), secondary].filter(Boolean) : completedCreationAction ? [completedCreationAction] : [];
+        return h(
+          React2.Fragment,
+          null,
+          execBar({ kicker: "\u672C\u6B21\u65B9\u6848", title: text11(plan.title) || "\u5F53\u524D\u65B9\u6848", chips: execBlocks, actions: execActions }),
+          showActions && (workspacePicker || workspaceStatus) ? h("div", { className: "pf8_exec_recovery" }, workspacePicker, workspaceStatus) : null,
+          execDetailsFold(planSurface.solution({
+            request,
+            understanding: "",
+            plan,
+            candidates: outcome.candidates,
+            discovery,
+            searchedAt,
+            actions: [],
+            note: "",
+            showSignature: true,
+            compact: true,
+            embedded: true
+          }))
+        );
+      }
+      const fallbackActions = !showFindCard && showActions && (state.intent || request) ? [retryAction()] : [];
+      return execBar({
+        kicker: "\u672C\u6B21\u65B9\u6848",
+        title: showFindCard ? "\u6B63\u5728\u66FF\u4F60\u627E" : "\u7EE7\u7EED\u67E5\u627E\u65B9\u6848",
+        actions: fallbackActions
+      });
+    };
     const body = startingNew ? searchingCard() : execution ? h(
       "div",
       { className: "pfv_result_grid" },
       h("div", { className: "pfv_result_primary" }, executionView),
-      h(
-        "aside",
-        { className: "pfv_solution_overview", "aria-label": "\u672C\u6B21\u80FD\u529B\u65B9\u6848" },
-        isCreating ? blueprintView() : h(React2.Fragment, null, planCardArea(), completedCreation)
-      )
+      h("aside", { className: "pfv_solution_overview", "aria-label": "\u672C\u6B21\u80FD\u529B\u65B9\u6848" }, executionOverview())
     ) : isCreating ? blueprintView() : h("section", { className: "pf8_planwrap", "aria-label": "\u5F53\u524D\u65B9\u6848" }, expertPlanCard, planCardArea());
     return h(
       "div",
@@ -4729,12 +4834,18 @@ var v8Css = `
 .pf_v8 .pf8_drafts .pf8_btn { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border: 1px solid var(--line2); border-radius: 18px; color: var(--ink); background: transparent; font-size: 13.5px; }
 .pf_v8 .pf8_drafts .pf8_lk { padding: 0; border: 0; border-bottom: 1px solid var(--line2); border-radius: 0; color: var(--ink2); background: none; font-size: 13px; }
 .pf_root.pf_v2 .pf_footer { max-width: 1080px; margin: 0 auto; padding: 0 40px 56px; border-top: 0; }
+.pf_root.pf_v2:has(.pf8_narrow) .pf_footer { max-width: 860px; }
+.pf_root.pf_v2:has(.pf8_shopw) .pf_footer, .pf_root.pf_v2:has(.pf8_histwrap) .pf_footer { max-width: 920px; }
 .pf_root.pf_v2 .pf_footer .pf_details { border-top: 0; }
-.pf_root.pf_v2 .pf_footer .pf_details > summary { font-size: 13px; color: var(--ink3); }
-.pf_root.pf_v2 .pf_footer .pf_details > summary { list-style: none; cursor: pointer; }
+.pf_root.pf_v2 .pf_footer .pf_details > summary { min-height: 26px; padding-block: 2px; font-size: 13px; color: var(--ink3); list-style: none; cursor: pointer; }
 .pf_root.pf_v2 .pf_footer .pf_details > summary::-webkit-details-marker { display: none; }
 .pf_root.pf_v2 .pf_footer .pf_details > summary::before { content: ""; display: inline-block; width: 0; height: 0; margin-right: 7px; vertical-align: 1px; border-left: 5px solid currentColor; border-top: 4px solid transparent; border-bottom: 4px solid transparent; }
 .pf_root.pf_v2 .pf_footer .pf_details[open] > summary::before { vertical-align: 0; border-left: 0; border-top: 5px solid currentColor; border-right: 4px solid transparent; border-bottom: 0; border-left: 4px solid transparent; }
+.pf_root.pf_v2:has(.pfv_result_grid) > .pf_inner { padding-top: 10px; }
+.pf_v8.pf8_findpage:has(.pfv_result_grid) .pf8_wrap { padding-top: 12px; padding-bottom: 14px; }
+.pf_v8.pf8_findpage:has(.pfv_result_grid) .pf8_top { margin-bottom: 16px; }
+.pf_v8.pf8_findpage:has(.pfv_result_grid) .pf8_folds { margin-top: 12px; }
+.pf_root.pf_v2:has(.pfv_result_grid) .pf_footer { margin-top: 8px; padding-bottom: 18px; }
 .pf_v8.pf8_flowback { width: calc(100% - 80px); max-width: 840px; margin: 0 auto 12px; }
 @container finder (max-width: 700px) { .pf_v8.pf8_flowback { width: calc(100% - 32px); } }
 @container finder (max-width: 700px) { .pf_v8 .pf8_oppcard { max-width: none; } }
@@ -4983,6 +5094,19 @@ var v8Css = `
 .pf_modal_ws { margin-top: 14px; display: grid; gap: 6px; font-size: 13px; color: var(--ink2); }
 .pf_modal_ws select { width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; }
 .pf_modal_acts { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.pf_v8 .pf8_exec_bar { display: flex; align-items: safe center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; min-inline-size: 0; }
+.pf_v8 .pf8_exec_plan_main { display: flex; align-items: baseline; gap: 8px 10px; flex-wrap: wrap; flex: 1 1 260px; min-inline-size: 0; }
+.pf_v8 .pf8_exec_kicker { font-size: 12px; color: var(--ink3); white-space: nowrap; }
+.pf_v8 .pf8_exec_title { font: 500 15px/1.45 var(--serif); color: var(--ink); overflow-wrap: anywhere; }
+.pf_v8 .pf8_exec_chips { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; min-inline-size: 0; }
+.pf_v8 .pf8_exec_chip { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; font-size: 11.5px; background: var(--subtle); color: var(--ink2); max-inline-size: 100%; }
+.pf_v8 .pf8_exec_chip.have { background: color-mix(in srgb, var(--have) 11%, transparent); color: color-mix(in srgb, var(--have) 88%, var(--ink)); }
+.pf_v8 .pf8_exec_chip.build { background: color-mix(in srgb, var(--build) 12%, transparent); color: color-mix(in srgb, var(--build) 80%, var(--ink)); }
+.pf_v8 .pf8_exec_chip code { font: 500 11.5px/1 var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-inline-size: 220px; }
+.pf_v8 .pf8_exec_acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-inline-start: auto; }
+.pf_v8 .pf8_exec_recovery { margin-top: 10px; display: grid; gap: 8px; }
+.pf_v8 .pf8_exec_details { margin-top: 8px; }
+.pf_v8 .pf8_exec_details > summary { min-height: 24px; padding-block: 2px; line-height: 1.5; }
 
 `;
 
@@ -5533,41 +5657,24 @@ var experienceV3Css = `
 .pfv_capability_gap { border-style: dashed; border-color: color-mix(in srgb, var(--pfv_accent) 45%, var(--pfv_line)); background: var(--pfv_tint); }
 .pfv_capability_gap .pfv_capability_kind { color: var(--pfv_accent); }
 
-/* Runtime output owns the large surface; the saved plan is secondary context. */
+/* Runtime output owns the full width; the saved plan sits below as a compact expandable bar. */
 .pfv_outcome_document.pfv_outcome_live { padding: 0; border: 0; box-shadow: none; background: transparent; }
-.pfv_result_grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(230px, .36fr); gap: 28px; align-items: start; }
-.pfv_result_primary { min-width: 0; }
-.pfv_result_primary .pfv_execution { margin: 0; padding: 20px; background: var(--pfv_paper); border: 1px solid var(--pfv_line); border-radius: 16px; box-shadow: 0 5px 18px color-mix(in srgb, var(--pfv_ink) 3%, transparent); }
-.pfv_result_primary .pfv_execution_heading { padding-bottom: 13px; border-bottom: 1px solid var(--pfv_line); }
-.pfv_result_primary .pfv_execution_heading h3 { font-size: 17px; }
-.pfv_result_primary .pf_execution_conversation { min-width: 0; margin-top: 16px; min-height: 320px !important; height: min(58vh, 620px) !important; }
-.pfv_result_primary .pf_execution_file_preview { min-width: 0; }
-.pfv_solution_overview { min-width: 0; padding: 6px 0 16px; }
-.pf_v2 .pfv_solution_overview .pfv_outcome_intro h2 { font-size: 20px; line-height: 1.55; letter-spacing: -.35px; }
-.pfv_solution_overview .pfv_kind { font-size: 12px; margin-bottom: 8px; }
-.pfv_solution_overview .pfv_capabilities { margin-top: 20px; }
-.pfv_solution_overview .pfv_capabilities_heading .pfv_hint { display: none; }
-.pfv_solution_overview .pfv_capability_map { grid-template-columns: minmax(0, 1fr); gap: 0; border-block: 1px solid var(--pfv_line); }
-.pfv_solution_overview .pfv_capability_item { padding: 14px 0; border: 0; border-bottom: 1px solid var(--pfv_line); border-radius: 0; background: transparent; }
-.pfv_solution_overview .pfv_capability_item:last-child { border-bottom: 0; }
-.pfv_solution_overview .pfv_capability_gap { padding-left: 12px; border-left: 2px solid var(--pfv_accent); }
-.pfv_solution_overview .pfv_capability_kind { margin-bottom: 4px; }
-.pfv_solution_overview .pfv_capability_item strong { font-size: 14px; }
-.pfv_solution_overview .pfv_outcome_actions { gap: 6px; margin-top: 16px; }
-.pfv_solution_overview .pfv_outcome_actions .pfv_button { font-size: 13px; min-width: 0; }
-.pfv_solution_overview .pfv_prerequisites { padding: 0; border-radius: 0; background: transparent; }
-.pfv_solution_overview .pfv_prerequisites .pfv_list { font-size: 12px; color: var(--pfv_muted); }
-@container finder (max-width: 900px) {
-  .pfv_result_grid { grid-template-columns: minmax(0, 1fr); gap: 24px; }
-  .pfv_solution_overview { border-top: 1px solid var(--pfv_line); padding-top: 20px; }
-  .pfv_solution_overview .pfv_capability_map { grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); gap: 10px; border: 0; }
-  .pfv_solution_overview .pfv_capability_item { padding: 14px; border: 1px solid var(--pfv_line); border-radius: 10px; background: var(--pfv_paper); }
-  .pfv_solution_overview .pfv_capability_gap { border-style: dashed; border-color: var(--pfv_accent); }
-}
+.pfv_result_grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+.pfv_result_primary { min-inline-size: 0; }
+.pfv_result_primary .pfv_execution { margin: 0; padding: 18px 22px 20px; background: var(--card, var(--pfv_paper)); border: 1px solid var(--line2, var(--pfv_line)); border-radius: 22px; box-shadow: none; }
+.pfv_result_primary .pfv_execution_head_band { display: grid; gap: 4px; padding-bottom: 12px; border-bottom: 1px solid var(--line, var(--pfv_line)); }
+.pfv_result_primary .pfv_execution_heading { display: flex; align-items: safe center; justify-content: space-between; gap: 12px; padding-bottom: 0; border-bottom: 0; }
+.pfv_result_primary .pfv_execution_heading h3 { font: 600 15.5px/1.4 var(--sans, inherit); color: var(--ink, var(--pfv_ink)); }
+.pfv_result_primary .pfv_execution_head_band > .pfv_prose { margin: 0; font-size: 13px; line-height: 1.6; color: var(--ink3, var(--pfv_muted)); }
+.pfv_result_primary .pfv_execution_details { margin-top: 2px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pfv_result_primary .pf_execution_conversation { min-inline-size: 0; margin-top: 12px; min-height: 320px !important; height: clamp(340px, calc(100vh - 380px), 680px) !important; height: clamp(340px, calc(100dvh - 380px), 680px) !important; }
+.pfv_result_primary .pf_execution_file_preview { min-inline-size: 0; }
+.pfv_solution_overview { min-inline-size: 0; padding: 14px 20px; border: 1px solid var(--line, var(--pfv_line)); border-radius: 18px; background: var(--card, var(--pfv_paper)); }
 @container finder (max-width: 520px) {
   .pfv_capability_map_hybrid { grid-template-columns: minmax(0, 1fr); }
-  .pfv_result_primary .pfv_execution { padding: 16px; }
-  .pfv_result_primary .pf_execution_conversation { min-height: 300px !important; height: min(64vh, 580px) !important; }
+  .pfv_result_primary .pfv_execution { padding: 14px 16px 16px; border-radius: 18px; }
+  .pfv_result_primary .pf_execution_conversation { min-height: 280px !important; height: clamp(300px, calc(100vh - 340px), 560px) !important; height: clamp(300px, calc(100dvh - 340px), 560px) !important; }
+  .pfv_solution_overview { padding: 12px 16px; border-radius: 16px; }
   .pf_v2 .pfv_expert_identity h1 { font-size: 25px; }
 }
 

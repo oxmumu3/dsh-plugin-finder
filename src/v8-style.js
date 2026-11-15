@@ -296,12 +296,18 @@ export const v8Css = `
 .pf_v8 .pf8_drafts .pf8_btn { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border: 1px solid var(--line2); border-radius: 18px; color: var(--ink); background: transparent; font-size: 13.5px; }
 .pf_v8 .pf8_drafts .pf8_lk { padding: 0; border: 0; border-bottom: 1px solid var(--line2); border-radius: 0; color: var(--ink2); background: none; font-size: 13px; }
 .pf_root.pf_v2 .pf_footer { max-width: 1080px; margin: 0 auto; padding: 0 40px 56px; border-top: 0; }
+.pf_root.pf_v2:has(.pf8_narrow) .pf_footer { max-width: 860px; }
+.pf_root.pf_v2:has(.pf8_shopw) .pf_footer, .pf_root.pf_v2:has(.pf8_histwrap) .pf_footer { max-width: 920px; }
 .pf_root.pf_v2 .pf_footer .pf_details { border-top: 0; }
-.pf_root.pf_v2 .pf_footer .pf_details > summary { font-size: 13px; color: var(--ink3); }
-.pf_root.pf_v2 .pf_footer .pf_details > summary { list-style: none; cursor: pointer; }
+.pf_root.pf_v2 .pf_footer .pf_details > summary { min-height: 26px; padding-block: 2px; font-size: 13px; color: var(--ink3); list-style: none; cursor: pointer; }
 .pf_root.pf_v2 .pf_footer .pf_details > summary::-webkit-details-marker { display: none; }
 .pf_root.pf_v2 .pf_footer .pf_details > summary::before { content: ""; display: inline-block; width: 0; height: 0; margin-right: 7px; vertical-align: 1px; border-left: 5px solid currentColor; border-top: 4px solid transparent; border-bottom: 4px solid transparent; }
 .pf_root.pf_v2 .pf_footer .pf_details[open] > summary::before { vertical-align: 0; border-left: 0; border-top: 5px solid currentColor; border-right: 4px solid transparent; border-bottom: 0; border-left: 4px solid transparent; }
+.pf_root.pf_v2:has(.pfv_result_grid) > .pf_inner { padding-top: 10px; }
+.pf_v8.pf8_findpage:has(.pfv_result_grid) .pf8_wrap { padding-top: 12px; padding-bottom: 14px; }
+.pf_v8.pf8_findpage:has(.pfv_result_grid) .pf8_top { margin-bottom: 16px; }
+.pf_v8.pf8_findpage:has(.pfv_result_grid) .pf8_folds { margin-top: 12px; }
+.pf_root.pf_v2:has(.pfv_result_grid) .pf_footer { margin-top: 8px; padding-bottom: 18px; }
 .pf_v8.pf8_flowback { width: calc(100% - 80px); max-width: 840px; margin: 0 auto 12px; }
 @container finder (max-width: 700px) { .pf_v8.pf8_flowback { width: calc(100% - 32px); } }
 @container finder (max-width: 700px) { .pf_v8 .pf8_oppcard { max-width: none; } }
@@ -550,5 +556,18 @@ export const v8Css = `
 .pf_modal_ws { margin-top: 14px; display: grid; gap: 6px; font-size: 13px; color: var(--ink2); }
 .pf_modal_ws select { width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; }
 .pf_modal_acts { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.pf_v8 .pf8_exec_bar { display: flex; align-items: safe center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; min-inline-size: 0; }
+.pf_v8 .pf8_exec_plan_main { display: flex; align-items: baseline; gap: 8px 10px; flex-wrap: wrap; flex: 1 1 260px; min-inline-size: 0; }
+.pf_v8 .pf8_exec_kicker { font-size: 12px; color: var(--ink3); white-space: nowrap; }
+.pf_v8 .pf8_exec_title { font: 500 15px/1.45 var(--serif); color: var(--ink); overflow-wrap: anywhere; }
+.pf_v8 .pf8_exec_chips { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; min-inline-size: 0; }
+.pf_v8 .pf8_exec_chip { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; font-size: 11.5px; background: var(--subtle); color: var(--ink2); max-inline-size: 100%; }
+.pf_v8 .pf8_exec_chip.have { background: color-mix(in srgb, var(--have) 11%, transparent); color: color-mix(in srgb, var(--have) 88%, var(--ink)); }
+.pf_v8 .pf8_exec_chip.build { background: color-mix(in srgb, var(--build) 12%, transparent); color: color-mix(in srgb, var(--build) 80%, var(--ink)); }
+.pf_v8 .pf8_exec_chip code { font: 500 11.5px/1 var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-inline-size: 220px; }
+.pf_v8 .pf8_exec_acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-inline-start: auto; }
+.pf_v8 .pf8_exec_recovery { margin-top: 10px; display: grid; gap: 8px; }
+.pf_v8 .pf8_exec_details { margin-top: 8px; }
+.pf_v8 .pf8_exec_details > summary { min-height: 24px; padding-block: 2px; line-height: 1.5; }
 
 `;
