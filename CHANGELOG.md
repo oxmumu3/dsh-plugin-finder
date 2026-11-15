@@ -1,3 +1,9 @@
+# 0.13.2（2026-11-15）
+
+- 重构创造模式输入框上方「创造向导」浮条（`src/creator-strip.js`）：对齐宿主原生 `TodoPanel` 宽度与内边距变量（`--dsh-composer-card-max-width`、`--dsh-composer-dock-inset`），默认收敛为 `38px` 单行毛玻璃引导条，区分已完成、老项目「免走」、当前步与执行中四态，普通非插件对话首轮结束后自动退场。
+- 把面向 AI 的内部 SDK 术语改为面向人的下一步提问胶囊与验收锦囊：点击胶囊通过 `inputActions.insertText` / `requestDraftInitialization` 安全追加进输入框（不覆盖草稿、不自动发送）；展开面板明确署名「发现好插件 · 创造向导」，并区分点 `×`（仅收起本会话浮条，后台省 Token 引导继续生效）与「全局关闭」（前后台一并停用）。
+- 对齐 `docs/install.md`、`README.md` 与 `0.13.2` 正式发行版本标识。
+
 # 0.13.1（2026-11-15）
 
 - 修复执行态页面双栏挤压与嵌套滚动错位：将 `.pfv_result_grid` 改为单栏纵向排布（`grid-template-columns: minmax(0, 1fr)`），执行对话与结果卡片独占整行可读宽度；右侧原 230px 窄栏改为底部一行紧凑方案条（`.pf8_exec_bar`），详细解法收进 `<details class="pf8_disclosure pf8_exec_details">`，消除长方案把右侧拉到 ~2000px 导致执行框划走消失的问题。

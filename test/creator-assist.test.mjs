@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Context } from '@deepseek-ai/cordis';
 import { createCreatorAssist, registerCreatorAssist, hostPresetReader, renderCreatorPrompt, CREATOR_SECTION, CREATOR_MARKER, CREATOR_TOOLS, CREATOR_GUIDE } from '../src/creator-assist.js';
-import { createCreatorDock, creatorProgress, creatorHandoffPrompt, openCreatorContinuation } from '../src/creator-strip.js';
+import { createCreatorDock, creatorProgress, creatorHandoffPrompt, openCreatorContinuation, applyCreatorPrompt } from '../src/creator-strip.js';
 // The official SDK is a peer dependency: present locally and in the SDK compatibility
 // jobs (which forbid skipped tests), absent in the peer-less publish preparation job.
 const sdk = await Promise.all([import('@deepseek-ai/dsh-tools'), import('@deepseek-ai/dsh-system-prompt')])
@@ -228,4 +228,62 @@ test('the stuck dock can be dismissed for this entry only, without touching the 
   assert.ok(dismiss);
   dismiss.props.onClick();
   assert.deepEqual(calls, ['dismiss']);
+});
+
+test('applyCreatorPrompt inserts undoably, appends onto non-empty drafts safely, and falls back gracefully', async () => {
+  assert.equal(await applyCreatorPrompt({}, '   '), 'noop');
+
+  const insertedCalls = [];
+  let focused = 0;
+  const origDoc = globalThis.document;
+  globalThis.document = { querySelector: () => ({ focus: () => { focused += 1; } }) };
+  try {
+    const res1 = await applyCreatorPrompt({
+      inputActions: {
+        captureInsertion: () => ({ start: 12, end: 12, draftRev: 3 }),
+        insertText: (txt, span) => { insertedCalls.push({ txt, span }); return true; },
+      },
+    }, '微调样式：只留三项指标');
+    assert.equal(res1, 'inserted');
+    assert.equal(insertedCalls[0].txt, '\n微调样式：只留三项指标');
+    assert.deepEqual(insertedCalls[0].span, { start: 12, end: 12, draftRev: 3 });
+    assert.equal(focused, 1);
+
+    const resZero = await applyCreatorPrompt({
+      inputActions: {
+        captureInsertion: () => ({ start: 0, end: 0, draftRev: 1 }),
+        insertText: (txt, span) => { insertedCalls.push({ txt, span }); return true; },
+      },
+    }, '你好');
+    assert.equal(resZero, 'inserted');
+    assert.equal(insertedCalls[1].txt, '你好');
+  } finally {
+    if (origDoc === undefined) delete globalThis.document;
+    else globalThis.document = origDoc;
+  }
+
+  const fallbackCalls = [];
+  const binding = { ctx: { get: name => name === 'conversation' ? { input: { requestDraftInitialization: (b, opts) => { fallbackCalls.push({ b, opts }); return 'applied'; } } } : undefined } };
+  const res2 = await applyCreatorPrompt({
+    sessionId: 's-1',
+    ctx: { sessions: { binding: () => binding } },
+  }, '请自查深浅色对比度');
+  assert.equal(res2, 'inserted');
+  assert.equal(fallbackCalls[0].opts.whenDraftExists, 'append');
+  assert.equal(fallbackCalls[0].opts.clearPreviousDraft, false);
+
+  const copied = [];
+  const prevDesc = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true,
+    value: { clipboard: { writeText: async txt => { copied.push(txt); } } },
+  });
+  try {
+    const res3 = await applyCreatorPrompt({}, '复制进剪贴板的引导语');
+    assert.equal(res3, 'copied');
+    assert.deepEqual(copied, ['复制进剪贴板的引导语']);
+  } finally {
+    if (prevDesc) Object.defineProperty(globalThis, 'navigator', prevDesc);
+    else delete globalThis.navigator;
+  }
 });

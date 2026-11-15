@@ -133,18 +133,54 @@ test('community-view category share bars contain zero extra buttons and plugin-d
   assert.equal(calls[1], 'installed');
 });
 
-test('CreatorDock renders hairline stage lessons grounded by stage id with no headings in summary', () => {
-  const Dock = createCreatorDock(fakeReact());
-  const runTree = Dock({ mode: 'run', progress: creatorProgress([{ stage: 'skeleton', summary: '搭空架子' }]) });
-  const lessons = nodes(runTree).find(n => hasClass(n, 'pfc_lessons'));
-  assert.ok(lessons);
-  const sum = nodes(lessons).find(n => n.type === 'summary');
-  assert.ok(sum);
-  assert.equal(nodes(sum).filter(n => /^h[1-6]$/.test(String(n.type))).length, 0);
-  assert.match(content(lessons), /ctx\.effect|空架子/);
+test('CreatorDock v2 aligns with composer inset, collapses to 1-line bar by default, and renders human stage guidance when expanded', () => {
+  assert.match(creatorStripCss, /--dsh-composer-card-max-width/);
+  assert.match(creatorStripCss, /--dsh-composer-dock-inset/);
+  assert.doesNotMatch(creatorStripCss, /Songti/);
+  assert.match(creatorStripCss, /\.is_skipped\s*\{[^}]*color-mix\(/);
 
-  const stuckTree = Dock({ mode: 'stuck', progress: creatorProgress([{ stage: 'blocked', step: 3, summary: '卡在挂载' }]) });
+  const Dock = createCreatorDock(fakeReact());
+  const introTree = Dock({ mode: 'intro', progress: creatorProgress([]) });
+  assert.match(content(introTree), /发现好插件 · 创造向导/);
+  assert.match(content(introTree), /后台已自动给 AI 开启省 Token 规矩/);
+
+  const progress = creatorProgress([
+    { stage: 'search', summary: '已查过现成插件' },
+    { stage: 'verify', summary: '/usage-float/state 返回 172M tokens，已在桌面端截图核对。' },
+  ]);
+
+  // Collapsed default: 1-line bar with human hint + prompt chip, NO drawer and NO raw technical log text.
+  const collapsedTree = Dock({ mode: 'run', progress, expanded: false });
+  assert.equal(nodes(collapsedTree).filter(n => hasClass(n, 'pfc_drawer')).length, 0);
+  assert.doesNotMatch(content(collapsedTree), /usage-float/);
+  assert.match(content(collapsedTree), /第 5\/5 步/);
+  assert.match(content(collapsedTree), /微调样式与精简度/);
+
+  // Clicking the prompt chip triggers onPrompt with guided copy.
+  let sentPrompt = '';
+  const dockedWithHandlers = Dock({ mode: 'run', progress, expanded: true, onPrompt: txt => { sentPrompt = txt; } });
+  const drawer = nodes(dockedWithHandlers).find(n => hasClass(n, 'pfc_drawer'));
+  assert.ok(drawer);
+  assert.match(content(drawer), /最近记录：\/usage-float\/state/);
+  assert.match(content(drawer), /2 定方案 · 免走/);
+  const metaNote = nodes(drawer).find(n => hasClass(n, 'pfc_meta_note'));
+  assert.ok(metaNote);
+  assert.match(content(metaNote), /来自「发现好插件」/);
+  assert.match(content(metaNote), /无需回头补做/);
+  const lessons = nodes(drawer).find(n => hasClass(n, 'pfc_lessons'));
+  assert.ok(lessons);
+  assert.equal(nodes(lessons).filter(n => /^h[1-6]$/.test(String(n.type))).length, 0);
+  assert.match(content(lessons), /⌘R/);
+  assert.doesNotMatch(content(lessons), /ctx\.effect|ModuleLoader|--dsw-alias/);
+  const chip = nodes(dockedWithHandlers).find(n => hasClass(n, 'pfc_chip') && content(n) === '微调样式与精简度');
+  assert.ok(chip);
+  chip.props.onClick();
+  assert.match(sentPrompt, /视觉样式/);
+
+  const stuckTree = Dock({ mode: 'stuck', expanded: true, progress: creatorProgress([{ stage: 'blocked', step: 3, summary: '卡在挂载' }]) });
   assert.match(content(nodes(stuckTree).find(n => hasClass(n, 'pfc_lessons'))), /连改三轮没好/);
+  assert.ok(nodes(stuckTree).find(n => n.type === 'button' && content(n) === '先不用'));
+  assert.ok(nodes(stuckTree).find(n => n.type === 'button' && content(n) === '开新窗口接着做'));
 });
 
 test('ConfirmDialog uses native closedby="any" without role="dialog" or aria-modal, and coordinate light-dismiss ignores drags', () => {

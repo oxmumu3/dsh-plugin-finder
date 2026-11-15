@@ -5957,13 +5957,124 @@ var ORDER = Object.fromEntries(STAGES.map((stage, index) => [stage.id, index]));
 var LABEL = { ...Object.fromEntries(STAGES.map((stage) => [stage.id, stage.label])), blocked: "\u5361\u4F4F\u4E86" };
 var PLAIN = {
   search: "\u5148\u770B\u770B\u6709\u6CA1\u6709\u73B0\u6210\u7684",
-  design: "\u8BF4\u6E05\u600E\u4E48\u505A",
-  skeleton: "\u5148\u642D\u4E2A\u80FD\u6253\u5F00\u7684",
-  feature: "\u4E00\u6B21\u52A0\u4E00\u4E2A\u529F\u80FD",
-  verify: "\u8DD1\u4E00\u904D\u786E\u8BA4",
+  design: "\u5148\u5BF9\u9F50 3 \u53E5\u8BDD\u65B9\u6848",
+  skeleton: "\u5148\u642D\u80FD\u70B9\u5F00\u7684\u7A7A\u67B6\u5B50",
+  feature: "\u4E00\u6B21\u53EA\u52A0\u4E00\u4E2A\u6838\u5FC3\u529F\u80FD",
+  verify: "\u6309\u63D0\u793A\u5237\u65B0\u6838\u5BF9\u5B9E\u6548",
   blocked: "\u5361\u4F4F\u4E86"
 };
-var BRICK = "M3 7H3.4V5.3a1.1 1.1 0 0 1 1.1-1.1h3a1.1 1.1 0 0 1 1.1 1.1V7h2.8V5.3a1.1 1.1 0 0 1 1.1-1.1h3a1.1 1.1 0 0 1 1.1 1.1V7H17a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3Z";
+var STAGE_SHORT = Object.freeze({
+  search: "\u67E5\u73B0\u6210",
+  design: "\u5B9A\u65B9\u6848",
+  skeleton: "\u642D\u67B6\u5B50",
+  feature: "\u52A0\u529F\u80FD",
+  verify: "\u5F85\u9A8C\u6536"
+});
+var STAGE_HINTS = Object.freeze({
+  search: "\u6709\u73B0\u6210\u63D2\u4EF6\u4F18\u5148\u590D\u7528\uFF0C\u786E\u5B9E\u6CA1\u6709\u518D\u81EA\u5DF1\u9020",
+  design: "\u5148\u786E\u8BA4\u6302\u5728\u54EA\u3001\u5E73\u65F6\u600E\u4E48\u7528\uFF0C\u518D\u8BA9\u5B83\u5199\u4EE3\u7801",
+  skeleton: "\u5148\u70B9\u5F00\u770B\u4F4D\u7F6E\u548C\u5165\u53E3\u6CA1\u767D\u5C4F\uFF0C\u5148\u4E0D\u7BA1\u7EC6\u8282",
+  feature: "\u770B\u4E00\u773C\u521A\u52A0\u7684\u529F\u80FD\u987A\u4E0D\u987A\u624B\uFF0C\u4E00\u6B21\u53EA\u6539\u4E00\u5904",
+  verify: "\u6309 \u2318R \u5237\u65B0\u770B\u5B9E\u6548\uFF08\u6539\u4E86\u540E\u53F0\u6216\u5DE5\u5177\u9700\u9000\u51FA\u91CD\u5F00 DSH\uFF09"
+});
+var STAGE_LESSONS = Object.freeze({
+  search: [
+    "\u5148\u641C\u793E\u533A\u73B0\u6210\u63D2\u4EF6\u80FD\u7701\u6389\u5927\u91CF\u91CD\u590D\u9020\u8F6E\u5B50\uFF1B\u771F\u6CA1\u6709\u73B0\u6210\u7684\uFF0C\u4E5F\u53EF\u6311\u6700\u63A5\u8FD1\u7684\u8BA9 AI \u7167\u7740\u6539\u3002",
+    "\u804A\u5B8C\u53D1\u73B0\u73B0\u6210\u7684\u5C31\u80FD\u7528\u65F6\uFF0C\u76F4\u63A5\u88C5\u73B0\u6210\u63D2\u4EF6\u6700\u7A33\u3002"
+  ],
+  design: [
+    "\u52A8\u624B\u524D\u53EA\u5BF9\u9F50\u4E09\u4EF6\u4E8B\uFF1A\u5165\u53E3\u6302\u5728\u54EA\uFF08\u4FA7\u680F\u3001\u9876\u90E8\u6807\u7B7E\u8FD8\u662F\u60AC\u6D6E\u7A97\uFF09\u3001\u5360\u591A\u5927\u7A7A\u95F4\u3001\u6570\u636E\u5B58\u54EA\u3002",
+    "\u9996\u7248\u780D\u6389\u9526\u4E0A\u6DFB\u82B1\u7684\u529F\u80FD\uFF0C\u8D8A\u805A\u7126\u8D8A\u5BB9\u6613\u4E00\u6B21\u505A\u6210\u3002"
+  ],
+  skeleton: [
+    "\u7B2C\u4E00\u7248\u53EA\u8981\u80FD\u70B9\u5F00\u3001\u4E0D\u767D\u5C4F\u3001\u4F4D\u7F6E\u987A\u773C\u5C31\u7B97\u8FC7\u5173\uFF0C\u522B\u4E00\u53E3\u6C14\u585E\u6EE1\u6240\u6709\u529F\u80FD\u3002",
+    "\u5165\u53E3\u4F4D\u7F6E\u5982\u679C\u4E0D\u987A\u624B\uFF0C\u8D81\u73B0\u5728\u8FD8\u6CA1\u5806\u903B\u8F91\u65F6\u6362\u4F4D\u7F6E\u6700\u8F7B\u677E\u3002"
+  ],
+  feature: [
+    "\u6BCF\u6B21\u53EA\u63D0 1\u20132 \u4E2A\u5177\u4F53\u8C03\u6574\uFF08\u5982\u201C\u538B\u5C0F\u5B57\u53F7\u201D\u201C\u53EA\u7559\u4E09\u9879\u6307\u6807\u201D\uFF09\uFF0C\u6BD4\u4E00\u6B21\u6539\u5341\u5904\u7A33\u5F97\u591A\u3002",
+    "\u6BCF\u52A0\u5B8C\u4E00\u5757\u90FD\u987A\u624B\u70B9\u4E00\u4E0B\uFF0C\u786E\u8BA4\u6CA1\u628A\u4E0A\u4E00\u7248\u505A\u597D\u7684\u5730\u65B9\u6539\u574F\u3002"
+  ],
+  verify: [
+    "\u53EA\u6539\u754C\u9762\u6837\u5F0F\u6309 \u2318R \u5373\u53EF\u751F\u6548\uFF1B\u65B0\u52A0\u4E86\u5DE5\u5177\u3001\u540E\u53F0\u63A5\u53E3\u6216\u91CD\u88C5\u540C\u540D\u63D2\u4EF6\uFF0C\u9700 \u2318Q \u9000\u51FA\u91CD\u5F00 DSH\u3002",
+    "\u987A\u624B\u5207\u4E00\u4E0B\u6DF1\u8272/\u6D45\u8272\u548C\u7A84\u7A97\u53E3\uFF0C\u770B\u6709\u6CA1\u6709\u6324\u7206\u3001\u906E\u6321\u6216\u770B\u4E0D\u6E05\u7684\u5B57\u3002"
+  ],
+  blocked: [
+    "\u540C\u4E00\u95EE\u9898\u8FDE\u6539\u4E09\u8F6E\u6CA1\u597D\uFF0C\u7EE7\u7EED\u5728\u957F\u5BF9\u8BDD\u91CC\u786C\u78E8\u53EA\u4F1A\u8D8A\u6539\u8D8A\u4E71\u3001\u8D8A\u82B1\u8D8A\u591A Token\uFF1B\u5E26\u8FDB\u5C55\u6362\u5E72\u51C0\u7A97\u53E3\u6700\u5212\u7B97\u3002"
+  ]
+});
+var STARTER_CHIPS = Object.freeze([
+  {
+    label: "\u5148\u67E5\u6709\u6CA1\u6709\u73B0\u6210\u7684",
+    prompt: "\u6211\u60F3\u505A\u4E00\u4E2A\u529F\u80FD\uFF1A___\u3002\u5148\u522B\u6025\u7740\u5199\u4EE3\u7801\uFF0C\u8BF7\u5148\u7528 finder_search \u67E5\u67E5\u793E\u533A\u6709\u6CA1\u6709\u73B0\u6210\u6216\u76F8\u8FD1\u7684\u63D2\u4EF6\u3002"
+  },
+  {
+    label: "\u5148\u5BF9\u9F50 3 \u53E5\u8BDD\u65B9\u6848",
+    prompt: "\u6211\u60F3\u81EA\u5DF1\u505A\u4E00\u4E2A\u5C0F\u63D2\u4EF6\uFF1A___\u3002\u5148\u522B\u5199\u4EE3\u7801\uFF0C\u8BF7\u7528\u4E09\u4E94\u53E5\u5927\u767D\u8BDD\u8DDF\u6211\u786E\u8BA4\u5165\u53E3\u6302\u5728\u54EA\u3001\u600E\u4E48\u4EA4\u4E92\u3001\u6570\u636E\u5B58\u54EA\u3002"
+  },
+  {
+    label: "\u642D\u6700\u5C0F\u53EF\u70B9\u5F00\u521D\u7248",
+    prompt: "\u6211\u60F3\u505A\uFF1A___\u3002\u7B2C\u4E00\u7248\u8BF7\u53EA\u642D\u4E00\u4E2A\u6700\u5C0F\u80FD\u70B9\u5F00\u3001\u4E0D\u767D\u5C4F\u7684\u7A7A\u67B6\u5B50\uFF0C\u6211\u786E\u8BA4\u4F4D\u7F6E\u987A\u773C\u540E\u518D\u9010\u4E2A\u52A0\u529F\u80FD\u3002"
+  }
+]);
+var STAGE_CHIPS = Object.freeze({
+  search: {
+    primary: {
+      label: "\u81EA\u5DF1\u9020 \xB7 \u5148\u5B9A 3 \u53E5\u65B9\u6848",
+      prompt: "\u73B0\u6210\u63D2\u4EF6\u4E0D\u5B8C\u5168\u5408\u9002\uFF0C\u6211\u4EEC\u81EA\u5DF1\u505A\u4E00\u4E2A\u8F7B\u91CF\u7248\u3002\u5148\u522B\u5199\u4EE3\u7801\uFF0C\u8BF7\u7528\u4E09\u4E94\u53E5\u5927\u767D\u8BDD\u8DDF\u6211\u786E\u8BA4\u5165\u53E3\u6302\u5728\u54EA\u3001\u5E73\u65F6\u600E\u4E48\u7528\u3001\u6570\u636E\u5B58\u54EA\u3002"
+    },
+    secondary: {
+      label: "\u6311\u6700\u63A5\u8FD1\u7684\u7167\u7740\u6539",
+      prompt: "\u8BF7\u6311\u4E00\u4E2A\u7ED3\u6784\u6700\u63A5\u8FD1\u7684\u73B0\u6210\u63D2\u4EF6\u53C2\u8003\u5B83\u7684\u6302\u8F7D\u65B9\u5F0F\uFF0C\u6309\u6211\u7684\u9700\u6C42\u7CBE\u7B80\u91CD\u505A\u4E00\u7248\u3002"
+    }
+  },
+  design: {
+    primary: {
+      label: "\u65B9\u6848\u53EF\u4EE5 \xB7 \u5148\u642D\u7A7A\u67B6\u5B50",
+      prompt: "\u8FD9\u4E2A\u65B9\u6848\u53EF\u4EE5\uFF0C\u7B2C\u4E00\u7248\u8BF7\u5148\u642D\u4E00\u4E2A\u6700\u5C0F\u80FD\u70B9\u5F00\u3001\u4E0D\u767D\u5C4F\u7684\u7A7A\u67B6\u5B50\uFF0C\u5148\u4E0D\u585E\u590D\u6742\u903B\u8F91\u3002"
+    },
+    secondary: {
+      label: "\u518D\u538B\u7CBE\u7B80\u4E00\u70B9",
+      prompt: "\u9996\u7248\u8FD8\u53EF\u4EE5\u518D\u7CBE\u7B80\u4E00\u70B9\uFF0C\u53EA\u4FDD\u7559\u6700\u6838\u5FC3\u7684\u4E00\u9879\u80FD\u529B\uFF1A"
+    }
+  },
+  skeleton: {
+    primary: {
+      label: "\u67B6\u5B50 OK \xB7 \u52A0\u6838\u5FC3\u529F\u80FD",
+      prompt: "\u5165\u53E3\u6211\u5DF2\u7ECF\u70B9\u5F00\u786E\u8BA4\u6B63\u5E38\u4E86\uFF0C\u73B0\u5728\u8BF7\u53EA\u52A0\u4E0A\u6700\u6838\u5FC3\u7684\u7B2C\u4E00\u4E2A\u529F\u80FD\uFF1A"
+    },
+    secondary: {
+      label: "\u600E\u4E48\u5237\u65B0\u770B\u6548\u679C\uFF1F",
+      prompt: "\u8BF7\u544A\u8BC9\u6211\u8FD9\u4E00\u6B65\u53EA\u9700\u8981\u6309 Cmd+R \u5237\u65B0\u754C\u9762\uFF0C\u8FD8\u662F\u9700\u8981\u5F7B\u5E95\u9000\u51FA\u91CD\u5F00 DSH\uFF1F"
+    }
+  },
+  feature: {
+    primary: {
+      label: "\u81EA\u67E5\u6DF1\u6D45\u8272\u4E0E\u7A84\u7A97\u53E3",
+      prompt: "\u8BF7\u5E2E\u6211\u68C0\u67E5\u4E00\u4E0B\u5F53\u524D\u754C\u9762\u5728\u6DF1\u8272/\u6D45\u8272\u4E3B\u9898\u548C\u7A84\u7A97\u53E3\u4E0B\u7684\u6392\u7248\u3001\u5BF9\u6BD4\u5EA6\u4E0E\u6EA2\u51FA\u60C5\u51B5\u3002"
+    },
+    secondary: {
+      label: "\u5FAE\u8C03\u4EA4\u4E92\u4E0E\u7EC6\u8282",
+      prompt: "\u521A\u52A0\u7684\u529F\u80FD\u6211\u770B\u4E86\u4E00\u773C\uFF0C\u60F3\u5FAE\u8C03\u4E00\u5904\u7EC6\u8282\uFF1A"
+    }
+  },
+  verify: {
+    primary: {
+      label: "\u5FAE\u8C03\u6837\u5F0F\u4E0E\u7CBE\u7B80\u5EA6",
+      prompt: "\u6211\u770B\u4E86\u4E00\u773C\u5F53\u524D\u6548\u679C\uFF0C\u60F3\u5FAE\u8C03\u4E00\u4E0B\u89C6\u89C9\u6837\u5F0F\u548C\u4FE1\u606F\u7CBE\u7B80\u5EA6\uFF1A"
+    },
+    secondary: {
+      label: "\u628A\u8E29\u5751\u8BB0\u5165\u7ECF\u9A8C\u5E93",
+      prompt: "\u8BF7\u628A\u8FD9\u6B21\u5236\u4F5C\u8FC7\u7A0B\u4E2D\u503C\u5F97\u590D\u7528\u7684\u907F\u5751\u70B9\u8C03\u7528 finder_creator_note \u8BB0\u5165\u63D2\u4EF6\u7ECF\u9A8C\u3002"
+    }
+  },
+  blocked: {
+    primary: {
+      label: "\u5148\u603B\u7ED3\u8BD5\u8FC7\u4EC0\u4E48\u4E0E\u5361\u70B9",
+      prompt: "\u5148\u505C\u4E00\u4E0B\u522B\u6539\u4EE3\u7801\u4E86\uFF1A\u8BF7\u7528\u4E09\u53E5\u8BDD\u603B\u7ED3\u521A\u624D\u8BD5\u8FC7\u4E86\u4EC0\u4E48\u3001\u5177\u4F53\u5361\u5728\u54EA\u4E2A\u73B0\u8C61\uFF0C\u65B9\u4FBF\u6211\u5224\u65AD\u6216\u6362\u65B0\u7A97\u53E3\u7EE7\u7EED\u3002"
+    }
+  }
+});
+var SPARK_PATH = "M10 2.25 11.9 7.1l4.85 1.9-4.85 1.9L10 15.75l-1.9-4.85-4.85-1.9 4.85-1.9L10 2.25Z";
 var text12 = (value) => typeof value === "string" ? value : "";
 var CREATOR_PRESET = "cordis";
 function creatorProgress(steps) {
@@ -5975,12 +6086,16 @@ function creatorProgress(steps) {
   const recorded = new Set(rows.map((item) => item.stage));
   const last = rows.at(-1) ?? null;
   return {
-    stages: STAGES.map((stage, index) => ({ ...stage, plain: PLAIN[stage.id], state: index === furthest ? "current" : index > furthest ? "todo" : recorded.has(stage.id) ? "done" : "skipped" })),
+    stages: STAGES.map((stage, index) => ({
+      ...stage,
+      plain: PLAIN[stage.id],
+      state: index === furthest ? "current" : index > furthest ? "todo" : recorded.has(stage.id) ? "done" : "skipped"
+    })),
     last: last ? { stage: last.stage, label: LABEL[last.stage], summary: text12(last.summary) } : null,
     blocked: last?.stage === "blocked",
     blockedStep: recordedStep,
     count: rows.length,
-    reached: Math.max(0, STAGES.filter((stage, index) => index <= furthest).length)
+    reached: Math.max(0, STAGES.filter((_, index) => index <= furthest).length)
   };
 }
 function creatorHandoffPrompt(steps) {
@@ -5993,133 +6108,326 @@ function creatorHandoffPrompt(steps) {
     "\u8BF7\u5148\u8C03\u7528 finder_creator_guide \u8BFB\u53D6\u521B\u9020\u7ECF\u9A8C\uFF0C\u518D\u4ECE\u6700\u540E\u4E00\u6B65\u7EE7\u7EED\uFF1B\u5DF2\u7ECF\u8DD1\u901A\u7684\u90E8\u5206\u4E0D\u8981\u91CD\u5199\u3002\u9700\u8981\u4E0A\u4E2A\u7A97\u53E3\u7684\u7EC6\u8282\u65F6\u5148\u95EE\u6211\u3002"
   ].join("\n");
 }
-var STAGE_LESSONS = Object.freeze({
-  search: [
-    "\u5199\u4EE3\u7801\u524D\u5148\u7528 cordis_inspect \u67E5\u5C55\u4F4D\u548C\u63A5\u53E3\uFF0C\u627E\u7ED3\u6784\u76F8\u8FD1\u7684\u5DF2\u8DD1\u901A\u63D2\u4EF6\u7167\u7740\u6539\u3002",
-    "\u53EA\u8BFB\u5BBF\u4E3B\u5305\u91CC\u7684 api-catalog \u548C slots \u5B9A\u4E49\uFF0C\u4E0D\u51ED\u8BB0\u5FC6\u731C\u63A5\u53E3\u3002"
-  ],
-  design: [
-    "\u52A8\u624B\u524D\u7528\u4E09\u4E94\u53E5\u5927\u767D\u8BDD\u5BF9\u9F50\uFF1A\u6302\u5728\u54EA\u3001\u51E0\u4E2A\u6587\u4EF6\u3001\u6570\u636E\u5B58\u54EA\u3002",
-    "\u53EF\u9009\u670D\u52A1\u5199\u8FDB inject\uFF0C\u72B6\u6001\u6536\u5728\u4E00\u4E2A\u5730\u65B9\uFF0C\u5199\u63A5\u53E3\u62D2\u7EDD\u8DE8\u7AD9\u8BF7\u6C42\u3002"
-  ],
-  skeleton: [
-    "\u7B2C\u4E00\u7248\u53EA\u505A\u80FD\u70B9\u5F00\u3001\u4E0D\u767D\u5C4F\u7684\u7A7A\u67B6\u5B50\uFF0C\u6240\u6709\u6CE8\u518C\u653E\u8FDB ctx.effect\u3002",
-    "main \u9762\u677F\u7528 flex \u6491\u6EE1\u5E76\u81EA\u5DF1\u5F53\u6EDA\u52A8\u53E3\uFF1BReact \u7528\u5BBF\u4E3B\u90A3\u4EFD\uFF0C\u4E0D\u5F15\u5BBF\u4E3B UI \u5305\u3002"
-  ],
-  feature: [
-    "\u4E00\u8F6E\u53EA\u52A0\u4E00\u4E2A\u529F\u80FD\uFF1B@container \u91CF\u81EA\u8EAB\u5BBD\u5EA6\uFF0C\u989C\u8272\u53EA\u7528 --dsw-alias-* \u53D8\u91CF\u3002",
-    "\u6309\u94AE\u548C\u6A21\u578B\u5DE5\u5177\u8D70\u540C\u4E00\u5957\u5B9E\u73B0\uFF1B\u5BA2\u6237\u7AEF\u5165\u53E3\u5305\u8FDB window.__ModuleLoader__.load\u3002"
-  ],
-  verify: [
-    "\u5148\u6253\u5305\u5E76\u5728\u6D45\u8272/\u6DF1\u8272/\u7A84\u5C4F\u4E0B\u91CF\u771F\u5B9E\u6E32\u67D3\uFF0C\u518D\u8FDB\u9694\u79BB\u5BBF\u4E3B\u771F\u70B9\u5F00\u9A8C\u3002",
-    "\u5F39\u7A97\u548C\u5217\u8868\u884C\u5FC5\u987B\u6709\u72B6\u6001\u6587\u5B57\uFF0C\u4E0D\u5355\u9760\u989C\u8272\uFF1B\u6362\u5305\u540E\u5F7B\u5E95\u9000\u51FA\u684C\u9762\u7AEF\u91CD\u5F00\u3002"
-  ],
-  blocked: [
-    "\u540C\u4E00\u95EE\u9898\u8FDE\u6539\u4E09\u8F6E\u6CA1\u597D\u5C31\u505C\u4E0B\u6765\u5199\u6E05\u5C1D\u8BD5\u548C\u5361\u70B9\uFF0C\u5F00\u5E72\u51C0\u7A97\u53E3\u63A5\u7740\u505A\u3002"
-  ]
-});
+async function applyCreatorPrompt({ ctx, sessionId, inputActions } = {}, prompt) {
+  const value = text12(prompt).trim();
+  if (!value) return "noop";
+  if (typeof inputActions?.captureInsertion === "function" && typeof inputActions?.insertText === "function") {
+    try {
+      const span = inputActions.captureInsertion();
+      const prefix = span && Number.isInteger(span.start) && span.start > 0 && span.start === span.end ? "\n" : "";
+      if (inputActions.insertText(prefix + value, span)) {
+        try {
+          const editor = globalThis.document?.querySelector?.('[data-composer-seat] [contenteditable="true"], [data-composer-seat] textarea');
+          editor?.focus?.();
+        } catch {
+        }
+        return "inserted";
+      }
+    } catch {
+    }
+  }
+  try {
+    const binding = sessionId ? ctx?.sessions?.binding?.(sessionId) : null;
+    const convInput = binding?.ctx?.get?.("conversation", false)?.input;
+    if (typeof convInput?.requestDraftInitialization === "function") {
+      const status = convInput.requestDraftInitialization(binding, {
+        prompt: value,
+        whenDraftExists: "append",
+        clearPreviousDraft: false
+      });
+      if (status === "applied") return "inserted";
+    }
+  } catch {
+  }
+  try {
+    if (typeof globalThis.navigator?.clipboard?.writeText === "function") {
+      await globalThis.navigator.clipboard.writeText(value);
+      return "copied";
+    }
+  } catch {
+  }
+  return "unavailable";
+}
 var css = `
-.pfc_dock, .pfc_closed { box-sizing: border-box; color-scheme: light dark;
+.pfc_dock, .pfc_closed {
+  box-sizing: border-box;
+  container-type: inline-size;
+  container-name: pfc-dock;
+  color-scheme: light dark;
   --pfc_ink: var(--dsw-alias-label-primary, #191b1f);
   --pfc_ink2: var(--dsw-alias-label-secondary, #4b5058);
   --pfc_ink3: var(--dsw-alias-label-tertiary, #868c95);
-  --pfc_card: var(--dsw-alias-bg-layer-2, #ffffff);
-  --pfc_line: var(--dsw-alias-border-l2, #e7e7e2);
-  --pfc_line2: var(--dsw-alias-border-l4, #d0d0c9);
-  --pfc_build: var(--dsw-alias-state-warn-primary, #dd8500);
+  --pfc_card: var(--dsw-specific-menu, var(--dsw-alias-bg-layer-2, #ffffff));
+  --pfc_chip_bg: var(--dsw-alias-fill-l2, rgba(25, 27, 31, 0.05));
+  --pfc_chip_hover: var(--dsw-alias-fill-l3, rgba(25, 27, 31, 0.09));
+  --pfc_line: var(--dsw-alias-border-l1, rgba(25, 27, 31, 0.08));
+  --pfc_line2: var(--dsw-alias-border-l3, rgba(25, 27, 31, 0.16));
+  --pfc_accent: var(--dsw-alias-brand-primary, #4b83f0);
+  --pfc_build: var(--dsw-alias-state-warn-primary, #d97706);
   --pfc_ok: var(--dsw-alias-state-success-primary, #2fa36b);
   --pfc_primary: var(--dsw-alias-button-primary-fill, #191b1f);
   --pfc_on_primary: var(--dsw-alias-label-primary-inverted, #ffffff);
-  --pfc_serif: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
   --pfc_sans: var(--dsw-font-family, -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif);
-  font-family: var(--pfc_sans); color: var(--pfc_ink); }
+  width: calc(100% - var(--dsh-composer-side-clearance, 0px) - var(--dsh-composer-side-clearance, 0px) - var(--dsh-composer-dock-inset, 0px) - var(--dsh-composer-dock-inset, 0px) - var(--dsh-composer-dock-inset, 0px) - var(--dsh-composer-dock-inset, 0px));
+  max-width: calc(var(--dsh-composer-card-max-width, 768px) - var(--dsh-composer-dock-inset, 0px) - var(--dsh-composer-dock-inset, 0px) - var(--dsh-composer-dock-inset, 0px) - var(--dsh-composer-dock-inset, 0px));
+  margin: 0 auto 6px;
+  border-radius: var(--dsw-radius-lg, 12px);
+  border: 1px solid var(--pfc_line);
+  background: var(--pfc_card);
+  backdrop-filter: var(--dsw-menu-backdrop-filter, blur(16px));
+  box-shadow: var(--dsw-elevation-panel, 0 2px 8px rgba(0, 0, 0, 0.06));
+  font-family: var(--pfc_sans);
+  color: var(--pfc_ink);
+  overflow: hidden;
+}
 :where(.pfc_dock, .pfc_closed)[data-theme="dark"], .dark :where(.pfc_dock, .pfc_closed) {
   --pfc_ink: var(--dsw-alias-label-primary, #eceded);
   --pfc_ink2: var(--dsw-alias-label-secondary, #b5b9bf);
   --pfc_ink3: var(--dsw-alias-label-tertiary, #7e848d);
-  --pfc_card: var(--dsw-alias-bg-layer-2, #1d1f22);
-  --pfc_line: var(--dsw-alias-border-l2, #2a2c30);
-  --pfc_line2: var(--dsw-alias-border-l4, #3b3e43);
+  --pfc_card: var(--dsw-specific-menu, var(--dsw-alias-bg-layer-2, rgba(31, 33, 38, 0.92)));
+  --pfc_chip_bg: var(--dsw-alias-fill-l2, rgba(255, 255, 255, 0.07));
+  --pfc_chip_hover: var(--dsw-alias-fill-l3, rgba(255, 255, 255, 0.12));
+  --pfc_line: var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.08));
+  --pfc_line2: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.16));
+  --pfc_accent: var(--dsw-alias-brand-primary, #6c9ef8);
   --pfc_build: var(--dsw-alias-state-warn-primary, #f0a530);
   --pfc_ok: var(--dsw-alias-state-success-primary, #4cc38a);
   --pfc_primary: var(--dsw-alias-button-primary-fill, #eceded);
   --pfc_on_primary: var(--dsw-alias-label-primary-inverted, #141517);
+  box-shadow: var(--dsw-elevation-panel, 0 2px 10px rgba(0, 0, 0, 0.28));
 }
 @media (prefers-color-scheme: dark) {
   :where(.pfc_dock, .pfc_closed):not([data-theme="light"]) {
     --pfc_ink: var(--dsw-alias-label-primary, #eceded);
     --pfc_ink2: var(--dsw-alias-label-secondary, #b5b9bf);
     --pfc_ink3: var(--dsw-alias-label-tertiary, #7e848d);
-    --pfc_card: var(--dsw-alias-bg-layer-2, #1d1f22);
-    --pfc_line: var(--dsw-alias-border-l2, #2a2c30);
-    --pfc_line2: var(--dsw-alias-border-l4, #3b3e43);
+    --pfc_card: var(--dsw-specific-menu, var(--dsw-alias-bg-layer-2, rgba(31, 33, 38, 0.92)));
+    --pfc_chip_bg: var(--dsw-alias-fill-l2, rgba(255, 255, 255, 0.07));
+    --pfc_chip_hover: var(--dsw-alias-fill-l3, rgba(255, 255, 255, 0.12));
+    --pfc_line: var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.08));
+    --pfc_line2: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.16));
+    --pfc_accent: var(--dsw-alias-brand-primary, #6c9ef8);
     --pfc_build: var(--dsw-alias-state-warn-primary, #f0a530);
     --pfc_ok: var(--dsw-alias-state-success-primary, #4cc38a);
     --pfc_primary: var(--dsw-alias-button-primary-fill, #eceded);
     --pfc_on_primary: var(--dsw-alias-label-primary-inverted, #141517);
   }
 }
-.pfc_dock { width: 100%; margin: 0 0 8px; padding: 16px 20px 18px; border: 1px solid var(--pfc_line2); border-radius: 20px; background: var(--pfc_card); }
-.pfc_dock[data-stuck="true"] { border-color: var(--pfc_build); }
-.pfc_hd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.pfc_hd b { font: 400 18px/1.4 var(--pfc_serif); }
-.pfc_brick { width: 24px; height: 24px; flex: none; margin: -2px 0 -2px -2px; overflow: visible; }
-.pfc_brick path { fill: color-mix(in srgb, var(--pfc_build) 9%, transparent); stroke: var(--pfc_build); stroke-width: 1.3; stroke-dasharray: 2.6 2.3; stroke-linecap: round; stroke-linejoin: round; }
-.pfc_hd .pfc_steps_link { margin-left: auto; }
-.pfc_dock p { margin: 6px 0 0; font-size: 14px; line-height: 1.7; color: var(--pfc_ink2); }
-.pfc_dock p b { color: var(--pfc_ink); font-weight: 500; }
-.pfc_five { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; margin-top: 14px; }
-.pfc_five div { min-width: 0; padding-right: 8px; }
-.pfc_five i { display: block; height: 5px; border-radius: 3px; background: var(--pfc_line); }
+
+.pfc_dock[data-compact="true"] { padding: 5px 10px; }
+.pfc_dock:not([data-compact="true"]) { padding: 10px 14px; }
+.pfc_dock[data-stuck="true"] { border-color: color-mix(in srgb, var(--pfc_build) 52%, var(--pfc_line)); }
+
+.pfc_bar { display: flex; align-items: center; gap: 8px; min-height: 26px; }
+.pfc_bar_toggle {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pfc_bar_toggle:hover:not(:disabled) { background: var(--pfc_chip_bg); }
+
+.pfc_mini_steps { display: inline-flex; align-items: center; gap: 3px; flex: none; }
+.pfc_mini_steps i { display: block; width: 14px; height: 4px; border-radius: 999px; background: var(--pfc_line2); }
+.pfc_mini_steps .is_done { background: var(--pfc_ok); }
+.pfc_mini_steps .is_skipped { background: color-mix(in srgb, var(--pfc_ok) 36%, var(--pfc_line2)); }
+.pfc_mini_steps .is_current { background: var(--pfc_accent); }
+.pfc_dock[data-stage="verify"][data-running="false"] .pfc_mini_steps .is_current { background: var(--pfc_ok); }
+.pfc_dock[data-stuck="true"] .pfc_mini_steps .is_current { background: var(--pfc_build); }
+.pfc_mini_steps .is_current.is_running { background: var(--pfc_accent); }
+
+.pfc_badge { font-size: 12px; font-weight: 600; line-height: 18px; color: var(--pfc_ink); white-space: nowrap; flex: none; }
+.pfc_hint {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--pfc_ink2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pfc_bar_actions { display: flex; align-items: center; gap: 4px; flex: none; }
+
+.pfc_chip {
+  box-sizing: border-box;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--pfc_line);
+  background: var(--pfc_chip_bg);
+  color: var(--pfc_ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 24px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pfc_chip:hover:not(:disabled) { background: var(--pfc_chip_hover); border-color: var(--pfc_line2); }
+.pfc_chip:disabled { opacity: 0.45; cursor: default; }
+
+.pfc_icon_btn {
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--pfc_ink3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: none;
+}
+.pfc_icon_btn:hover:not(:disabled) { background: var(--pfc_chip_bg); color: var(--pfc_ink); }
+.pfc_icon_btn:disabled { opacity: 0.45; cursor: default; }
+
+.pfc_hd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 24px; }
+.pfc_hd b { font-size: 13px; font-weight: 600; line-height: 20px; color: var(--pfc_ink); }
+.pfc_sub { font-size: 12.5px; line-height: 18px; color: var(--pfc_ink2); flex: 1 1 200px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfc_hd_tools { display: flex; align-items: center; gap: 6px; margin-left: auto; flex: none; }
+.pfc_spark { width: 15px; height: 15px; flex: none; color: var(--pfc_accent); }
+.pfc_stuck_dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pfc_build); flex: none; }
+
+.pfc_chip_row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.pfc_stuck_note { margin: 6px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--pfc_ink2); }
+
+.pfc_dock .pfc_button, .pfc_closed .pfc_button {
+  box-sizing: border-box;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--pfc_line2);
+  background: transparent;
+  color: var(--pfc_ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.pfc_dock .pfc_button:hover:not(:disabled), .pfc_closed .pfc_button:hover:not(:disabled) { background: var(--pfc_chip_bg); }
+.pfc_dock .pfc_button[data-primary="true"] { border-color: var(--pfc_primary); background: var(--pfc_primary); color: var(--pfc_on_primary); }
+.pfc_dock .pfc_button[data-primary="true"]:hover:not(:disabled) { opacity: 0.9; background: var(--pfc_primary); }
+.pfc_dock .pfc_button:disabled, .pfc_closed .pfc_button:disabled { opacity: 0.45; cursor: default; }
+
+.pfc_dock .pfc_ghost, .pfc_closed .pfc_ghost {
+  box-sizing: border-box;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--pfc_ink3);
+  font: inherit;
+  font-size: 12px;
+  line-height: 24px;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pfc_dock .pfc_ghost:hover:not(:disabled), .pfc_closed .pfc_ghost:hover:not(:disabled) { background: var(--pfc_chip_bg); color: var(--pfc_ink); }
+.pfc_dock .pfc_ghost:disabled, .pfc_closed .pfc_ghost:disabled { opacity: 0.45; cursor: default; }
+
+.pfc_drawer { margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--pfc_line); display: flex; flex-direction: column; gap: 10px; }
+.pfc_five { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.pfc_five div { min-width: 0; }
+.pfc_five i { display: block; height: 4px; border-radius: 999px; background: var(--pfc_line2); }
 .pfc_five .is_done i { background: var(--pfc_ok); }
-.pfc_five .is_current i { background: var(--pfc_build); }
-.pfc_five span { display: block; margin-top: 6px; font-size: 12px; line-height: 1.45; color: var(--pfc_ink3); }
+.pfc_five .is_skipped i { background: color-mix(in srgb, var(--pfc_ok) 36%, var(--pfc_line2)); }
+.pfc_five .is_current i { background: var(--pfc_accent); }
+.pfc_dock[data-stage="verify"][data-running="false"] .pfc_five .is_current i { background: var(--pfc_ok); }
+.pfc_dock[data-stuck="true"] .pfc_five .is_current i { background: var(--pfc_build); }
+.pfc_five span { display: block; margin-top: 5px; font-size: 11.5px; line-height: 1.35; color: var(--pfc_ink3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pfc_five .is_done span { color: var(--pfc_ink2); }
+.pfc_five .is_skipped span { color: var(--pfc_ink3); }
 .pfc_five .is_current span { color: var(--pfc_ink); font-weight: 600; }
-.pfc_acts { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 16px; }
-.pfc_dock .pfc_button, .pfc_closed .pfc_button { box-sizing: border-box; font: inherit; font-size: 13px; height: 32px; padding: 0 16px; border-radius: 16px; border: 1px solid var(--pfc_line2);
-  background: transparent; color: var(--pfc_ink); cursor: pointer; }
-.pfc_dock .pfc_button:hover:not(:disabled), .pfc_closed .pfc_button:hover:not(:disabled) { background: color-mix(in srgb, var(--pfc_ink) 5%, transparent); }
-.pfc_dock .pfc_button[data-primary="true"], .pfc_closed .pfc_button[data-primary="true"] { border-color: var(--pfc_primary); background: var(--pfc_primary); color: var(--pfc_on_primary); }
-.pfc_dock .pfc_button[data-primary="true"]:hover:not(:disabled), .pfc_closed .pfc_button[data-primary="true"]:hover:not(:disabled) { opacity: .9; background: var(--pfc_primary); }
-.pfc_dock .pfc_button:disabled, .pfc_closed .pfc_button:disabled { opacity: .45; cursor: default; }
-.pfc_dock .pfc_link, .pfc_closed .pfc_link { box-sizing: border-box; font: inherit; font-size: 12.5px; padding: 0; border: 0; background: none; color: var(--pfc_ink3); cursor: pointer;
-  border-bottom: 1px solid var(--pfc_line2); line-height: 1.5; }
-.pfc_dock .pfc_link:hover, .pfc_closed .pfc_link:hover { color: var(--pfc_ink); }
-.pfc_notice { font-size: 12.5px; color: var(--pfc_ink3); }
-.pfc_closed { width: 100%; margin: 0 0 8px; padding: 10px 14px; border: 1px solid var(--pfc_line); border-radius: 14px;
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--pfc_ink3); background: var(--pfc_card); }
-.pfc_button:focus-visible, .pfc_link:focus-visible { outline: 2px solid var(--pfc_ink); outline-offset: 2px; border-radius: 6px; }
-.pfc_lessons { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--pfc_line); }
-.pfc_lessons > summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; font-size: 12.5px; color: var(--pfc_ink2); }
-.pfc_lessons > summary::-webkit-details-marker { display: none; }
-.pfc_lessons > summary::before { content: ""; display: inline-block; width: 0; height: 0; border-left: 4.5px solid currentColor; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent; }
-.pfc_lessons[open] > summary::before { border-left: 3.5px solid transparent; border-right: 3.5px solid transparent; border-top: 4.5px solid currentColor; border-bottom: 0; }
-.pfc_lessons > summary:hover { color: var(--pfc_ink); }
-.pfc_lessons_list { margin: 8px 0 0; padding-left: 18px; list-style: disc; font-size: 12.5px; line-height: 1.65; color: var(--pfc_ink2); }
-.pfc_lessons_list li + li { margin-top: 4px; }
-@media (max-width: 560px) {
-  .pfc_dock { padding: 14px 16px 16px; }
+.pfc_meta_note { margin: -2px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--pfc_ink3); }
+
+.pfc_summary { margin: 0; padding: 8px 0 0; border-top: 1px solid var(--pfc_line); font-size: 12.5px; line-height: 1.55; color: var(--pfc_ink2); }
+.pfc_lessons { padding-top: 8px; border-top: 1px solid var(--pfc_line); }
+.pfc_lessons_hd { font-size: 12px; font-weight: 600; line-height: 18px; color: var(--pfc_ink); }
+.pfc_lessons_list { margin: 4px 0 0; padding-left: 16px; list-style: disc; font-size: 12px; line-height: 1.6; color: var(--pfc_ink2); }
+.pfc_lessons_list li + li { margin-top: 2px; }
+
+.pfc_drawer_foot {
+  padding-top: 8px;
+  border-top: 1px solid var(--pfc_line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pfc_drawer_left, .pfc_drawer_right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+.pfc_notice_row { margin-top: 6px; font-size: 12px; line-height: 1.4; color: var(--pfc_ok); }
+.pfc_closed {
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--pfc_ink2);
+}
+.pfc_closed .pfc_ghost { margin-left: auto; color: var(--pfc_ink); font-weight: 500; }
+.pfc_bar_toggle:focus-visible, .pfc_chip:focus-visible, .pfc_icon_btn:focus-visible, .pfc_button:focus-visible, .pfc_ghost:focus-visible {
+  outline: 2px solid var(--pfc_accent);
+  outline-offset: 2px;
+}
+
+@container pfc-dock (max-width: 560px) {
+  .pfc_hint { display: none; }
+  .pfc_five { gap: 4px; }
   .pfc_five span { font-size: 11px; }
 }
-@media (prefers-reduced-motion: no-preference) { .pfc_five i { transition: background-color .2s; } }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes pfc-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.38; } }
+  .pfc_mini_steps .is_current.is_running { animation: pfc-pulse 1.4s ease-in-out infinite; }
+  .pfc_mini_steps i, .pfc_five i { transition: background-color 0.2s ease; }
+}
 `;
 var creatorStripCss = css;
 function createCreatorDock(React2) {
   const h = React2.createElement;
-  const brick = () => h(
+  const sparkIcon = () => h(
     "svg",
-    { className: "pfc_brick", viewBox: "-3 0.6 26 22.6", role: "img", "aria-label": "\u8FD8\u6CA1\u505A\u5B8C\uFF0C\u8981\u4E00\u8D77\u505A" },
-    h("path", { d: BRICK })
+    { className: "pfc_spark", viewBox: "0 0 20 20", fill: "none", "aria-hidden": "true" },
+    h("path", { d: SPARK_PATH, stroke: "currentColor", strokeWidth: "1.5", strokeLinejoin: "round" })
+  );
+  const chevronIcon = (open) => h(
+    "svg",
+    { width: 14, height: 14, viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true" },
+    h("path", { d: open ? "M4 10l4-4 4 4" : "M4 6l4 4 4-4", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" })
+  );
+  const closeIcon = () => h(
+    "svg",
+    { width: 13, height: 13, viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true" },
+    h("path", { d: "M4.5 4.5l7 7m0-7l-7 7", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" })
   );
   return function CreatorDock({
     mode = "intro",
     progress = null,
+    expanded = false,
+    running = false,
     busy = "",
     notice = "",
     onKnow,
     onSkip,
-    onReopen,
+    onToggleExpand,
+    onPrompt,
     onOpenNext,
     onClose,
     onSettings,
@@ -6131,95 +6439,240 @@ function createCreatorDock(React2) {
       return h(
         "div",
         { className: "pfc_closed", role: "status" },
-        h("span", null, "\u5DF2\u5173\u95ED\u300C\u53D1\u73B0\u597D\u63D2\u4EF6\u300D\u7684\u521B\u9020\u7ECF\u9A8C\uFF0C\u4E4B\u540E\u65B0\u5F00\u7684\u521B\u9020\u6A21\u5F0F\u4F1A\u8BDD\u4E0D\u518D\u5E26\u4E0A\u3002"),
-        h("button", { type: "button", className: "pfc_link", disabled: busy !== "", onClick: onEnable }, "\u64A4\u9500"),
-        notice ? h("span", { className: "pfc_notice", role: "status" }, notice) : null
+        h("span", null, "\u5DF2\u5168\u5C40\u5173\u95ED\u521B\u9020\u5411\u5BFC\u4E0E\u540E\u53F0\u7701 Token \u7ECF\u9A8C\uFF0C\u65B0\u5F00\u521B\u9020\u4F1A\u8BDD\u4E0D\u518D\u542F\u7528\u3002"),
+        notice ? h("span", { className: "pfc_notice_row", role: "status" }, notice) : null,
+        h("button", { type: "button", className: "pfc_ghost", disabled: busy !== "", onClick: onEnable }, "\u64A4\u9500")
       );
     }
     const stages = progress?.stages ?? [];
     const reached = progress?.reached ?? 0;
     const last = progress?.last ?? null;
-    const five = () => h(
-      "div",
-      { className: "pfc_five", role: "img", "aria-label": `\u4E94\u6B65\uFF1A${stages.map((stage, index) => `${index + 1} ${stage.plain ?? stage.label}`).join("\uFF0C")}` },
-      ...stages.map((stage, index) => h(
-        "div",
-        { key: stage.id, className: stage.state === "done" ? "is_done" : stage.state === "current" ? "is_current" : "" },
-        h("i", null),
-        h("span", null, `${index + 1} ${stage.plain ?? stage.label}`)
-      ))
+    const current = stages.find((stage) => stage.state === "current") ?? stages[Math.min(Math.max(reached - 1, 0), (stages.length || 1) - 1)] ?? STAGES[0];
+    const currentId = current?.id || "search";
+    const isExpanded = Boolean(expanded);
+    const hasSkipped = stages.some((stage) => stage.state === "skipped");
+    const stageTip = (stage, index, isRunning) => {
+      const shortLabel = STAGE_SHORT[stage.id] ?? stage.label;
+      const stateLabel = stage.state === "done" ? "\u5DF2\u5B8C\u6210" : stage.state === "skipped" ? "\u672C\u8F6E\u514D\u8D70\uFF08\u5982\u7EE7\u7EED\u8FED\u4EE3\u5DF2\u6709\u63D2\u4EF6\uFF09\uFF0C\u65E0\u9700\u8865\u505A" : stage.state === "current" ? isRunning ? "AI \u6B63\u5728\u6539\u52A8" : "\u5F53\u524D\u6B65\u9AA4" : "\u5F85\u8FDB\u884C";
+      return `${index + 1}. ${shortLabel} \xB7 ${stateLabel}`;
+    };
+    const metaNote = () => h(
+      "p",
+      { className: "pfc_meta_note" },
+      hasSkipped ? "\u6765\u81EA\u300C\u53D1\u73B0\u597D\u63D2\u4EF6\u300D\xB7 \u540E\u53F0\u7701 Token \u5F15\u5BFC\u751F\u6548\u4E2D\uFF08\u70B9 \xD7 \u4EC5\u6536\u8D77\u6D6E\u6761\uFF09\xB7 \u6807\u300C\u514D\u8D70\u300D\u4EE3\u8868\u8001\u9879\u76EE\u8FED\u4EE3\u6216\u76F4\u5954\u4E3B\u9898\uFF0C\u65E0\u9700\u56DE\u5934\u8865\u505A" : "\u6765\u81EA\u300C\u53D1\u73B0\u597D\u63D2\u4EF6\u300D\xB7 \u627E\u73B0\u6210\u6CA1\u5408\u9002\u7684\u5C31\u966A\u4F60\u9020 \xB7 \u540E\u53F0\u7701 Token \u5F15\u5BFC\u751F\u6548\u4E2D\uFF08\u70B9 \xD7 \u4EC5\u6536\u8D77\u6D6E\u6761\uFF09"
     );
-    const links = (showSteps = false) => h(
-      React2.Fragment,
-      null,
-      showSteps ? h("button", { type: "button", className: "pfc_link pfc_steps_link", onClick: onShowSteps, title: "\u8FD9\u51E0\u6B65\u662F\u4EC0\u4E48" }, "\u8FD9\u51E0\u6B65\u662F\u4EC0\u4E48") : null,
-      typeof onSettings === "function" ? h("button", { type: "button", className: "pfc_link", onClick: onSettings }, "\u7ECF\u9A8C") : null,
-      h("button", { type: "button", className: "pfc_link", disabled: busy !== "", onClick: onClose }, "\u5173\u95ED")
-    );
-    if (mode === "intro") {
-      return h(
-        "div",
-        { className: "pfc_dock", role: "region", "aria-label": "\u53D1\u73B0\u597D\u63D2\u4EF6 \xB7 \u966A\u4F60\u505A\u63D2\u4EF6\u7684\u505A\u6CD5" },
-        h("div", { className: "pfc_hd" }, brick(), h("b", null, "\u8FD9\u4E00\u5757\uFF0C\u6211\u966A\u4F60\u505A")),
-        h("p", null, "\u505A\u63D2\u4EF6\u7684\u65F6\u5019\u6211\u6309\u4E0B\u9762\u4E94\u6B65\u6765\uFF0C\u6BCF\u4E00\u6B65\u5148\u95EE\u4F60\u3002\u4E0D\u7528\u8BBE\u7F6E\uFF1B\u804A\u522B\u7684\u4E8B\u6211\u4E0D\u51FA\u58F0\u3002"),
-        five(),
-        h(
-          "div",
-          { className: "pfc_acts" },
-          h("button", { type: "button", className: "pfc_button", "data-primary": "true", onClick: onKnow }, "\u77E5\u9053\u4E86"),
-          h("button", { type: "button", className: "pfc_link", onClick: onSkip }, "\u8FD9\u4E2A\u5BF9\u8BDD\u4E0D\u7528\u966A")
-        )
-      );
-    }
+    const five = () => h("div", {
+      className: "pfc_five",
+      role: "img",
+      "aria-label": `\u4E94\u6B65\u6D41\u7A0B\uFF1A${stages.map((stage, index) => `${index + 1} ${STAGE_SHORT[stage.id] ?? stage.label}`).join("\uFF0C")}`
+    }, ...stages.map((stage, index) => {
+      const shortLabel = STAGE_SHORT[stage.id] ?? stage.label;
+      const tip = stageTip(stage, index, running);
+      return h("div", {
+        key: stage.id,
+        title: tip,
+        className: stage.state === "done" ? "is_done" : stage.state === "skipped" ? "is_skipped" : stage.state === "current" ? "is_current" : ""
+      }, h("i", null), h("span", { title: tip }, `${index + 1} ${shortLabel}${stage.state === "skipped" ? " \xB7 \u514D\u8D70" : ""}`));
+    }));
     const lessonList = (stageId, label) => {
       const items8 = STAGE_LESSONS[stageId] ?? STAGE_LESSONS.search;
       return h(
-        "details",
+        "div",
         { className: "pfc_lessons" },
-        h("summary", { className: "pfc_lessons_sum" }, h("span", null, label ? `\u672C\u6B65\u907F\u5751\u94C1\u5F8B \xB7 ${label}` : "\u672C\u6B65\u907F\u5751\u94C1\u5F8B")),
+        h("div", { className: "pfc_lessons_hd" }, label ? `\u8FD9\u4E00\u6B65\u6CE8\u610F\u4EC0\u4E48 \xB7 ${label}` : "\u8FD9\u4E00\u6B65\u6CE8\u610F\u4EC0\u4E48"),
         h("ul", { className: "pfc_lessons_list" }, ...items8.map((item, idx) => h("li", { key: idx }, item)))
       );
     };
-    if (mode === "stuck") {
-      const blockedStep = progress?.blockedStep;
-      const heading = blockedStep ? `\u5361\u5728\u7B2C ${blockedStep} \u6B65${last?.summary ? `\uFF1A${last.summary}` : ""}` : `\u5361\u4F4F\u4E86${last?.summary ? `\uFF1A${last.summary}` : ""}`;
+    const noticeEl = notice ? h("div", { className: "pfc_notice_row", role: "status" }, notice) : null;
+    if (mode === "intro") {
       return h(
         "div",
-        { className: "pfc_dock", "data-stuck": "true", role: "region", "aria-label": "\u53D1\u73B0\u597D\u63D2\u4EF6 \xB7 \u521B\u9020\u8FDB\u5EA6" },
+        { className: "pfc_dock", "data-mode": "intro", role: "region", "aria-label": "\u53D1\u73B0\u597D\u63D2\u4EF6 \xB7 \u521B\u9020\u5411\u5BFC" },
         h(
           "div",
           { className: "pfc_hd" },
-          brick(),
-          h("b", null, heading)
+          sparkIcon(),
+          h("b", null, "\u53D1\u73B0\u597D\u63D2\u4EF6 \xB7 \u521B\u9020\u5411\u5BFC"),
+          h("span", { className: "pfc_sub" }, "\u6CA1\u73B0\u6210\u63D2\u4EF6\u65F6\u966A\u4F60\u6309 5 \u6B65\u7A33\u9020 \xB7 \u540E\u53F0\u5DF2\u81EA\u52A8\u7ED9 AI \u5F00\u542F\u7701 Token \u89C4\u77E9"),
+          h(
+            "div",
+            { className: "pfc_hd_tools" },
+            typeof onSkip === "function" ? h("button", { type: "button", className: "pfc_ghost", title: "\u4EC5\u9690\u85CF\u672C\u6B21\u8D77\u6B65\u5361\uFF0C\u540E\u53F0\u7701 Token \u5F15\u5BFC\u7EE7\u7EED\u751F\u6548", onClick: onSkip }, "\u8FD9\u56DE\u4E0D\u7528") : null,
+            typeof onClose === "function" ? h("button", { type: "button", className: "pfc_ghost", title: "\u5728\u6240\u6709\u521B\u9020\u4F1A\u8BDD\u4E2D\u540C\u65F6\u5173\u95ED\u5411\u5BFC\u6D6E\u6761\u4E0E\u540E\u53F0\u7701 Token \u7ECF\u9A8C", disabled: busy !== "", onClick: onClose }, "\u5168\u5C40\u5173\u95ED") : null
+          )
         ),
-        h("p", null, "\u540C\u4E00\u4E2A\u95EE\u9898\u5728\u4E00\u4E2A\u5BF9\u8BDD\u91CC\u53CD\u590D\u6539\uFF0C\u53EA\u4F1A\u8D8A\u6539\u8D8A\u8D35\u3002\u5F00\u4E2A\u65B0\u7A97\u53E3\uFF0C\u628A\u8BD5\u8FC7\u4EC0\u4E48\u3001\u5361\u5728\u54EA\u4E00\u8D77\u5E26\u8FC7\u53BB\u3002"),
-        five(),
-        lessonList("blocked", "\u6B62\u635F\u6362\u7A97"),
         h(
           "div",
-          { className: "pfc_acts" },
-          h("button", { type: "button", className: "pfc_button", "data-primary": "true", disabled: busy !== "", onClick: onOpenNext, title: "\u65B0\u5EFA\u4E00\u4E2A\u5E72\u51C0\u7684\u521B\u9020\u6A21\u5F0F\u7A97\u53E3\uFF0C\u628A\u8FD9\u91CC\u8BB0\u4E0B\u7684\u8FDB\u5C55\u5E26\u8FC7\u53BB" }, "\u5F00\u65B0\u7A97\u53E3\u63A5\u7740\u505A"),
-          h("button", { type: "button", className: "pfc_link", onClick: onDismiss }, "\u5148\u4E0D\u7528"),
-          links()
+          { className: "pfc_chip_row" },
+          ...STARTER_CHIPS.map((chip) => h("button", {
+            key: chip.label,
+            type: "button",
+            className: "pfc_chip",
+            title: chip.prompt,
+            onClick: () => onPrompt ? onPrompt(chip.prompt, { fromIntro: true }) : onKnow?.()
+          }, chip.label)),
+          !onPrompt && typeof onKnow === "function" ? h("button", { type: "button", className: "pfc_ghost", onClick: onKnow }, "\u77E5\u9053\u4E86") : null
         ),
-        notice ? h("span", { className: "pfc_notice", role: "status" }, notice) : null
+        noticeEl
       );
     }
-    const current = stages.find((stage) => stage.state === "current") ?? stages[Math.min(Math.max(reached, 0), (stages.length || 1) - 1)];
+    if (mode === "stuck") {
+      const blockedStep = progress?.blockedStep;
+      const heading = blockedStep ? `\u5361\u5728\u7B2C ${blockedStep} \u6B65` : "\u8FD9\u91CC\u5361\u4F4F\u4E86";
+      const stuckChip = STAGE_CHIPS.blocked.primary;
+      return h(
+        "div",
+        { className: "pfc_dock", "data-mode": "stuck", "data-stuck": "true", "data-stage": currentId, "data-running": running ? "true" : "false", role: "region", "aria-label": "\u53D1\u73B0\u597D\u63D2\u4EF6 \xB7 \u5361\u70B9\u6B62\u635F" },
+        h(
+          "div",
+          { className: "pfc_hd" },
+          h("i", { className: "pfc_stuck_dot", "aria-hidden": "true" }),
+          h("b", null, heading),
+          last?.summary ? h("span", { className: "pfc_sub", title: last.summary }, last.summary) : null,
+          h(
+            "div",
+            { className: "pfc_hd_tools" },
+            typeof onToggleExpand === "function" ? h("button", { type: "button", className: "pfc_ghost", "aria-expanded": isExpanded, onClick: onToggleExpand }, isExpanded ? "\u6536\u8D77" : "\u8BE6\u60C5") : null,
+            h("button", { type: "button", className: "pfc_ghost", title: "\u672C\u6B21\u5148\u6536\u8D77\u63D0\u793A\uFF0C\u540E\u53F0\u7701 Token \u5F15\u5BFC\u7EE7\u7EED\u751F\u6548", onClick: onDismiss }, "\u5148\u4E0D\u7528")
+          )
+        ),
+        h("p", { className: "pfc_stuck_note" }, "\u540C\u4E00\u4E2A\u95EE\u9898\u5728\u957F\u5BF9\u8BDD\u91CC\u53CD\u590D\u6539\u53EA\u4F1A\u8D8A\u6539\u8D8A\u4E71\uFF1B\u628A\u8FDB\u5C55\u548C\u5361\u70B9\u5E26\u53BB\u65B0\u7A97\u53E3\u63A5\u7740\u505A\u6700\u7A33\u3002"),
+        h(
+          "div",
+          { className: "pfc_chip_row" },
+          h("button", {
+            type: "button",
+            className: "pfc_button",
+            "data-primary": "true",
+            disabled: busy !== "",
+            onClick: onOpenNext,
+            title: "\u65B0\u5EFA\u4E00\u4E2A\u5E72\u51C0\u7684\u521B\u9020\u6A21\u5F0F\u7A97\u53E3\uFF0C\u628A\u8FD9\u91CC\u8BB0\u4E0B\u7684\u8FDB\u5C55\u5E26\u8FC7\u53BB"
+          }, "\u5F00\u65B0\u7A97\u53E3\u63A5\u7740\u505A"),
+          h("button", {
+            type: "button",
+            className: "pfc_chip",
+            title: stuckChip.prompt,
+            onClick: () => onPrompt?.(stuckChip.prompt)
+          }, stuckChip.label)
+        ),
+        isExpanded ? h(
+          "div",
+          { className: "pfc_drawer" },
+          five(),
+          metaNote(),
+          lessonList("blocked", "\u6B62\u635F\u6362\u7A97"),
+          h(
+            "div",
+            { className: "pfc_drawer_foot" },
+            h(
+              "div",
+              { className: "pfc_drawer_right" },
+              typeof onSettings === "function" ? h("button", { type: "button", className: "pfc_ghost", onClick: onSettings }, "\u7BA1\u7406\u7ECF\u9A8C\u5E93") : null,
+              typeof onClose === "function" ? h("button", { type: "button", className: "pfc_ghost", title: "\u5728\u6240\u6709\u521B\u9020\u4F1A\u8BDD\u4E2D\u540C\u65F6\u5173\u95ED\u5411\u5BFC\u6D6E\u6761\u4E0E\u540E\u53F0\u7701 Token \u7ECF\u9A8C", disabled: busy !== "", onClick: onClose }, "\u5168\u5C40\u5173\u95ED") : null
+            )
+          )
+        ) : null,
+        noticeEl
+      );
+    }
+    const stepNum = Math.min(Math.max(reached, 1), stages.length || 5);
+    const chips = STAGE_CHIPS[currentId] ?? STAGE_CHIPS.search;
+    const shortTitle = STAGE_SHORT[currentId] ?? current?.label ?? "\u8FDB\u884C\u4E2D";
+    const hintText = running ? "\u6B63\u5728\u6309\u4F60\u7684\u8981\u6C42\u66F4\u65B0\uFF0C\u5B8C\u6210\u540E\u518D\u6838\u5BF9\u6548\u679C" : STAGE_HINTS[currentId] ?? "";
+    const badgeText = running ? `\u7B2C ${stepNum}/5 \u6B65 \xB7 \u6B63\u5728\u6539\u52A8\u2026` : `\u7B2C ${stepNum}/5 \u6B65 \xB7 ${shortTitle}`;
     return h(
       "div",
-      { className: "pfc_dock", role: "region", "aria-label": "\u53D1\u73B0\u597D\u63D2\u4EF6 \xB7 \u521B\u9020\u8FDB\u5EA6" },
+      {
+        className: "pfc_dock",
+        "data-mode": "run",
+        "data-compact": isExpanded ? "false" : "true",
+        "data-stage": currentId,
+        "data-running": running ? "true" : "false",
+        role: "region",
+        "aria-label": "\u53D1\u73B0\u597D\u63D2\u4EF6 \xB7 \u521B\u9020\u5411\u5BFC"
+      },
       h(
         "div",
-        { className: "pfc_hd" },
-        brick(),
-        h("b", null, `\u505A\u5230\u7B2C ${Math.min(Math.max(reached, 1), stages.length || 5)} \u6B65${current ? `\uFF1A${current.plain ?? current.label}` : ""}`),
-        links(true)
+        { className: "pfc_bar" },
+        h(
+          "button",
+          {
+            type: "button",
+            className: "pfc_bar_toggle",
+            "aria-expanded": isExpanded,
+            onClick: onToggleExpand,
+            title: isExpanded ? "\u6536\u8D77\u5411\u5BFC\u8BE6\u60C5" : "\u70B9\u51FB\u67E5\u770B 5 \u6B65\u8F68\u8FF9\u4E0E\u9A8C\u6536\u9526\u56CA\uFF08\u6765\u81EA\u300C\u53D1\u73B0\u597D\u63D2\u4EF6\u300D\uFF0C\u540E\u53F0\u7701 Token \u5F15\u5BFC\u751F\u6548\u4E2D\uFF09"
+          },
+          h("span", { className: "pfc_mini_steps", "aria-hidden": "true" }, ...stages.map((stage, index) => h("i", {
+            key: stage.id,
+            title: stageTip(stage, index, running),
+            className: stage.state === "done" ? "is_done" : stage.state === "skipped" ? "is_skipped" : stage.state === "current" ? running ? "is_current is_running" : "is_current" : ""
+          }))),
+          h("span", { className: "pfc_badge" }, badgeText),
+          h("span", { className: "pfc_hint" }, hintText)
+        ),
+        h(
+          "div",
+          { className: "pfc_bar_actions" },
+          !running && chips.primary ? h("button", {
+            type: "button",
+            className: "pfc_chip",
+            title: chips.primary.prompt,
+            onClick: () => onPrompt?.(chips.primary.prompt)
+          }, chips.primary.label) : null,
+          h("button", {
+            type: "button",
+            className: "pfc_icon_btn",
+            "aria-expanded": isExpanded,
+            "aria-label": isExpanded ? "\u6536\u8D77\u5411\u5BFC\u8BE6\u60C5" : "\u5C55\u5F00\u5411\u5BFC\u8BE6\u60C5",
+            title: isExpanded ? "\u6536\u8D77\u5411\u5BFC\u8BE6\u60C5" : "\u5C55\u5F00\u9636\u6BB5\u4E0E\u9526\u56CA",
+            onClick: onToggleExpand
+          }, chevronIcon(isExpanded)),
+          typeof onDismiss === "function" ? h("button", {
+            type: "button",
+            className: "pfc_icon_btn",
+            "aria-label": "\u672C\u4F1A\u8BDD\u6536\u8D77\u5411\u5BFC",
+            title: "\u672C\u6B21\u5BF9\u8BDD\u5148\u6536\u8D77\u6D6E\u6761\uFF08\u540E\u53F0\u7701 Token \u5F15\u5BFC\u7EE7\u7EED\u751F\u6548\uFF09",
+            onClick: onDismiss
+          }, closeIcon()) : null
+        )
       ),
-      h("p", null, last?.summary ? last.summary : "\u6BCF\u4E00\u6B65\u90FD\u5148\u95EE\u4F60\uFF0C\u4F60\u8BF4\u4E86\u624D\u5F80\u4E0B\u8D70\u3002"),
-      five(),
-      lessonList(current?.id || "search", current?.label || ""),
-      notice ? h("span", { className: "pfc_notice", role: "status" }, notice) : null
+      isExpanded ? h(
+        "div",
+        { className: "pfc_drawer" },
+        five(),
+        metaNote(),
+        last?.summary ? h("p", { className: "pfc_summary" }, `\u6700\u8FD1\u8BB0\u5F55\uFF1A${last.summary}`) : null,
+        lessonList(currentId, shortTitle),
+        h(
+          "div",
+          { className: "pfc_drawer_foot" },
+          h(
+            "div",
+            { className: "pfc_drawer_left" },
+            chips.secondary ? h("button", {
+              type: "button",
+              className: "pfc_chip",
+              title: chips.secondary.prompt,
+              onClick: () => onPrompt?.(chips.secondary.prompt)
+            }, chips.secondary.label) : null,
+            typeof onOpenNext === "function" ? h("button", {
+              type: "button",
+              className: "pfc_chip",
+              disabled: busy !== "",
+              onClick: onOpenNext
+            }, "\u5E26\u8FDB\u5C55\u6362\u65B0\u7A97\u53E3") : null
+          ),
+          h(
+            "div",
+            { className: "pfc_drawer_right" },
+            typeof onShowSteps === "function" ? h("button", { type: "button", className: "pfc_ghost", onClick: onShowSteps }, "\u67E5\u770B\u8D77\u6B65\u6A21\u677F") : null,
+            typeof onSettings === "function" ? h("button", { type: "button", className: "pfc_ghost", onClick: onSettings }, "\u7BA1\u7406\u7ECF\u9A8C\u5E93") : null,
+            typeof onClose === "function" ? h("button", { type: "button", className: "pfc_ghost", title: "\u5728\u6240\u6709\u521B\u9020\u4F1A\u8BDD\u4E2D\u540C\u65F6\u5173\u95ED\u5411\u5BFC\u6D6E\u6761\u4E0E\u540E\u53F0\u7701 Token \u7ECF\u9A8C", disabled: busy !== "", onClick: onClose }, "\u5168\u5C40\u5173\u95ED") : null
+          )
+        )
+      ) : null,
+      noticeEl
     );
   };
 }
@@ -6268,7 +6721,11 @@ function createCreatorStrip(React2, { ctx, request, openSettings }) {
     const [busy, setBusy] = React2.useState("");
     const [notice, setNotice] = React2.useState("");
     const [closedHere, setClosedHere] = React2.useState(false);
-    const [dismissed, setDismissed] = React2.useState(false);
+    const [expanded, setExpanded] = React2.useState(false);
+    const [running, setRunning] = React2.useState(false);
+    const [turnEnds, setTurnEnds] = React2.useState(0);
+    const [dismissedAt, setDismissedAt] = React2.useState(-1);
+    const [manualIntro, setManualIntro] = React2.useState(false);
     const [introOpen, setIntroOpen] = React2.useState(() => {
       try {
         const store = globalThis.localStorage;
@@ -6277,15 +6734,40 @@ function createCreatorStrip(React2, { ctx, request, openSettings }) {
         return true;
       }
     });
+    const noticeTimerRef = React2.useRef(null);
+    const showNotice = React2.useCallback((message) => {
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+      setNotice(message);
+      if (message) noticeTimerRef.current = setTimeout(() => {
+        noticeTimerRef.current = null;
+        setNotice("");
+      }, 2400);
+    }, []);
+    React2.useEffect(() => () => {
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    }, []);
     const dismissIntro = (hideForever) => {
       try {
         globalThis.localStorage?.setItem(hideForever ? `finder.creator.skip.${sessionId}` : `finder.creator.intro.${sessionId}`, "1");
       } catch {
       }
       setIntroOpen(false);
+      setManualIntro(false);
     };
     React2.useEffect(() => {
       setPreset(presetOf(ctx, sessionId));
+      setExpanded(false);
+      setDismissedAt(-1);
+      setManualIntro(false);
+      setRunning(false);
+      setTurnEnds(0);
+      setNotice("");
+      try {
+        const store = globalThis.localStorage;
+        setIntroOpen(store?.getItem(`finder.creator.intro.${sessionId}`) !== "1" && store?.getItem(`finder.creator.skip.${sessionId}`) !== "1");
+      } catch {
+        setIntroOpen(true);
+      }
       const face = (() => {
         try {
           return ctx.sessions?.binding?.(sessionId)?.session?.projections?.faceOf?.("agentPreset");
@@ -6317,20 +6799,35 @@ function createCreatorStrip(React2, { ctx, request, openSettings }) {
           return null;
         }
       })();
-      const count2 = () => {
+      const scan = () => {
         const entries = source?.getSnapshot?.()?.entries;
-        if (!Array.isArray(entries)) return 0;
-        let total = 0;
+        if (!Array.isArray(entries)) return { signalCount: 0, endedCount: 0, isRunning: false };
+        let signalCount = 0;
+        let endedCount = 0;
+        let lastTurnType = "";
         for (const entry of entries) {
           const event = entry?.event;
-          if (entry?.type === "event" && (event?.type === "turn/end" || event?.type === "tool/call" && event.data?.name === "finder_creator_step")) total += 1;
+          if (entry?.type !== "event") continue;
+          if (event?.type === "turn/start") {
+            lastTurnType = "turn/start";
+            continue;
+          }
+          if (event?.type === "turn/end") {
+            lastTurnType = "turn/end";
+            endedCount += 1;
+            signalCount += 1;
+            continue;
+          }
+          if (event?.type === "tool/call" && event.data?.name === "finder_creator_step") signalCount += 1;
         }
-        return total;
+        return { signalCount, endedCount, isRunning: lastTurnType === "turn/start" };
       };
       const check = () => {
-        const now = count2();
-        if (now === seen) return;
-        seen = now;
+        const next = scan();
+        setRunning(next.isRunning);
+        setTurnEnds(next.endedCount);
+        if (next.signalCount === seen) return;
+        seen = next.signalCount;
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
           timer = null;
@@ -6351,37 +6848,58 @@ function createCreatorStrip(React2, { ctx, request, openSettings }) {
       void request("creator-configure", { enabled: true }).then(() => {
         setClosedHere(false);
         setData((current) => ({ ...current ?? {}, enabled: true }));
-      }).catch(() => setNotice("\u6CA1\u6709\u91CD\u65B0\u5F00\u542F\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002")).finally(() => setBusy(""));
+      }).catch(() => showNotice("\u6CA1\u6709\u91CD\u65B0\u5F00\u542F\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002")).finally(() => setBusy(""));
     };
     if (closedHere) return h(Dock, { mode: "closed", busy, notice, onEnable: enable });
     if (data.enabled === false) return null;
     const progress = creatorProgress(data.steps);
     const openNext = () => {
       setBusy("next");
-      setNotice("");
+      showNotice("");
       void openCreatorContinuation(ctx, sessionId, creatorHandoffPrompt(data.steps)).then((result) => {
-        if (result.draft !== "applied") setNotice("\u65B0\u7A97\u53E3\u5DF2\u6253\u5F00\uFF0C\u4EA4\u63A5\u5185\u5BB9\u6CA1\u80FD\u653E\u8FDB\u8F93\u5165\u6846\uFF0C\u53EF\u4EE5\u624B\u52A8\u8BF4\u660E\u8FDB\u5C55\u3002");
-      }).catch((error) => setNotice(error?.safeForUser ? error.message : "\u6CA1\u80FD\u5F00\u65B0\u7A97\u53E3\uFF0C\u8BF7\u4ECE\u5DE6\u4FA7\u65B0\u5EFA\u521B\u9020\u6A21\u5F0F\u4F1A\u8BDD\u3002")).finally(() => setBusy(""));
+        if (result.draft !== "applied") showNotice("\u65B0\u7A97\u53E3\u5DF2\u6253\u5F00\uFF0C\u4EA4\u63A5\u5185\u5BB9\u6CA1\u80FD\u653E\u8FDB\u8F93\u5165\u6846\uFF0C\u53EF\u4EE5\u624B\u52A8\u8BF4\u660E\u8FDB\u5C55\u3002");
+      }).catch((error) => showNotice(error?.safeForUser ? error.message : "\u6CA1\u80FD\u5F00\u65B0\u7A97\u53E3\uFF0C\u8BF7\u4ECE\u5DE6\u4FA7\u65B0\u5EFA\u521B\u9020\u6A21\u5F0F\u4F1A\u8BDD\u3002")).finally(() => setBusy(""));
     };
     const close = () => {
       setBusy("close");
-      setNotice("");
-      void request("creator-configure", { enabled: false }).then(() => setClosedHere(true)).catch(() => setNotice("\u6CA1\u6709\u5173\u95ED\u6210\u529F\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002")).finally(() => setBusy(""));
+      showNotice("");
+      void request("creator-configure", { enabled: false }).then(() => setClosedHere(true)).catch(() => showNotice("\u6CA1\u6709\u5173\u95ED\u6210\u529F\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002")).finally(() => setBusy(""));
     };
-    if (!progress.count && !introOpen) return null;
-    if (dismissed) return null;
-    const mode = progress.blocked ? "stuck" : progress.count ? "run" : "intro";
+    const handlePrompt = (prompt, opts = {}) => {
+      void applyCreatorPrompt({ ctx, sessionId, inputActions: props?.inputActions }, prompt).then((status) => {
+        if (opts.fromIntro) dismissIntro(false);
+        if (status === "copied") showNotice("\u5DF2\u590D\u5236\u5F15\u5BFC\u8BDD\u672F\uFF0C\u53EF\u76F4\u63A5\u7C98\u8D34\u5230\u8F93\u5165\u6846");
+        else if (status === "unavailable") showNotice("\u6682\u65F6\u5199\u5165\u4E0D\u5230\u8F93\u5165\u6846\uFF0C\u8BF7\u5148\u70B9\u4E00\u4E0B\u8F93\u5165\u6846\u518D\u8BD5");
+        else if (status === "inserted" && !opts.fromIntro) showNotice("\u5DF2\u586B\u5165\u8F93\u5165\u6846\uFF0C\u8865\u5145\u7EC6\u8282\u5373\u53EF\u53D1\u9001");
+      });
+    };
+    if (!progress.count && !manualIntro && (!introOpen || turnEnds > 0)) return null;
+    const isDismissed = dismissedAt >= 0 && !(progress.blocked && progress.count > dismissedAt);
+    if (isDismissed && !manualIntro) return null;
+    const mode = manualIntro ? "intro" : progress.blocked ? "stuck" : progress.count ? "run" : "intro";
     return h(Dock, {
       mode,
       progress,
+      expanded,
+      running,
       busy,
       notice,
       onKnow: () => dismissIntro(false),
       onSkip: () => dismissIntro(true),
-      onShowSteps: () => setIntroOpen(true),
+      onToggleExpand: () => setExpanded((v) => !v),
+      onPrompt: handlePrompt,
+      onShowSteps: () => {
+        setExpanded(false);
+        setManualIntro(true);
+        setIntroOpen(true);
+      },
       onOpenNext: openNext,
       onClose: close,
-      onDismiss: () => setDismissed(true),
+      onDismiss: () => {
+        setExpanded(false);
+        setManualIntro(false);
+        setDismissedAt(progress.count);
+      },
       onSettings: typeof openSettings === "function" ? openSettings : null,
       onEnable: enable
     });
