@@ -12,12 +12,12 @@ const history = (request, extra={}) => ({taskId:'task-1', title:'保存的方案
 const ids = result => result.map(item=>item.entry.id);
 const freeze = value => {if(value && typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value);}return value;};
 
-test('topics provide the four fixed interests with bounded matching words',()=>{
-  assert.deepEqual(featuredTopics.map(item=>item.id), ['twin','family','projects','connections']);
+test('topics provide the five fixed interests with bounded matching words',()=>{
+  assert.deepEqual(featuredTopics.map(item=>item.id), ['twin','family','projects','connections','learning']);
   for(const topic of featuredTopics){assert.equal(typeof topic.label,'string');assert.ok(topic.keywords.length>0);assert.ok(topic.keywords.every(word=>typeof word==='string'&&word.length<100));}
 });
 test('normalization allows only known interests and dismissible product IDs',()=>{
-  assert.deepEqual(normalizeFeaturedPreferences({version:1, interests:['twin','twin','family','unknown',{},'agent-twin'], dismissed:['agent-twin','agent-twin','dot-harness','twin','unknown'], privateText:'not retained'}),{version:1, interests:['twin','family'], dismissed:['agent-twin','dot-harness']});
+  assert.deepEqual(normalizeFeaturedPreferences({version:1, interests:['twin','twin','family','unknown',{},'agent-twin'], dismissed:['agent-twin','agent-twin','dot-harness','incidental-learn','twin','unknown'], privateText:'not retained'}),{version:1, interests:['twin','family'], dismissed:['agent-twin','dot-harness','incidental-learn']});
 });
 test('malformed preferences and unsupported versions reset safely',()=>{
   for(const value of [null,undefined,[],true,'{}',0,{version:2,interests:['twin']},{version:'1',interests:['twin']}]) assert.deepEqual(normalizeFeaturedPreferences(value),{version:1,interests:[],dismissed:[]});

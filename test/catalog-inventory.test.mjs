@@ -38,6 +38,8 @@ test('the four verified scoped publisher identities count as the local primary p
   assert.equal(value.packageName,scoped);assert.equal(value.version,'8.7.6');assert.equal(value.installed,true);assert.equal(value.active,true);assert.equal(value.componentOnly,false);
   assert.equal('installable' in value,false);assert.equal('source' in value,false);assert.deepEqual(f.calls.sort(),['bundles','plugins']);
  }
+ const learn=fixture({bundles:[installed('@oxmumu3/dsh-incidental-learn',{version:'0.1.6'})],plugins:[active('@oxmumu3/dsh-incidental-learn')]});
+ assert.deepEqual(await learn.read(selection('featured','incidental-learn')),{installed:true,enabled:true,active:true,conflict:false,packageName:'@oxmumu3/dsh-incidental-learn',version:'0.1.6',componentOnly:false});
 });
 test('the exact unscoped primary remains preferred and similar or foreign scoped names are not aliases',async()=>{
  const name='dsh-family-assistant',scoped='@oxmumu3/'+name;

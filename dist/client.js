@@ -1545,6 +1545,34 @@ var featuredCatalog = [
       sha256: "ff0a638d7c4ed7de598b31a219c8e2c8ca5fa1c858fdeeb677cbb3d9717453d0",
       verifiedAt: "2026-10-30T17:15:03Z"
     }
+  },
+  {
+    id: "incidental-learn",
+    title: "\u5728\u65E5\u5E38\u534F\u4F5C\u91CC\u987A\u624B\u6512\u4E0B\u4E2A\u4EBA\u6280\u80FD\u5E93",
+    subtitle: "\u987A\u5E26\u79C1\u6559 \xB7 \u8FB9\u5E72\u6D3B\u8FB9\u6512\u7ECF\u9A8C",
+    summary: "\u5E73\u65F6\u7167\u5E38\u5BF9\u8BDD\u5E72\u6D3B\uFF0C\u53EA\u5728\u6D89\u53CA\u771F\u5B9E\u53D6\u820D\u7684\u56DE\u590D\u672B\u5C3E\u9644\u4E00\u6761\u9ED8\u8BA4\u6298\u8D77\u7684\u987A\u5E26\u5B66\u4E60\u5361\uFF1B\u5FD9\u65F6\u540E\u53F0\u81EA\u52A8\u5B58\u6863\uFF0C\u6709\u7A7A\u53EF\u5728\u53F3\u4FA7\u680F\u4E00\u9898\u70B9\u62E8\u6216\u4E09\u5206\u949F\u5C55\u5F00\u5B66\u3002",
+    why: "\u81EA\u7814\u7B56\u5C55\uFF1A\u9762\u5411\u5E73\u65F6\u9AD8\u9891\u4E0E\u52A9\u624B\u534F\u4F5C\u505A\u9879\u76EE\u7684\u4EBA\uFF0C\u628A\u987A\u624B\u8BB0\u5F55\u53D6\u820D\u3001\u53F3\u4FA7\u8F7B\u70B9\u62E8\u548C\u5206\u9636\u6BB5\u638C\u63E1\u5EA6\u653E\u8FDB\u540C\u4E00\u672C\u672C\u673A\u6280\u80FD\u8D26\u672C\u3002",
+    audience: ["\u65E5\u5E38\u7528\u52A9\u624B\u5199\u4EE3\u7801\u3001\u5B9A\u65B9\u6848\u6216\u6539\u6587\u6848\uFF0C\u60F3\u987A\u624B\u6C89\u6DC0\u5B9E\u6218\u5224\u65AD", "\u5E0C\u671B\u5E72\u6D3B\u65F6\u4E0D\u88AB\u6253\u65AD\uFF0C\u6709\u7A7A\u518D\u6309\u5206\u7C7B\u56DE\u770B\u548C\u81EA\u6D4B"],
+    topics: ["learning"],
+    scenario: "\u6211\u60F3\u5728\u5E73\u65F6\u63A8\u8FDB\u5DE5\u4F5C\u65F6\uFF0C\u628A\u6D89\u53CA\u754C\u9762\u4F53\u9A8C\u3001\u5DE5\u7A0B\u67B6\u6784\u3001\u534F\u4F5C\u63D0\u793A\u8BCD\u548C\u4EA7\u54C1\u7B56\u7565\u7684\u5173\u952E\u53D6\u820D\u987A\u624B\u8BB0\u4E0B\u6765\uFF0C\u4E0D\u6253\u65AD\u5F53\u524D\u5BF9\u8BDD\uFF0C\u6709\u7A7A\u518D\u6309\u5206\u7C7B\u590D\u4E60\u548C\u81EA\u6D4B\u638C\u63E1\u7A0B\u5EA6\u3002\u5148\u770B\u6E05\u81EA\u52A8\u5B58\u6863\u548C\u5B66\u4E60\u8BB0\u5F55\u7684\u4FDD\u5B58\u8FB9\u754C\u3002",
+    requirements: ["DeepSeek Harness 0.2.2-rc.2 \u6216 0.2.2-rc.3\u3001Node.js 22.0+\uFF1B\u5C55\u5F00\u5B66\u4E0E\u5BF9\u8BDD\u672B\u5C3E\u5B66\u4E60\u5361\u9700\u5BBF\u4E3B\u5DF2\u914D\u7F6E\u53EF\u7528\u6A21\u578B", "\u9ED8\u8BA4\u96F6\u8017\u989D\u5EA6\u7684\u4E09\u6B65\u56FE\u89E3\u4E0E\u793A\u4F8B\u6548\u679C\u53EF\u76F4\u63A5\u6D4F\u89C8\uFF1B\u8DE8\u5DE5\u5177\u547D\u4EE4\u884C\u5199\u5165\u5171\u4EAB\u540C\u4E00\u672C\u673A\u8D26\u672C"],
+    limitations: ["0.1.6 \u4E3A\u516C\u5F00\u53D1\u884C\u7248\u672C\uFF1B\u672C\u9875\u53EA\u6838\u5BF9\u53D1\u884C\u8D44\u4EA7\u3001\u5305\u54C8\u5E0C\u4E0E\u5BBF\u4E3B\u517C\u5BB9\u58F0\u660E\uFF0C\u4E0D\u7B49\u4E8E\u5B9E\u9645\u5BF9\u8BDD\u751F\u6210\u8D28\u91CF\u6216\u5B66\u4E60\u6548\u679C\u9A8C\u6536", "\u662F\u5426\u9644\u5E26\u987A\u5E26\u5B66\u4E60\u5361\u53D6\u51B3\u4E8E\u5F53\u8F6E\u5BF9\u8BDD\u662F\u5426\u51FA\u73B0\u5B9E\u8D28\u53D6\u820D\u53CA\u6240\u9009\u6A21\u578B\u9075\u5FAA\u60C5\u51B5\uFF0C\u666E\u901A\u95EE\u7B54\u4FDD\u6301\u9759\u9ED8\u4E0D\u6253\u6270", "\u6280\u80FD\u8D26\u672C\u4E0E\u81EA\u52A8\u5B58\u6863\u4FDD\u5B58\u5728\u672C\u673A\u5F53\u524D\u73AF\u5883\u76EE\u5F55\uFF0C\u91CD\u88C5\u7CFB\u7EDF\u6216\u8DE8\u8BBE\u5907\u4E0D\u4F1A\u81EA\u52A8\u4E91\u540C\u6B65"],
+    components: ["@oxmumu3/dsh-incidental-learn"],
+    hosts: ["0.2.2-rc.2", "0.2.2-rc.3"],
+    status: "available",
+    version: "0.1.6",
+    checkedAt: "2026-11-16T02:15:13Z",
+    sourceUrls: [
+      "https://github.com/oxmumu3/dsh-incidental-learn",
+      "https://github.com/oxmumu3/dsh-incidental-learn/releases/tag/v0.1.6",
+      "https://github.com/oxmumu3/dsh-incidental-learn/releases/download/v0.1.6/SHA256SUMS"
+    ],
+    install: {
+      spec: "https://github.com/oxmumu3/dsh-incidental-learn/releases/download/v0.1.6/oxmumu3-dsh-incidental-learn-0.1.6.tgz",
+      version: "0.1.6",
+      sha256: "5367f238e3b648426135befa3ae6cbee847faefe48c396a55cc6f8ab3ed698bc",
+      verifiedAt: "2026-11-16T02:15:13Z"
+    }
   }
 ];
 
@@ -1805,9 +1833,10 @@ var featuredTopics = Object.freeze([
   { id: "twin", label: "AI \u5206\u8EAB", keywords: ["ai \u5206\u8EAB", "ai\u5206\u8EAB", "\u6570\u5B57\u5206\u8EAB", "\u77E5\u8BC6\u84B8\u998F", "\u5206\u8EAB", "agent twin", "personal ai"] },
   { id: "family", label: "\u5BB6\u5EAD\u52A9\u624B", keywords: ["\u5BB6\u5EAD", "\u5BB6\u4EBA", "\u957F\u8F88", "\u4EB2\u4EBA", "family"] },
   { id: "projects", label: "\u9879\u76EE\u534F\u4F5C", keywords: ["\u9879\u76EE", "\u4EFB\u52A1\u4EA4\u529E", "\u9879\u76EE\u52A9\u7406", "\u5DE5\u4F5C\u533A", "\u4EFB\u52A1\u7BA1\u7406", "project", "workspace"] },
-  { id: "connections", label: "\u5DE5\u5177\u8FDE\u63A5", keywords: ["\u8FDE\u63A5", "\u6865\u63A5", "\u63A5\u5165", "\u4E92\u901A", "connector", "bridge", "harness", "openai dot"] }
+  { id: "connections", label: "\u5DE5\u5177\u8FDE\u63A5", keywords: ["\u8FDE\u63A5", "\u6865\u63A5", "\u63A5\u5165", "\u4E92\u901A", "connector", "bridge", "harness", "openai dot"] },
+  { id: "learning", label: "\u987A\u5E26\u5B66\u4E60", keywords: ["\u987A\u5E26\u79C1\u6559", "\u987A\u5E26\u5B66\u4E60", "\u6280\u80FD\u5E93", "\u7ECF\u9A8C\u6C89\u6DC0", "\u590D\u76D8", "\u76F2\u533A", "\u8FB9\u505A\u8FB9\u5B66", "incidental learn"] }
 ].map((topic) => Object.freeze({ ...topic, keywords: Object.freeze(topic.keywords) })));
-var productIds = /* @__PURE__ */ new Set(["agent-twin", "family-assistant", "dsh-dot", "dot-harness"]);
+var productIds = /* @__PURE__ */ new Set(["agent-twin", "family-assistant", "dsh-dot", "dot-harness", "incidental-learn"]);
 var topicIds = new Set(featuredTopics.map((topic) => topic.id));
 var topicLabels = new Map(featuredTopics.map((topic) => [topic.id, topic.label]));
 var object = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -2194,7 +2223,8 @@ function renderFeaturedView({ h, state, controller, copyText, busy = false, mode
           "agent-twin": "M15 19v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6M17 5a3 3 0 0 1 0 6M21 19v-2a4 4 0 0 0-3-3.87",
           "family-assistant": "m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8",
           "dsh-dot": "M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7M8 13h8M8 17h5",
-          "dot-harness": "M10 13a5 5 0 0 0 7 .5l3-3a5 5 0 0 0-7-7l-1.5 1.5M14 11a5 5 0 0 0-7-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5"
+          "dot-harness": "M10 13a5 5 0 0 0 7 .5l3-3a5 5 0 0 0-7-7l-1.5 1.5M14 11a5 5 0 0 0-7-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5",
+          "incidental-learn": "M2 6.5A2.5 2.5 0 0 1 4.5 4H12v16H4.5A2.5 2.5 0 0 0 2 22.5v-16Zm20 0A2.5 2.5 0 0 0 19.5 4H12v16h7.5a2.5 2.5 0 0 1 2.5 2.5v-16Z"
         }[entry.id] })
       ),
       h("h3", { id: `pf_${group}_${entry.id}` }, entry.subtitle.split(" \xB7 ")[0])
@@ -3564,13 +3594,15 @@ var scenarioTitles = {
   "agent-twin": "\u628A\u9879\u76EE\u8D44\u6599\u6574\u7406\u6210\u77E5\u8BC6\u5E93",
   "family-assistant": "\u51C6\u5907\u5BB6\u4EBA\u7684\u65E5\u5E38\u5C0F\u52A9\u624B",
   "dsh-dot": "\u4ECE\u624B\u673A\u4E86\u89E3\u9879\u76EE\u8FDB\u5C55",
-  "dot-harness": "\u8BA9\u52A9\u624B\u8BFB\u5230\u53E6\u4E00\u7AEF\u7684\u9879\u76EE\u8D44\u6599"
+  "dot-harness": "\u8BA9\u52A9\u624B\u8BFB\u5230\u53E6\u4E00\u7AEF\u7684\u9879\u76EE\u8D44\u6599",
+  "incidental-learn": "\u5728\u65E5\u5E38\u534F\u4F5C\u91CC\u987A\u624B\u6512\u7ECF\u9A8C"
 };
 var scenarioBenefits = {
   "agent-twin": "\u4FDD\u7559\u51FA\u5904\uFF0C\u4E4B\u540E\u968F\u65F6\u63D0\u95EE\u3001\u56DE\u770B\u3002",
   "family-assistant": "\u8BA9\u5BB6\u4EBA\u5206\u522B\u62E5\u6709\u804A\u5929\u3001\u63D0\u9192\u548C\u65E5\u5E38\u8D44\u8BAF\u7684\u5C0F\u52A9\u624B\u3002",
   "dsh-dot": "\u628A\u9879\u76EE\u8FDB\u5C55\u3001\u5361\u70B9\u548C\u4E0B\u4E00\u6B65\u6574\u7406\u6210\u4E00\u4EFD\u624B\u673A\u4E0A\u80FD\u770B\u7684\u7B80\u62A5\u3002",
-  "dot-harness": "\u8BA9\u5DF2\u6709\u52A9\u624B\u67E5\u5230\u53E6\u4E00\u7AEF\u7684\u9879\u76EE\u8D44\u6599\uFF0C\u5C11\u6765\u56DE\u590D\u5236\u548C\u8865\u80CC\u666F\u3002"
+  "dot-harness": "\u8BA9\u5DF2\u6709\u52A9\u624B\u67E5\u5230\u53E6\u4E00\u7AEF\u7684\u9879\u76EE\u8D44\u6599\uFF0C\u5C11\u6765\u56DE\u590D\u5236\u548C\u8865\u80CC\u666F\u3002",
+  "incidental-learn": "\u4E0D\u6253\u65AD\u5F53\u524D\u5BF9\u8BDD\uFF0C\u628A\u5173\u952E\u53D6\u820D\u5B58\u8FDB\u4E2A\u4EBA\u6280\u80FD\u5E93\u3002"
 };
 function experienceSourceHealth(discovery) {
   if (!discovery) return null;

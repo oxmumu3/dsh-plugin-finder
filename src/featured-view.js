@@ -37,6 +37,7 @@ export function renderFeaturedView({ h, state, controller, copyText, busy = fals
         'family-assistant': 'm3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8',
         'dsh-dot': 'M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7M8 13h8M8 17h5',
         'dot-harness': 'M10 13a5 5 0 0 0 7 .5l3-3a5 5 0 0 0-7-7l-1.5 1.5M14 11a5 5 0 0 0-7-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5',
+        'incidental-learn': 'M2 6.5A2.5 2.5 0 0 1 4.5 4H12v16H4.5A2.5 2.5 0 0 0 2 22.5v-16Zm20 0A2.5 2.5 0 0 0 19.5 4H12v16h7.5a2.5 2.5 0 0 1 2.5 2.5v-16Z',
       }[entry.id] })),
     h('h3', { id: `pf_${group}_${entry.id}` }, entry.subtitle.split(' · ')[0])),
   h('p', { className: 'pf_featured_summary' }, entry.title),

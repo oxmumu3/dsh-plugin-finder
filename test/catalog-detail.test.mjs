@@ -81,7 +81,11 @@ test('a cache ancestor symlink cannot write verified bytes outside its owned hom
  const {readdir}=await import('node:fs/promises');assert.deepEqual(await readdir(elsewhere),[]);
 });
 
-for (const fixtureCase of [{id:'dsh-dot',repository:'dsh-project-companion',packageName:'dsh-project-companion'},{id:'dot-harness',repository:'dot-dsh-connector',packageName:'dot-dsh-management'}]) {
+for (const fixtureCase of [
+ {id:'dsh-dot',repository:'dsh-project-companion',packageName:'dsh-project-companion'},
+ {id:'dot-harness',repository:'dot-dsh-connector',packageName:'dot-dsh-management'},
+ {id:'incidental-learn',repository:'dsh-incidental-learn',packageName:'@oxmumu3/dsh-incidental-learn',archivePrefix:'oxmumu3-dsh-incidental-learn',hostVersion:'0.2.2-rc.3'},
+]) {
  test('published '+fixtureCase.id+' resolves its exact public package instead of an obsolete preview gate',async t=>{
   const root=await mkdtemp(path.join(os.tmpdir(),'finder-featured-detail-'));t.after(()=>rm(root,{recursive:true,force:true}));
   const entry=featuredCatalog.find(entry=>entry.id===fixtureCase.id);
@@ -91,9 +95,9 @@ for (const fixtureCase of [{id:'dsh-dot',repository:'dsh-project-companion',pack
   execFileSync('/usr/bin/tar',['--format=ustar','--no-xattrs','-czf',path.join(root,'source.tgz'),'-C',root,'package'],{env:{...process.env,COPYFILE_DISABLE:'1'}});
   const bytes=await readFile(path.join(root,'source.tgz')),calls=[];
   const repository='oxmumu3/'+fixtureCase.repository;
-  const filename=fixtureCase.packageName+'-'+entry.version+'.tgz';
+  const filename=(fixtureCase.archivePrefix??fixtureCase.packageName)+'-'+entry.version+'.tgz';
   const spec='https://github.com/'+repository+'/releases/download/v'+entry.version+'/'+filename;
-  const resolve=createCatalogDetailResolver({featured:featuredCatalog.map(item=>item.id===fixtureCase.id?{...item,install:{...item.install,sha256:sum(bytes)}}:item),archiveHome:root,archiveRoot:path.join(root,'cache'),hostVersion:'0.2.1-rc.3',fetchImpl:async url=>{
+  const resolve=createCatalogDetailResolver({featured:featuredCatalog.map(item=>item.id===fixtureCase.id?{...item,install:{...item.install,sha256:sum(bytes)}}:item),archiveHome:root,archiveRoot:path.join(root,'cache'),hostVersion:fixtureCase.hostVersion??'0.2.1-rc.3',fetchImpl:async url=>{
    calls.push(String(url));
    if(url==='https://api.github.com/repos/'+repository)return Response.json({full_name:repository});
    if(url==='https://api.github.com/repos/'+repository+'/releases/tags/v'+entry.version)return Response.json({tag_name:'v'+entry.version,draft:false,assets:[{name:filename,browser_download_url:spec,digest:'sha256:'+sum(bytes)}]});

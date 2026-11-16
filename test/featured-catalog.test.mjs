@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { featuredCatalog } from '../src/featured-catalog.js';
-const expectedIds = ['agent-twin', 'family-assistant', 'dsh-dot', 'dot-harness'];
+const expectedIds = ['agent-twin', 'family-assistant', 'dsh-dot', 'dot-harness', 'incidental-learn'];
 const strings = ['id', 'title', 'subtitle', 'summary', 'why', 'scenario', 'status', 'version', 'checkedAt'];
 const lists = ['audience', 'topics', 'requirements', 'limitations', 'components', 'sourceUrls'];
 const card = id => {
@@ -23,9 +23,9 @@ const assertPublicHttps = value => {
   assert.equal(url.search, '');
 };
 
-test('cold-start catalog offers exactly four distinct products rather than platform or component duplicates', () => {
-  assert.equal(featuredCatalog.length, 4);
-  assert.equal(new Set(featuredCatalog.map(entry => entry.id)).size, 4);
+test('cold-start catalog offers five distinct products rather than platform or component duplicates', () => {
+  assert.equal(featuredCatalog.length, 5);
+  assert.equal(new Set(featuredCatalog.map(entry => entry.id)).size, 5);
   assert.deepEqual(featuredCatalog.map(entry => entry.id), expectedIds);
 });
 
@@ -41,7 +41,7 @@ test('each curated card explains its use, audience, requirements and evidence bo
       assert.ok(entry[field].every(value => typeof value === 'string' && value.trim()), `${id}.${field} items`);
       if (field !== 'sourceUrls') assert.ok(entry[field].length > 0, `${id}.${field} is required`);
     }
-    assert.ok(entry.topics.every(topic => ['twin', 'family', 'projects', 'connections'].includes(topic)));
+    assert.ok(entry.topics.every(topic => ['twin', 'family', 'projects', 'connections', 'learning'].includes(topic)));
     assert.ok(['available', 'preview', 'private'].includes(entry.status));
     assertUtc(entry.checkedAt);
     assert.match(entry.why, /自研/);
@@ -81,11 +81,16 @@ test('only a checked exact public release is installable and all preview or priv
     assertUtc(entry.install.verifiedAt);
     assertPublicHttps(entry.install.spec);
     const path = new URL(entry.install.spec).pathname;
-    const repo=entry.id==='agent-twin'?'ai-twin-starter':entry.id==='dsh-dot'?'dsh-project-companion':entry.id==='dot-harness'?'dot-dsh-connector':'dsh-family-assistant';
-    assert.equal(path, `/oxmumu3/${repo}/releases/download/v${entry.version}/${entry.components[0]}-${entry.version}.tgz`);
+    const repo = entry.id === 'agent-twin' ? 'ai-twin-starter'
+      : entry.id === 'dsh-dot' ? 'dsh-project-companion'
+        : entry.id === 'dot-harness' ? 'dot-dsh-connector'
+          : entry.id === 'incidental-learn' ? 'dsh-incidental-learn'
+            : 'dsh-family-assistant';
+    const archivePrefix = entry.components[0].replace(/^@/, '').replace('/', '-');
+    assert.equal(path, `/oxmumu3/${repo}/releases/download/v${entry.version}/${archivePrefix}-${entry.version}.tgz`);
     assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/tag/v${entry.version}`));
-    if(entry.id==='agent-twin')assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/download/v${entry.version}/SHA256SUMS`));
-    assert.match(entry.limitations.join(' '), /预发布/);
+    if (['agent-twin', 'incidental-learn'].includes(entry.id)) assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/download/v${entry.version}/SHA256SUMS`));
+    assert.match(entry.limitations.join(' '), entry.version.includes('-preview.') ? /预发布/ : /公开发行/);
     assert.match(entry.limitations.join(' '), /不等于.*验收/);
   }
 });

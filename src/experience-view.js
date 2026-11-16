@@ -31,12 +31,14 @@ const scenarioTitles = {
   'family-assistant': '准备家人的日常小助手',
   'dsh-dot': '从手机了解项目进展',
   'dot-harness': '让助手读到另一端的项目资料',
+  'incidental-learn': '在日常协作里顺手攒经验',
 };
 const scenarioBenefits = {
   'agent-twin': '保留出处，之后随时提问、回看。',
   'family-assistant': '让家人分别拥有聊天、提醒和日常资讯的小助手。',
   'dsh-dot': '把项目进展、卡点和下一步整理成一份手机上能看的简报。',
   'dot-harness': '让已有助手查到另一端的项目资料，少来回复制和补背景。',
+  'incidental-learn': '不打断当前对话，把关键取舍存进个人技能库。',
 };
 export function experienceSourceHealth(discovery) {
   if (!discovery) return null;

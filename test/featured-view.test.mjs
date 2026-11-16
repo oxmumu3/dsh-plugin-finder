@@ -12,7 +12,7 @@ const render = (state = {}, options = {}) => renderFeaturedView({ h, state, cont
 
 test('home shows the four curated products below the request without inventing recommendations or exposing saved drafts', () => {
   const view = render({ featuredId: 'agent-twin', featuredDrafts: [draft] });
-  assert.equal(nodes(view).filter(node => node.type === 'article').length, 4);
+  assert.equal(nodes(view).filter(node => node.type === 'article').length, 5);
   assert.match(visible(view), /精选插件/);
   assert.doesNotMatch(visible(view), /猜你喜欢|感兴趣的方向|不感兴趣|恢复草稿|需要恢复的未提交输入|试试这个场景/);
   const settings = nodes(view).find(node => node.type === 'details');

@@ -1,6 +1,6 @@
 # 安装、首次使用与卸载
 
-本说明对应 `@oxmumu3/dsh-plugin-finder@0.13.2`。在 npm 和 GitHub Releases 可查询本版的发行状态。
+本说明对应 `@oxmumu3/dsh-plugin-finder@0.13.3`。在 npm 和 GitHub Releases 可查询本版的发行状态。
 
 正式下载附件及 SHA-256 见 [GitHub Releases](https://github.com/oxmumu3/dsh-plugin-finder/releases)。
 
@@ -20,7 +20,7 @@
 在正在使用的官方 Harness 原生「插件 → 添加插件」中填入：
 
 ```text
-@oxmumu3/dsh-plugin-finder@0.13.2
+@oxmumu3/dsh-plugin-finder@0.13.3
 ```
 
 这是本版的精确 npm 安装身份。若注册表尚未返回该版本，请查看正式 Release 并保留当前安装。通过本地 TGZ 安装时，应核对发行哈希；绝对路径必须位于目标宿主机器，不能使用另一台机器的路径。

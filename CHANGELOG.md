@@ -1,3 +1,8 @@
+# 0.13.3（2026-11-16）
+
+- 精选目录收录「顺带私教」（`@oxmumu3/dsh-incidental-learn@0.1.6`），支持官方 Harness `0.2.2-rc.2` / `0.2.2-rc.3`，并新增「顺带学习」推荐兴趣方向与对应详情图标记号。
+- 对齐 `docs/install.md`、`README.md` 与 `0.13.3` 正式发行版本标识。
+
 # 0.13.2（2026-11-15）
 
 - 重构创造模式输入框上方「创造向导」浮条（`src/creator-strip.js`）：对齐宿主原生 `TodoPanel` 宽度与内边距变量（`--dsh-composer-card-max-width`、`--dsh-composer-dock-inset`），默认收敛为 `38px` 单行毛玻璃引导条，区分已完成、老项目「免走」、当前步与执行中四态，普通非插件对话首轮结束后自动退场。
