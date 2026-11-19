@@ -1,3 +1,8 @@
+# 0.13.6（2026-11-19）
+
+- 修复已保存的「指定社区插件」历史任务在社区目录版本升级、git-only 条目补充 npm 包名或仓库 `sourceUrl` 大小写变化后，因 `assertCommunityPlan` 仍校验旧版本号等于当前目录最新版本而触发 `INVALID_BACKUP` / `HISTORY_STORAGE_FAILED` 导致 `bootstrap` 报错无法恢复本机历史与省 Token 账本的问题；现仅校验证据来源与包/仓库身份绑定，新建 `executionClaim` 仍严格核对最新版本，已声明的本地执行记录可正常续跑。
+- 对齐 `docs/install.md`、`README.md` 与 `0.13.6` 正式发行版本标识。
+
 # 0.13.5（2026-11-19）
 
 - 解法卡（`single` / `combo` / `hybrid` / `gap`）与自建蓝图卡（`create`）新增省 Token 保守基准预估条（`.pf8_save_strip`）与可折叠算法拆解，并在确认弹窗与社区插件首次安装确认框的摘要事实中同步展示预计节省量（基于真实 DSH 开发/调优会话用量保守折算）。

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createFinderService} from '../src/service.js';
 import {createDiscovery} from '../src/discovery.js';
-import {getCommunityEntry} from '../src/community-catalog.js';
+import {getActiveCommunityCatalog,getCommunityEntry,setActiveCommunityCatalog} from '../src/community-catalog.js';
 
 const selected=getCommunityEntry('https://github.com/yongfanbeta/dsh-pomodoro');
 const monorepo=getCommunityEntry('https://github.com/ethanyoq/invoice-downloader/tree/main/plugins/dsh-invoice-downloader');
@@ -156,4 +156,89 @@ test('missing package README does not fall back to a monorepo root description; 
   assert.equal(result.candidates[0].documentation.text,'');
   assert.ok(!f.calls.some(call=>call.url===`https://raw.githubusercontent.com/${f.repo}/${SHA}/README.md`));
   const before=f.calls.length;await assert.rejects(discovery.searchSelected({communityEntryId:'https://github.com/forged/plugin'}));assert.equal(f.calls.length,before);
+});
+
+test('historical selected-plugin records survive upstream catalog version bumps, sourceUrl casing changes, and git-to-npm transitions',async t=>{
+  const originalCatalog=getActiveCommunityCatalog();
+  t.after(()=>setActiveCommunityCatalog(originalCatalog));
+  const gitOnly=originalCatalog.entries.find(entry=>!entry.npmName&&/^https:\/\/github\.com\/[^/]+\/[^/]+$/i.test(entry.sourceUrl));
+  assert.ok(gitOnly,'expected a root GitHub git-only entry in community catalog');
+  const bumpedNpm='99.0.0';
+  const legacyCandidate={...candidate,install:{...candidate.install,version:'0.0.1',spec:`${selected.npmName}@0.0.1`}};
+  const legacyPlan={...plan,pluginIds:[legacyCandidate.id],steps:plan.steps.map(step=>({...step,owner:legacyCandidate.id}))};
+  const fNpm=fixture({candidates:[legacyCandidate],modelPlan:legacyPlan});
+  const aNpm=await fNpm.service.analyze({request:'使用旧版番茄钟',communityEntryId:selected.id});
+  const pNpm=await fNpm.service.recommend({...ids(aNpm.workflow),intent:aNpm.intent});
+  const claimExisting=await fNpm.service.executionClaim({...ids(pNpm.workflow),kind:'use',workspaceId:'w-existing'});
+  assert.equal(claimExisting.claim,'acquired');
+
+  const gitCandidate={
+    id:gitOnly.name,
+    name:gitOnly.name,
+    capabilities:['专注计时'],
+    communityEntryId:gitOnly.id,
+    communitySourceUrl:gitOnly.sourceUrl,
+    install:{type:'git',commit:SHA,spec:`git+${gitOnly.sourceUrl}.git#${SHA}`},
+  };
+  const gitPlan={
+    kind:'single',
+    title:'使用仓库插件',
+    rationale:'基于旧版 Git 目录生成',
+    pluginIds:[gitCandidate.id],
+    steps:[{capability:'专注计时',owner:gitCandidate.id,sourceCapability:'专注计时',action:'安装运行',input:'任务',output:'结果'}],
+    limits:[],
+  };
+  const fGit=fixture({store:fNpm.store,candidates:[gitCandidate],modelPlan:gitPlan});
+  const aGit=await fGit.service.analyze({request:'使用 git-only 插件',communityEntryId:gitOnly.id});
+  const pGit=await fGit.service.recommend({...ids(aGit.workflow),intent:aGit.intent});
+
+  const flippedSourceUrl=selected.sourceUrl.replace('https://github.com/yongfanbeta/', 'https://github.com/YongfanBeta/');
+  const updatedCatalog=structuredClone(originalCatalog);
+  updatedCatalog.entries=updatedCatalog.entries.map(entry=>{
+    if(entry.id===selected.id)return{...entry,version:bumpedNpm,sourceUrl:flippedSourceUrl};
+    if(entry.id===gitOnly.id)return{...entry,npmName:gitOnly.name,version:'1.0.0'};
+    return entry;
+  });
+  setActiveCommunityCatalog(updatedCatalog);
+
+  const upgradedCandidate={...candidate,communitySourceUrl:flippedSourceUrl,install:{...candidate.install,version:bumpedNpm,spec:`${selected.npmName}@${bumpedNpm}`}};
+  const restarted=fixture({store:fNpm.store,candidates:[upgradedCandidate]});
+  const booted=await restarted.service.bootstrap();
+  assert.equal(booted.historyTotal,2);
+  const hist=await restarted.service.history();
+  assert.equal(hist.historyTotal,2);
+
+  const openedNpm=await restarted.service.open({taskId:pNpm.workflow.taskId});
+  assert.equal(openedNpm.workflow.communityEntryId,selected.id);
+  const resumedExisting=await restarted.service.executionClaim({...ids(openedNpm.workflow),kind:'use',workspaceId:'w-existing'});
+  assert.equal(resumedExisting.claim,'existing');
+  assert.equal(resumedExisting.attempt.requestId,claimExisting.attempt.requestId);
+  await assert.rejects(restarted.service.executionClaim({...ids(openedNpm.workflow),kind:'use',workspaceId:'w-new'}),error=>error.code==='COMMUNITY_SOURCE_UNVERIFIED');
+
+  const openedGit=await restarted.service.open({taskId:pGit.workflow.taskId});
+  assert.equal(openedGit.workflow.communityEntryId,gitOnly.id);
+
+  for(const workflowId of [pNpm.workflow.taskId,pGit.workflow.taskId]){
+    const exported=await restarted.service.exportTask({taskId:workflowId});
+    const imported=fixture();
+    const receipt=await imported.service.importBackup({workflow:exported});
+    const reopened=await imported.service.open({taskId:receipt.importedTaskId});
+    assert.equal(reopened.workflow.taskId,receipt.importedTaskId);
+  }
+
+  const npmBackup=await restarted.service.exportTask({taskId:pNpm.workflow.taskId});
+  for(const altered of [
+    {...legacyCandidate,id:'attacker-timer',name:'attacker-timer',install:{...legacyCandidate.install,spec:'attacker-timer@1.0.0',version:'1.0.0'}},
+    {...legacyCandidate,install:{...legacyCandidate.install,spec:'attacker-timer@1.0.0'}},
+    {...legacyCandidate,install:{...legacyCandidate.install,registry:'https://evil.test'}},
+  ]){
+    const forged=copy(npmBackup);
+    forged.task.revisions.at(-1).workflow.candidates=[altered];
+    if(altered.id!==legacyCandidate.id){
+      forged.task.revisions.at(-1).workflow.plan.pluginIds=[altered.id];
+      forged.task.revisions.at(-1).workflow.plan.steps[0].owner=altered.id;
+    }
+    const importer=fixture();
+    await assert.rejects(importer.service.importBackup({workflow:forged}),error=>error.code==='INVALID_BACKUP');
+  }
 });
