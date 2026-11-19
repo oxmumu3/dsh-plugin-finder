@@ -570,4 +570,38 @@ export const v8Css = `
 .pf_v8 .pf8_exec_details { margin-top: 8px; }
 .pf_v8 .pf8_exec_details > summary { min-height: 24px; padding-block: 2px; line-height: 1.5; }
 
+/* —— v0.13.5 首页眉栏省 Token 微签（方案 A）与解法/蓝图卡左竖线收益条 —— */
+.pf_v8 .pf8_meta_row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 10px; }
+.pf_v8 .pf8_meta_row .pf8_meta { margin-bottom: 0; }
+.pf_v8 .pf8_eyebrow_ledger { display: inline-flex; align-items: center; gap: 6px; min-height: 25px; padding: 2px 10px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--ok) 10%, var(--subtle)); font-size: 12px; line-height: 1.35; color: var(--ink2); cursor: pointer; }
+.pf_v8 .pf8_eyebrow_ledger:hover:not(:disabled) { background: color-mix(in srgb, var(--ok) 17%, var(--subtle)); color: var(--ink); }
+.pf_v8 .pf8_eyebrow_ledger .pf8_pc { --h: 15px; margin: 0; }
+.pf_v8 .pf8_eyebrow_ledger b { font-weight: 600; font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--ok) 78%, var(--ink)); }
+.pf_v8 .pf8_eyebrow_more { color: var(--ink3); font-size: 11.5px; padding-left: 2px; }
+
+.pf_v8 .pf8_save_strip { margin-top: 22px; padding: 13px 16px; border: 0; border-left: 2.5px solid var(--ok); border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--ok) 7%, var(--card)); }
+.pf_v8 .pf8_save_strip.is_create { border-left-color: var(--build); background: color-mix(in srgb, var(--build) 7%, var(--card)); }
+.pf_v8 .pf8_save_top { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.pf_v8 .pf8_save_headline { display: inline-flex; align-items: flex-start; gap: 8px; font: 600 15px/1.4 var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
+.pf_v8 .pf8_save_headline .pf8_pc { --h: 19px; margin: 1.5px 0 0; }
+.pf_v8 .pf8_save_badge { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11.5px; font-weight: 500; color: color-mix(in srgb, var(--ok) 82%, var(--ink)); background: color-mix(in srgb, var(--ok) 14%, transparent); white-space: nowrap; }
+.pf_v8 .pf8_save_strip.is_create .pf8_save_badge { color: color-mix(in srgb, var(--build) 82%, var(--ink)); background: color-mix(in srgb, var(--build) 14%, transparent); }
+.pf_v8 .pf8_save_desc { margin-top: 5px; font-size: 13px; line-height: 1.6; color: var(--ink2); }
+.pf_v8 .pf8_save_details { margin-top: 8px; }
+.pf_v8 .pf8_save_details > summary { cursor: pointer; font-size: 12px; color: var(--ink3); list-style: none; display: inline-flex; align-items: center; gap: 5px; }
+.pf_v8 .pf8_save_details > summary::-webkit-details-marker { display: none; }
+.pf_v8 .pf8_save_details > summary::before { content: ""; display: inline-block; width: 0; height: 0; border-left: 4.5px solid currentColor; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent; }
+.pf_v8 .pf8_save_details[open] > summary::before { border-left: 3.5px solid transparent; border-right: 3.5px solid transparent; border-top: 4.5px solid currentColor; border-bottom: 0; }
+.pf_v8 .pf8_save_math { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.65; color: var(--ink2); }
+.pf_v8 .pf8_save_math ul { margin: 4px 0 0; padding-left: 16px; list-style: disc; }
+
+dialog.pf_modal.pf_modal_ledger { width: min(540px, calc(100vw - 32px)); }
+.pf_v8 .pf8_ledger_rows { margin: 14px 0 0; border-top: 1px solid var(--line); }
+.pf_v8 .pf8_ledger_row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; padding: 11px 0; border-bottom: 1px solid var(--line); align-items: center; }
+.pf_v8 .pf8_ledger_row:last-child { border-bottom: 0; }
+.pf_v8 .pf8_ledger_row b { display: block; font-size: 13.5px; font-weight: 500; color: var(--ink); overflow-wrap: anywhere; }
+.pf_v8 .pf8_ledger_row small { display: block; margin-top: 2px; font-size: 12px; color: var(--ink3); overflow-wrap: anywhere; }
+.pf_v8 .pf8_ledger_amt { font: 600 13.5px/1.2 var(--sans); font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--ok) 84%, var(--ink)); white-space: nowrap; }
+.pf_v8 .pf8_ledger_amt.is_create { color: color-mix(in srgb, var(--build) 82%, var(--ink)); }
+
 `;

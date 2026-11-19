@@ -199,10 +199,28 @@ export function createPlanSurface(React) {
     onClick: action.onClick,
   }, action.label);
 
+  const savingsStrip = savings => {
+    if (!savings || typeof savings !== 'object') return null;
+    const mathItems = items(savings.mathItems).filter(item => text(item));
+    return h('div', { className: `pf8_save_strip${savings.kind === 'create' ? ' is_create' : ''}` },
+      h('div', { className: 'pf8_save_top' },
+        h('span', { className: 'pf8_save_headline' },
+          h(Lego, { kinds: ['done'], label: '' }),
+          h('span', null, text(savings.headline))),
+        text(savings.badge) ? h('span', { className: 'pf8_save_badge' }, text(savings.badge)) : null),
+      text(savings.desc) ? h('p', { className: 'pf8_save_desc' }, text(savings.desc)) : null,
+      mathItems.length
+        ? h('details', { className: 'pf8_save_details' },
+          h('summary', null, text(savings.mathTitle) || '怎么算的？'),
+          h('div', { className: 'pf8_save_math' },
+            h('ul', null, ...mathItems.map((line, index) => h('li', { key: index }, line)))))
+        : null);
+  };
+
   /** 5.8 解法卡：一张卡能单独截图讲清楚。 */
   const solution = ({
     request, understanding, quoteLabel = '你说：', plan, candidates, actions = [], discovery,
-    searchedAt, note = '', tag = '', showSignature = true, compact = false, embedded = false,
+    searchedAt, note = '', tag = '', savings = null, showSignature = true, compact = false, embedded = false,
   }) => {
     const blocks = planBlocks({ plan, candidates, request });
     const count = sourceReadTotal(discovery);
@@ -272,6 +290,7 @@ export function createPlanSurface(React) {
           brick('seen'),
           h('code', null, text(candidate.name) || text(candidate.id)),
           h('span', null, text(candidate.summary)))))) : null,
+      !compact && !embedded && savings ? savingsStrip(savings) : null,
       actions.length ? h('div', { className: 'pf8_acts' }, ...actions.filter(action => action && text(action.label)).map(actionButton)) : null,
       text(note) ? h('p', { className: 'pf8_next' }, text(note)) : null,
       tag ? h('p', { className: 'pf8_fine' }, h('span', { className: 'pf8_tag' }, tag)) : null,
@@ -330,5 +349,5 @@ export function createPlanSurface(React) {
     }, option))),
     h('p', { className: 'pf8_fine' }, '也可以在下面补充你的想法。'));
 
-  return { solution, searching, incomplete, clarification, planBlocks, planSourceRows, sourceFunnelSteps };
+  return { solution, searching, incomplete, clarification, savingsStrip, planBlocks, planSourceRows, sourceFunnelSteps };
 }

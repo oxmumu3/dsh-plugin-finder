@@ -14,7 +14,8 @@ import { renderCreationGuide } from './creation-guide.js';
 import { createHistoryView } from './v8-history-view.js';
 import { finderCss } from './client-style.js';
 import { createExperienceView } from './experience-view.js';
-import { createConfirmDialog, createMoreMenu } from './v8-menu.js';
+import { createConfirmDialog, createMoreMenu, createTokenLedgerDialog } from './v8-menu.js';
+import { normalizeTokenSavings } from './token-savings.js';
 import { experienceCss } from './experience-style.js';
 import { createCreatorFeedbackDraft, renderCreatorFeedbackDraft } from './creator-feedback.js';
 import { canRecheckPluginSource, renderPluginDetailView } from './plugin-detail-view.js';
@@ -183,7 +184,7 @@ export function createFinderController(ctx, options = {}) {
     workspacePhase: 'pending', feedbackSaved: false, handoffRequested: false, preservedTarget: null,
     modelLabel: '', resetPending: false, storageWarning: '', telemetryWarning: '',
     view: 'home', homeRequest: '', homeWarning: '', searching: false, featuredId: null, featuredPreferences: normalizeFeaturedPreferences(null), featuredHistory: [], featuredDrafts: [], featuredWarning: '', scenarioSeed: '', history: [], historyTotal: 0, historyOffset: 0, unlinkedFeedback: [], searchHistory: [],
-    taskId: null, revisionId: null, revisionNumber: null, revisions: [], feedback: [], handoff: null, origin: null, restoredFrom: '', pendingHandoff: null, telemetry: null, telemetrySettingsOpen: false, telemetrySuggestionVisible: false,
+    taskId: null, revisionId: null, revisionNumber: null, revisions: [], feedback: [], handoff: null, origin: null, restoredFrom: '', pendingHandoff: null, telemetry: null, telemetrySettingsOpen: false, telemetrySuggestionVisible: false, tokenSavings: null,
   });
   const publish = patch => {
     if (closed) return;
@@ -231,6 +232,9 @@ export function createFinderController(ctx, options = {}) {
       if (telemetry) publish({ telemetry });
       const reportingWarning = workflowWarning(value?.telemetryWarning);
       if (reportingWarning) publish({ telemetryWarning: reportingWarning });
+      if (value?.tokenSavings && typeof value.tokenSavings === 'object') {
+        publish({ tokenSavings: normalizeTokenSavings(value.tokenSavings) });
+      }
       applyValue(value);
       return true;
     } catch (error) {
@@ -277,6 +281,9 @@ export function createFinderController(ctx, options = {}) {
       const value = await response.json();
       if (closed || controller.signal.aborted || !catalogCurrent(generation, selection)) return false;
       if (!response.ok) throw handoffFailure(typeof value?.error?.message === 'string' && value.error.message.length <= 600 ? value.error.message : '暂时无法读取插件状态，请稍后重试。');
+      if (value?.tokenSavings && typeof value.tokenSavings === 'object') {
+        publish({ tokenSavings: normalizeTokenSavings(value.tokenSavings) });
+      }
       const detail = catalogValue(value, selection, detailId);
       publish({ catalogDetail: detail, catalogError: '' });
       return true;
@@ -309,6 +316,7 @@ export function createFinderController(ctx, options = {}) {
     ...(Array.isArray(value?.history) ? { history: value.history.filter(item => item && typeof item.taskId === 'string').slice(0, 100), historyOffset: 0, featuredHistory: value.historyTotal === 0 ? [] : [...new Map([...value.history, ...state.featuredHistory].filter(item => item && typeof item.taskId === 'string').map(item => [item.taskId, item]).reverse()).values()].reverse().slice(0, 100) } : {}),
     ...(Number.isSafeInteger(value?.historyTotal) && value.historyTotal >= 0 ? { historyTotal: value.historyTotal } : {}),
     ...(Array.isArray(value?.unlinkedFeedback) ? { unlinkedFeedback: value.unlinkedFeedback } : {}),
+    ...(value?.tokenSavings && typeof value.tokenSavings === 'object' ? { tokenSavings: normalizeTokenSavings(value.tokenSavings) } : {}),
   });
   const identity = () => state.taskId && state.revisionId ? { taskId: state.taskId, revisionId: state.revisionId } : {};
   const editorCache = new Map();
@@ -525,6 +533,9 @@ export function createFinderController(ctx, options = {}) {
     });
     const value = await response.json();
     if (!response.ok) throw handoffFailure(text(value?.error?.message) || '这次运行的记录暂时无法保存。');
+    if (!closed && value?.tokenSavings && typeof value.tokenSavings === 'object') {
+      publish({ tokenSavings: normalizeTokenSavings(value.tokenSavings) });
+    }
     return value;
   };
   const mountExecution = (reference, signal) => {
@@ -755,7 +766,7 @@ export function createFinderController(ctx, options = {}) {
       let communitySync = null;
       return run('bootstrap', 'bootstrap', undefined, value => {
         if (typeof value?.model?.configured !== 'boolean') throw new Error('invalid bootstrap');
-        const { workflow, workflowWarning: warningValue, communitySync: syncValue, ...bootstrap } = value;
+        const { workflow, workflowWarning: warningValue, communitySync: syncValue, tokenSavings: _tokenSavings, ...bootstrap } = value;
         communitySync = syncValue ?? null;
         const warning = workflowWarning(warningValue);
         if (value.opportunity) opportunityClient.apply(value.opportunity);
@@ -1460,6 +1471,7 @@ export function apply(ctx) {
   const MoreMenu = createMoreMenu(React);
   const HistoryView = createHistoryView(React);
   const ConfirmDialog = createConfirmDialog(React);
+  const TokenLedgerDialog = createTokenLedgerDialog(React);
   function FixedExecutionChat(props) {
     // ModuleLoader supplies the same official primitives singleton used by ui-chat.
     // Keep acquisition here so importing the controller in Node needs no UI runtime.
@@ -1559,7 +1571,9 @@ export function apply(ctx) {
     const [feedbackOutcome, setFeedbackOutcome] = React.useState('');
     const [feedbackNote, setFeedbackNote] = React.useState('');
     const [confirmModal, setConfirmModal] = React.useState(null);
+    const [ledgerOpen, setLedgerOpen] = React.useState(false);
     const onRequestConfirm = typeof HTMLDialogElement !== 'undefined' ? spec => setConfirmModal(spec) : null;
+    const onOpenLedger = typeof HTMLDialogElement !== 'undefined' ? () => setLedgerOpen(true) : null;
     const active = React.useRef(true);
     const importInput = React.useRef(null);
     const telemetrySettings = React.useRef(null);
@@ -1761,10 +1775,11 @@ export function apply(ctx) {
       !state.catalogOpen && state.followupWarning ? h('p', { className: 'pf_banner pf_small', role: 'status' }, state.followupWarning) : null,
       !state.catalogOpen && state.resetPending && state.busy !== 'reset' ? h('div', { className: 'pf_banner pf_small', role: 'status' }, '开始新需求尚未确认，已有方案仍保留。', button('重试开始新需求', () => controller.retryReset(), { disabled: busy })) : null,
       !state.catalogOpen && busy && ['home', 'featured', 'history', 'creation-guide'].includes(state.view) && !state.searching ? h('div', { className: 'pf_status', role: 'status' }, h('span', { className: 'pf_spinner', 'aria-hidden': true }), { 'opportunity-adopt': '正在核对建议并查找方案…', 'creation-start': '正在评估复用机会并生成共创草案…', 'creation-update': '正在保存蓝图并按需重新核对供给…', 'creation-refine': '正在根据你的描述修改蓝图…', creator: '正在连接官方 Creator 并保留会话关联…', 'creator-save': '正在保存 Creator 原会话关联…', bootstrap: '正在读取连接与配置…', analyze: '正在理解目标、材料与约束…', recommend: '正在搜索来源、读取候选资料并推荐…', handoff: '正在连接选定工作区并准备未发送草稿…', feedback: '正在保存到本机…', reset: '正在保存并开始新需求…', history: '正在读取本机历史方案…', open: '正在打开所选方案与版本…', refine: '正在根据反馈重新理解需求…', import: '正在导入本机备份…', export: '正在导出任务备份…', continue: '正在核对原会话绑定…', 'handoff-save': '正在保存原会话关联…', 'telemetry-status': '正在读取同步状态…', 'telemetry-consent': '正在保存自动回传选择…', 'telemetry-delete': '正在停止回传并申请删除记录…' }[state.busy], button('取消', () => controller.cancel(), { className: 'pf_btn pf_text' })) : null,
-      h('div', { className: 'pfv_catalog_background', style: { display: state.catalogOpen ? 'none' : undefined }, 'aria-hidden': state.catalogOpen ? true : undefined }, state.view === 'featured' ? renderFeaturedView({ h, state, controller, copyText, busy, mode: 'detail' }) : state.view === 'history' ? h('div', null, h(HistoryView, { state, controller, busy, drafts: renderFeaturedView({ h, state, controller, copyText, busy, mode: 'drafts' }) })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, more: moreMenu, onRequestConfirm, sections: { expertConversation: state.expertReference && SessionProvider && renderSlot ? h('div', { className: 'pf_expert_conversation', style: { minHeight: 420, height: 'min(70vh, 760px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.expertReference }, renderSlot('plugin-finder.expert', {}))) : null, executionConversation: state.executionReference && SessionProvider && renderSlot ? h('div', { className: 'pf_execution_conversation', style: { minHeight: 400, height: 'min(68vh, 720px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.executionReference }, renderSlot('plugin-finder.execution', {}))) : null, workspacePicker: !state.workspaceId ? h('label', { className: 'pf_label' }, '在哪个工作区完成', h('select', { 'aria-label': '任务工作区', value: state.workspaceId, disabled: busy || state.workspacePhase !== 'ready', onChange: event => controller.selectWorkspace(event.target.value) }, h('option', { value: '' }, '选择任务材料所在的工作区'), ...state.workspaces.map(item => h('option', { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } })),
+      h('div', { className: 'pfv_catalog_background', style: { display: state.catalogOpen ? 'none' : undefined }, 'aria-hidden': state.catalogOpen ? true : undefined }, state.view === 'featured' ? renderFeaturedView({ h, state, controller, copyText, busy, mode: 'detail' }) : state.view === 'history' ? h('div', null, h(HistoryView, { state, controller, busy, drafts: renderFeaturedView({ h, state, controller, copyText, busy, mode: 'drafts' }) })) : h(ExperienceView, { state, controller, busy, modelReady, copyText, more: moreMenu, onRequestConfirm, onOpenLedger, sections: { expertConversation: state.expertReference && SessionProvider && renderSlot ? h('div', { className: 'pf_expert_conversation', style: { minHeight: 420, height: 'min(70vh, 760px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.expertReference }, renderSlot('plugin-finder.expert', {}))) : null, executionConversation: state.executionReference && SessionProvider && renderSlot ? h('div', { className: 'pf_execution_conversation', style: { minHeight: 400, height: 'min(68vh, 720px)', display: 'flex', flexDirection: 'column', position: 'relative' } }, h(SessionProvider, { session: state.executionReference }, renderSlot('plugin-finder.execution', {}))) : null, workspacePicker: !state.workspaceId ? h('label', { className: 'pf_label' }, '在哪个工作区完成', h('select', { 'aria-label': '任务工作区', value: state.workspaceId, disabled: busy || state.workspacePhase !== 'ready', onChange: event => controller.selectWorkspace(event.target.value) }, h('option', { value: '' }, '选择任务材料所在的工作区'), ...state.workspaces.map(item => h('option', { key: item.workspaceId, value: item.workspaceId }, item.title)))) : null, searchEvidence, candidateView, taskHistory, selectedInstallGuide, ordinaryHandoff, creatorHandoff: creatorHandoffView, feedback: feedbackView, creationGuide: renderCreationGuide({ h, state, controller, busy }) } })),
       state.catalogOpen ? renderPluginDetailView({ h, state, controller, onRequestConfirm }) : null,
       state.telemetrySettingsOpen ? telemetryView : null,
       h(ConfirmDialog, { modal: confirmModal, workspaceId: state.workspaceId, workspaces: state.workspaces, onSelectWorkspace: id => controller.selectWorkspace(id), onDismiss: () => setConfirmModal(null) }),
+      h(TokenLedgerDialog, { open: ledgerOpen, tokenSavings: state.tokenSavings, onDismiss: () => setLedgerOpen(false) }),
       h('footer', { className: 'pf_footer' }, h(CreatorSettings), h('details', { className: 'pf_details' }, h('summary', null, '关于搜索、模型与本机记录'),
         h('p', null, '需求、方案和草稿保存在本机；历史方案可随时继续。自动回传默认关闭，可在「更多」中调整。'),
         h('p', null, `查找与起草使用 DSH 默认模型：${state.modelLabel || '尚未读取'}。沿用已有额度；浏览精选不调用模型。`),

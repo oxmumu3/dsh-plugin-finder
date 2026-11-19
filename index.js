@@ -28,6 +28,7 @@ import {safePlanValidationIssue,FinderError} from './src/contracts.js';
 import {createExpertSessions,registerExpertSession,verifyExpertSession} from './src/expert-session.js';
 import {createCreatorAssist,registerCreatorAssist,hostPresetReader} from './src/creator-assist.js';
 import {createCommunityRefresher} from './src/community-refresh.js';
+import {summarizeTokenSavingsLedger} from './src/token-savings.js';
 export const name='plugin-finder';
 export const inject=['connection','storageDomain','tools','systemPrompt','workspaceRegistry','workingDirectory','sandboxPolicy'];
 const feedback=z.object({id:z.string().uuid(),createdAt:z.string().datetime(),outcome:z.enum(['complete','partial','blocked']),pluginIds:z.array(z.string().max(200)).max(4),note:z.string().max(1500),stage:z.string().max(80)}).strict();
@@ -119,12 +120,36 @@ export async function apply(ctx){
     expertState:body=>experts.state(body),
     expertVerify:async body=>{const {expert}=experts.state(body);if(!expert)throw new FinderError('WORKFLOW_NOT_FOUND');return{expert,verification:await verifyExpertSession(ctx,experts,expert.sessionId,{signal:body.signal})};},
   };
+  const requests=agentHandle.table('requests');
+  const readSerializedRows=table=>{
+    const out=[];
+    try{
+      for(const [,row] of table.entries()){
+        if(typeof row?.serialized!=='string')continue;
+        try{out.push(JSON.parse(row.serialized));}catch{}
+      }
+    }catch{}
+    return out;
+  };
+  const computeTokenSavings=()=>{
+    try{
+      return summarizeTokenSavingsLedger({
+        historyTasks:readSerializedRows(tasks),
+        catalogInstalls:readSerializedRows(installations),
+        creatorSessions:readSerializedRows(creatorSteps),
+        agentRequests:readSerializedRows(requests),
+      });
+    }catch{
+      return {totalTokens:0,reuseCount:0,createCount:0,totalItems:0,items:[]};
+    }
+  };
+  const withTokenSavings=fn=>typeof fn==='function'?async(...args)=>{const value=await fn(...args);return value&&typeof value==='object'&&!Array.isArray(value)?{...value,tokenSavings:computeTokenSavings()}:value;}:undefined;
   const baseService={...creatorApi,...expertApi,...withOpportunityApi(withTelemetryApi(core,telemetry),{model,store:opportunityStore,historyStore,readWorkspaceContext:createOpportunityContextReader(ctx,{signal:lifetime.signal})}),
     catalogDetail:body=>catalogService.detail(body),catalogInstall:body=>catalogService.install(body),catalogStatus:body=>catalogService.status(body)};
-  const service={...baseService,
-    async bootstrap(){const[state,communitySync]=await Promise.all([baseService.bootstrap(),communityRefresher.maybeRefresh().catch(()=>communityRefresher.status())]);return{...state,communitySync};},
+  const savingsWrapped=Object.fromEntries(['history','open','reset','importBackup','feedback','handoff','creatorClaim','creatorRecord','executionClaim','executionPrepare','executionSubmitClaim','executionCancelClaim','executionRecord','catalogInstall','catalogStatus'].filter(key=>typeof baseService[key]==='function').map(key=>[key,withTokenSavings(baseService[key].bind(baseService))]));
+  const service={...baseService,...savingsWrapped,
+    async bootstrap(){const[state,communitySync]=await Promise.all([baseService.bootstrap(),communityRefresher.maybeRefresh().catch(()=>communityRefresher.status())]);return{...state,communitySync,tokenSavings:computeTokenSavings()};},
     communitySnapshot:()=>communityRefresher.snapshot()};
-  const requests=agentHandle.table('requests');
   const agentModel=createAgentModelAdapter(model,{readRuntime:createRuntimeContextReader(ctx,{signal:lifetime.signal})});
   const agentService=createAgentFinderService({
     readInstalled:createPluginInventoryReader(ctx,{archiveRoot}),

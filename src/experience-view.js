@@ -8,6 +8,7 @@ import { getCommunityEntry, getCommunityOverview } from './community-catalog.js'
 import { createHomeView } from './v8-home-view.js';
 import { createPlanSurface, hybridInstallCopy } from './v8-plan-view.js';
 import { createLego } from './v8-lego.js';
+import { estimatePlanSavings } from './token-savings.js';
 
 const text = value => typeof value === 'string' ? value : '';
 const items = value => Array.isArray(value) ? value : [];
@@ -111,7 +112,7 @@ export function createExperienceView(React) {
     }
   };
 
-  return function ExperienceView({ state, controller, busy = false, modelReady = false, copyText, sections = {}, more = null, onRequestConfirm }) {
+  return function ExperienceView({ state, controller, busy = false, modelReady = false, copyText, sections = {}, more = null, onRequestConfirm, onOpenLedger = null }) {
     const homeInput = React.useRef(null);
     const startingNew = Boolean(state.searching);
     // Old saved guide routes still recover into the same creation surface.
@@ -175,6 +176,8 @@ export function createExperienceView(React) {
       homeInput, shortcut, resumeView,
       overview: catalog,
       more,
+      tokenSavings: state.tokenSavings,
+      onOpenLedger,
       homeCommunityName: homeCommunityEntry?.name,
       suggested,
       opportunityCard: state.opportunity
@@ -330,6 +333,7 @@ export function createExperienceView(React) {
       if (state.executionWorkspaceLabel) facts.push({ label: '工作区', value: text(state.executionWorkspaceLabel) });
       return facts;
     };
+    const planSavings = !uncertainGap && plan ? estimatePlanSavings({ plan, candidates: outcome.candidates, mode: 'plan' }) : null;
     const primaryAction = () => {
       if (uncertainGap) return retryAction();
       if (plan.kind === 'hybrid') return {
@@ -340,6 +344,7 @@ export function createExperienceView(React) {
           facts: [
             ...selectedPluginFacts(),
             records(plan?.gaps).length ? { label: '待补能力', value: records(plan.gaps).map(g => text(g.capability)).filter(Boolean).join('、') } : null,
+            planSavings?.confirmFact ? { label: '预计节省', value: planSavings.confirmFact } : null,
           ].filter(Boolean),
           showWorkspacePicker: true,
           confirmLabel: '确认补齐并使用',
@@ -352,7 +357,10 @@ export function createExperienceView(React) {
         onClick: () => !workspacePending && confirmOrRun({
           title: plan?.kind === 'native' ? '在工作区试跑这个方案？' : '确认使用这个方案？',
           body: actionNote('使用这个方案'),
-          facts: selectedPluginFacts(),
+          facts: [
+            ...selectedPluginFacts(),
+            plan?.kind !== 'native' && planSavings?.confirmFact ? { label: '预计节省', value: planSavings.confirmFact } : null,
+          ].filter(Boolean),
           showWorkspacePicker: true,
           confirmLabel: plan?.kind === 'native' ? '确认执行' : '确认安装并使用',
           cancelLabel: '先不装',
@@ -368,6 +376,7 @@ export function createExperienceView(React) {
       const actions = showActions ? [primaryChoice, secondary].filter(Boolean) : [];
       return planSurface.solution({
         request, understanding, plan, candidates: outcome.candidates, discovery, searchedAt, actions,
+        savings: showActions ? planSavings : null,
         note: actions.length && actionNote(primaryChoice.label) ? actionNote(primaryChoice.label) : '',
       });
     };
@@ -459,6 +468,8 @@ export function createExperienceView(React) {
       ['数据与权限', unique([text(blueprint.data), text(blueprint.tools)]).join('；')], ['完成标准', blueprint.acceptance],
     ].filter(([, value]) => text(value));
 
+    const createSavings = creation ? estimatePlanSavings({ plan, candidates: state.candidates, creation, mode: 'create' }) : null;
+
     const startBlueprintAction = () => ({
       label: '开始创建', primary: true,
       onClick: () => !workspacePending && confirmOrRun({
@@ -468,6 +479,7 @@ export function createExperienceView(React) {
           text(blueprint?.name) ? { label: '插件草稿', value: text(blueprint.name) } : null,
           text(blueprint?.purpose) ? { label: '目标', value: short(blueprint.purpose, 80) } : null,
           state.executionWorkspaceLabel ? { label: '工作区', value: text(state.executionWorkspaceLabel) } : null,
+          createSavings?.confirmFact ? { label: '预计节省', value: createSavings.confirmFact } : null,
         ].filter(Boolean),
         showWorkspacePicker: true,
         confirmLabel: '确认开始创建',
@@ -500,7 +512,9 @@ export function createExperienceView(React) {
           h('summary', { className: 'pf8_lk' }, '方案里的插件和版本'),
           h('div', { className: 'pf8_disclosure_body' }, capabilities)) : null,
         clarification,
-        showActions ? h(React.Fragment, null, workspacePicker, workspaceStatus,
+        showActions ? h(React.Fragment, null,
+          createSavings ? planSurface.savingsStrip(createSavings) : null,
+          workspacePicker, workspaceStatus,
           h('div', { className: 'pf8_acts' },
             v8Action(startBlueprintAction()),
             v8Action({ label: '回看方案', onClick: () => controller.showFind(), disabled: locked })),

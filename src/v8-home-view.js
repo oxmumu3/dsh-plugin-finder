@@ -5,6 +5,7 @@
 
 import { createLego } from './v8-lego.js';
 import { HOME_EXAMPLES, HOME_WAYS, renderExamples, renderLegend, renderMine } from './v8-home.js';
+import { formatWanTokens } from './token-savings.js';
 
 const text = value => (typeof value === 'string' ? value : '');
 const items = value => (Array.isArray(value) ? value : []);
@@ -63,7 +64,7 @@ export function createHomeView(React) {
   return function HomeView({
     state, controller, busy, modelReady, locked, homeInput, shortcut, resumeView,
     opportunityCard, opportunitySettings, fallbackIdea, featured, onFeatured, featuredSettings,
-    featuredWarning, onCommunity, overview, homeCommunityName, more,
+    featuredWarning, onCommunity, overview, homeCommunityName, more, tokenSavings = null, onOpenLedger = null,
   }) {
     // 「你交代过的事」和「全部 N 件」用的是同一份记录：本机保存的方案。
     // 查找记录（searchHistory）只用于回溯检索，不再冒充方案数量。
@@ -95,6 +96,20 @@ export function createHomeView(React) {
       ? { title: text(state.plan.title) || text(state.intent?.goal), action: typeof controller.showFind === 'function' ? () => controller.showFind() : null }
       : null;
     const meta = used ? `你交代过 ${stories} 件事` : '我是住在 DSH 里的插件专家。说一句就行，剩下的我来。';
+    const savedTotal = Number.isSafeInteger(tokenSavings?.totalTokens) && tokenSavings.totalTokens > 0 ? tokenSavings.totalTokens : 0;
+    const eyebrowMeta = savedTotal > 0
+      ? h('div', { className: 'pf8_meta_row' },
+        h('p', { className: 'pf8_meta' }, meta),
+        h('button', {
+          type: 'button',
+          className: 'pf8_eyebrow_ledger',
+          onClick: () => onOpenLedger?.(),
+          'aria-label': `查看本机省 Token 账本与计算逻辑，累计已省约 ${formatWanTokens(savedTotal)} Token`,
+        },
+        h(Lego, { kinds: ['done'], label: '' }),
+        h('span', null, '累计已省约 ', h('b', null, formatWanTokens(savedTotal)), ' Token'),
+        h('span', { className: 'pf8_eyebrow_more', 'aria-hidden': 'true' }, '账本与算法 ›')))
+      : h('p', { className: 'pf8_meta' }, meta);
     const hero = pending
       ? h('h1', { className: 'pf8_line', id: 'pfv_home_title' },
         h(Lego, { kinds: ['build'], label: '这件事还没做完' }), `${short(text(pending.title).replace(/[。.!！?？]+$/, ''), 60)} 还没做完。`,
@@ -175,7 +190,7 @@ export function createHomeView(React) {
         h('section', { role: 'group', 'aria-labelledby': 'pfv_expert_title', 'aria-describedby': 'pf8_lead' },
           h('div', { className: 'pf8_hero' },
             h('div', null,
-              h('p', { className: 'pf8_meta' }, meta),
+              eyebrowMeta,
               hero,
               h('span', { className: 'pf8_sr', id: 'pfv_expert_title' }, '插件专家'),
               h('p', { className: 'pf8_sr', id: 'pf8_lead' }, '说一件你想做成的事，我先去找现成的；没有就陪你做。'),

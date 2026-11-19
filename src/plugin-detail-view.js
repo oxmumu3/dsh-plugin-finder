@@ -2,6 +2,7 @@ import { featuredCatalog } from './featured-catalog.js';
 import { isNewerVersion } from './featured.js';
 import { getCommunityEntry, getCommunityOverview } from './community-catalog.js';
 import { communityPresentation } from './community-presentation.js';
+import { estimateDetailInstallSavings } from './token-savings.js';
 
 const text = value => typeof value === 'string' ? value : '';
 const strings = value => Array.isArray(value) ? value.filter(item => typeof item === 'string' && item.trim()) : [];
@@ -115,6 +116,7 @@ export function renderPluginDetailView({ h, state, controller, onRequestConfirm 
         version ? { label: '版本', value: version } : null,
         author ? { label: '作者', value: author } : null,
         repository ? { label: '来源', value: repository } : null,
+        !enableOnly ? { label: '预计节省', value: estimateDetailInstallSavings(detail ?? fallback) } : null,
       ].filter(Boolean),
       confirmLabel: enableOnly ? '确认启用' : phase === 'failed' ? '重试安装' : '确认安装',
       cancelLabel: '先不装',

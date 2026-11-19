@@ -1,6 +1,6 @@
 {
   "name": "@oxmumu3/dsh-plugin-finder",
-  "version": "0.13.4",
+  "version": "0.13.5",
   "description": "Describe a need, find a usable plan, and run or create in the same DeepSeek Harness workspace",
   "icon": "./icon.svg",
   "author": "牛村木木山",
@@ -101,6 +101,7 @@
     "src/telemetry-config.js",
     "src/telemetry-contract.js",
     "src/telemetry.js",
+    "src/token-savings.js",
     "src/v8-home-view.js",
     "src/v8-home.js",
     "src/v8-history-view.js",
