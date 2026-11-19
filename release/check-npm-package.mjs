@@ -17,7 +17,7 @@ export const publicFiles = new Set([
     'creator-preview', 'featured-preview', 'single-flow-preview', 'experience-v2-preview',
     'workspace-flow-preview', 'community-browse-preview', 'proactive-discovery', 'rc3-compatibility', 'agent-entry'].map(name => `docs/${name}.md`),
   ...['client-style', 'client', 'catalog-archive', 'catalog-inventory', 'catalog-detail', 'catalog-install-service', 'plugin-detail-view', 'community-catalog-data', 'community-catalog',
-    'community-presentation', 'community-selection', 'community-view', 'contracts',
+    'community-presentation', 'community-refresh', 'community-selection', 'community-view', 'contracts',
     'creation-guide', 'creation', 'creator-feedback', 'creator-handoff', 'discovery',
     'eligibility', 'execution-conversation-view', 'execution-markdown', 'execution-preparation', 'expert-session', 'creator-assist', 'creator-strip',
     'experience-style', 'experience-view', 'featured-catalog', 'featured-view', 'featured',

@@ -27,6 +27,7 @@ import {createAgentModelAdapter} from './src/agent-model.js';
 import {safePlanValidationIssue,FinderError} from './src/contracts.js';
 import {createExpertSessions,registerExpertSession,verifyExpertSession} from './src/expert-session.js';
 import {createCreatorAssist,registerCreatorAssist,hostPresetReader} from './src/creator-assist.js';
+import {createCommunityRefresher} from './src/community-refresh.js';
 export const name='plugin-finder';
 export const inject=['connection','storageDomain','tools','systemPrompt','workspaceRegistry','workingDirectory','sandboxPolicy'];
 const feedback=z.object({id:z.string().uuid(),createdAt:z.string().datetime(),outcome:z.enum(['complete','partial','blocked']),pluginIds:z.array(z.string().max(200)).max(4),note:z.string().max(1500),stage:z.string().max(80)}).strict();
@@ -61,7 +62,10 @@ export async function apply(ctx){
   const table=store.table('feedback');
   const feedbackStore=createFeedbackStore({read:()=>table.get('entries'),write:row=>table.put('entries',state.parse(row))});
   const lifetime=new AbortController();
-  const discovery=createDiscovery({market:()=>ctx.get('pluginMarket',false),signal:lifetime.signal});
+  const archiveRoot=catalogArchiveRoot(ctx),archiveHome=archiveRoot?ctx.get('profileContext',false)?.home:undefined;
+  const communityRefresher=createCommunityRefresher({cacheHome:archiveHome,signal:lifetime.signal});
+  await communityRefresher.init().catch(()=>{});
+  const discovery=createDiscovery({market:()=>ctx.get('pluginMarket',false),signal:lifetime.signal,onFullCatalog:(raw,fetchedAt)=>{void communityRefresher.ingestLiveCatalog(raw,fetchedAt).catch(()=>{});}});
   const workflowTable=store.table('workflow');
   const workflowStore={read:()=>workflowTable.get('current'),write:row=>workflowTable.put('current',workflow.parse(row)),clear:()=>workflowTable.delete('current')};
   const tasks=historyStoreHandle.table('tasks');
@@ -83,10 +87,10 @@ export async function apply(ctx){
   const onPlanValidationIssue=issue=>{const safe=safePlanValidationIssue(issue);if(safe)try{ctx.logger?.info?.('finder.plan_validation_issue '+JSON.stringify(safe));}catch{}};
   core=createFinderService({discovery,model,feedbackStore,workflowStore,historyStore,searchHistoryStore,telemetry,onPlanValidationIssue,hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal})});
   const opportunityStore={read:async()=>JSON.parse((await opportunityHandle.global.get()).serialized),write:value=>opportunityHandle.global.set({serialized:JSON.stringify(value)})};
-  const archiveRoot=catalogArchiveRoot(ctx),installations=catalogHandle.table('installations');
+  const installations=catalogHandle.table('installations');
   const catalogService=createCatalogInstallService({
     store:{read:id=>installations.get(id),write:row=>installations.put(row.id,catalogInstallRow.parse(row)),list:()=>[...installations.entries()].map(([,row])=>row)},
-    resolveDetail:createCatalogDetailResolver({discovery,hostVersion:getDshRuntimeVersion(),nodeVersion:process.versions.node,platform:process.platform,archiveRoot,archiveHome:archiveRoot?ctx.get('profileContext',false)?.home:undefined,signal:lifetime.signal}),
+    resolveDetail:createCatalogDetailResolver({discovery,hostVersion:getDshRuntimeVersion(),nodeVersion:process.versions.node,platform:process.platform,archiveRoot,archiveHome,signal:lifetime.signal}),
     preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal,archiveRoot}),
     readInstalled:createPluginInventoryReader(ctx,{archiveRoot}),
     readEntryInstalled:createCatalogInventoryReader(ctx),entryRevision:catalogEntryRevision,
@@ -115,8 +119,11 @@ export async function apply(ctx){
     expertState:body=>experts.state(body),
     expertVerify:async body=>{const {expert}=experts.state(body);if(!expert)throw new FinderError('WORKFLOW_NOT_FOUND');return{expert,verification:await verifyExpertSession(ctx,experts,expert.sessionId,{signal:body.signal})};},
   };
-  const service={...creatorApi,...expertApi,...withOpportunityApi(withTelemetryApi(core,telemetry),{model,store:opportunityStore,historyStore,readWorkspaceContext:createOpportunityContextReader(ctx,{signal:lifetime.signal})}),
+  const baseService={...creatorApi,...expertApi,...withOpportunityApi(withTelemetryApi(core,telemetry),{model,store:opportunityStore,historyStore,readWorkspaceContext:createOpportunityContextReader(ctx,{signal:lifetime.signal})}),
     catalogDetail:body=>catalogService.detail(body),catalogInstall:body=>catalogService.install(body),catalogStatus:body=>catalogService.status(body)};
+  const service={...baseService,
+    async bootstrap(){const[state,communitySync]=await Promise.all([baseService.bootstrap(),communityRefresher.maybeRefresh().catch(()=>communityRefresher.status())]);return{...state,communitySync};},
+    communitySnapshot:()=>communityRefresher.snapshot()};
   const requests=agentHandle.table('requests');
   const agentModel=createAgentModelAdapter(model,{readRuntime:createRuntimeContextReader(ctx,{signal:lifetime.signal})});
   const agentService=createAgentFinderService({
@@ -142,6 +149,7 @@ export async function apply(ctx){
   const stopRoutes=registerFinderRoutes(ctx,service);
   return async()=>{
     lifetime.abort();
+    communityRefresher.close();
     try{stopRoutes();}finally{
       try{await stopAgentTools();}finally{try{stopExpert();stopCreator();}finally{try{await catalogService.close();}finally{service.close();discovery.close();}}}
     }

@@ -6,6 +6,7 @@ import os from 'node:os';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {featuredCatalog} from '../src/featured-catalog.js';
+import {getCommunityEntry} from '../src/community-catalog.js';
 import {canRecheckPluginSource} from '../src/plugin-detail-view.js';
 const {createCatalogDetailResolver}=await import('../src/catalog-detail.js').catch(()=>({}));
 const communityId='https://github.com/bioaievolu/dsh-md-studio';
@@ -13,25 +14,25 @@ const sum=b=>createHash('sha256').update(b).digest('hex');
 async function fixture(t,{manifest={},wrongDigest=false,renamed=false,wrongAsset=false}={}){
  const root=await mkdtemp(path.join(os.tmpdir(),'finder-catalog-detail-'));t.after(()=>rm(root,{recursive:true,force:true}));
  await mkdir(path.join(root,'package'));
- await writeFile(path.join(root,'package/package.json'),JSON.stringify({name:'dsh-agent-twin',version:'0.4.0-preview.3',dsh:{bundle:{patch:'./cordis.patch.yml'}},...manifest}));
+ await writeFile(path.join(root,'package/package.json'),JSON.stringify({name:'@oxmumu3/dsh-agent-twin',version:'0.4.0-preview.6',dsh:{bundle:{patch:'./cordis.patch.yml'}},...manifest}));
  await writeFile(path.join(root,'package/cordis.patch.yml'),'[]\n');
  execFileSync('/usr/bin/tar',['--format=ustar','--no-xattrs','-czf',path.join(root,'source.tgz'),'-C',root,'package'],{env:{...process.env,COPYFILE_DISABLE:'1'}});
  const bytes=await readFile(path.join(root,'source.tgz')),calls=[];
  const fetchImpl=async url=>{calls.push(String(url));
   if(url==='https://api.github.com/repos/oxmumu3/ai-twin-starter')return Response.json({full_name:renamed?'someone/redirect':'oxmumu3/ai-twin-starter'});
-  if(url==='https://api.github.com/repos/oxmumu3/ai-twin-starter/releases/tags/v0.4.0-preview.3')return Response.json({tag_name:'v0.4.0-preview.3',draft:false,assets:[{name:'dsh-agent-twin-0.4.0-preview.3.tgz',browser_download_url:wrongAsset?'https://other.invalid/a.tgz':'https://github.com/oxmumu3/ai-twin-starter/releases/download/v0.4.0-preview.3/dsh-agent-twin-0.4.0-preview.3.tgz',digest:'sha256:'+(wrongDigest?'0'.repeat(64):sum(bytes))}]});
-  if(url==='https://github.com/oxmumu3/ai-twin-starter/releases/download/v0.4.0-preview.3/dsh-agent-twin-0.4.0-preview.3.tgz')return new Response(bytes);
+  if(url==='https://api.github.com/repos/oxmumu3/ai-twin-starter/releases/tags/v0.4.0-preview.6')return Response.json({tag_name:'v0.4.0-preview.6',draft:false,assets:[{name:'oxmumu3-dsh-agent-twin-0.4.0-preview.6.tgz',browser_download_url:wrongAsset?'https://other.invalid/a.tgz':'https://github.com/oxmumu3/ai-twin-starter/releases/download/v0.4.0-preview.6/oxmumu3-dsh-agent-twin-0.4.0-preview.6.tgz',digest:'sha256:'+(wrongDigest?'0'.repeat(64):sum(bytes))}]});
+  if(url==='https://github.com/oxmumu3/ai-twin-starter/releases/download/v0.4.0-preview.6/oxmumu3-dsh-agent-twin-0.4.0-preview.6.tgz')return new Response(bytes);
   throw Error('unexpected fetch '+url);
  };
  return {root,bytes,calls,resolve:createCatalogDetailResolver({discovery:{searchSelected(){throw Error('unexpected community');}},hostVersion:'0.2.1-rc.3',archiveHome:root,archiveRoot:path.join(root,'cache'),featured:featuredCatalog.map(entry=>entry.id==='agent-twin'?{...entry,install:{...entry.install,sha256:sum(bytes)}}:entry),fetchImpl,now:()=>Date.now()+1000})};
 }
 test('community detail preserves selected identity and uses only author lookup, never a model',async()=>{
- const selected=[];
- const candidate={id:'dsh-md-studio',name:'dsh-md-studio',summary:'author description',requirements:{notes:['local files']},limitations:[],install:{type:'npm',spec:'dsh-md-studio@1.2.0',version:'1.2.0'},evidence:{metadata:'manifest-checked'}};
+ const selected=[],expectedVersion=getCommunityEntry(communityId).version;
+ const candidate={id:'dsh-md-studio',name:'dsh-md-studio',summary:'author description',requirements:{notes:['local files']},limitations:[],install:{type:'npm',spec:`dsh-md-studio@${expectedVersion}`,version:expectedVersion},evidence:{metadata:'manifest-checked'}};
  const resolve=createCatalogDetailResolver({discovery:{async searchSelected(input){selected.push(input);return {candidates:[candidate],selected:{status:'checked'}};}},hostVersion:'0.2.1-rc.3'});
  const detail=await resolve({collection:'community',entryId:communityId});
  assert.equal(selected.length,1);assert.equal(selected[0].communityEntryId,communityId);
- assert.equal(detail.entry.id,communityId);assert.equal(detail.entry.name,'dsh-md-studio');assert.equal(detail.candidate.install.spec,'dsh-md-studio@1.2.0');
+ assert.equal(detail.entry.id,communityId);assert.equal(detail.entry.name,'dsh-md-studio');assert.equal(detail.candidate.install.spec,`dsh-md-studio@${expectedVersion}`);
  assert.match(detail.entry.description,/author description/);
 });
 test('unresolved community metadata keeps selected description and cannot invent an install source',async()=>{
@@ -61,10 +62,10 @@ test('unknown ids and caller-provided install sources are refused',async()=>{
 });
 test('featured download verifies canonical owner, exact release, checksum and package bytes before returning a local immutable candidate',async t=>{
  const f=await fixture(t);const result=await f.resolve({collection:'featured',entryId:'agent-twin'});
- assert.equal(result.candidate.install.type,'archive');assert.equal(result.candidate.install.packageName,'dsh-agent-twin');
+ assert.equal(result.candidate.install.type,'archive');assert.equal(result.candidate.install.packageName,'@oxmumu3/dsh-agent-twin');
  assert.equal(result.candidate.install.sha256,sum(f.bytes));assert.equal(result.candidate.evidence.metadata,'manifest-checked');
  assert.match(result.candidate.install.spec,new RegExp(sum(f.bytes)+'\\.tgz$'));
- assert.equal(result.entry.name,'dsh-agent-twin');assert.equal(f.calls.length,3);
+ assert.equal(result.entry.name,'@oxmumu3/dsh-agent-twin');assert.equal(f.calls.length,3);
  assert.deepEqual(await readFile(path.join(f.root,'cache',sum(f.bytes)+'.tgz')),f.bytes);
 });
 test('renamed repository, substituted asset, bad digest, package/version and incompatibility never become installable',async t=>{
@@ -82,9 +83,9 @@ test('a cache ancestor symlink cannot write verified bytes outside its owned hom
 });
 
 for (const fixtureCase of [
- {id:'dsh-dot',repository:'dsh-project-companion',packageName:'dsh-project-companion'},
- {id:'dot-harness',repository:'dot-dsh-connector',packageName:'dot-dsh-management'},
- {id:'incidental-learn',repository:'dsh-incidental-learn',packageName:'@oxmumu3/dsh-incidental-learn',archivePrefix:'oxmumu3-dsh-incidental-learn',hostVersion:'0.2.2-rc.3'},
+ {id:'dsh-dot',repository:'dsh-project-companion',packageName:'@oxmumu3/dsh-project-companion',archivePrefix:'oxmumu3-dsh-project-companion'},
+ {id:'dot-harness',repository:'dot-dsh-connector',packageName:'@oxmumu3/dot-dsh-management',archivePrefix:'oxmumu3-dot-dsh-management'},
+ {id:'incidental-learn',repository:'dsh-incidental-learn',packageName:'@oxmumu3/dsh-incidental-learn',archivePrefix:'oxmumu3-dsh-incidental-learn',hostVersion:'0.2.2-rc.5'},
 ]) {
  test('published '+fixtureCase.id+' resolves its exact public package instead of an obsolete preview gate',async t=>{
   const root=await mkdtemp(path.join(os.tmpdir(),'finder-featured-detail-'));t.after(()=>rm(root,{recursive:true,force:true}));
@@ -123,5 +124,5 @@ test('a pinned host miss is decided before any download and offers no source ret
   const detail = await resolve({ collection: 'featured', entryId: 'agent-twin' });
   assert.equal(fetched, 0);
   assert.equal(detail.candidate, null);
-  assert.equal(detail.unavailableReason, '目录里记的 0.4.0-preview.3 版不支持你现在的 DSH。等作者更新后再装。');
+  assert.equal(detail.unavailableReason, '目录里记的 0.4.0-preview.6 版不支持你现在的 DSH。等作者更新后再装。');
 });

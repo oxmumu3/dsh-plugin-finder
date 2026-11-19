@@ -7,11 +7,11 @@ const pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'ut
 const rc1='0.2.2-rc.1';
 test('the new official desktop exact SDK is admitted while unknown releases remain rejected',()=>{
  assert.equal(compatibility.validateCompatibility(pkg,rc1),rc1);
- for(const sdk of [rc1,'0.2.2-rc.2','0.2.2-rc.3'])assert.equal(compatibility.validateCompatibility(pkg,sdk),sdk);
- for(const version of ['0.2.2-alpha.3','0.2.2-rc.4','0.2.2','0.2.1-rc.6'])assert.throws(()=>compatibility.validateCompatibility(pkg,version),/absent/);
+ for(const sdk of [rc1,'0.2.2-rc.2','0.2.2-rc.3','0.2.2-rc.4','0.2.2-rc.5'])assert.equal(compatibility.validateCompatibility(pkg,sdk),sdk);
+ for(const version of ['0.2.2-alpha.3','0.2.2-rc.6','0.2.2','0.2.1-rc.6'])assert.throws(()=>compatibility.validateCompatibility(pkg,version),/absent/);
 });
 test('each recent RC carrier plan pins the official Cordis and minimum Node without relaxing budgets',async()=>{
- for(const sdk of [rc1,'0.2.2-rc.2','0.2.2-rc.3']){
+ for(const sdk of [rc1,'0.2.2-rc.2','0.2.2-rc.3','0.2.2-rc.4','0.2.2-rc.5']){
   const plan=await planSdk(['--sdk',sdk,'--plan']);
   assert.equal(plan.dependencies['@deepseek-ai/cordis'],'4.1.0');assert.equal(plan.dependencies['@deepseek-ai/schemastery'],'3.19.0');
   assert.equal(plan.nodeMinimumVersion,'24.9.0');assert.equal(plan.otherNodeHeapMb,128);
@@ -22,7 +22,7 @@ test('official current desktop and npm latest are independently checked without 
  assert.equal(typeof compatibility.validateOfficialTargets,'function');
  assert.deepEqual(compatibility.validateOfficialTargets(pkg,{latest:'0.2.1-rc.5',desktop:rc1}),{latest:'0.2.1-rc.5',desktop:rc1});
  assert.deepEqual(compatibility.validateOfficialTargets(pkg,{latest:'0.2.1-rc.5',desktop:'0.2.2-rc.2'}),{latest:'0.2.1-rc.5',desktop:'0.2.2-rc.2'});
- for(const desktop of ['0.2.2-alpha.3','0.2.2-rc.4',undefined,''])assert.throws(()=>compatibility.validateOfficialTargets(pkg,{latest:'0.2.1-rc.5',desktop}));
+ for(const desktop of ['0.2.2-alpha.3','0.2.2-rc.6',undefined,''])assert.throws(()=>compatibility.validateOfficialTargets(pkg,{latest:'0.2.1-rc.5',desktop}));
  assert.throws(()=>compatibility.validateOfficialTargets(pkg,{latest:'0.2.1-rc.6',desktop:rc1}));
 });
 test('the official desktop feed must supply one exact version',()=>{
@@ -34,12 +34,12 @@ import {supportsCreatorHost} from '../src/creator-handoff.js';
 import {buildCreatorPrompt} from '../src/agent-creator.js';
 import {CREATION_SYSTEM} from '../src/creation.js';
 test('all exact validated Hosts retain creation while old and experimental hosts stay blocked',()=>{
- assert.equal(supportsCreatorHost(rc1),true);assert.equal(supportsCreatorHost('0.2.1-rc.5'),true);assert.equal(supportsCreatorHost('0.2.2-rc.2'),true);assert.equal(supportsCreatorHost('0.2.2-rc.3'),true);
- for(const version of ['0.2.1-rc.4','0.2.2-alpha.3','0.2.2-rc.4',''])assert.equal(supportsCreatorHost(version),false);
+ assert.equal(supportsCreatorHost(rc1),true);assert.equal(supportsCreatorHost('0.2.1-rc.5'),true);assert.equal(supportsCreatorHost('0.2.2-rc.2'),true);assert.equal(supportsCreatorHost('0.2.2-rc.3'),true);assert.equal(supportsCreatorHost('0.2.2-rc.4'),true);assert.equal(supportsCreatorHost('0.2.2-rc.5'),true);
+ for(const version of ['0.2.1-rc.4','0.2.2-alpha.3','0.2.2-rc.6',''])assert.equal(supportsCreatorHost(version),false);
 });
 test('Creator guidance includes the exact new SDK instead of forcing rc5 on its runtime',()=>{
  const prompt=buildCreatorPrompt({requestId:'fixture',creation:{blueprint:{purpose:'synthetic'}}},{sessionId:'parent',workspaceId:'fixture',directory:'/safe/fixture'});
- for(const text of [prompt,CREATION_SYSTEM]){for(const sdk of ['0.2.1-rc.5',rc1,'0.2.2-rc.2','0.2.2-rc.3'])assert.ok(text.includes(sdk));assert.match(text,/当前宿主/);}
+ for(const text of [prompt,CREATION_SYSTEM]){for(const sdk of ['0.2.1-rc.5',rc1,'0.2.2-rc.2','0.2.2-rc.3','0.2.2-rc.4','0.2.2-rc.5'])assert.ok(text.includes(sdk));assert.match(text,/当前宿主/);}
 });
 
 import {CLIENT_VERSION} from '../src/telemetry-config.js';

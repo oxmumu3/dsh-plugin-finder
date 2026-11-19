@@ -86,7 +86,7 @@ function keyRequirement(documentation) {
   return free ? optional || required ? 'optional' : 'not-required' : optional ? 'optional' : required ? 'required' : 'unknown';
 }
 
-export function createDiscovery({ market, fetchImpl = fetch, now = () => new Date(), signal: externalLifetimeSignal,searchTimeoutMs=45000,authorTimeoutMs=8000,sourceTimeoutMs=15000 } = {}) {
+export function createDiscovery({ market, fetchImpl = fetch, now = () => new Date(), signal: externalLifetimeSignal,searchTimeoutMs=45000,authorTimeoutMs=8000,sourceTimeoutMs=25000,onFullCatalog } = {}) {
   const ownLifetime = new AbortController();
   const lifetimeSignal = AbortSignal.any([ownLifetime.signal, externalLifetimeSignal].filter(Boolean));
   const cache = new Map();
@@ -117,7 +117,7 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
     abortIfNeeded(signal, lifetimeSignal);
     const target = new URL(url);
     if (target.protocol !== 'https:' || target.username || target.password || target.port || !ALLOWED_HOSTS.has(target.hostname)) throw new Error('Source URL outside the read-only HTTPS allowlist');
-    const signals = [signal, lifetimeSignal, AbortSignal.timeout(15000)].filter(Boolean);
+    const signals = [signal, lifetimeSignal, AbortSignal.timeout(Math.max(15000, sourceTimeoutMs))].filter(Boolean);
     const response = await waitForHost(fetchImpl(target.href, { method, redirect: 'error', signal: AbortSignal.any(signals), headers: { 'User-Agent': 'dsh-plugin-finder/0.2 live-discovery', Accept: 'application/json, text/plain;q=0.8' } }), signal);
     abortIfNeeded(signal, lifetimeSignal);
     if (method === 'HEAD' && response.status === 404) return null;
@@ -343,8 +343,9 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
       await Promise.all([
         (async()=>{
           try{
-            const result=await sourceJson(FULL_URL,{maxBytes:16*1024*1024});
+            const result=await sourceJson(FULL_URL,{maxBytes:64*1024*1024});
             const catalog=fullCatalog(result.value);
+            if(result.status==='live'&&typeof onFullCatalog==='function')try{onFullCatalog(result.value,result.fetchedAt);}catch{}
             const source={id:'awesome-full',title:'Awesome DSH 完整社区目录',url:FULL_URL,status:result.status,fetchedAt:result.fetchedAt,total:catalog.total,npmTotal:catalog.npmTotal,githubOnlyTotal:catalog.githubOnlyTotal,rejectedRows:catalog.rejectedRows,catalogUpdatedAt:catalog.updated,...(result.error?{error:result.error}:{})};
             sources.push(source);addRows(catalog.entries,source);
             if(catalog.rejectedRows)warnings.push(`完整社区目录有 ${catalog.rejectedRows} 条无法安全解析的仓库地址，未纳入检索。`);
@@ -353,7 +354,7 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
         })(),
         (async () => {
           try {
-            const result = await sourceJson(INDEX_URL, { maxBytes: 8 * 1024 * 1024 });
+            const result = await sourceJson(INDEX_URL, { maxBytes: 24 * 1024 * 1024 });
             if (result.value.format !== 1 || !Array.isArray(result.value.plugins)) throw new Error('Unsupported format-1 market index');
             const source = { id: 'awesome', title: localized(result.value.title) || 'Awesome DSH Plugin', url: INDEX_URL, status: result.status, fetchedAt: result.fetchedAt, total: result.value.plugins.length, ...(result.error ? { error: result.error } : {}) };
             sources.push(source); addRows(result.value.plugins, source);

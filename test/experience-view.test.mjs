@@ -600,11 +600,13 @@ test('featured hides pinned entries that declare no support for the current host
   const current = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '', bootstrap: { hostVersion: '0.2.9-rc.1' } }));
   assert.equal(nodes(current.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 0);
   assert.equal(nodes(current.view).filter(node => node.props.className === 'pf8_feat').length, 0);
-  const rc3 = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '', bootstrap: { hostVersion: '0.2.2-rc.3' } }));
+  const rc5 = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '', bootstrap: { hostVersion: '0.2.2-rc.5' } }));
   assert.deepEqual(
-    nodes(rc3.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).map(node => node.props['aria-label']),
+    nodes(rc5.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).map(node => node.props['aria-label']),
     ['查看精选：在日常协作里顺手攒下个人技能库'],
   );
+  const rc3 = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '', bootstrap: { hostVersion: '0.2.2-rc.3' } }));
+  assert.equal(nodes(rc3.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 3);
   const declared = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '', bootstrap: { hostVersion: '0.2.1-rc.3' } }));
   assert.equal(nodes(declared.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 4);
   // No host version means unknown, not incompatible: keep the entries for the detail gate.

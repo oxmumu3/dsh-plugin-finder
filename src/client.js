@@ -6,7 +6,7 @@ import { executeInWorkspace, inferWorkspace } from './workspace-execution.js';
 import { watchExecutionConversation } from './execution-conversation-view.js';
 import { createExecutionFileOpener, createExecutionPreviewSurface, executionPreviewTabInfoFactory, mirrorExecutionPreviewSlots, renderExecutionAssistant } from './execution-markdown.js';
 import { featuredCatalog } from './featured-catalog.js';
-import { getCommunityEntry } from './community-catalog.js';
+import { getActiveCommunityCatalog, getCommunityEntry, setActiveCommunityCatalog } from './community-catalog.js';
 import { communityPluginRequest, rememberReturnPoint, restoreReturnPoint } from './community-view.js';
 import { normalizeFeaturedPreferences, featuredTopics } from './featured.js';
 import { renderFeaturedView } from './featured-view.js';
@@ -165,6 +165,7 @@ export function createFinderController(ctx, options = {}) {
   let catalogRead = null;
   let catalogReturnPoint = null;
   let communityReturnPoint = null;
+  let communityRefreshTimer = null;
   const catalogControllers = new Set();
   const catalogInstalls = new Map();
   let state = Object.freeze({
@@ -713,6 +714,37 @@ export function createFinderController(ctx, options = {}) {
       ? bindExpert(expert).catch(() => { if (!closed && state.taskId === taskId) publish({ expertPhase: '', expertError: '专家会话暂时没有打开；它仍在 DSH 会话列表里，可以从那里继续。' }); })
       : null);
   };
+  const needsCommunitySync = summary => {
+    if (!summary || typeof summary !== 'object') return false;
+    const active = getActiveCommunityCatalog();
+    const remoteAt = Date.parse(summary.fetchedAt);
+    const localAt = Date.parse(active.fetchedAt);
+    if (!Number.isFinite(remoteAt)) return false;
+    if (!Number.isFinite(localAt) || remoteAt > localAt) return true;
+    return Number.isSafeInteger(summary.total) && summary.total !== active.total && remoteAt >= localAt;
+  };
+  const fetchCommunitySnapshot = async () => {
+    if (closed) return false;
+    try {
+      const response = await fetchRequest(endpoint + 'community-snapshot', { method: 'GET', credentials: 'same-origin', redirect: 'error', cache: 'no-store' });
+      if (closed || !response?.ok) return false;
+      const value = await response.json();
+      if (closed || !value?.catalog || !Array.isArray(value.catalog.entries) || !value.catalog.entries.length) return false;
+      if (!needsCommunitySync(value.catalog)) return false;
+      setActiveCommunityCatalog(value.catalog);
+      publish({ communitySyncedAt: value.catalog.fetchedAt });
+      return true;
+    } catch { return false; }
+  };
+  const syncCommunityCatalog = summary => {
+    if (closed || !summary || typeof summary !== 'object') return;
+    if (needsCommunitySync(summary)) void fetchCommunitySnapshot();
+    else if (summary.refreshing === true) {
+      if (communityRefreshTimer) clearTimeout(communityRefreshTimer);
+      communityRefreshTimer = setTimeout(() => { communityRefreshTimer = null; void fetchCommunitySnapshot(); }, 2500);
+      communityRefreshTimer?.unref?.();
+    }
+  };
   return {
     ...opportunityClient.methods,
     getSnapshot: () => state,
@@ -720,9 +752,11 @@ export function createFinderController(ctx, options = {}) {
     bootstrap() {
       const firstRead = !state.bootstrapLoaded;
       const revision = draftRevision;
+      let communitySync = null;
       return run('bootstrap', 'bootstrap', undefined, value => {
         if (typeof value?.model?.configured !== 'boolean') throw new Error('invalid bootstrap');
-        const { workflow, workflowWarning: warningValue, ...bootstrap } = value;
+        const { workflow, workflowWarning: warningValue, communitySync: syncValue, ...bootstrap } = value;
+        communitySync = syncValue ?? null;
         const warning = workflowWarning(warningValue);
         if (value.opportunity) opportunityClient.apply(value.opportunity);
         publish({ bootstrap, bootstrapLoaded: true, modelLabel: text(value.model.label), storageWarning: warning, ...historyPatch(value), ...(warning ? { notice: warning } : {}) });
@@ -731,7 +765,7 @@ export function createFinderController(ctx, options = {}) {
             applyWorkflow(workflow, { view: state.view, restoredFrom: '本机历史', notice: warning || '已恢复本机任务与方案，可继续安装或接续会话。' });
           } else if (!warning) publish({ notice: '本机记录格式无法恢复，可继续填写新需求。' });
         }
-      }).then(ok => { if (ok) opportunityClient.maybeRefresh(); return ok; });
+      }).then(ok => { if (ok) { opportunityClient.maybeRefresh(); syncCommunityCatalog(communitySync); } return ok; });
     },
     setRequest(request) { if (!closed && (!operation || operation.kind === 'bootstrap')) { draftRevision += 1; publish({ request: text(request).slice(0, 6000), error: '', notice: '' }); } },
     setFollowup(value) {
@@ -1369,6 +1403,7 @@ export function createFinderController(ctx, options = {}) {
     close() {
       if (closed) return;
       opportunityClient.close();
+      if (communityRefreshTimer) { clearTimeout(communityRefreshTimer); communityRefreshTimer = null; }
       catalogGeneration += 1; for (const controller of catalogControllers) controller.abort('disposed'); catalogControllers.clear();
       closed = true; sequence += 1; searchGeneration += 1;
       executionMount?.reject(abortError()); executionMount = null;

@@ -1,3 +1,10 @@
+# 0.13.4（2026-11-19）
+
+- 社区目录离线基线更新至 `11,979` 条（上游 `2026-11-18`），覆盖六大用途分类与每类 3 项人工复核代表条目，并在宿主后台新增每 24 小时静默热更新与本机原子缓存兜底（断网或失败时自动沿用随包/本地快照）。
+- 修复实时全量检索中 `plugins.json`（已增长至 `16.1 MiB`）触发 `16 MiB` 体积上限截断的问题，将上限放宽至 `64 MiB`（补充索引 `24 MiB`），恢复纯 GitHub 社区插件的完整实时召回，并同步复用实时拉取结果刷新商店缓存。
+- 精选目录同步更新至已核验公开发行包：顺带私教 `@oxmumu3/dsh-incidental-learn@0.1.8`（支持 `0.2.2-rc.2` 至 `0.2.2-rc.5`）、微信家庭助手 `@oxmumu3/dsh-family-assistant@0.2.0`、DSH Dot `@oxmumu3/dsh-project-companion@0.39.0`、Agent Twin `@oxmumu3/dsh-agent-twin@0.4.0-preview.6`、Dot 连接 Harness `@oxmumu3/dot-dsh-management@0.6.0-preview.25`。
+- 新增官方 DeepSeek Harness `0.2.2-rc.4` 与 `0.2.2-rc.5` 兼容支持与 SDK 矩阵验证，对齐 `docs/install.md`、`README.md` 与 `0.13.4` 正式发行版本标识。
+
 # 0.13.3（2026-11-16）
 
 - 精选目录收录「顺带私教」（`@oxmumu3/dsh-incidental-learn@0.1.6`），支持官方 Harness `0.2.2-rc.2` / `0.2.2-rc.3`，并新增「顺带学习」推荐兴趣方向与对应详情图标记号。

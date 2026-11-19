@@ -1,50 +1,41 @@
 {
   "schemaVersion": 1,
-  "sourceSha256": "d53b17dcb090a8bf4ee807e7bd2c8926116d221fac7dad516dccef59d3f2edd0",
-  "productionSha256": "ff3e9849de35b127c7b5892ac7d9367f1d724d8e9ed0b2c5451b700265c269f3",
-  "bytes": 3793138,
-  "sourceTotal": 6565,
-  "total": 6563,
-  "excludedTotal": 2,
-  "excluded": [
-    {
-      "sourceId": "https://github.com/piggy00544/dsh-workproof/tree/main/packages/dsh-delivery-receipts",
-      "reason": "own-legacy-namespace-pending-migration"
-    },
-    {
-      "sourceId": "https://github.com/piggy00544/dsh-workproof/tree/main/packages/dsh-evidence-ledger",
-      "reason": "own-legacy-namespace-pending-migration"
-    }
-  ],
+  "sourceSha256": "caab2ef4d2b4e47f20e04e06f84999acba957a3a6fb85384260d3e0d882f4ec7",
+  "productionSha256": "37d25ee66d11fc27d4e509bd8ac028ea190d962b02be865a6a387fc3f31d5a90",
+  "bytes": 7260992,
+  "sourceTotal": 11979,
+  "total": 11979,
+  "excludedTotal": 0,
+  "excluded": [],
   "categories": [
     {
       "id": "work",
-      "count": 1476,
+      "count": 2812,
       "previewCount": 3
     },
     {
       "id": "content",
-      "count": 324,
+      "count": 608,
       "previewCount": 3
     },
     {
       "id": "knowledge",
-      "count": 617,
+      "count": 1171,
       "previewCount": 3
     },
     {
       "id": "experience",
-      "count": 1693,
+      "count": 3218,
       "previewCount": 3
     },
     {
       "id": "develop",
-      "count": 994,
+      "count": 1531,
       "previewCount": 3
     },
     {
       "id": "manage",
-      "count": 1459,
+      "count": 2639,
       "previewCount": 3
     }
   ],

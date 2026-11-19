@@ -217,3 +217,25 @@ test('local retrieval plus explicitly reused configured DSH model route supports
   assert.equal(result.candidates[0]?.requirements.extraApiKey,expected,readme);
  }
 });
+
+test('full live catalog payloads larger than 16 MiB succeed and notify cache listener without truncation',async()=>{
+ const padding='filler '.repeat(600);
+ const filler=Array.from({length:4200},(_,i)=>entry(`dsh-unrelated-${i}`,{description:padding}));
+ const target=entry('dsh-library',{description:'Markdown research library search'});
+ const payloadText=JSON.stringify({name:'awesome-dsh-plugin',updated:'2026-11-18',count:filler.length+1,plugins:[...filler,target]});
+ assert.ok(Buffer.byteLength(payloadText)>16*1024*1024,'synthetic plugins.json must exceed legacy 16 MiB cap');
+ const seen=[];
+ const base=fixture([target]);
+ const result=await createDiscovery({
+  fetchImpl:(url,options)=>String(url)===FULL
+   ?Promise.resolve(new Response(payloadText,{status:200,headers:{'Content-Type':'application/json','Content-Length':String(Buffer.byteLength(payloadText))}}))
+   :base.fetchImpl(url,options),
+  onFullCatalog:(raw,fetchedAt)=>seen.push({total:raw.plugins.length,fetchedAt}),
+ }).search({intent});
+ const source=result.sources.find(x=>x.id==='awesome-full');
+ assert.equal(source.status,'live');
+ assert.equal(source.total,filler.length+1);
+ assert.equal(result.candidates[0]?.name,'dsh-library');
+ assert.equal(seen.length,1);
+ assert.equal(seen[0].total,filler.length+1);
+});

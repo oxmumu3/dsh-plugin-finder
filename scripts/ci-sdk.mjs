@@ -8,7 +8,7 @@ import { validateCompatibility } from './compatibility.mjs';
 import { runInSandbox, verifySandbox } from './ci-sandbox.mjs';
 const exec = promisify(execFile);
 const source = fileURLToPath(new URL('../', import.meta.url));
-const cordis41Targets = new Set(['0.2.2-rc.1', '0.2.2-rc.2', '0.2.2-rc.3']);
+const cordis41Targets = new Set(['0.2.2-rc.1', '0.2.2-rc.2', '0.2.2-rc.3', '0.2.2-rc.4', '0.2.2-rc.5']);
 export async function planSdk(args) {
   if (args.length < 2 || args.length > 3 || args[0] !== '--sdk' || args.length === 3 && args[2] !== '--plan') throw Error('Usage: node scripts/ci-sdk.mjs --sdk EXACT_VERSION [--plan]');
   const metadata = JSON.parse(await readFile(join(source, 'package.json')));

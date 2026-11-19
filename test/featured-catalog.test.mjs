@@ -50,12 +50,12 @@ test('each curated card explains its use, audience, requirements and evidence bo
 });
 
 test('project bridge and connection management stay inside their respective product cards', () => {
-  assert.ok(card('agent-twin').components.includes('dsh-agent-twin'));
-  assert.ok(card('family-assistant').components.includes('dsh-family-assistant'));
-  assert.ok(card('dsh-dot').components.includes('dsh-project-companion'));
+  assert.ok(card('agent-twin').components.includes('@oxmumu3/dsh-agent-twin'));
+  assert.ok(card('family-assistant').components.includes('@oxmumu3/dsh-family-assistant'));
+  assert.ok(card('dsh-dot').components.includes('@oxmumu3/dsh-project-companion'));
   assert.ok(card('dsh-dot').components.some(component => component.startsWith('dsh-wechat')));
   assert.ok(card('dot-harness').components.includes('dot-dsh-connector'));
-  assert.ok(card('dot-harness').components.includes('dot-dsh-management'));
+  assert.ok(card('dot-harness').components.includes('@oxmumu3/dot-dsh-management'));
   assert.ok(!featuredCatalog.some(entry => ['dsh-wechat', 'dot-dsh-management', 'deepseek-harness', 'openai-dot'].includes(entry.id)));
 });
 
@@ -89,7 +89,8 @@ test('only a checked exact public release is installable and all preview or priv
     const archivePrefix = entry.components[0].replace(/^@/, '').replace('/', '-');
     assert.equal(path, `/oxmumu3/${repo}/releases/download/v${entry.version}/${archivePrefix}-${entry.version}.tgz`);
     assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/tag/v${entry.version}`));
-    if (['agent-twin', 'incidental-learn'].includes(entry.id)) assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/download/v${entry.version}/SHA256SUMS`));
+    if (['agent-twin', 'dot-harness', 'incidental-learn'].includes(entry.id)) assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/download/v${entry.version}/SHA256SUMS`));
+    if (entry.id === 'family-assistant') assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/download/v${entry.version}/SHA256SUMS.txt`));
     assert.match(entry.limitations.join(' '), entry.version.includes('-preview.') ? /预发布/ : /公开发行/);
     assert.match(entry.limitations.join(' '), /不等于.*验收/);
   }
@@ -107,7 +108,7 @@ test('published DSH Dot offers a verified install while preserving the separate 
 test('published Dot connection card installs the management plugin and keeps personal connection setup explicit', () => {
   const entry = card('dot-harness');
   assert.equal(entry.status, 'available');
-  assert.equal(entry.components[0], 'dot-dsh-management');
+  assert.equal(entry.components[0], '@oxmumu3/dot-dsh-management');
   assert.ok(entry.install, 'a publicly released manager must not remain a private-only catalog item');
   assert.match(entry.requirements.join(' '), /本人|单人/);
   assert.match(entry.requirements.join(' '), /MCP/);

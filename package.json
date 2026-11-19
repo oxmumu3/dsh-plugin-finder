@@ -1,6 +1,6 @@
 {
   "name": "@oxmumu3/dsh-plugin-finder",
-  "version": "0.13.3",
+  "version": "0.13.4",
   "description": "Describe a need, find a usable plan, and run or create in the same DeepSeek Harness workspace",
   "icon": "./icon.svg",
   "author": "牛村木木山",
@@ -8,7 +8,7 @@
   "type": "module",
   "engines": {
     "node": "^22.19.0 || >=24.0.0",
-    "dsh": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3"
+    "dsh": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3 || 0.2.2-rc.4 || 0.2.2-rc.5"
   },
   "exports": {
     ".": "./index.js",
@@ -57,6 +57,7 @@
     "src/community-catalog-data.js",
     "src/community-catalog.js",
     "src/community-presentation.js",
+    "src/community-refresh.js",
     "src/community-selection.js",
     "src/community-view.js",
     "src/contracts.js",
@@ -153,10 +154,10 @@
     "zod": "4.6.7"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-app-boot": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3",
-    "@deepseek-ai/dsh-sandbox": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3",
-    "@deepseek-ai/dsh-storage-domain": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3",
-    "@deepseek-ai/dsh-tools": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3"
+    "@deepseek-ai/dsh-app-boot": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3 || 0.2.2-rc.4 || 0.2.2-rc.5",
+    "@deepseek-ai/dsh-sandbox": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3 || 0.2.2-rc.4 || 0.2.2-rc.5",
+    "@deepseek-ai/dsh-storage-domain": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3 || 0.2.2-rc.4 || 0.2.2-rc.5",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.5 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3 || 0.2.2-rc.4 || 0.2.2-rc.5"
   },
   "repository": {
     "type": "git",

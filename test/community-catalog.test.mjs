@@ -10,24 +10,32 @@ const read = async name => JSON.parse(await fs.readFile(new URL(name, research),
 const [full, market, manifest, selection, evidence, identity] = await Promise.all(['plugins.json', 'index.json', 'fetch-manifest.json', 'preview-selection.json', 'sample-source-evidence.json', 'own-identity-evidence.json'].map(read));
 const input = { full, market, manifest, selection, evidence, identity };
 
-test('catalog is reproducible from captured metadata and explicit author review, excluding only the two unresolved own entries', () => {
+test('catalog is reproducible from captured metadata and explicit author review, excluding any legacy-namespace entries', () => {
   const result = buildCommunityCatalog(input);
   assert.deepEqual(result.catalog, communityCatalog);
-  assert.equal(communityCatalog.sourceTotal, 6565);
-  assert.equal(communityCatalog.total, 6563);
-  assert.equal(communityCatalog.excludedTotal, 2);
-  assert.equal(communityCatalog.marketIndexTotal, 3382);
-  assert.equal(result.excluded.length, 2);
-  assert.ok(result.excluded.every(row => row.sourceId.startsWith('https://github.com/piggy00544/dsh-workproof/tree/main/packages/')));
+  assert.equal(communityCatalog.sourceTotal, 11979);
+  assert.equal(communityCatalog.total, 11979);
+  assert.equal(communityCatalog.excludedTotal, 0);
+  assert.equal(communityCatalog.marketIndexTotal, 6109);
   assert.doesNotMatch(JSON.stringify(communityCatalog), /piggy00544/i);
   assert.ok(communityCatalog.entries.filter(entry => entry.preview).every(entry => [...entry.summary].length < 100 && !entry.summary.includes('\ufffd')));
+
+  const legacyRows = [
+    'https://github.com/piggy00544/dsh-workproof/tree/main/packages/dsh-delivery-receipts',
+    'https://github.com/piggy00544/dsh-workproof/tree/main/packages/dsh-evidence-ledger',
+  ].map((url, idx) => ({ ...full.plugins[0], name: `legacy-${idx}`, url }));
+  const filtered = buildCommunityCatalog({ ...input, full: { ...full, plugins: [...full.plugins, ...legacyRows] } });
+  assert.equal(filtered.catalog.excludedTotal, 2);
+  assert.equal(filtered.excluded.length, 2);
+  assert.ok(filtered.excluded.every(row => row.sourceId.startsWith('https://github.com/piggy00544/dsh-workproof/tree/main/packages/')));
+  assert.doesNotMatch(JSON.stringify(filtered.catalog), /piggy00544/i);
 });
 
 test('six complete categories expose three reviewed representative entries each without dropping monorepo paths', () => {
   const overview = getCommunityOverview();
   assert.equal(overview.categories.length, 6);
   assert.equal(overview.categories.reduce((sum, category) => sum + category.count, 0), overview.total);
-  assert.deepEqual(overview.categories.map(c => c.count), [1476, 324, 617, 1693, 994, 1459]);
+  assert.deepEqual(overview.categories.map(c => c.count), [2812, 608, 1171, 3218, 1531, 2639]);
   for (const category of overview.categories) {
     assert.equal(category.previews.length, 3);
     assert.ok(category.previews.every(entry => entry.preview && entry.categoryId === category.id));
@@ -82,7 +90,7 @@ test('author sources are HTTPS GitHub entry URLs and metadata excludes executabl
 
 test('builder fails closed on missing author review, conflicting identities and unknown source categories', () => {
   assert.throws(() => buildCommunityCatalog({ ...input, evidence: { entries: [] } }), /reviewed author/);
-  assert.throws(() => buildCommunityCatalog({ ...input, identity: { entries: [] } }), /identity disposition/);
+  assert.throws(() => buildCommunityCatalog({ ...input, identity: { entries: [] }, full: { ...full, plugins: [...full.plugins, { ...full.plugins[0], url: 'https://github.com/piggy00544/dsh-workproof/tree/main/packages/dsh-delivery-receipts' }] } }), /identity disposition/);
   assert.throws(() => buildCommunityCatalog({ ...input, full: { ...full, plugins: [...full.plugins, { ...full.plugins[0], url: 'https://github.com/piggy00544/unreviewed' }] } }), /identity disposition/);
   assert.throws(() => buildCommunityCatalog({ ...input, full: { ...full, plugins: [...full.plugins, full.plugins[0]] } }), /Duplicate canonical/);
   const changed = { ...full, plugins: full.plugins.map((row, i) => i ? row : { ...row, category: 'future-unknown' }) };

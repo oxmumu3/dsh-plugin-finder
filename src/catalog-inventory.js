@@ -9,13 +9,14 @@ const text=(value,max)=>typeof value==='string'&&value.length>0&&value.length<=m
 const unavailable=()=>{throw new FinderError('PLUGIN_INSTALL_UNAVAILABLE');};
 const absent=packageName=>({installed:false,enabled:false,active:false,conflict:false,packageName,version:'',componentOnly:false});
 const componentName=value=>typeof value==='string'?value.match(/^((?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*)(?:@|（|$)/)?.[1]:null;
-// Canonical publisher identities were independently verified for these four
-// products. This is local recognition only, never an interchangeable install spec.
-const primaryAliases=Object.freeze({
- 'dsh-agent-twin':'@oxmumu3/dsh-agent-twin',
- 'dsh-family-assistant':'@oxmumu3/dsh-family-assistant',
- 'dsh-project-companion':'@oxmumu3/dsh-project-companion',
- 'dot-dsh-management':'@oxmumu3/dot-dsh-management',
+// Canonical & legacy unscoped publisher identities were independently verified for these
+// products (preferring unscoped legacy only when both exact names appear locally, while preserving
+// scoped identity as primary). This is local recognition only, never an interchangeable install spec.
+const legacyUnscoped=Object.freeze({
+ '@oxmumu3/dsh-agent-twin':'dsh-agent-twin',
+ '@oxmumu3/dsh-family-assistant':'dsh-family-assistant',
+ '@oxmumu3/dsh-project-companion':'dsh-project-companion',
+ '@oxmumu3/dot-dsh-management':'dot-dsh-management',
 });
 
 // A recorded Git source can identify a local package even when its author used
@@ -59,7 +60,7 @@ export function createCatalogInventoryReader(ctx){
    const names=input.collection==='featured'?selected.components.map(componentName):[selected.npmName];
    if(!names.length||names.some(name=>!text(name,214)||!packagePattern.test(name)))unavailable();
    for(let index=0;index<names.length;index++){
-    const variants=input.collection==='featured'&&index===0&&primaryAliases[names[index]]?[names[index],primaryAliases[names[index]]]:[names[index]];
+    const variants=input.collection==='featured'&&index===0&&legacyUnscoped[names[index]]?[legacyUnscoped[names[index]],names[index]]:[names[index]];
     for(const name of variants){
      const matches=bundles.filter(bundle=>bundle?.name===name);
      if(matches.length>1)unavailable();
