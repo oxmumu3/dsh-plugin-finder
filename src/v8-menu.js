@@ -178,7 +178,7 @@ export function createTokenLedgerDialog(React) {
     },
     h('div', { className: 'pf_modal_head' },
       h('h2', { id: 'pf_ledger_title' }, `本机累计帮你省下了约 ${formatWanTokens(tokenSavings.totalTokens)} Token`),
-      h('button', { type: 'button', className: 'pf_modal_x', 'aria-label': '关闭省 Token 账本', onClick: finishClose }, '×')),
+      h('button', { type: 'button', className: 'pf_modal_x', 'aria-label': '关闭省 Token 详情', onClick: finishClose }, '×')),
     h('p', { className: 'pf_modal_body' },
       `基于这台机器通过发现好插件实际安装、执行或带经验开造的记录汇总（复用现成插件 ${tokenSavings.reuseCount || 0} 款 · 带经验自建 ${tokenSavings.createCount || 0} 次）。同一插件不重复累计，仅搜索或浏览过的候选不计入。`),
     rows.length

@@ -2168,7 +2168,7 @@ function estimatePlanSavings({ plan, candidates = [], creation = null, mode = "p
       mathTitle: "\u5E26\u7ECF\u9A8C\u81EA\u5EFA\u5177\u4F53\u5E2E\u4F60\u6321\u6389\u4E86\u54EA\u51E0\u5751\uFF1F",
       mathItems: [
         "\u4E0D\u5E26\u84DD\u56FE\u76F4\u63A5\u4ECE\u96F6\u5199\u63D2\u4EF6\uFF0C\u5E38\u56E0\u8FB9\u754C\u53D1\u6563\u3001\u5BBF\u4E3B\u53D8\u91CF\u649E\u8F66\u6216\u8BEF\u91CD\u5F00\u5BBF\u4E3B\u591A\u7ED5 3\u20135 \u8F6E\u5927\u4E0A\u4E0B\u6587\u4FEE\u6539\uFF08\u6309\u6BCF\u8F6E\u4FDD\u5B88\u591A\u8017\u7EA6 10\u4E07\u201315\u4E07 Token \u6298\u7B97\uFF09\uFF1B",
-        "\u786E\u8BA4\u5F00\u59CB\u521B\u5EFA\u5E76\u5B9E\u9645\u5F00\u5DE5\u540E\uFF0C\u81EA\u52A8\u8BA1\u5165\u672C\u673A\u7701 Token \u8D26\u672C\uFF08\u6309 45 \u4E07/\u6B21\u4FDD\u5B88\u8BA1\u5165\uFF09\u3002"
+        "\u786E\u8BA4\u5F00\u59CB\u521B\u5EFA\u5E76\u5B9E\u9645\u5F00\u5DE5\u540E\uFF0C\u81EA\u52A8\u8BA1\u5165\u9996\u9875\u7D2F\u8BA1\u8BB0\u5F55\uFF08\u6309 45 \u4E07/\u6B21\u4FDD\u5B88\u8BA1\u5165\uFF09\u3002"
       ],
       confirmFact: `\u7EA6 ${wanText} Token\uFF08\u5C11\u8D70 3\u20135 \u8F6E\u8FD4\u5DE5\uFF09`
     };
@@ -2189,7 +2189,7 @@ function estimatePlanSavings({ plan, candidates = [], creation = null, mode = "p
       mathTitle: "\u600E\u4E48\u7B97\u7684\uFF1F\uFF08\u57FA\u4E8E\u771F\u5B9E DSH \u5F00\u53D1\u4F1A\u8BDD\u57FA\u51C6\uFF09",
       mathItems: [
         workbench ? "\u591A\u6A21\u5757\u5DE5\u4F5C\u53F0\u81EA\u5EFA\u4ECE\u7A7A\u67B6\u5B50\u5230\u8054\u8C03\u901A\u5E38\u9700\u8981\u591A\u8F6E\u957F\u4E0A\u4E0B\u6587\u8FED\u4EE3\uFF1B\u4FDD\u5B88\u6309 180 \u4E07 Token \u57FA\u51C6\u6298\u7B97\uFF0C\u540C\u63D2\u4EF6\u4E0D\u91CD\u590D\u7D2F\u8BA1\u3002" : "\u5355\u4E2A\u8F7B\u91CF/\u5E38\u89C4\u63D2\u4EF6\u4ECE\u9700\u6C42\u68B3\u7406\u5230\u5199\u7801\u8C03\u8BD5\u5B8C\u6210\uFF0C\u4FDD\u5B88\u6309 90 \u4E07 Token \u57FA\u51C6\u6298\u7B97\uFF0C\u540C\u63D2\u4EF6\u4E0D\u91CD\u590D\u7D2F\u8BA1\u3002",
-        "\u786E\u8BA4\u4F7F\u7528\u3001\u5B8C\u6210\u5B89\u88C5\u6216\u5E26\u7ED3\u679C\u53CD\u9988\u540E\uFF0C\u81EA\u52A8\u8BB0\u5165\u9996\u9875\u7D2F\u8BA1\u7701 Token \u8D26\u672C\uFF08\u4EC5\u505A\u7701\u6D41\u53C2\u8003\uFF09\u3002"
+        "\u786E\u8BA4\u4F7F\u7528\u3001\u5B8C\u6210\u5B89\u88C5\u6216\u5E26\u7ED3\u679C\u53CD\u9988\u540E\uFF0C\u81EA\u52A8\u8BB0\u5165\u9996\u9875\u7D2F\u8BA1\u8BB0\u5F55\uFF08\u4EC5\u505A\u7701\u6D41\u53C2\u8003\uFF09\u3002"
       ],
       confirmFact: `\u7EA6 ${wanText} Token\uFF08\u514D\u4ECE\u96F6\u91CD\u590D\u9020\u8F6E\u5B50\uFF09`
     };
@@ -2253,7 +2253,7 @@ function estimatePlanSavings({ plan, candidates = [], creation = null, mode = "p
       mathTitle: "\u4E3A\u4EC0\u4E48\u81EA\u5DF1\u505A\u4E5F\u80FD\u7701 Token\uFF1F",
       mathItems: [
         "\u5148\u7531\u63D2\u4EF6\u4E13\u5BB6\u5BF9\u9F50\u9996\u7248\u6700\u5C0F\u8FB9\u754C\u4E0E\u907F\u5751\u6E05\u5355\uFF0C\u907F\u514D\u8FB9\u5199\u8FB9\u63A8\u7FFB\u91CD\u6765\u4E0E\u5BBF\u4E3B\u6837\u5F0F/\u6CE8\u518C\u8FD4\u5DE5\uFF1B",
-        "\u4FDD\u5B88\u6309\u5C11\u8D70 3\u20135 \u8F6E\u5927\u4E0A\u4E0B\u6587\u4FEE\u6539\u6298\u7B97 45 \u4E07 Token\uFF0C\u786E\u8BA4\u5F00\u59CB\u521B\u5EFA\u540E\u624D\u8BB0\u5165\u9996\u9875\u8D26\u672C\u3002"
+        "\u4FDD\u5B88\u6309\u5C11\u8D70 3\u20135 \u8F6E\u5927\u4E0A\u4E0B\u6587\u4FEE\u6539\u6298\u7B97 45 \u4E07 Token\uFF0C\u786E\u8BA4\u5F00\u59CB\u521B\u5EFA\u540E\u624D\u8BB0\u5165\u9996\u9875\u7D2F\u8BA1\u8BB0\u5F55\u3002"
       ],
       confirmFact: `\u7EA6 ${wanText} Token\uFF08\u5C11\u8D70 3\u20135 \u8F6E\u8FD4\u5DE5\uFF09`
     };
@@ -2998,11 +2998,11 @@ function createHomeView(React2) {
           type: "button",
           className: "pf8_eyebrow_ledger",
           onClick: () => onOpenLedger?.(),
-          "aria-label": `\u67E5\u770B\u672C\u673A\u7701 Token \u8D26\u672C\u4E0E\u8BA1\u7B97\u903B\u8F91\uFF0C\u7D2F\u8BA1\u5DF2\u7701\u7EA6 ${formatWanTokens(savedTotal)} Token`
+          "aria-label": `\u67E5\u770B\u7D2F\u8BA1\u5DF2\u7701\u7EA6 ${formatWanTokens(savedTotal)} Token \u8BE6\u60C5`
         },
         h(Lego, { kinds: ["done"], label: "" }),
         h("span", null, "\u7D2F\u8BA1\u5DF2\u7701\u7EA6 ", h("b", null, formatWanTokens(savedTotal)), " Token"),
-        h("span", { className: "pf8_eyebrow_more", "aria-hidden": "true" }, "\u8D26\u672C\u4E0E\u7B97\u6CD5 \u203A")
+        h("span", { className: "pf8_eyebrow_more", "aria-hidden": "true" }, "\u203A")
       )
     ) : h("p", { className: "pf8_meta" }, meta);
     const hero = pending ? h(
@@ -4920,7 +4920,7 @@ function createTokenLedgerDialog(React2) {
         "div",
         { className: "pf_modal_head" },
         h("h2", { id: "pf_ledger_title" }, `\u672C\u673A\u7D2F\u8BA1\u5E2E\u4F60\u7701\u4E0B\u4E86\u7EA6 ${formatWanTokens(tokenSavings.totalTokens)} Token`),
-        h("button", { type: "button", className: "pf_modal_x", "aria-label": "\u5173\u95ED\u7701 Token \u8D26\u672C", onClick: finishClose }, "\xD7")
+        h("button", { type: "button", className: "pf_modal_x", "aria-label": "\u5173\u95ED\u7701 Token \u8BE6\u60C5", onClick: finishClose }, "\xD7")
       ),
       h(
         "p",
@@ -5608,7 +5608,8 @@ var v8Css = `
 .pf_v8 .pf8_eyebrow_ledger:hover:not(:disabled) { background: color-mix(in srgb, var(--ok) 17%, var(--subtle)); color: var(--ink); }
 .pf_v8 .pf8_eyebrow_ledger .pf8_pc { --h: 15px; margin: 0; }
 .pf_v8 .pf8_eyebrow_ledger b { font-weight: 600; font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--ok) 78%, var(--ink)); }
-.pf_v8 .pf8_eyebrow_more { color: var(--ink3); font-size: 11.5px; padding-left: 2px; }
+.pf_v8 .pf8_eyebrow_more { color: var(--ink3); font-size: 13px; line-height: 1; margin-left: -1px; }
+.pf_v8 .pf8_eyebrow_ledger:hover:not(:disabled) .pf8_eyebrow_more { color: var(--ink); }
 
 .pf_v8 .pf8_save_strip { margin-top: 22px; padding: 13px 16px; border: 0; border-left: 2.5px solid var(--ok); border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--ok) 7%, var(--card)); }
 .pf_v8 .pf8_save_strip.is_create { border-left-color: var(--build); background: color-mix(in srgb, var(--build) 7%, var(--card)); }

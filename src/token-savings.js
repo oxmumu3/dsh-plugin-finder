@@ -158,7 +158,7 @@ export function estimatePlanSavings({ plan, candidates = [], creation = null, mo
       mathTitle: '带经验自建具体帮你挡掉了哪几坑？',
       mathItems: [
         '不带蓝图直接从零写插件，常因边界发散、宿主变量撞车或误重开宿主多绕 3–5 轮大上下文修改（按每轮保守多耗约 10万–15万 Token 折算）；',
-        '确认开始创建并实际开工后，自动计入本机省 Token 账本（按 45 万/次保守计入）。',
+        '确认开始创建并实际开工后，自动计入首页累计记录（按 45 万/次保守计入）。',
       ],
       confirmFact: `约 ${wanText} Token（少走 3–5 轮返工）`,
     };
@@ -185,7 +185,7 @@ export function estimatePlanSavings({ plan, candidates = [], creation = null, mo
         workbench
           ? '多模块工作台自建从空架子到联调通常需要多轮长上下文迭代；保守按 180 万 Token 基准折算，同插件不重复累计。'
           : '单个轻量/常规插件从需求梳理到写码调试完成，保守按 90 万 Token 基准折算，同插件不重复累计。',
-        '确认使用、完成安装或带结果反馈后，自动记入首页累计省 Token 账本（仅做省流参考）。',
+        '确认使用、完成安装或带结果反馈后，自动记入首页累计记录（仅做省流参考）。',
       ],
       confirmFact: `约 ${wanText} Token（免从零重复造轮子）`,
     };
@@ -252,7 +252,7 @@ export function estimatePlanSavings({ plan, candidates = [], creation = null, mo
       mathTitle: '为什么自己做也能省 Token？',
       mathItems: [
         '先由插件专家对齐首版最小边界与避坑清单，避免边写边推翻重来与宿主样式/注册返工；',
-        '保守按少走 3–5 轮大上下文修改折算 45 万 Token，确认开始创建后才记入首页账本。',
+        '保守按少走 3–5 轮大上下文修改折算 45 万 Token，确认开始创建后才记入首页累计记录。',
       ],
       confirmFact: `约 ${wanText} Token（少走 3–5 轮返工）`,
     };

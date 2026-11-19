@@ -104,11 +104,11 @@ export function createHomeView(React) {
           type: 'button',
           className: 'pf8_eyebrow_ledger',
           onClick: () => onOpenLedger?.(),
-          'aria-label': `查看本机省 Token 账本与计算逻辑，累计已省约 ${formatWanTokens(savedTotal)} Token`,
+          'aria-label': `查看累计已省约 ${formatWanTokens(savedTotal)} Token 详情`,
         },
         h(Lego, { kinds: ['done'], label: '' }),
         h('span', null, '累计已省约 ', h('b', null, formatWanTokens(savedTotal)), ' Token'),
-        h('span', { className: 'pf8_eyebrow_more', 'aria-hidden': 'true' }, '账本与算法 ›')))
+        h('span', { className: 'pf8_eyebrow_more', 'aria-hidden': 'true' }, '›')))
       : h('p', { className: 'pf8_meta' }, meta);
     const hero = pending
       ? h('h1', { className: 'pf8_line', id: 'pfv_home_title' },

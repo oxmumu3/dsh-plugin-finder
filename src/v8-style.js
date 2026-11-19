@@ -577,7 +577,8 @@ export const v8Css = `
 .pf_v8 .pf8_eyebrow_ledger:hover:not(:disabled) { background: color-mix(in srgb, var(--ok) 17%, var(--subtle)); color: var(--ink); }
 .pf_v8 .pf8_eyebrow_ledger .pf8_pc { --h: 15px; margin: 0; }
 .pf_v8 .pf8_eyebrow_ledger b { font-weight: 600; font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--ok) 78%, var(--ink)); }
-.pf_v8 .pf8_eyebrow_more { color: var(--ink3); font-size: 11.5px; padding-left: 2px; }
+.pf_v8 .pf8_eyebrow_more { color: var(--ink3); font-size: 13px; line-height: 1; margin-left: -1px; }
+.pf_v8 .pf8_eyebrow_ledger:hover:not(:disabled) .pf8_eyebrow_more { color: var(--ink); }
 
 .pf_v8 .pf8_save_strip { margin-top: 22px; padding: 13px 16px; border: 0; border-left: 2.5px solid var(--ok); border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--ok) 7%, var(--card)); }
 .pf_v8 .pf8_save_strip.is_create { border-left-color: var(--build); background: color-mix(in srgb, var(--build) 7%, var(--card)); }

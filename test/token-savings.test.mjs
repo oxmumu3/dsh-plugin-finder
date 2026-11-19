@@ -269,6 +269,8 @@ test('HomeView Layout A keeps zero state quiet, shows eyebrow chip only when > 0
   const eyebrowBtn = nodes(liveView).find(n => hasClass(n, 'pf8_eyebrow_ledger'));
   assert.ok(eyebrowBtn);
   assert.match(content(eyebrowBtn), /315 万/);
+  assert.match(content(eyebrowBtn), /›/);
+  assert.doesNotMatch(content(eyebrowBtn), /账本|算法/);
   eyebrowBtn.props.onClick();
   assert.equal(opened, 1);
 
