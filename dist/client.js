@@ -433,7 +433,7 @@ function createOpportunityClient({ getState, publish, fetchRequest = globalThis.
 }
 
 // src/creator-handoff.js
-var supportsCreatorHost = (version) => ["0.2.1-rc.5", "0.2.2-rc.1", "0.2.2-rc.2", "0.2.2-rc.3", "0.2.2-rc.4", "0.2.2-rc.5"].includes(version);
+var supportsCreatorHost = (version) => ["0.2.1-rc.5", "0.2.2-rc.1", "0.2.2-rc.2", "0.2.2-rc.3", "0.2.2-rc.4", "0.2.2-rc.5", "0.2.3-alpha.1", "0.2.3-alpha.2"].includes(version);
 var localAttempts = /* @__PURE__ */ new WeakMap();
 var identity = (value) => typeof value === "string" && value.trim() ? value : void 0;
 var stopped = Symbol("cancelled");
@@ -805,7 +805,7 @@ async function executeInWorkspace(ctx, options = {}) {
       emit({ phase: "unknown", summary: "\u6682\u65F6\u65E0\u6CD5\u786E\u8BA4\u6267\u884C\u72B6\u6001", details: messageOf(snapshot.openError || (snapshot.removed ? "\u4F1A\u8BDD\u5DF2\u4E0D\u53EF\u7528" : "\u8BFB\u53D6\u4F1A\u8BDD\u5931\u8D25")) });
       return;
     }
-    const pending = ctx.uiSession?.sessionStatus?.getSnapshot?.()?.get?.(sessionId)?.pendingInteraction;
+    const pending = typeof ctx.uiSession?.pendingInteractions?.getSnapshot === "function" ? ctx.uiSession.pendingInteractions.getSnapshot()?.get?.(sessionId) : ctx.uiSession?.sessionStatus?.getSnapshot?.()?.get?.(sessionId)?.pendingInteraction;
     if (cancelled) emit({ phase: "cancelling", summary: "\u6B63\u5728\u505C\u6B62\uFF0C\u7B49\u5F85\u5BBF\u4E3B\u786E\u8BA4", terminal: false, result: facts.result });
     else if (pending) emit({ phase: "waiting-user", summary: "\u7B49\u5F85\u4F60\u786E\u8BA4", details: "\u8BF7\u5728\u4E0B\u65B9\u5B98\u65B9\u4EA4\u4E92\u4E2D\u5904\u7406\u3002", result: facts.result });
     else if (facts.turn !== void 0) emit({ phase: "running", summary: "\u6B63\u5728\u6267\u884C", details: facts.details, result: facts.result, turn: facts.turn });
@@ -1006,7 +1006,7 @@ async function executeInWorkspace(ctx, options = {}) {
         return;
       }
       if (disposed) return;
-      reference = ctx.sessions.retain(sessionId, { source: "controllerOperation" });
+      reference = ctx.sessions.retain(sessionId, { source: "controllerOperation", facets: { conversation: true } });
       await reference.ready;
       if (wantsSubmission && await cancelledBeforeSend()) return;
       if (disposed) return;
@@ -1033,7 +1033,7 @@ async function executeInWorkspace(ctx, options = {}) {
       subscribe(binding.session);
       subscribe(binding.eventSource);
       subscribe(binding.session.projections.faceOf("inbox"));
-      subscribe(ctx.uiSession?.sessionStatus);
+      subscribe(typeof ctx.uiSession?.pendingInteractions?.subscribe === "function" ? ctx.uiSession.pendingInteractions : ctx.uiSession?.sessionStatus);
       if (cancelled && !submissionOwned) {
         await recoverHistory();
         observe();
@@ -1188,7 +1188,7 @@ function readExecutionConversation({ entries = [], requestId, session = {}, inbo
   }
   return { messages: messages2, phase, summary, active };
 }
-function watchExecutionConversation({ reference, sessionId, requestId, sessions, sessionStatus }, onChange) {
+function watchExecutionConversation({ reference, sessionId, requestId, sessions, sessionStatus, pendingInteractions }, onChange) {
   let disposed = false, currentBinding, sourceStops = [];
   const outerStops = [];
   const stopSources = () => {
@@ -1208,6 +1208,8 @@ function watchExecutionConversation({ reference, sessionId, requestId, sessions,
       return void 0;
     }
   };
+  const pendingSource = typeof pendingInteractions?.getSnapshot === "function" ? pendingInteractions : sessionStatus;
+  const readPending = () => typeof pendingInteractions?.getSnapshot === "function" ? pendingInteractions.getSnapshot()?.get?.(sessionId) : sessionStatus?.getSnapshot?.()?.get?.(sessionId)?.pendingInteraction;
   function refresh() {
     if (disposed) return;
     const binding = resolveBinding();
@@ -1227,7 +1229,7 @@ function watchExecutionConversation({ reference, sessionId, requestId, sessions,
         requestId,
         session: binding.session.getSnapshot(),
         inbox: binding.session.projections?.faceOf?.("inbox")?.getSnapshot?.(),
-        pendingInteraction: sessionStatus?.getSnapshot?.()?.get?.(sessionId)?.pendingInteraction
+        pendingInteraction: readPending()
       }) : { messages: [], phase: "unavailable", active: false, summary: "\u6B63\u5728\u91CD\u65B0\u8FDE\u63A5\u5F53\u524D\u4F1A\u8BDD\u3002" };
     } catch {
       snapshot = { messages: [], phase: "unavailable", active: false, summary: "\u6682\u65F6\u65E0\u6CD5\u8BFB\u53D6\u6700\u65B0\u4F1A\u8BDD\u3002" };
@@ -1235,7 +1237,7 @@ function watchExecutionConversation({ reference, sessionId, requestId, sessions,
     if (!disposed) onChange({ ...snapshot, reference, sessionId, requestId });
   }
   subscribe(sessions?.list, outerStops);
-  subscribe(sessionStatus, outerStops);
+  subscribe(pendingSource, outerStops);
   refresh();
   Promise.resolve(reference?.ready).then(refresh, refresh);
   return () => {
@@ -8169,7 +8171,7 @@ function createFinderController(ctx, options = {}) {
       publish({ error: resumeAttempt ? "\u539F\u4EFB\u52A1\u5DE5\u4F5C\u533A\u6682\u65F6\u65E0\u6CD5\u8BFB\u53D6\uFF0C\u6267\u884C\u8BB0\u5F55\u4ECD\u4FDD\u7559\u3002" : "\u8BF7\u9009\u62E9\u8FD9\u6B21\u4EFB\u52A1\u4F7F\u7528\u7684\u5DE5\u4F5C\u533A\u3002" });
       return false;
     }
-    if (!supportsCreatorHost(state.bootstrap?.hostVersion) || typeof ctx.uiSession?.sessionStatus?.getSnapshot !== "function") {
+    if (!supportsCreatorHost(state.bootstrap?.hostVersion) || typeof ctx.uiSession?.pendingInteractions?.getSnapshot !== "function" && typeof ctx.uiSession?.sessionStatus?.getSnapshot !== "function") {
       publish({ error: "\u5F53\u524D\u5BBF\u4E3B\u7F3A\u5C11\u672C\u9875\u6267\u884C\u6240\u9700\u63A5\u53E3\uFF0C\u8BF7\u5347\u7EA7\u5230\u652F\u6301\u7684 Harness \u7248\u672C\u3002" });
       return false;
     }
@@ -8364,7 +8366,7 @@ function createFinderController(ctx, options = {}) {
   const bindExpert = async (expert) => {
     if (expertBinding?.sessionId === expert.sessionId) return expertBinding.reference;
     releaseExpert();
-    const reference = ctx.sessions.retain(expert.sessionId, { source: "controllerOperation" });
+    const reference = ctx.sessions.retain(expert.sessionId, { source: "controllerOperation", facets: { conversation: true } });
     const entry = { sessionId: expert.sessionId, taskId: expert.taskId, reference, stops: [] };
     expertBinding = entry;
     await reference.ready;
@@ -9420,7 +9422,7 @@ function apply(ctx) {
     const [fileError, setFileError] = import_react.default.useState("");
     const openFile = import_react.default.useMemo(() => createExecutionFileOpener({ reference, sessionId, sessions: ctx.sessions, sidebarRight: props.previewSurface, onError: setFileError }), [reference, sessionId, props.previewSurface]);
     const scrollArea = import_react.default.useRef(null), followTail = import_react.default.useRef(true);
-    import_react.default.useEffect(() => watchExecutionConversation({ reference, sessionId, requestId, sessions: ctx.sessions, sessionStatus: ctx.uiSession?.sessionStatus }, setObserved), [reference, sessionId, requestId]);
+    import_react.default.useEffect(() => watchExecutionConversation({ reference, sessionId, requestId, sessions: ctx.sessions, sessionStatus: ctx.uiSession?.sessionStatus, pendingInteractions: ctx.uiSession?.pendingInteractions }, setObserved), [reference, sessionId, requestId]);
     const conversation = observed?.reference === reference && observed?.sessionId === sessionId && observed?.requestId === requestId ? observed : { messages: [], active: false, summary: "\u6B63\u5728\u8BFB\u53D6\u5F53\u524D\u4F1A\u8BDD\u3002" };
     import_react.default.useEffect(() => {
       followTail.current = true;

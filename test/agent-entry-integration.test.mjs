@@ -55,7 +55,7 @@ test('entry routes fixed plan issues from both factories through the official de
  const logging=new Context(),disposeExporter=logging.logger.exporter({export:message=>messages.push(message)});
  t.after(async()=>{for(const cleanup of effects.reverse())await cleanup?.();await disposeExporter();await logging.fiber.dispose();});
  logging.logger.warn('default-warn-is-filtered');
- const warningCount=JSON.parse(await readFile(new URL('../node_modules/@deepseek-ai/cordis/package.json',import.meta.url),'utf8')).version==='4.1.0'?1:0;
+ const cordisVersion=JSON.parse(await readFile(new URL('../node_modules/@deepseek-ai/cordis/package.json',import.meta.url),'utf8')).version;const warningCount=cordisVersion.startsWith('4.0.')?0:1;
  assert.equal(messages.length,warningCount);assert.equal(logging.logger.buffer.length,warningCount);
  const sdk={
   '@deepseek-ai/dsh-storage-domain':{defineDomain:spec=>spec,domainTable:schema=>schema},

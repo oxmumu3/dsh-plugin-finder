@@ -176,7 +176,9 @@ export async function executeInWorkspace(ctx, options = {}) {
     if (snapshot.openError || snapshot.openState === 'error' || snapshot.removed) {
       emit({ phase: 'unknown', summary: '暂时无法确认执行状态', details: messageOf(snapshot.openError || (snapshot.removed ? '会话已不可用' : '读取会话失败')) }); return;
     }
-    const pending = ctx.uiSession?.sessionStatus?.getSnapshot?.()?.get?.(sessionId)?.pendingInteraction;
+    const pending = typeof ctx.uiSession?.pendingInteractions?.getSnapshot === 'function'
+      ? ctx.uiSession.pendingInteractions.getSnapshot()?.get?.(sessionId)
+      : ctx.uiSession?.sessionStatus?.getSnapshot?.()?.get?.(sessionId)?.pendingInteraction;
     if (cancelled) emit({ phase: 'cancelling', summary: '正在停止，等待宿主确认', terminal: false, result: facts.result });
     else if (pending) emit({ phase: 'waiting-user', summary: '等待你确认', details: '请在下方官方交互中处理。', result: facts.result });
     else if (facts.turn !== undefined) emit({ phase: 'running', summary: '正在执行', details: facts.details, result: facts.result, turn: facts.turn });
@@ -322,7 +324,7 @@ export async function executeInWorkspace(ctx, options = {}) {
         if (await cancelledBeforeSend()) return;
       } else if (!sessionId) { emit({ phase: 'unknown', summary: '已有执行正在准备或结果尚未确认', details: '不会重复创建或发送。' }); return; }
       if (disposed) return;
-      reference = ctx.sessions.retain(sessionId, { source: 'controllerOperation' });
+      reference = ctx.sessions.retain(sessionId, { source: 'controllerOperation', facets: { conversation: true } });
       // The outer call may return on abort, but binding verification never skips readiness.
       await reference.ready;
       if (wantsSubmission && await cancelledBeforeSend()) return;
@@ -335,7 +337,7 @@ export async function executeInWorkspace(ctx, options = {}) {
       const workspaces = ctx.workspaces.list.getSnapshot();
       if (workspaces?.phase !== 'ready' || !workspaces.items?.some(ws => ws.workspaceId === attempt.workspaceId && ws.sessionIds?.includes(sessionId))) { emit({ phase: 'blocked', summary: '执行会话工作区尚未核实' }); return; }
       if (typeof binding.session.prompt !== 'function' || typeof binding.session.cancel !== 'function' || !binding.eventSource?.getSnapshot || !binding.session.getSnapshot) { emit({ phase: 'blocked', summary: '宿主缺少执行或进度接口' }); return; }
-      subscribe(binding.session); subscribe(binding.eventSource); subscribe(binding.session.projections.faceOf('inbox')); subscribe(ctx.uiSession?.sessionStatus);
+      subscribe(binding.session); subscribe(binding.eventSource); subscribe(binding.session.projections.faceOf('inbox')); subscribe(typeof ctx.uiSession?.pendingInteractions?.subscribe === 'function' ? ctx.uiSession.pendingInteractions : ctx.uiSession?.sessionStatus);
       if (cancelled && !submissionOwned) { await recoverHistory(); observe(); await cancelActivity(); return; }
       await waitOrAbort(Promise.resolve(onReference(reference)), signal);
       if (wantsSubmission && await cancelledBeforeSend()) return;

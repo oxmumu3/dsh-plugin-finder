@@ -3,7 +3,8 @@ import { mkdtemp, rm, readFile, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { Context } from '@deepseek-ai/cordis';
-import { HostConnectionService } from '@deepseek-ai/dsh-client-connection';
+import * as clientConnection from '@deepseek-ai/dsh-client-connection';
+const { HostConnectionService, ConnectionAuthentication } = clientConnection;
 import { Storage } from '@deepseek-ai/dsh-storage';
 import { DomainFacility } from '@deepseek-ai/dsh-storage-domain';
 import { JsonStorageBackend } from '@deepseek-ai/dsh-storage-json';
@@ -17,7 +18,14 @@ const ctx = new Context();
 // No browser/account auth is created: the official service's same-process owner
 // peer exercises its real dispatcher. All state lives in this synthetic directory.
 let authenticated = false;
-const connection = new HostConnectionService(ctx, [], { isAuthenticated: () => authenticated, authenticateApi: () => undefined });
+let connection;
+if (typeof ConnectionAuthentication === 'function') {
+  const auth = new ConnectionAuthentication(ctx);
+  connection = new HostConnectionService(ctx, []);
+  auth.register({ authenticate: () => authenticated ? connection.browserPeer : undefined });
+} else {
+  connection = new HostConnectionService(ctx, [], { isAuthenticated: () => authenticated, authenticateApi: () => undefined });
+}
 const dispatcher = connection.createSharedFetchHandler('/api');
 const request = (path, options) => new Request('http://127.0.0.1' + path, options);
 let ownerPeer, admission;

@@ -7,7 +7,7 @@ const matrix = JSON.parse(readFileSync(new URL('../compatibility.json', import.m
 
 test('every validated official SDK has matching exact Host and SDK declarations', () => {
   for (const version of matrix) assert.equal(validateCompatibility(pkg, version), version);
-  assert.deepEqual(matrix, ['0.2.1-rc.5', '0.2.2-rc.1', '0.2.2-rc.2', '0.2.2-rc.3', '0.2.2-rc.4', '0.2.2-rc.5']);
+  assert.deepEqual(matrix, ['0.2.1-rc.5', '0.2.2-rc.1', '0.2.2-rc.2', '0.2.2-rc.3', '0.2.2-rc.4', '0.2.2-rc.5', '0.2.3-alpha.2']);
   assert.throws(() => validateCompatibility(pkg, '0.2.1-rc.4'), /absent from the tested matrix/);
 });
 test('a new official SDK fails until it has been tested and added explicitly', () => {

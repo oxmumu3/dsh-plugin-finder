@@ -7,7 +7,7 @@ const pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'ut
 const rc1='0.2.2-rc.1';
 test('the new official desktop exact SDK is admitted while unknown releases remain rejected',()=>{
  assert.equal(compatibility.validateCompatibility(pkg,rc1),rc1);
- for(const sdk of [rc1,'0.2.2-rc.2','0.2.2-rc.3','0.2.2-rc.4','0.2.2-rc.5'])assert.equal(compatibility.validateCompatibility(pkg,sdk),sdk);
+ for(const sdk of [rc1,'0.2.2-rc.2','0.2.2-rc.3','0.2.2-rc.4','0.2.2-rc.5','0.2.3-alpha.2'])assert.equal(compatibility.validateCompatibility(pkg,sdk),sdk);
  for(const version of ['0.2.2-alpha.3','0.2.2-rc.6','0.2.2','0.2.1-rc.6'])assert.throws(()=>compatibility.validateCompatibility(pkg,version),/absent/);
 });
 test('each recent RC carrier plan pins the official Cordis and minimum Node without relaxing budgets',async()=>{
@@ -34,12 +34,12 @@ import {supportsCreatorHost} from '../src/creator-handoff.js';
 import {buildCreatorPrompt} from '../src/agent-creator.js';
 import {CREATION_SYSTEM} from '../src/creation.js';
 test('all exact validated Hosts retain creation while old and experimental hosts stay blocked',()=>{
- assert.equal(supportsCreatorHost(rc1),true);assert.equal(supportsCreatorHost('0.2.1-rc.5'),true);assert.equal(supportsCreatorHost('0.2.2-rc.2'),true);assert.equal(supportsCreatorHost('0.2.2-rc.3'),true);assert.equal(supportsCreatorHost('0.2.2-rc.4'),true);assert.equal(supportsCreatorHost('0.2.2-rc.5'),true);
+ assert.equal(supportsCreatorHost(rc1),true);assert.equal(supportsCreatorHost('0.2.1-rc.5'),true);assert.equal(supportsCreatorHost('0.2.2-rc.2'),true);assert.equal(supportsCreatorHost('0.2.2-rc.3'),true);assert.equal(supportsCreatorHost('0.2.2-rc.4'),true);assert.equal(supportsCreatorHost('0.2.2-rc.5'),true);assert.equal(supportsCreatorHost('0.2.3-alpha.2'),true);
  for(const version of ['0.2.1-rc.4','0.2.2-alpha.3','0.2.2-rc.6',''])assert.equal(supportsCreatorHost(version),false);
 });
 test('Creator guidance includes the exact new SDK instead of forcing rc5 on its runtime',()=>{
  const prompt=buildCreatorPrompt({requestId:'fixture',creation:{blueprint:{purpose:'synthetic'}}},{sessionId:'parent',workspaceId:'fixture',directory:'/safe/fixture'});
- for(const text of [prompt,CREATION_SYSTEM]){for(const sdk of ['0.2.1-rc.5',rc1,'0.2.2-rc.2','0.2.2-rc.3','0.2.2-rc.4','0.2.2-rc.5'])assert.ok(text.includes(sdk));assert.match(text,/当前宿主/);}
+ for(const text of [prompt,CREATION_SYSTEM]){for(const sdk of ['0.2.1-rc.5',rc1,'0.2.2-rc.2','0.2.2-rc.3','0.2.2-rc.4','0.2.2-rc.5','0.2.3-alpha.2'])assert.ok(text.includes(sdk));assert.match(text,/当前宿主/);}
 });
 
 import {CLIENT_VERSION} from '../src/telemetry-config.js';

@@ -9,6 +9,7 @@ import { runInSandbox, verifySandbox } from './ci-sandbox.mjs';
 const exec = promisify(execFile);
 const source = fileURLToPath(new URL('../', import.meta.url));
 const cordis41Targets = new Set(['0.2.2-rc.1', '0.2.2-rc.2', '0.2.2-rc.3', '0.2.2-rc.4', '0.2.2-rc.5']);
+const cordis42Targets = new Set(['0.2.3-alpha.2']);
 export async function planSdk(args) {
   if (args.length < 2 || args.length > 3 || args[0] !== '--sdk' || args.length === 3 && args[2] !== '--plan') throw Error('Usage: node scripts/ci-sdk.mjs --sdk EXACT_VERSION [--plan]');
   const metadata = JSON.parse(await readFile(join(source, 'package.json')));
@@ -19,16 +20,22 @@ export async function planSdk(args) {
   for (const name of ['dsh-storage', 'dsh-storage-domain', 'dsh-storage-json', 'dsh-client-connection']) dependencies['@deepseek-ai/' + name] = sdk;
   // The Host contract imports Cordis directly; pin each exact official SDK's peer
   // rather than relying on a transitive, automatically hoisted installation.
+  const usesCordis42 = cordis42Targets.has(sdk) || sdk.startsWith('0.2.3-');
   const usesCordis41 = cordis41Targets.has(sdk);
-  dependencies['@deepseek-ai/cordis'] = usesCordis41 ? '4.1.0' : '4.0.5';
-  dependencies['@deepseek-ai/schemastery'] = usesCordis41 ? '3.19.0' : '3.18.5';
+  dependencies['@deepseek-ai/cordis'] = usesCordis42 ? '4.2.0-alpha.1' : usesCordis41 ? '4.1.0' : '4.0.5';
+  dependencies['@deepseek-ai/schemastery'] = usesCordis42 ? '3.20.0-alpha.1' : usesCordis41 ? '3.19.0' : '3.18.5';
   // Retain Finder's measured VM-fixture suite baseline; all other Node processes stay at 128 MB.
   const suiteHeapMb = metadata.name === '@oxmumu3/dsh-plugin-finder' ? 512 : 128;
   const minimumTests = metadata.name === '@oxmumu3/dsh-plugin-finder' ? 1185 : 267;
-  return { sdk, dependencies, nodeMinimumVersion: usesCordis41 ? '24.9.0' : '22.22.0', suiteHeapMb, minimumTests, otherNodeHeapMb: 128, compatibilityOverride: false, hooks: false };
+  return { sdk, dependencies, nodeMinimumVersion: usesCordis42 ? '24.22.3' : usesCordis41 ? '24.9.0' : '22.22.0', suiteHeapMb, minimumTests, otherNodeHeapMb: 128, compatibilityOverride: false, hooks: false };
 }
 export function assertSdkNodeVersion(sdk,version=process.versions.node) {
-  if (cordis41Targets.has(sdk)) {
+  if (cordis42Targets.has(sdk) || sdk.startsWith('0.2.3-')) {
+    const match=typeof version==='string'?version.match(/^(\d+)\.(\d+)\.(\d+)$/):null;
+    const major=match?Number(match[1]):0,minor=match?Number(match[2]):0,patch=match?Number(match[3]):0;
+    const ok=(major===24&&(minor>22||minor===22&&patch>=3))||(major===26&&(minor>13||minor===13&&patch>=1))||major>26;
+    if (!ok) throw Error(`Official ${sdk} requires Node ^24.22.3 || >=26.13.1 before SDK acquisition or execution`);
+  } else if (cordis41Targets.has(sdk)) {
     const match=typeof version==='string'?version.match(/^(\d+)\.(\d+)\.(\d+)$/):null;
     if (!match || Number(match[1]) < 24 || Number(match[1]) === 24 && Number(match[2]) < 9) throw Error(`Official ${sdk} requires Node >=24.9.0 before SDK acquisition or execution`);
   }

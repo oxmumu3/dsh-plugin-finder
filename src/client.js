@@ -569,7 +569,7 @@ export function createFinderController(ctx, options = {}) {
     syncWorkspaces();
     const workspaceId = resumeAttempt?.workspaceId || state.workspaceId;
     if (!workspaceId || !workspaceSnapshot()?.items?.some(item => item.workspaceId === workspaceId)) { publish({ error: resumeAttempt ? '原任务工作区暂时无法读取，执行记录仍保留。' : '请选择这次任务使用的工作区。' }); return false; }
-    if (!supportsCreatorHost(state.bootstrap?.hostVersion) || typeof ctx.uiSession?.sessionStatus?.getSnapshot !== 'function') {
+    if (!supportsCreatorHost(state.bootstrap?.hostVersion) || (typeof ctx.uiSession?.pendingInteractions?.getSnapshot !== 'function' && typeof ctx.uiSession?.sessionStatus?.getSnapshot !== 'function')) {
       publish({ error: '当前宿主缺少本页执行所需接口，请升级到支持的 Harness 版本。' }); return false;
     }
     executionStarting = true;
@@ -702,7 +702,7 @@ export function createFinderController(ctx, options = {}) {
   const bindExpert = async expert => {
     if (expertBinding?.sessionId === expert.sessionId) return expertBinding.reference;
     releaseExpert();
-    const reference = ctx.sessions.retain(expert.sessionId, { source: 'controllerOperation' });
+    const reference = ctx.sessions.retain(expert.sessionId, { source: 'controllerOperation', facets: { conversation: true } });
     const entry = { sessionId: expert.sessionId, taskId: expert.taskId, reference, stops: [] };
     expertBinding = entry;
     await reference.ready;
@@ -1483,7 +1483,7 @@ export function apply(ctx) {
     const [fileError, setFileError] = React.useState('');
     const openFile = React.useMemo(() => createExecutionFileOpener({ reference, sessionId, sessions: ctx.sessions, sidebarRight: props.previewSurface, onError: setFileError }), [reference, sessionId, props.previewSurface]);
     const scrollArea = React.useRef(null), followTail = React.useRef(true);
-    React.useEffect(() => watchExecutionConversation({ reference, sessionId, requestId, sessions: ctx.sessions, sessionStatus: ctx.uiSession?.sessionStatus }, setObserved), [reference, sessionId, requestId]);
+    React.useEffect(() => watchExecutionConversation({ reference, sessionId, requestId, sessions: ctx.sessions, sessionStatus: ctx.uiSession?.sessionStatus, pendingInteractions: ctx.uiSession?.pendingInteractions }, setObserved), [reference, sessionId, requestId]);
     const conversation = observed?.reference === reference && observed?.sessionId === sessionId && observed?.requestId === requestId ? observed : { messages: [], active: false, summary: '正在读取当前会话。' };
     React.useEffect(() => { followTail.current = true; setFileError(''); }, [reference, sessionId]);
     React.useEffect(() => { if (followTail.current && scrollArea.current) scrollArea.current.scrollTop = scrollArea.current.scrollHeight; }, [observed]);

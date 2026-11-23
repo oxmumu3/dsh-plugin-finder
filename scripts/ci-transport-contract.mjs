@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 /** Test the SDK's actual admission boundary before using its internal dispatcher. */
 export function assertTransportAdmission(connection, sdk, setAuthenticated) {
   const request = { headers: new Headers({ Host: '127.0.0.1' }) };
+  const rejectionOf = req => typeof connection.requestRejection === 'function' ? connection.requestRejection(req) : connection.admit(req).rejection;
   setAuthenticated(false);
-  assert.equal(connection.requestRejection(request), 401);
+  assert.equal(rejectionOf(request), 401);
   assert.equal(connection.admit(request).rejection, 401);
   setAuthenticated(true);
-  assert.equal(connection.requestRejection({ headers: new Headers({ Host: 'foreign.invalid' }) }), 403);
-  assert.equal(connection.requestRejection(request), undefined);
+  assert.equal(rejectionOf({ headers: new Headers({ Host: 'foreign.invalid' }) }), 403);
+  assert.equal(rejectionOf(request), undefined);
   const { peer } = connection.admit(request); assert.ok(peer);
   // Official rc020 exposes one admitted operator, without per-peer principals.
   // Newer SDKs expose browserPeer and additionally fence each exact Fetch route.

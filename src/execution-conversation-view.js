@@ -37,7 +37,7 @@ export function readExecutionConversation({ entries = [], requestId, session = {
 }
 
 /** Observe the caller-owned exact reference. This never retains/releases or sends. */
-export function watchExecutionConversation({ reference, sessionId, requestId, sessions, sessionStatus }, onChange) {
+export function watchExecutionConversation({ reference, sessionId, requestId, sessions, sessionStatus, pendingInteractions }, onChange) {
   let disposed = false, currentBinding, sourceStops = [];
   const outerStops = [];
   const stopSources = () => { for (const stop of sourceStops.splice(0)) stop(); };
@@ -53,6 +53,10 @@ export function watchExecutionConversation({ reference, sessionId, requestId, se
       return sessionId && reference?.sessionId === sessionId && binding?.sessionId === sessionId && sessions?.binding?.(sessionId) === binding ? binding : undefined;
     } catch { return undefined; }
   };
+  const pendingSource = typeof pendingInteractions?.getSnapshot === 'function' ? pendingInteractions : sessionStatus;
+  const readPending = () => typeof pendingInteractions?.getSnapshot === 'function'
+    ? pendingInteractions.getSnapshot()?.get?.(sessionId)
+    : sessionStatus?.getSnapshot?.()?.get?.(sessionId)?.pendingInteraction;
   function refresh() {
     if (disposed) return;
     const binding = resolveBinding();
@@ -68,12 +72,12 @@ export function watchExecutionConversation({ reference, sessionId, requestId, se
       snapshot = binding ? readExecutionConversation({
         entries: binding.eventSource.getSnapshot().entries, requestId,
         session: binding.session.getSnapshot(), inbox: binding.session.projections?.faceOf?.('inbox')?.getSnapshot?.(),
-        pendingInteraction: sessionStatus?.getSnapshot?.()?.get?.(sessionId)?.pendingInteraction,
+        pendingInteraction: readPending(),
       }) : { messages: [], phase: 'unavailable', active: false, summary: '正在重新连接当前会话。' };
     } catch { snapshot = { messages: [], phase: 'unavailable', active: false, summary: '暂时无法读取最新会话。' }; }
     if (!disposed) onChange({ ...snapshot, reference, sessionId, requestId });
   }
-  subscribe(sessions?.list, outerStops); subscribe(sessionStatus, outerStops);
+  subscribe(sessions?.list, outerStops); subscribe(pendingSource, outerStops);
   refresh();
   Promise.resolve(reference?.ready).then(refresh, refresh);
   return () => {
