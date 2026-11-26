@@ -295,9 +295,10 @@
         "zh": "AI 分身工作台"
       },
       "description": {
-        "en": "Curate selected project materials with source provenance, boundary rules, and verified channel connections into a personal AI twin.",
-        "zh": "从选定项目材料整理有溯源的知识、边界规则与通道授权，在本地打造可核对的个人 AI 分身。"
+        "en": "Publish any local workspace as an isolated full-blooded DSH AI Twin with /try public scan-to-try lobby, 0.2.3 Feishu/WeCom connectors, personal WeChat iLink QR, inline/mobile approvals, scopePaths isolation, and semantic knowledge graph.",
+        "zh": "3 分钟把本地专业工作区发布为满血隔离 AI 分身：支持 /try 公开扫码真体验大厅、0.2.3 官方飞书/企微连接器与个人微信扫码、对话流原位与手机远程拍板、目录级物理隔离及语义知识图谱。"
       },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJBSSDliIbouqvlt6XkvZzlj7AiPgogIDxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE0IiBmaWxsPSIjMjQ1OTQ3Ii8+CiAgPHJlY3QgeD0iNiIgeT0iNiIgd2lkdGg9IjUyIiBoZWlnaHQ9IjUyIiByeD0iMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y2ZjVmMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMjQiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPGNpcmNsZSBjeD0iMjQiIGN5PSIyNiIgcj0iOC41IiBmaWxsPSJub25lIiBzdHJva2U9IiNmNmY1ZjAiIHN0cm9rZS13aWR0aD0iMyIvPgogIDxwYXRoIGQ9Ik0xMy41IDQ3YzAtNi4yIDQuNy0xMC41IDEwLjUtMTAuNVMzNC41IDQwLjggMzQuNSA0NyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjZmNWYwIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxjaXJjbGUgY3g9IjQzLjUiIGN5PSIyNC41IiByPSI2LjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Q4Yjk4OSIgc3Ryb2tlLXdpZHRoPSIyLjUiLz4KICA8cGF0aCBkPSJNMzYgNDUuNWMuOC00LjggNC03LjggOC03LjggMy42IDAgNi41IDIuNSA3LjUgNi44IiBmaWxsPSJub25lIiBzdHJva2U9IiNkOGI5ODkiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==",
       "author": "牛村木木山",
       "homepage": "https://github.com/oxmumu3/ai-twin-starter",
       "repository": {
@@ -307,12 +308,17 @@
         "category": "learning",
         "keywords": [
           "twin",
+          "collaboration",
+          "feishu",
+          "wecom",
+          "wechat",
+          "semantic-graph",
           "knowledge",
-          "provenance",
-          "workbench",
+          "public-try",
           "分身"
         ],
         "labels": [
+          "dual-023",
           "local-first"
         ],
         "sortKeys": {
@@ -321,13 +327,13 @@
       },
       "versions": [
         {
-          "version": "0.4.0-preview.6",
-          "publishTimestamp": 1793830290,
+          "version": "0.6.3",
+          "publishTimestamp": 1795688700,
           "source": {
             "type": "npm"
           },
           "engines": {
-            "dsh": "0.2.1-rc.2 || 0.2.1-rc.3 || 0.2.1-rc.4 || 0.2.1-rc.5 || 0.2.2-rc.1"
+            "dsh": ">=0.2.2-rc.2 <0.2.3-0 || >=0.2.3-alpha.0 <0.2.4-0"
           }
         }
       ]
