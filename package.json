@@ -1,6 +1,6 @@
 {
   "name": "@oxmumu3/dsh-plugin-finder",
-  "version": "0.13.8",
+  "version": "0.14.0",
   "description": "Describe a need, find a usable plan, and run or create in the same DeepSeek Harness workspace",
   "icon": "./icon.svg",
   "author": "牛村木木山",
@@ -54,6 +54,7 @@
     "src/catalog-inventory.js",
     "src/client-style.js",
     "src/client.js",
+    "src/community-catalog-client-stub.js",
     "src/community-catalog-data.js",
     "src/community-catalog.js",
     "src/community-presentation.js",

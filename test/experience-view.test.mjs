@@ -33,7 +33,7 @@ test('home has one demand composer, editable examples and four distinct featured
   assert.equal(visibleNodes(view).filter(node => node.type === 'textarea').length, 1);
   assert.equal(nodes(view).filter(node => node.props.role === 'tab' || node.props.role === 'tablist').length, 0);
   const featured = nodes(view).filter(node => node.type === 'button' && String(node.props['aria-label'] || '').startsWith('查看精选：'));
-  assert.equal(featured.length, 5);
+  assert.equal(featured.length, 7);
   for (const entry of featuredCatalog) assert.equal(featured.filter(node => node.props['aria-label'] === `查看精选：${entry.title}`).length, 1);
   assert.match(content(view), /你选择了「家庭助手」兴趣/);
   nodes(view).find(node => node.props['aria-label'] === '把「把邮箱里的发票收齐，汇成 Excel」填进输入框').props.onClick();
@@ -88,7 +88,7 @@ test('home has one actionable idea beside the demand input and an independently 
     button(scenario, '试试').props.onClick();
     assert.deepEqual(calls, [['startFeatured', interests.length ? 'family-assistant' : 'agent-twin']]);
     assert.equal(nodes(view).filter(node => node.type === 'h2' && content(node) === '精选').length, 1);
-    assert.equal(nodes(view).filter(node => node.type === 'button' && String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 5);
+    assert.equal(nodes(view).filter(node => node.type === 'button' && String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 7);
   }
 });
 
@@ -600,18 +600,15 @@ test('featured hides pinned entries that declare no support for the current host
   const current = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '', bootstrap: { hostVersion: '0.2.9-rc.1' } }));
   assert.equal(nodes(current.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 0);
   assert.equal(nodes(current.view).filter(node => node.props.className === 'pf8_feat').length, 0);
+  const alpha2 = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '', bootstrap: { hostVersion: '0.2.3-alpha.2' } }));
+  assert.equal(nodes(alpha2.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 6);
   const rc5 = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '', bootstrap: { hostVersion: '0.2.2-rc.5' } }));
-  assert.deepEqual(
-    nodes(rc5.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).map(node => node.props['aria-label']),
-    ['查看精选：在日常协作里顺手攒下个人技能库'],
-  );
-  const rc3 = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '', bootstrap: { hostVersion: '0.2.2-rc.3' } }));
-  assert.equal(nodes(rc3.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 3);
+  assert.equal(nodes(rc5.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 6);
   const declared = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '', bootstrap: { hostVersion: '0.2.1-rc.3' } }));
-  assert.equal(nodes(declared.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 4);
+  assert.equal(nodes(declared.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 3);
   // No host version means unknown, not incompatible: keep the entries for the detail gate.
   const unknown = render(fixture({ view: 'home', homeRequest: '', plan: null, taskId: null, request: '' }));
-  assert.equal(nodes(unknown.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 5);
+  assert.equal(nodes(unknown.view).filter(node => String(node.props['aria-label'] || '').startsWith('查看精选：')).length, 7);
 });
 
 test('RC2 with no compatible featured keeps a live opportunity card instead of throwing', () => {

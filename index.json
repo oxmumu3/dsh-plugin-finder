@@ -67,8 +67,8 @@
         "zh": "发现好插件"
       },
       "description": {
-        "en": "Search 11,979+ community plugins by task intent, assemble verifiable plans, and enter Creator Mode with lessons learned when a gap remains.",
-        "zh": "按真实任务需求倒推检索 11,979+ 社区插件与精选方案；差最后 20% 缺口时带避坑经验进创造模式补齐并回原工作区交付。"
+        "en": "Search 11,979+ community plugins by task intent, reuse installed bundles first, assemble verifiable plans, and enter Creator Mode with lessons learned when a gap remains.",
+        "zh": "按真实任务需求倒推检索 11,979+ 社区插件与本机已装能力；差最后 20% 缺口时带避坑经验进创造模式补齐并回原工作区交付。"
       },
       "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJQbHVnaW4gRmluZGVyIj4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNCIgZmlsbD0iIzRkNmJmZSIvPgogIDxjaXJjbGUgY3g9IjI3IiBjeT0iMjciIHI9IjEyLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSI0LjUiLz4KICA8cGF0aCBkPSJNMzYuNSAzNi41IDQ5IDQ5IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iNC41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMjcgMjF2MTJNMjEgMjdoMTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9IjAuOTIiLz4KPC9zdmc+Cg==",
       "author": "牛村木木山",
@@ -96,8 +96,8 @@
       },
       "versions": [
         {
-          "version": "0.13.8",
-          "publishTimestamp": 1795401380,
+          "version": "0.14.0",
+          "publishTimestamp": 1795865400,
           "source": {
             "type": "npm"
           },
@@ -117,6 +117,7 @@
         "en": "Personal chief-of-staff bridging Mac workspaces, Google Workspace, flomo, Dida, and native DSH sessions with Sentinel safety confirmation and WeChat/iOS sync.",
         "zh": "住在电脑里、手机随时聊的私人参谋：直连 Mac 工作区、Google 三件套、flomo 与滴答，原生会话同源并带 Sentinel 安全确认卡。"
       },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEU0ggRG90Ij4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNCIgZmlsbD0iIzE4MjIzMCIvPgogIDxjaXJjbGUgY3g9IjMyIiBjeT0iMzIiIHI9IjE1IiBmaWxsPSJub25lIiBzdHJva2U9IiM2MGE1ZmEiIHN0cm9rZS13aWR0aD0iNCIvPgogIDxjaXJjbGUgY3g9IjMyIiBjeT0iMzIiIHI9IjUuNSIgZmlsbD0iI2Y4ZmFmYyIvPgo8L3N2Zz4=",
       "author": "牛村木木山",
       "homepage": "https://github.com/oxmumu3/dsh-project-companion",
       "repository": {
@@ -163,6 +164,7 @@
         "en": "AI task triage cockpit with parallel Codex worktree dispatch, unified ledger MCP, topic repository view, and evidence-backed acceptance.",
         "zh": "DeepSeek Harness 原生智能任务总管：一句话 AI 拆单分诊、Codex Git Worktree 并发派工、驾驶舱/选题双视图与证据验收闭环。"
       },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEU0ggU3VwZXIgQWdlbnQiPgogIDxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE0IiBmaWxsPSIjMWUyOTNiIi8+CiAgPHJlY3QgeD0iMTMiIHk9IjE2IiB3aWR0aD0iMTAiIGhlaWdodD0iMzIiIHJ4PSIzLjUiIGZpbGw9IiM2MGE1ZmEiLz4KICA8cmVjdCB4PSIyNyIgeT0iMTYiIHdpZHRoPSIxMCIgaGVpZ2h0PSIyMiIgcng9IjMuNSIgZmlsbD0iI2Y1OWUwYiIvPgogIDxyZWN0IHg9IjQxIiB5PSIxNiIgd2lkdGg9IjEwIiBoZWlnaHQ9IjI4IiByeD0iMy41IiBmaWxsPSIjMzRkMzk5Ii8+Cjwvc3ZnPg==",
       "author": "牛村木木山",
       "homepage": "https://github.com/oxmumu3/dsh-superagent#readme",
       "repository": {
@@ -208,6 +210,7 @@
         "en": "Family WeChat assistant with isolated member sessions, consent-scoped memory sharing, reminders, and host-side configuration.",
         "zh": "给每位家人配一个独立的微信小助手：隔离会话与偏好记忆、明确分享授权范围、日程提醒与家庭事务协助。"
       },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJMZWxlIEZhbWlseSBBc3Npc3RhbnQiPgogIDxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE0IiBmaWxsPSIjMWY0ZDNhIi8+CiAgPHBhdGggZD0iTTE2IDMzIDMyIDE5bDE2IDE0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmN2Y0ZWMiIHN0cm9rZS13aWR0aD0iMy42IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cGF0aCBkPSJNMjEgMzF2MTVoMjJWMzEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y3ZjRlYyIgc3Ryb2tlLXdpZHRoPSIzLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxjaXJjbGUgY3g9IjMyIiBjeT0iMzcuNSIgcj0iMy41IiBmaWxsPSIjZDhiOTg5Ii8+Cjwvc3ZnPg==",
       "author": "牛村木木山",
       "homepage": "https://github.com/oxmumu3/dsh-family-assistant#readme",
       "repository": {
@@ -253,6 +256,7 @@
         "en": "Zero-interruption micro-learning cards at real engineering trade-offs with 10-second quizzes, side-panel coaching, and a local skills notebook.",
         "zh": "在日常协作的关键取舍处顺手生成防刷屏微学习卡，支持 10 秒快测、右侧边聊边测与本机个人技能手账沉淀。"
       },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJJbmNpZGVudGFsIExlYXJuIENvYWNoIj4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNCIgZmlsbD0iIzJiMjYyMCIvPgogIDxwYXRoIGQ9Ik0xNyAyMmM1LTIgMTAtMSAxNSAyIDUtMyAxMC00IDE1LTJ2MjNjLTUtMi0xMC0xLTE1IDItNS0zLTEwLTQtMTUtMlYyMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y1ZWZlNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMyIDI0djIzIiBzdHJva2U9IiNlNWE5M2IiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+",
       "author": "牛村木木山",
       "homepage": "https://github.com/oxmumu3/dsh-incidental-learn#readme",
       "repository": {
@@ -334,6 +338,53 @@
           },
           "engines": {
             "dsh": ">=0.2.2-rc.2 <0.2.3-0 || >=0.2.3-alpha.0 <0.2.4-0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "@oxmumu3/dot-memory",
+      "title": {
+        "en": "Dot Memory Bus",
+        "zh": "Dot 记忆总线"
+      },
+      "description": {
+        "en": "Local plaintext Markdown memory bus shared across DSH, Antigravity, Claude Code, Codex, and MCP-compatible agents with transparent review and zero cloud lock-in.",
+        "zh": "跨工具共享的本机明文 Markdown 记忆总线：打通 DSH 与多款本机 AI 工具的偏好、项目脉络与交接记录，随时可读可改。"
+      },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEb3QgTWVtb3J5IEJ1cyI+CiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiMxYjI2MzgiLz4KICA8cmVjdCB4PSIxNCIgeT0iMTYiIHdpZHRoPSIzNiIgaGVpZ2h0PSIzMiIgcng9IjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2UyZThmMCIgc3Ryb2tlLXdpZHRoPSIzLjIiLz4KICA8cGF0aCBkPSJNMjIgMjYuNWgyME0yMiAzNC41aDEzIiBzdHJva2U9IiNlMmU4ZjAiIHN0cm9rZS13aWR0aD0iMy4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8Y2lyY2xlIGN4PSI0MiIgY3k9IjM2LjUiIHI9IjQuMiIgZmlsbD0iIzM4YmRmOCIvPgo8L3N2Zz4=",
+      "author": "牛村木木山",
+      "homepage": "https://github.com/oxmumu3/dot-memory",
+      "repository": {
+        "url": "https://github.com/oxmumu3/dot-memory"
+      },
+      "metadata": {
+        "category": "learning",
+        "keywords": [
+          "memory",
+          "mcp",
+          "markdown",
+          "cross-agent",
+          "local-first",
+          "记忆总线"
+        ],
+        "labels": [
+          "dual-023",
+          "local-first"
+        ],
+        "sortKeys": {
+          "featured": 7
+        }
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1795708320,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.2-rc.2 <0.3.0"
           }
         }
       ]

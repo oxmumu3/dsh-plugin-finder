@@ -28,6 +28,7 @@ import {safePlanValidationIssue,FinderError} from './src/contracts.js';
 import {createExpertSessions,registerExpertSession,verifyExpertSession} from './src/expert-session.js';
 import {createCreatorAssist,registerCreatorAssist,hostPresetReader} from './src/creator-assist.js';
 import {createCommunityRefresher} from './src/community-refresh.js';
+import {browseCommunity,getCommunityOverview} from './src/community-catalog.js';
 import {summarizeTokenSavingsLedger} from './src/token-savings.js';
 export const name='plugin-finder';
 export const inject=['connection','storageDomain','tools','systemPrompt','workspaceRegistry','workingDirectory','sandboxPolicy'];
@@ -86,7 +87,14 @@ export async function apply(ctx){
   const telemetry=createTelemetry({store:telemetryStore,endpoint:COLLECTOR_URL,listPending:epoch=>core.pendingTelemetry(epoch),clientVersion:CLIENT_VERSION,hostVersion:getDshRuntimeVersion()});
   const model=createHostModel(ctx);
   const onPlanValidationIssue=issue=>{const safe=safePlanValidationIssue(issue);if(safe)try{ctx.logger?.info?.('finder.plan_validation_issue '+JSON.stringify(safe));}catch{}};
-  core=createFinderService({discovery,model,feedbackStore,workflowStore,historyStore,searchHistoryStore,telemetry,onPlanValidationIssue,hostVersion:getDshRuntimeVersion(),runtimeContext:createRuntimeContextReader(ctx,{signal:lifetime.signal}),preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal})});
+  const runtimeContext=createRuntimeContextReader(ctx,{signal:lifetime.signal});
+  const readInstalledPlugins=async signal=>{
+    try{
+      const rt=await runtimeContext({signal});
+      return Array.isArray(rt?.plugins)?rt.plugins.filter(p=>p&&p.installed===true&&p.enabled===true&&typeof p.name==='string').map(p=>p.name):[];
+    }catch{return [];}
+  };
+  core=createFinderService({discovery,model,feedbackStore,workflowStore,historyStore,searchHistoryStore,telemetry,onPlanValidationIssue,hostVersion:getDshRuntimeVersion(),runtimeContext,readInstalledPlugins,preparePlugins:createPluginInstaller(ctx,{signal:lifetime.signal})});
   const opportunityStore={read:async()=>JSON.parse((await opportunityHandle.global.get()).serialized),write:value=>opportunityHandle.global.set({serialized:JSON.stringify(value)})};
   const installations=catalogHandle.table('installations');
   const catalogService=createCatalogInstallService({
@@ -148,7 +156,39 @@ export async function apply(ctx){
     catalogDetail:body=>catalogService.detail(body),catalogInstall:body=>catalogService.install(body),catalogStatus:body=>catalogService.status(body)};
   const savingsWrapped=Object.fromEntries(['history','open','reset','importBackup','feedback','handoff','creatorClaim','creatorRecord','executionClaim','executionPrepare','executionSubmitClaim','executionCancelClaim','executionRecord','catalogInstall','catalogStatus'].filter(key=>typeof baseService[key]==='function').map(key=>[key,withTokenSavings(baseService[key].bind(baseService))]));
   const service={...baseService,...savingsWrapped,
-    async bootstrap(){const[state,communitySync]=await Promise.all([baseService.bootstrap(),communityRefresher.maybeRefresh().catch(()=>communityRefresher.status())]);return{...state,communitySync,tokenSavings:computeTokenSavings()};},
+    async bootstrap(body={}){
+      const[state,communitySync,installedPlugins]=await Promise.all([
+        baseService.bootstrap(),
+        communityRefresher.maybeRefresh().catch(()=>communityRefresher.status()),
+        readInstalledPlugins(body?.signal),
+      ]);
+      return{...state,communitySync,communityOverview:getCommunityOverview(),installedPlugins,tokenSavings:computeTokenSavings()};
+    },
+    async catalogInstall(body){
+      const result=await savingsWrapped.catalogInstall(body);
+      return{...result,installedPlugins:await readInstalledPlugins(body?.signal)};
+    },
+    async catalogStatus(body){
+      const result=await savingsWrapped.catalogStatus(body);
+      return{...result,installedPlugins:await readInstalledPlugins(body?.signal)};
+    },
+    async communityBrowse(body={}){
+      if(!body||typeof body!=='object'||Array.isArray(body))throw new FinderError('INVALID_INPUT');
+      await communityRefresher.init().catch(()=>{});
+      const installedPlugins=body.filter==='installed'?await readInstalledPlugins(body.signal):null;
+      return{
+        ...browseCommunity({
+          categoryId:typeof body.categoryId==='string'?body.categoryId:'',
+          query:typeof body.query==='string'?body.query.slice(0,300):'',
+          sort:body.sort==='stars'?'stars':'default',
+          filter:body.filter==='npm'||body.filter==='installed'?body.filter:'all',
+          installedPlugins,
+          page:body.page,
+          pageSize:body.pageSize,
+        }),
+        overview:getCommunityOverview(),
+      };
+    },
     communitySnapshot:()=>communityRefresher.snapshot()};
   const agentModel=createAgentModelAdapter(model,{readRuntime:createRuntimeContextReader(ctx,{signal:lifetime.signal})});
   const agentService=createAgentFinderService({

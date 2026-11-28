@@ -44,7 +44,8 @@ test('root index.json stays synchronized with build-market-index.mjs and DSH for
     assert.ok(['asc', 'desc'].includes(entry.order), `sortKeys.${id}.order`);
   }
 
-  assert.equal(doc.plugins.length, 6);
+  assert.equal(doc.plugins.length, 7);
+  for (const plugin of doc.plugins) assert.ok(typeof plugin.icon === 'string' && plugin.icon.startsWith('data:image/svg+xml;base64,'), `${plugin.name}.icon required`);
   const seen = new Set();
   for (const plugin of doc.plugins) {
     assert.match(plugin.name, PACKAGE_NAME);

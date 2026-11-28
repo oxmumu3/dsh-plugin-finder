@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { featuredCatalog } from '../src/featured-catalog.js';
-const expectedIds = ['agent-twin', 'family-assistant', 'dsh-dot', 'dot-harness', 'incidental-learn'];
+const expectedIds = ['agent-twin', 'family-assistant', 'dsh-dot', 'superagent', 'incidental-learn', 'dot-memory', 'dot-harness'];
 const strings = ['id', 'title', 'subtitle', 'summary', 'why', 'scenario', 'status', 'version', 'checkedAt'];
 const lists = ['audience', 'topics', 'requirements', 'limitations', 'components', 'sourceUrls'];
 const card = id => {
@@ -18,14 +18,18 @@ const assertPublicHttps = value => {
   assert.equal(url.protocol, 'https:');
   assert.equal(url.username, '');
   assert.equal(url.password, '');
-  assert.equal(url.hostname, 'github.com');
-  assert.equal(url.pathname.split('/')[1], 'oxmumu3');
+  assert.ok(
+    (url.hostname === 'github.com' && url.pathname.split('/')[1] === 'oxmumu3')
+    || (url.hostname === 'registry.npmjs.org' && url.pathname.startsWith('/@oxmumu3/'))
+    || (url.hostname === 'www.npmjs.com' && url.pathname.startsWith('/package/@oxmumu3/')),
+    `unexpected public source URL ${value}`,
+  );
   assert.equal(url.search, '');
 };
 
-test('cold-start catalog offers five distinct products rather than platform or component duplicates', () => {
-  assert.equal(featuredCatalog.length, 5);
-  assert.equal(new Set(featuredCatalog.map(entry => entry.id)).size, 5);
+test('cold-start catalog offers seven distinct products rather than platform or component duplicates', () => {
+  assert.equal(featuredCatalog.length, 7);
+  assert.equal(new Set(featuredCatalog.map(entry => entry.id)).size, 7);
   assert.deepEqual(featuredCatalog.map(entry => entry.id), expectedIds);
 });
 
@@ -76,21 +80,23 @@ test('only a checked exact public release is installable and all preview or priv
   for (const entry of installable) {
     assert.equal(entry.status, 'available');
     assert.deepEqual(Object.keys(entry.install).sort(), ['sha256', 'spec', 'verifiedAt', 'version']);
-    assert.match(entry.install.sha256,/^[a-f0-9]{64}$/);
+    assert.match(entry.install.sha256, /^[a-f0-9]{64}$/);
     assert.equal(entry.install.version, entry.version);
     assertUtc(entry.install.verifiedAt);
     assertPublicHttps(entry.install.spec);
-    const path = new URL(entry.install.spec).pathname;
-    const repo = entry.id === 'agent-twin' ? 'ai-twin-starter'
-      : entry.id === 'dsh-dot' ? 'dsh-project-companion'
-        : entry.id === 'dot-harness' ? 'dot-dsh-connector'
-          : entry.id === 'incidental-learn' ? 'dsh-incidental-learn'
-            : 'dsh-family-assistant';
-    const archivePrefix = entry.components[0].replace(/^@/, '').replace('/', '-');
-    assert.equal(path, `/oxmumu3/${repo}/releases/download/v${entry.version}/${archivePrefix}-${entry.version}.tgz`);
-    assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/tag/v${entry.version}`));
-    if (['agent-twin', 'dot-harness', 'incidental-learn'].includes(entry.id)) assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/download/v${entry.version}/SHA256SUMS`));
-    if (entry.id === 'family-assistant') assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/download/v${entry.version}/SHA256SUMS.txt`));
+    const parsed = new URL(entry.install.spec);
+    if (parsed.hostname === 'registry.npmjs.org') {
+      const pkg = entry.components[0];
+      const shortName = pkg.split('/')[1];
+      assert.equal(parsed.pathname, `/${pkg}/-/${shortName}-${entry.version}.tgz`);
+      assert.ok(entry.sourceUrls.some(url => url.startsWith('https://github.com/oxmumu3/')));
+    } else {
+      const repo = 'dot-dsh-connector';
+      const archivePrefix = entry.components[0].replace(/^@/, '').replace('/', '-');
+      assert.equal(parsed.pathname, `/oxmumu3/${repo}/releases/download/v${entry.version}/${archivePrefix}-${entry.version}.tgz`);
+      assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/tag/v${entry.version}`));
+      assert.ok(entry.sourceUrls.includes(`https://github.com/oxmumu3/${repo}/releases/download/v${entry.version}/SHA256SUMS`));
+    }
     assert.match(entry.limitations.join(' '), entry.version.includes('-preview.') ? /预发布/ : /公开发行/);
     assert.match(entry.limitations.join(' '), /不等于.*验收/);
   }

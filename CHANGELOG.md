@@ -1,3 +1,15 @@
+# 0.14.0（2026-11-28）
+
+- **全量精选焕新与 `0.2.3-alpha.2` 首屏恢复**：`featured-catalog.js` 与官方市场索引 `index.json` 全面同步至实测公开发行版（`AI 分身工作台 0.6.3`、`乐乐家庭助手 0.2.9`、`DSH Dot 0.43.1`、`Super Agent 0.3.0`、`顺带私教 0.2.0`、`Dot 记忆总线 0.1.0` 及历史兼容 `Dot 连接管理`），解决 `0.2.3-alpha.2` 下精选整栏和默认建议卡因旧宿主白名单被过滤消失的问题；`catalog-detail.js` 新增官方 npm tarball + SHA-256 双源核验，`index.json` 全员补齐内联 SVG 图标。
+- **本机已装插件全链路感知**：`bootstrap` 与 `recommend` 接入只读 `runtimeContext`（`pluginManager.listBundles()`），正式点亮首页右侧「你的 DSH 现在装着 N 个插件」积木墙，方案规划优先复用本机已装插件，解法卡积木显式区分「已装好，能直接用」，首页「你交代过的事」最近 4 条现可直接点击打开对应方案。
+- **插件商店质量排序、筛选与旧快照救活**：商店分页摆脱纯字母序，改为综合质量（含独立仓实星权重与大仓 `#subpath` 防虚高折算）与搜词相关性排序，新增「综合排序 / 按 GitHub Star」「全部来源 / 仅 npm 直装 / 本机已装」筛选、行内 `★` / `npm` / `已安装` 标记及一键复制 `0.2.3` 精选市场源；商店详情在目录快照旧版不兼容当前宿主时，自动核对同包名、同作者仓库在 npm 发布的最新兼容版。
+- **找方案渐进反馈与双语召回扩充**：等待卡在需求理解完成后立刻展示「我的理解 + 拆解出的关键能力」胶囊与候选核对实时进展；`catalog/index.mjs` 中英能力映射由 16 组扩至 28 组。
+- **创造伴侣升级、主对话常驻 Prompt 瘦身与客户端 96% 瘦身**：`CREATOR_GUIDE` 吸收 `dsh-plugin-lessons` 64 条最新 `0.2.3` 与排版避坑精粹并厘清 `⌘R` 热看 vs `⌘Q` 换包重开；精简主会话常驻 `finder:agent-routing` 与工具说明节省每轮上下文 Token；新增轻量 `/api/plugin_finder/community-browse` 分页路由并将 `6.9 MiB` 离线目录留在 Host 侧，浏览器包 `dist/client.js` 从 `10 MB` 降至 `~400 KB`。
+
+# 0.13.8（2026-11-23）
+
+- 新增官方 DeepSeek Harness `0.2.3-alpha.2` 单包双兼容支持（`pendingInteractions ?? sessionStatus` 运行期降级、`facets: { conversation: true }` 会话保持、`ConnectionAuthentication` 鉴权适配）并上线仓根官方 `format: 1` 插件市场索引 `index.json`。
+
 # 0.13.7（2026-11-19）
 
 - 精简首页眉栏省 Token 微签文案：去掉「账本与算法」字样，改为直接展示「累计已省约 XX 万 Token ›」（保留悬停联动与点击查看详情弹窗），并同步将卡片折叠说明中的「账本」改为更直白的「首页累计记录」。

@@ -7,7 +7,7 @@ export const featuredTopics = Object.freeze([
   {id:'learning', label:'顺带学习', keywords:['顺带私教','顺带学习','技能库','经验沉淀','复盘','盲区','边做边学','incidental learn']},
 ].map(topic=>Object.freeze({...topic,keywords:Object.freeze(topic.keywords)})));
 
-const productIds = new Set(['agent-twin','family-assistant','dsh-dot','dot-harness','incidental-learn']);
+const productIds = new Set(['agent-twin','family-assistant','dsh-dot','superagent','incidental-learn','dot-memory','dot-harness']);
 const topicIds = new Set(featuredTopics.map(topic=>topic.id));
 const topicLabels = new Map(featuredTopics.map(topic=>[topic.id,topic.label]));
 const object = value => value!==null && typeof value==='object' && !Array.isArray(value);

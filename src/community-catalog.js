@@ -14,6 +14,59 @@ const cmp=(a,b)=>a<b?-1:a>b?1:0;
 const integer=(value,fallback,min,max)=>{const n=Number(value);return Number.isFinite(n)?Math.min(max,Math.max(min,Math.floor(n))):fallback;};
 const shorten=value=>{const clean=String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/gu,' ').trim(),chars=[...clean];return chars.length>240?chars.slice(0,239).join('')+'…':clean;};
 const completeness=entry=>(entry.npmName&&entry.version?4:0)+(entry.summary.length>=30?2:0)+(entry.owner?1:0);
+export const isMonorepoSubpath=entry=>typeof entry?.name==='string'&&entry.name.includes('#');
+const displayLeaf=name=>{const value=String(name??'');const hash=value.lastIndexOf('#');return hash>=0?value.slice(hash+1):value;};
+
+/**
+ * Balanced quality signal for browsing & search tie-breaking:
+ * rewards real standalone repo stars and npm installability while dampening
+ * monorepo subpaths (#subpath) that inherit giant parent repository stars.
+ */
+export function communityQualityScore(entry){
+  const base=completeness(entry)*10;
+  const stars=Number.isFinite(entry?.stars)&&entry.stars>0?entry.stars:0;
+  const starBoost=stars>0
+    ?(isMonorepoSubpath(entry)?Math.min(22,Math.round(Math.log10(stars+1)*5.5)):Math.min(48,Math.round(Math.log10(stars+1)*18)))
+    :0;
+  return base+starBoost;
+}
+
+function queryRelevance(row,tokens){
+  if(!tokens.length)return 0;
+  let score=0;
+  for(const token of tokens){
+    if(row.leaf===token||row.npm===token)score+=120;
+    else if(row.leaf.startsWith(token)||row.npm.startsWith(token))score+=60;
+    else if(row.leaf.includes(token)||row.npm.includes(token))score+=36;
+    else if(row.owner===token)score+=30;
+    else if(row.owner.includes(token))score+=16;
+    else score+=8;
+  }
+  return score;
+}
+
+function installedKeySet(installedPlugins){
+  if(!installedPlugins)return null;
+  const list=installedPlugins instanceof Set?[...installedPlugins]:Array.isArray(installedPlugins)?installedPlugins:[];
+  const keys=new Set();
+  for(const raw of list){
+    const value=normalize(raw);
+    if(!value)continue;
+    keys.add(value);
+    const slash=value.lastIndexOf('/');
+    if(slash>=0)keys.add(value.slice(slash+1));
+  }
+  return keys;
+}
+
+export function isCommunityEntryInstalled(entry,installedKeys){
+  if(!installedKeys||!installedKeys.size||!entry)return false;
+  const npm=normalize(entry.npmName);
+  if(npm&&installedKeys.has(npm))return true;
+  const leaf=normalize(displayLeaf(entry.name));
+  if(leaf&&installedKeys.has(leaf))return true;
+  return false;
+}
 
 export function canonicalCommunityId(value){
   const u=new URL(value);
@@ -96,13 +149,21 @@ export function normalizeLiveCommunityCatalog(rawFull,{fetchedAt,baseCatalog=com
 
 let activeCatalog=communityCatalog;
 let activeIndex=null;
+let remoteOverview=null;
+const rememberedEntries=new Map();
 
 function buildIndex(catalog){
   const labels=new Map(catalog.categories.map(category=>[category.id,category.label]));
   const byId=new Map(catalog.entries.map(entry=>[entry.id,entry]));
   const categoryIds=new Set(catalog.categories.map(category=>category.id));
-  const searchable=catalog.entries.map(entry=>({
+  const searchable=catalog.entries.map((entry,order)=>({
     entry,
+    order,
+    leaf:normalize(displayLeaf(entry.name)),
+    npm:normalize(entry.npmName),
+    owner:normalize(entry.owner),
+    quality:communityQualityScore(entry),
+    stars:Number.isFinite(entry.stars)&&entry.stars>0?entry.stars:0,
     text:normalize([entry.name,entry.owner,entry.summary,entry.npmName,entry.sourceCategory,labels.get(entry.categoryId)].filter(Boolean).join(' ')),
   }));
   return {catalog,byId,categoryIds,searchable};
@@ -116,23 +177,72 @@ export function setActiveCommunityCatalog(nextCatalog){
   }
   activeCatalog=freezeCatalog(nextCatalog);
   activeIndex=null;
+  remoteOverview=null;
   return activeCatalog;
 }
 export function resetActiveCommunityCatalog(){
   activeCatalog=communityCatalog;
   activeIndex=null;
+  remoteOverview=null;
+  rememberedEntries.clear();
   return activeCatalog;
 }
 
+/** Browser client stores lightweight overview & paged entries received from Host without bundling 6.9 MiB JSON. */
+export function setCommunityOverview(overview){
+  if(!overview||typeof overview!=='object'||!Array.isArray(overview.categories))return;
+  remoteOverview=overview;
+  for(const cat of overview.categories)for(const entry of cat?.previews??[])if(entry&&typeof entry.id==='string')rememberedEntries.set(entry.id,entry);
+}
+export function rememberCommunityEntries(entries){
+  if(!Array.isArray(entries))return;
+  for(const entry of entries){
+    if(!entry||typeof entry.id!=='string')continue;
+    if(rememberedEntries.size>800){
+      const first=rememberedEntries.keys().next().value;
+      if(first)rememberedEntries.delete(first);
+    }
+    rememberedEntries.set(entry.id,entry);
+  }
+}
+
 export function getCommunityOverview(){
+  if(activeCatalog.entries.length===0&&remoteOverview){
+    return {
+      ...remoteOverview,
+      categories:remoteOverview.categories.map(category=>({...category,sourceCategories:[...(category.sourceCategories??[])],previews:[...(category.previews??[])]})),
+    };
+  }
   const {entries,categories,...meta}=activeCatalog;
   return{...meta,categories:categories.map(category=>({...category,sourceCategories:[...category.sourceCategories],count:entries.filter(entry=>entry.categoryId===category.id).length,previews:entries.filter(entry=>entry.categoryId===category.id&&entry.preview)}))};
 }
-export function browseCommunity({categoryId='',query='',page=1,pageSize=24}={}){
+
+export function browseCommunity({categoryId='',query='',sort='default',filter='all',installedPlugins=null,page=1,pageSize=24}={}){
   const {categoryIds,searchable}=getIndex();
   const size=integer(pageSize,24,1,60),tokens=normalize(String(query).slice(0,300)).split(/\s+/u).filter(Boolean).slice(0,12),category=typeof categoryId==='string'?categoryId:'';
-  const rows=category&&!categoryIds.has(category)?[]:searchable.filter(({entry,text})=>(!category||entry.categoryId===category)&&tokens.every(token=>text.includes(token))).map(row=>row.entry);
+  const safeSort=sort==='stars'?'stars':'default';
+  const safeFilter=filter==='npm'||filter==='installed'?filter:'all';
+  const installedKeys=safeFilter==='installed'?installedKeySet(installedPlugins):null;
+  const matched=category&&!categoryIds.has(category)?[]:searchable.filter(row=>{
+    if(category&&row.entry.categoryId!==category)return false;
+    if(safeFilter==='npm'&&!row.entry.npmName)return false;
+    if(safeFilter==='installed'&&!isCommunityEntryInstalled(row.entry,installedKeys))return false;
+    return tokens.every(token=>row.text.includes(token));
+  });
+  let ordered=matched;
+  if(safeSort==='stars'){
+    ordered=[...matched].sort((a,b)=>(b.stars-a.stars)||(b.quality-a.quality)||(a.order-b.order));
+  }else if(tokens.length){
+    ordered=[...matched].sort((a,b)=>(queryRelevance(b,tokens)-queryRelevance(a,tokens))||(b.quality-a.quality)||(a.order-b.order));
+  }else{
+    ordered=[...matched].sort((a,b)=>(Number(b.entry.preview)-Number(a.entry.preview))||(a.entry.preview&&b.entry.preview?a.order-b.order:0)||(b.quality-a.quality)||(a.order-b.order));
+  }
+  const rows=ordered.map(row=>row.entry);
   const total=rows.length,pages=Math.ceil(total/size),current=integer(page,1,1,Math.max(1,pages));
   return{entries:rows.slice((current-1)*size,current*size),total,page:current,pageSize:size,pages};
 }
-export function getCommunityEntry(id){return typeof id==='string'?getIndex().byId.get(id)??null:null;}
+
+export function getCommunityEntry(id){
+  if(typeof id!=='string')return null;
+  return getIndex().byId.get(id)??rememberedEntries.get(id)??null;
+}

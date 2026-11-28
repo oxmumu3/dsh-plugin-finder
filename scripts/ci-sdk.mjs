@@ -24,6 +24,11 @@ export async function planSdk(args) {
   const usesCordis41 = cordis41Targets.has(sdk);
   dependencies['@deepseek-ai/cordis'] = usesCordis42 ? '4.2.0-alpha.1' : usesCordis41 ? '4.1.0' : '4.0.5';
   dependencies['@deepseek-ai/schemastery'] = usesCordis42 ? '3.20.0-alpha.1' : usesCordis41 ? '3.19.0' : '3.18.5';
+  if (usesCordis42) {
+    dependencies['@deepseek-ai/cordis-plugin-group'] = '1.2.0-alpha.1';
+    dependencies['@deepseek-ai/cordis-plugin-loader'] = '1.2.0-alpha.1';
+    dependencies['@deepseek-ai/cordis-plugin-include'] = '1.2.0-alpha.1';
+  }
   // Retain Finder's measured VM-fixture suite baseline; all other Node processes stay at 128 MB.
   const suiteHeapMb = metadata.name === '@oxmumu3/dsh-plugin-finder' ? 512 : 128;
   const minimumTests = metadata.name === '@oxmumu3/dsh-plugin-finder' ? 1185 : 267;

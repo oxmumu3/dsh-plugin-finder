@@ -301,15 +301,60 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
       abortIfNeeded(signal,lifetimeSignal);
       const warnings=[],source={id:'community-selected-author',title:'所选插件的作者资料',url:selected.sourceUrl,status:'failed',fetchedAt:iso()};
       const selectedContext={entryId:selected.id,name:selected.name,sourceUrl:selected.sourceUrl,status:'unresolved',reason:''};
+      const inspectVersion=async version=>{
+        const entry=fullCatalog({name:'awesome-dsh-plugin',plugins:[{name:selected.name,url:selected.sourceUrl,npm:selected.npmName,version,description:{zh:selected.summary},category:selected.sourceCategory}]}).entries[0];
+        if(!entry)throw new Error('Selected entry metadata is incomplete');
+        return authorDetails({entry,origin:source,score:1,terms:[]},{signal:boundedSignal,hostVersion,nodeVersion,platform,warnings,communityEntryId:selected.id,communitySourceUrl:selected.sourceUrl});
+      };
+      let boundedSignal;
       try{
-        const boundedSignal=AbortSignal.any([signal,lifetimeSignal,AbortSignal.timeout(searchTimeoutMs)].filter(Boolean));
+        boundedSignal=AbortSignal.any([signal,lifetimeSignal,AbortSignal.timeout(searchTimeoutMs)].filter(Boolean));
         const repo=repositoryOf(selected.sourceUrl);if(!repo)throw new Error('Selected author URL is unsupported');
         const repositoryResult=await json(`https://api.github.com/repos/${repo.name}`,{signal:boundedSignal}),repository=repositoryResult.value;
         if(repositoryResult.status==='stale')throw new Error('Selected author ownership response is stale and could not be refreshed');
         if(String(repository.full_name??'').toLowerCase()!==repo.name.toLowerCase())throw new Error('Selected author repository ownership could not be confirmed');
-        const entry=fullCatalog({name:'awesome-dsh-plugin',plugins:[{name:selected.name,url:selected.sourceUrl,npm:selected.npmName,version:selected.version,description:{zh:selected.summary},category:selected.sourceCategory}]}).entries[0];
-        if(!entry)throw new Error('Selected entry metadata is incomplete');
-        const candidate=await authorDetails({entry,origin:source,score:1,terms:[]},{signal:boundedSignal,hostVersion,nodeVersion,platform,warnings,communityEntryId:selected.id,communitySourceUrl:selected.sourceUrl});
+        let candidate;
+        try{
+          candidate=await inspectVersion(selected.version);
+        }catch(firstError){
+          abortIfNeeded(signal,lifetimeSignal);
+          const firstDetail=String(firstError?.message??'');
+          const canCheckNewerNpm=Boolean(selected.npmName&&selected.version&&(/incompatib|no compatible index version|HTTP 404/i.test(firstDetail))&&!/platform|operating system/i.test(firstDetail));
+          if(!canCheckNewerNpm)throw firstError;
+          // 快照记录的旧 npm 版本可能早于当前宿主版本；在不更换包名与作者仓库归属的前提下，
+          // 安全核对 npm 上同作者发布的最新兼容版，避免新版本宿主下误判「装不了」。
+          try{
+            const encodedPkg=encodeURIComponent(selected.npmName).replace('%40','@').replace(/%2F/gi,'/');
+            const packument=(await json(`https://registry.npmjs.org/${encodedPkg}`,{signal:boundedSignal,maxBytes:4*1024*1024})).value;
+            const allVersions=Object.values(packument?.versions??{}).filter(v=>v&&v.name===selected.npmName&&typeof v.version==='string'&&v.version!==selected.version);
+            const compatibleVersions=allVersions.filter(v=>{
+              const declaredRepo=repositoryOf(v.repository);
+              if(!declaredRepo||declaredRepo.url.toLowerCase()!==repo.url.toLowerCase())return false;
+              const range=dshRange(v);
+              if(range&&assessCompatibility({compatibility:{dsh:range}},hostVersion).status==='incompatible')return false;
+              if(v.engines?.node&&assessCompatibility({compatibility:{dsh:v.engines.node}},nodeVersion??process.versions.node).status==='incompatible')return false;
+              if(Array.isArray(v.os)&&v.os.length&&platform){
+                const blocked=v.os.filter(x=>typeof x==='string'&&x.startsWith('!')).map(x=>x.slice(1));
+                const allowed=v.os.filter(x=>typeof x==='string'&&!x.startsWith('!'));
+                if(blocked.includes(platform)||(allowed.length&&!allowed.includes(platform)))return false;
+              }
+              return true;
+            });
+            const stable=compatibleVersions.filter(v=>!v.version.includes('-'));
+            const pool=stable.length?stable:compatibleVersions;
+            const latestTag=packument?.['dist-tags']?.latest;
+            const picked=pool.find(v=>v.version===latestTag)??pool.sort((a,b)=>b.version.localeCompare(a.version,'en',{numeric:true}))[0];
+            if(!picked)throw firstError;
+            candidate=await inspectVersion(picked.version);
+            candidate.upgradedFromVersion=selected.version;
+            const upgradeNote=`目录快照记录为 ${selected.version}（与当前宿主不兼容），已为你核对同作者在 npm 发布的最新兼容版 ${candidate.install.version}。`;
+            candidate.limitations=[upgradeNote,...(candidate.limitations??[])];
+            warnings.push(upgradeNote);
+          }catch(upgradeError){
+            abortIfNeeded(signal,lifetimeSignal);
+            throw firstError;
+          }
+        }
         source.status=repositoryResult.status;source.fetchedAt=repositoryResult.fetchedAt;selectedContext.status='checked';
         return{candidates:[candidate],sources:[source],warnings,searchedAt:iso(),selected:selectedContext,coverage:{scope:'selected-entry',inspected:1,resolved:1}};
       }catch(error){
@@ -416,6 +461,7 @@ export function createDiscovery({ market, fetchImpl = fetch, now = () => new Dat
       for (let index = 0; index < Math.min(distinct.length, inspectionBudget) && candidates.length < 6; index += 3) {
         if(Date.now()>=deadline){warnings.push('本轮作者资料读取达到时间预算，保留已读候选，其余匹配项尚未检查。');break;}
         const group = distinct.slice(index, Math.min(index + 3, inspectionBudget)); inspected += group.length;
+        try { const names = group.map(row => String(row.entry?.name ?? '').split('#').pop()).filter(Boolean).slice(0, 3); if (names.length) recordProgress({ text: `正在核对候选插件：${names.join('、')}` }, progressId); } catch {}
         const results = await Promise.all(group.map(async row => {
           const origins=row.origins??[row.origin];for(const origin of origins)counts(origin).inspected++;
           const authorSignal=AbortSignal.any([signal,lifetimeSignal,AbortSignal.timeout(Math.max(1,Math.min(authorTimeoutMs,deadline-Date.now())))].filter(Boolean));

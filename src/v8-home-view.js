@@ -116,16 +116,29 @@ export function createHomeView(React) {
         pending.action ? h('button', { type: 'button', className: 'pf8_lk', onClick: pending.action }, '接着做') : null)
       : h('h1', { className: 'pf8_line', id: 'pfv_home_title' }, '想让 DSH 帮你做成什么？');
 
-    // 5.3 你交代过的事：最近 4 条。记录里没有精确任务关联，所以这里只回看，不假装能跳回某一版。
+    // 5.3 你交代过的事：最近 4 条，有 taskId 时直接点进对应方案版本。
     const historyRows = history.slice(0, 4).map((record, index) => {
       const kind = historyState(record);
       const when = searchTime(record.updatedAt || record.createdAt);
       const label = text(record.title) || text(record.request) || '这件事';
-      return h('li', { key: text(record.id) || index },
+      const taskId = text(record.taskId);
+      const revisionId = text(record.latestRevisionId) || text(record.revisionId);
+      const canOpen = Boolean(taskId && typeof controller.openTask === 'function');
+      const rowBody = [
+        h('b', null, short(label, 40)),
+        h('small', null, when ? `${kind.say}，${when}` : kind.say),
+      ];
+      return h('li', { key: taskId || text(record.id) || index },
         h('span', { className: 'pf8_g' }, h(Lego, { kinds: [kind.lego], label: `${kind.say}，${label}` })),
-        h('div', { className: 'pf8_row' },
-          h('b', null, short(label, 40)),
-          h('small', null, when ? `${kind.say}，${when}` : kind.say)));
+        canOpen
+          ? h('button', {
+            type: 'button',
+            className: 'pf8_row',
+            disabled: busy || locked,
+            'aria-label': `回看「${short(label, 40)}」`,
+            onClick: () => controller.openTask(taskId, revisionId || undefined),
+          }, ...rowBody)
+          : h('div', { className: 'pf8_row' }, ...rowBody));
     });
 
     // 5.4 精选：作者亲手做、亲手验过的那几条，点进详情。

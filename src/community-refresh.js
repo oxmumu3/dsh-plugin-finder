@@ -176,7 +176,7 @@ export function createCommunityRefresher({
           method: 'GET',
           redirect: 'error',
           signal: combined,
-          headers: { 'User-Agent': 'dsh-plugin-finder/0.13.8 catalog-refresh', Accept: 'application/json' },
+          headers: { 'User-Agent': 'dsh-plugin-finder/0.14.0 catalog-refresh', Accept: 'application/json' },
         });
         const raw = await readBoundedJson(response, MAX_BYTES);
         if (closed) return status();

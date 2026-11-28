@@ -27,9 +27,11 @@ const WORKBENCH_SLUGS = Object.freeze([
   'dot-dsh-management',
   'dot-dsh-connector',
   'dsh-superagent',
+  'dot-memory',
   'dsh-dot',
   'agent-twin',
   'family-assistant',
+  'superagent',
   'dot-harness',
 ]);
 

@@ -6,7 +6,7 @@ import { executeInWorkspace, inferWorkspace } from './workspace-execution.js';
 import { watchExecutionConversation } from './execution-conversation-view.js';
 import { createExecutionFileOpener, createExecutionPreviewSurface, executionPreviewTabInfoFactory, mirrorExecutionPreviewSlots, renderExecutionAssistant } from './execution-markdown.js';
 import { featuredCatalog } from './featured-catalog.js';
-import { getActiveCommunityCatalog, getCommunityEntry, setActiveCommunityCatalog } from './community-catalog.js';
+import { getActiveCommunityCatalog, getCommunityEntry, rememberCommunityEntries, setActiveCommunityCatalog, setCommunityOverview } from './community-catalog.js';
 import { communityPluginRequest, rememberReturnPoint, restoreReturnPoint } from './community-view.js';
 import { normalizeFeaturedPreferences, featuredTopics } from './featured.js';
 import { renderFeaturedView } from './featured-view.js';
@@ -178,7 +178,7 @@ export function createFinderController(ctx, options = {}) {
     expertAvailable: typeof ctx?.sessions?.create === 'function' && typeof ctx?.sessions?.retain === 'function' && typeof ctx?.sessions?.binding === 'function',
     creation: null, creationForm: null, creationDirty: false, localOnly: false, creatorAttempts: [], creatorHandoff: null, pendingCreatorRecord: null,
     conversation: [], followupText: '', followupWarning: '', followupPending: false, followupRetry: null, pendingOutcome: null,
-    stage: 'describe', request: '', communityEntryId: null, homeCommunityEntryId: null, bootstrap: null, bootstrapLoaded: false,
+    stage: 'describe', request: '', communityEntryId: null, homeCommunityEntryId: null, communityOverview: null, installedPlugins: [], bootstrap: null, bootstrapLoaded: false,
     intent: null, plan: null, candidates: [], catalogUpdatedAt: '', discovery: null, warnings: [],
     busy: null, error: '', notice: '', workspaceId: '', workspaces: [],
     workspacePhase: 'pending', feedbackSaved: false, handoffRequested: false, preservedTarget: null,
@@ -283,6 +283,9 @@ export function createFinderController(ctx, options = {}) {
       if (!response.ok) throw handoffFailure(typeof value?.error?.message === 'string' && value.error.message.length <= 600 ? value.error.message : '暂时无法读取插件状态，请稍后重试。');
       if (value?.tokenSavings && typeof value.tokenSavings === 'object') {
         publish({ tokenSavings: normalizeTokenSavings(value.tokenSavings) });
+      }
+      if (Array.isArray(value?.installedPlugins)) {
+        publish({ installedPlugins: strings(value.installedPlugins) });
       }
       const detail = catalogValue(value, selection, detailId);
       publish({ catalogDetail: detail, catalogError: '' });
@@ -749,6 +752,9 @@ export function createFinderController(ctx, options = {}) {
   };
   const syncCommunityCatalog = summary => {
     if (closed || !summary || typeof summary !== 'object') return;
+    // Slimmed browser bundles keep the full 11,979 catalog on Host and page via /community-browse;
+    // only pull full /community-snapshot when an active local in-memory catalog exists (e.g. tests).
+    if (getActiveCommunityCatalog().entries.length === 0) return;
     if (needsCommunitySync(summary)) void fetchCommunitySnapshot();
     else if (summary.refreshing === true) {
       if (communityRefreshTimer) clearTimeout(communityRefreshTimer);
@@ -760,17 +766,43 @@ export function createFinderController(ctx, options = {}) {
     ...opportunityClient.methods,
     getSnapshot: () => state,
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
+    async browseCommunity({ categoryId = '', query = '', sort = 'default', filter = 'all', page = 1, pageSize = 24, signal } = {}) {
+      if (closed) return null;
+      const response = await fetchRequest(endpoint + 'community-browse', {
+        method: 'POST', credentials: 'same-origin', redirect: 'error', cache: 'no-store',
+        ...(signal ? { signal } : {}),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categoryId, query, sort, filter, page, pageSize }),
+      });
+      if (closed || signal?.aborted || !response?.ok) return null;
+      const value = await response.json();
+      if (closed || signal?.aborted || !value || !Array.isArray(value.entries)) return null;
+      rememberCommunityEntries(value.entries);
+      if (value.overview && typeof value.overview === 'object') {
+        setCommunityOverview(value.overview);
+        publish({ communityOverview: value.overview });
+      }
+      return value;
+    },
     bootstrap() {
       const firstRead = !state.bootstrapLoaded;
       const revision = draftRevision;
       let communitySync = null;
       return run('bootstrap', 'bootstrap', undefined, value => {
         if (typeof value?.model?.configured !== 'boolean') throw new Error('invalid bootstrap');
-        const { workflow, workflowWarning: warningValue, communitySync: syncValue, tokenSavings: _tokenSavings, ...bootstrap } = value;
+        const { workflow, workflowWarning: warningValue, communitySync: syncValue, communityOverview: overviewValue, installedPlugins: installedValue, tokenSavings: _tokenSavings, ...bootstrap } = value;
         communitySync = syncValue ?? null;
+        if (overviewValue && typeof overviewValue === 'object' && Array.isArray(overviewValue.categories)) {
+          setCommunityOverview(overviewValue);
+        }
         const warning = workflowWarning(warningValue);
         if (value.opportunity) opportunityClient.apply(value.opportunity);
-        publish({ bootstrap, bootstrapLoaded: true, modelLabel: text(value.model.label), storageWarning: warning, ...historyPatch(value), ...(warning ? { notice: warning } : {}) });
+        publish({
+          bootstrap, bootstrapLoaded: true, modelLabel: text(value.model.label), storageWarning: warning,
+          ...(overviewValue && typeof overviewValue === 'object' && Array.isArray(overviewValue.categories) ? { communityOverview: overviewValue } : {}),
+          ...(Array.isArray(installedValue) ? { installedPlugins: strings(installedValue) } : {}),
+          ...historyPatch(value), ...(warning ? { notice: warning } : {}),
+        });
         if (firstRead && revision === 0 && draftRevision === revision && !state.request.trim() && state.stage === 'describe' && workflow) {
           if (validSavedWorkflow(workflow)) {
             applyWorkflow(workflow, { view: state.view, restoredFrom: '本机历史', notice: warning || '已恢复本机任务与方案，可继续安装或接续会话。' });

@@ -18,10 +18,13 @@ const bounded=(value,max=2000)=>typeof value==='string'?value.slice(0,max):'';
 const list=value=>Array.isArray(value)?value.filter(x=>typeof x==='string').slice(0,20).map(x=>x.slice(0,2000)):[];
 const safeRelative=name=>typeof name==='string'&&!path.isAbsolute(name)&&!name.includes('\\')&&!name.split('/').some(x=>x==='..');
 const packagePattern=/^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/;
-const allowedHosts=new Set(['api.github.com','github.com','release-assets.githubusercontent.com','objects.githubusercontent.com','raw.githubusercontent.com']);
+const allowedHosts=new Set(['api.github.com','github.com','release-assets.githubusercontent.com','objects.githubusercontent.com','raw.githubusercontent.com','registry.npmjs.org']);
 const publicArchive=/^https:\/\/github\.com\/oxmumu3\/[a-zA-Z0-9_.-]+\/releases\/download\/v?([0-9a-zA-Z.-]+)\/([a-zA-Z0-9_.-]+\.tgz)$/;
+const publicNpmArchive=/^https:\/\/registry\.npmjs\.org\/@oxmumu3\/([a-z0-9][a-z0-9._-]*)\/-\/\1-([0-9]+\.[0-9]+\.[0-9]+(?:-[a-zA-Z0-9.-]+)?)\.tgz$/;
 const selectedCandidateMatches=(entry,candidate)=>entry.npmName
- ?candidate?.name===entry.npmName&&candidate.id===entry.npmName&&candidate.install?.type==='npm'&&candidate.install.version===entry.version&&candidate.install.spec===`${entry.npmName}@${entry.version}`
+ ?candidate?.name===entry.npmName&&candidate.id===entry.npmName&&candidate.install?.type==='npm'
+  &&((candidate.install.version===entry.version&&candidate.install.spec===`${entry.npmName}@${entry.version}`)
+   ||(candidate.upgradedFromVersion===entry.version&&candidate.communitySourceUrl===entry.sourceUrl&&candidate.install.spec===`${entry.npmName}@${candidate.install.version}`))
  :candidate?.communityEntryId===entry.id&&candidate.communitySourceUrl===entry.sourceUrl;
 
 /** Editorial changes open a fresh record without replacing historical receipts. */
@@ -72,22 +75,32 @@ async function ensureCacheRoot(archiveRoot,archiveHome){
 async function archiveCandidate(entry,{archiveRoot,archiveHome,fetchImpl,signal,hostVersion,nodeVersion,platform,now}){
  const install=safeFeaturedInstall(entry,now());
  if(!install||!archiveRoot||!path.isAbsolute(archiveRoot))throw Error('no verified public package');
- const match=publicArchive.exec(install.spec);
- if(!match||match[1].replace(/^v/,'')!==install.version)throw Error('unverified public source');
- const url=new URL(install.spec),parts=url.pathname.split('/'),repository=parts.slice(1,3).join('/'),tag=parts[5],filename=parts[6];
+ const ghMatch=publicArchive.exec(install.spec);
+ const npmMatch=ghMatch?null:publicNpmArchive.exec(install.spec);
+ if((!ghMatch||ghMatch[1].replace(/^v/,'')!==install.version)&&(!npmMatch||npmMatch[2]!==install.version))throw Error('unverified public source');
  const get=(url,max)=>request(url,{fetchImpl,signal,max});
- const metadata=JSON.parse((await get('https://api.github.com/repos/'+repository,250000)).toString());
- if(metadata.full_name!==repository||metadata.full_name.split('/')[0]!=='oxmumu3')throw Error('canonical owner mismatch');
- const release=JSON.parse((await get('https://api.github.com/repos/'+repository+'/releases/tags/'+encodeURIComponent(tag),1000000)).toString());
- const assets=Array.isArray(release.assets)?release.assets:[];
- const matches=assets.filter(asset=>asset.name===filename&&asset.browser_download_url===install.spec);
- if(release.tag_name!==tag||release.draft!==false||matches.length!==1)throw Error('release identity mismatch');
- let expected=/^sha256:([a-f0-9]{64})$/.exec(matches[0].digest??'')?.[1];
- if(!expected){
-  const checksums=assets.filter(asset=>asset.name==='SHA256SUMS'&&asset.browser_download_url===install.spec.slice(0,install.spec.lastIndexOf('/')+1)+'SHA256SUMS');
-  if(checksums.length!==1)throw Error('no asset integrity');
-  const lines=(await get(checksums[0].browser_download_url,100000)).toString().split(/\r?\n/).map(line=>line.match(/^([a-f0-9]{64})\s+\*?(.+)$/)).filter(row=>row&&row[2]===filename);
-  if(lines.length!==1)throw Error('no exact checksum');expected=lines[0][1];
+ let expected='';
+ if(ghMatch){
+  const url=new URL(install.spec),parts=url.pathname.split('/'),repository=parts.slice(1,3).join('/'),tag=parts[5],filename=parts[6];
+  const metadata=JSON.parse((await get('https://api.github.com/repos/'+repository,250000)).toString());
+  if(metadata.full_name!==repository||metadata.full_name.split('/')[0]!=='oxmumu3')throw Error('canonical owner mismatch');
+  const release=JSON.parse((await get('https://api.github.com/repos/'+repository+'/releases/tags/'+encodeURIComponent(tag),1000000)).toString());
+  const assets=Array.isArray(release.assets)?release.assets:[];
+  const matches=assets.filter(asset=>asset.name===filename&&asset.browser_download_url===install.spec);
+  if(release.tag_name!==tag||release.draft!==false||matches.length!==1)throw Error('release identity mismatch');
+  expected=/^sha256:([a-f0-9]{64})$/.exec(matches[0].digest??'')?.[1]??'';
+  if(!expected){
+   const checksums=assets.filter(asset=>asset.name==='SHA256SUMS'&&asset.browser_download_url===install.spec.slice(0,install.spec.lastIndexOf('/')+1)+'SHA256SUMS');
+   if(checksums.length!==1)throw Error('no asset integrity');
+   const lines=(await get(checksums[0].browser_download_url,100000)).toString().split(/\r?\n/).map(line=>line.match(/^([a-f0-9]{64})\s+\*?(.+)$/)).filter(row=>row&&row[2]===filename);
+   if(lines.length!==1)throw Error('no exact checksum');expected=lines[0][1];
+  }
+ }else{
+  const packageName=`@oxmumu3/${npmMatch[1]}`;
+  if(!entry.components.includes(packageName)||typeof entry.install.sha256!=='string'||!/^[a-f0-9]{64}$/.test(entry.install.sha256))throw Error('no asset integrity');
+  const registryMeta=JSON.parse((await get(`https://registry.npmjs.org/${packageName}/${encodeURIComponent(install.version)}`,512000)).toString());
+  if(registryMeta.name!==packageName||registryMeta.version!==install.version||registryMeta.dist?.tarball!==install.spec)throw Error('release identity mismatch');
+  expected=entry.install.sha256;
  }
  const bytes=await get(install.spec,16*1024*1024);
  if(hash(bytes)!==expected||entry.install.sha256&&entry.install.sha256!==expected)throw Error('asset integrity mismatch');

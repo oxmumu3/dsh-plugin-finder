@@ -31,15 +31,19 @@ const scenarioTitles = {
   'agent-twin': '把项目资料整理成知识库',
   'family-assistant': '准备家人的日常小助手',
   'dsh-dot': '从手机了解项目进展',
+  superagent: '把多条任务放进同一块看板并发派工',
   'dot-harness': '让助手读到另一端的项目资料',
   'incidental-learn': '在日常协作里顺手攒经验',
+  'dot-memory': '让多个 AI 工具共享同一份本机记忆',
 };
 const scenarioBenefits = {
   'agent-twin': '保留出处，之后随时提问、回看。',
   'family-assistant': '让家人分别拥有聊天、提醒和日常资讯的小助手。',
   'dsh-dot': '把项目进展、卡点和下一步整理成一份手机上能看的简报。',
+  superagent: '一句话拆单并在独立工作树并行推进，验收证据后再结案。',
   'dot-harness': '让已有助手查到另一端的项目资料，少来回复制和补背景。',
   'incidental-learn': '不打断当前对话，把关键取舍存进个人技能库。',
+  'dot-memory': '用本机明文 Markdown 同步偏好与项目脉络，切工具不再失忆。',
 };
 export function experienceSourceHealth(discovery) {
   if (!discovery) return null;
@@ -168,7 +172,7 @@ export function createExperienceView(React) {
     const homeCommunityEntry = getCommunityEntry(state.homeCommunityEntryId);
     const resumeView = state.taskId || state.request ? h('div', { className: 'pfv_resume' }, h('div', null, h('span', { className: 'pfv_hint' }, '上次进行到这里'), paragraph(text(state.creation?.blueprint?.name) || text(state.plan?.title) || text(state.intent?.goal) || text(state.request))), button('继续上次方案', () => state.creation ? controller.showCreation() : controller.showFind(), { disabled: busy })) : null;
 
-    const catalog = (() => { try { return getCommunityOverview(); } catch { return null; } })();
+    const catalog = state.communityOverview || (() => { try { return getCommunityOverview(); } catch { return null; } })();
 
     // 首页整屏走 v8（SPEC 5.1–5.5）。旧版三站路径与产品介绍按 SPEC 第 4 节去掉。
     const home = () => renderHomeV8({
@@ -202,6 +206,7 @@ export function createExperienceView(React) {
     if (state.communityOpen && !state.searching && state.view === 'home') {
       return h('div', { className: 'pf_v8 pf8_storepage' }, h(CommunityView, {
         controller, busy: locked, modelReady, intent: state.communityIntent,
+        overview: catalog, installedPlugins: state.installedPlugins, copyText,
       }));
     }
     if (state.view === 'home' && !state.searching) return home();
@@ -376,6 +381,7 @@ export function createExperienceView(React) {
       const actions = showActions ? [primaryChoice, secondary].filter(Boolean) : [];
       return planSurface.solution({
         request, understanding, plan, candidates: outcome.candidates, discovery, searchedAt, actions,
+        installedPlugins: state.installedPlugins,
         savings: showActions ? planSavings : null,
         note: actions.length && actionNote(primaryChoice.label) ? actionNote(primaryChoice.label) : '',
       });
@@ -421,7 +427,7 @@ export function createExperienceView(React) {
     };
 
     const searchingCard = () => planSurface.searching({
-      request, progress, waited, events: liveEvents,
+      request, intent: startingNew ? null : state.intent, progress, waited, events: liveEvents,
       actions: [{ label: '停止', onClick: () => controller.cancel(), disabled: false }],
     });
 

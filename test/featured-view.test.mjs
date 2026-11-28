@@ -10,9 +10,9 @@ const visible = node => node == null ? '' : typeof node !== 'object' ? String(no
 const draft = { id: 'draft-1', request: '需要恢复的未提交输入', createdAt: '2026-10-22T12:00:00Z' };
 const render = (state = {}, options = {}) => renderFeaturedView({ h, state, controller: {}, copyText() {}, ...options });
 
-test('home shows the four curated products below the request without inventing recommendations or exposing saved drafts', () => {
+test('home shows the curated products below the request without inventing recommendations or exposing saved drafts', () => {
   const view = render({ featuredId: 'agent-twin', featuredDrafts: [draft] });
-  assert.equal(nodes(view).filter(node => node.type === 'article').length, 5);
+  assert.equal(nodes(view).filter(node => node.type === 'article').length, 7);
   assert.match(visible(view), /精选插件/);
   assert.doesNotMatch(visible(view), /猜你喜欢|感兴趣的方向|不感兴趣|恢复草稿|需要恢复的未提交输入|试试这个场景/);
   const settings = nodes(view).find(node => node.type === 'details');

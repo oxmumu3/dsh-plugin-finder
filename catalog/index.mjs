@@ -18,6 +18,18 @@ export const CAPABILITY_TERMS = Object.freeze({
   'workflow-orchestration': ['工作流', '编排', 'workflow', '多智能体', 'multi-agent', '多agent'],
   'workflow-templates': ['工作流模板', '模板工作流', 'workflow template', '固定模板'],
   'workflow-persistence': ['保存工作流', '工作流复用', '重复运行', 'saved workflow', '持久化工作流', '复跑'],
+  'messaging-im': ['微信', 'wechat', '飞书', 'feishu', 'lark', '企微', '企业微信', 'wecom', '钉钉', 'dingtalk', 'telegram', 'slack', 'discord', 'qq', '消息通道', '机器人'],
+  'memory-knowledge': ['记忆', 'memory', '知识库', '知识图谱', 'graph', '笔记', 'obsidian', 'flomo', 'notion', 'rag', '沉淀', '分身'],
+  'voice-audio': ['语音', 'voice', 'tts', '配音', '音频', '转写', 'asr', 'whisper', '播客', '朗读', 'siri'],
+  'task-schedule': ['看板', 'taskboard', '待办', 'todo', '日程', '定时', 'cron', 'schedule', '提醒', 'reminder', '滴答', 'dida', '项目管理'],
+  'media-design': ['封面', '海报', '画图', '图片', '图像', 'svg', 'mermaid', 'drawio', '视频', '剪辑', 'video', 'remotion', 'hyperframes', '图表', '设计'],
+  'mail-calendar': ['邮件', '邮箱', 'email', 'mail', 'gmail', 'imap', 'smtp', '日历', 'calendar', '会议'],
+  'terminal-ops': ['终端', 'terminal', 'ssh', 'docker', '部署', 'deploy', '服务器', '运维', '监控', '日志'],
+  'translation-writing': ['翻译', 'translate', '润色', '写作', '改稿', '文章', '公众号', '小红书', '推文', '文案', '周报'],
+  'finance-invoice': ['发票', 'invoice', '记账', '账单', '报销', '财税', '预算', '财务', 'excel'],
+  'mcp-bridge': ['mcp', '桥接', 'bridge', 'webhook', '连接器', 'connector', '同步', '互通'],
+  'ui-theme': ['主题', 'theme', '外观', '侧栏', '悬浮窗', '快捷键', 'shortcut', '布局', '美化'],
+  'model-usage': ['模型', 'model', '用量', '费用', 'token', '计费', 'billing', 'quota', '余额', 'provider'],
 });
 
 const clone = value => structuredClone(value);

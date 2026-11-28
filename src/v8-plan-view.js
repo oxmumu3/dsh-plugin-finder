@@ -114,8 +114,29 @@ export function signatureText(searchedAt, discovery) {
 }
 
 /** 一块积木一句话：方案里的每个插件、每个缺口各一块（SPEC 5.8 第 4 条）。 */
-export function planBlocks({ plan, candidates, request }) {
+const normalizedPluginSet = list => {
+  const keys = new Set();
+  for (const raw of items(list)) {
+    const value = text(raw).trim().toLowerCase();
+    if (!value) continue;
+    keys.add(value);
+    const slash = value.lastIndexOf('/');
+    if (slash >= 0) keys.add(value.slice(slash + 1));
+  }
+  return keys;
+};
+const isBlockInstalled = (candidate, installedKeys) => {
+  if (!installedKeys.size || !candidate) return false;
+  for (const raw of [candidate.install?.packageName, candidate.name, candidate.id]) {
+    const value = text(raw).trim().toLowerCase();
+    if (value && installedKeys.has(value)) return true;
+  }
+  return false;
+};
+
+export function planBlocks({ plan, candidates, request, installedPlugins = [] }) {
   const selected = new Set(items(plan?.pluginIds));
+  const installedKeys = normalizedPluginSet(installedPlugins);
   const steps = records(plan?.steps);
   const blocks = [];
   if (plan?.kind === 'native') {
@@ -127,6 +148,7 @@ export function planBlocks({ plan, candidates, request }) {
     const capability = steps.filter(step => text(step.owner) === candidate.id).map(step => text(step.capability)).filter(Boolean);
     blocks.push({
       kind: 'have',
+      installed: isBlockInstalled(candidate, installedKeys),
       name: text(candidate.name) || text(candidate.id),
       note: capability.length ? capability.join('、') : text(candidate.capability),
       version: text(candidate.install?.version) || text(candidate.version),
@@ -220,9 +242,9 @@ export function createPlanSurface(React) {
   /** 5.8 解法卡：一张卡能单独截图讲清楚。 */
   const solution = ({
     request, understanding, quoteLabel = '你说：', plan, candidates, actions = [], discovery,
-    searchedAt, note = '', tag = '', savings = null, showSignature = true, compact = false, embedded = false,
+    searchedAt, note = '', tag = '', savings = null, installedPlugins = [], showSignature = true, compact = false, embedded = false,
   }) => {
-    const blocks = planBlocks({ plan, candidates, request });
+    const blocks = planBlocks({ plan, candidates, request, installedPlugins });
     const count = sourceReadTotal(discovery);
     const read = records(candidates).length;
     const selected = new Set(items(plan?.pluginIds));
@@ -249,10 +271,11 @@ export function createPlanSurface(React) {
     const blockChildren = [];
     blocks.forEach((block, index) => {
       if (index > 0) blockChildren.push(h('span', { key: `conn-${index}`, className: 'pf8_conn', 'aria-hidden': 'true' }, '+'));
-      blockChildren.push(h('div', { key: `${block.kind}-${index}`, className: `pf8_blk ${block.kind}` },
+      const stateLabel = block.kind === 'have' && block.installed ? '已装好，能直接用' : (BLOCK_STATE[block.kind] || '');
+      blockChildren.push(h('div', { key: `${block.kind}-${index}`, className: `pf8_blk ${block.kind}${block.installed ? ' pf8_blk_installed' : ''}` },
         h('div', { className: 'pf8_blk_top' },
           h('span', { className: 'pf8_blk_studs', 'aria-hidden': 'true' }, h('i', null), h('i', null)),
-          h('span', { className: 'pf8_bstat' }, BLOCK_STATE[block.kind] || '')),
+          h('span', { className: 'pf8_bstat' }, stateLabel)),
         h('code', null, text(block.name)),
         block.note ? h('span', null, text(block.note)) : null,
         block.version ? h('span', { className: 'pf8_blk_ver' }, `现在是 ${block.version} 版`) : null));
@@ -299,19 +322,27 @@ export function createPlanSurface(React) {
         h('span', null, signatureText(searchedAt, discovery))) : null);
   };
 
-  /** 5.9 正在找：不编进度，只把真实的查找说明和已经发生的事写出来。 */
-  const searching = ({ request, progress, waited = 0, events = [], actions = [] }) => h('article', { className: 'pf8_card pf8_find', role: 'status', 'aria-live': 'polite' },
-    text(request) ? h('p', { className: 'pf8_q' }, '你说：', h('b', null, `「${text(request)}」`)) : null,
-    h('h1', { className: 'pf8_verdict' }, '正在替你找。'),
-    h('p', { className: 'pf8_why' }, '找完会留在这里，不用守着。'),
-    h('ul', { className: 'pf8_log' },
-      h('li', { className: 'pf8_cur' },
-        h(React.Fragment, null, h('i', { className: 'pf8_dot', 'aria-hidden': 'true' }), h('span', null, text(progress) || '正在查找可行路径',
-          waited >= 30 ? `，已等待 ${waited} 秒，比平时久；可以继续等，或点下面的「停止」。` : waited >= 3 ? `，已用时 ${waited} 秒。` : ''))),
-      ...items(events).slice(-4).map((event, index) => h('li', { key: `${text(event.seq) || index}` },
-        h(React.Fragment, null, h('i', { className: 'pf8_dot pf8_dot_done', 'aria-hidden': 'true' }), h('span', null, text(event.text)))))),
-    h('p', { className: 'pf8_next' }, '方案正在形成，通常十几秒。'),
-    actions.length ? h('div', { className: 'pf8_acts' }, ...actions.filter(action => action && text(action.label)).map(actionButton)) : null);
+  /** 5.9 正在找：不编进度，只把真实的查找说明、已理解的能力槽位和已经发生的事写出来。 */
+  const searching = ({ request, intent = null, progress, waited = 0, events = [], actions = [] }) => {
+    const goal = text(intent?.goal);
+    const caps = items(intent?.capabilities).map(item => text(item)).filter(Boolean).slice(0, 6);
+    return h('article', { className: 'pf8_card pf8_find', role: 'status', 'aria-live': 'polite' },
+      text(request) ? h('p', { className: 'pf8_q' }, '你说：', h('b', null, `「${text(request)}」`)) : null,
+      h('h1', { className: 'pf8_verdict' }, goal ? '已理解需求，正在核对插件来源。' : '正在替你找。'),
+      h('p', { className: 'pf8_why' }, '找完会留在这里，不用守着。'),
+      goal || caps.length ? h('div', { className: 'pf8_find_intent' },
+        goal && goal !== text(request) ? h('p', { className: 'pf8_find_goal' }, '我的理解：', h('b', null, goal)) : null,
+        caps.length ? h('div', { className: 'pf8_find_caps', 'aria-label': '拆解出的关键能力' },
+          ...caps.map(cap => h('span', { key: cap, className: 'pf8_find_cap' }, cap))) : null) : null,
+      h('ul', { className: 'pf8_log' },
+        h('li', { className: 'pf8_cur' },
+          h(React.Fragment, null, h('i', { className: 'pf8_dot', 'aria-hidden': 'true' }), h('span', null, text(progress) || '正在查找可行路径',
+            waited >= 30 ? `，已等待 ${waited} 秒，比平时久；可以继续等，或点下面的「停止」。` : waited >= 3 ? `，已用时 ${waited} 秒。` : ''))),
+        ...items(events).slice(-4).map((event, index) => h('li', { key: `${text(event.seq) || index}` },
+          h(React.Fragment, null, h('i', { className: 'pf8_dot pf8_dot_done', 'aria-hidden': 'true' }), h('span', null, text(event.text)))))),
+      h('p', { className: 'pf8_next' }, '方案正在形成，通常十几秒。'),
+      actions.length ? h('div', { className: 'pf8_acts' }, ...actions.filter(action => action && text(action.label)).map(actionButton)) : null);
+  };
 
   /** 5.10 没查完：说清读到什么、没读到什么、为什么不给结论。 */
   const incomplete = ({ request, health, discovery, actions = [], tentative = null }) => {

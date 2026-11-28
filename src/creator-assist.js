@@ -46,24 +46,24 @@ export function renderCreatorPrompt(noteCount = 0, {tools = true} = {}) {
   ].join('\n');
 }
 
-/** 按需读取的完整经验：来自作者连做多个插件的实测记录，不随每次请求发送。 */
+/** 按需读取的完整经验：来自作者连做多个插件与 64 条实测记录（dsh-plugin-lessons），不随每次请求发送。 */
 export const CREATOR_GUIDE = [
   '## 动手前',
   '- 先调 cordis_inspect_list / cordis_inspect_query 查清当前宿主的展位（slot）、服务签名和主题变量，不凭记忆猜接口名。',
   '- 找一个结构最接近的内置插件或本机已有插件照着改：目录结构、注册方式、样式变量都抄现成的。',
   '- 先给用户三五句话的设计（挂哪、几个文件、数据存哪），确认后再写。',
   '',
-  '## 写的时候',
+  '## 写的时候（含 0.2.2 / 0.2.3 双兼容硬坑）',
   '- 第一版只做能点开、不白屏的空架子，再一轮加一个功能。',
   '- 不要在独立面板（main）里自己画聊天输入框：main 没有 inputActions，也没有多轮记忆。对话优先挂到 conversation.view，或嵌入原生会话组件；新页面只负责展示和整理。',
-  '- main 根容器用 flex: 1 1 0; height: 100%; min-height: 0，不要用 position: absolute; inset: 0，否则会盖住左侧栏回不去。',
-  '- 颜色只用宿主的 --dsw-alias-* 变量，不引用宿主内部 UI 包。',
-  '- connection.fetch.register 要在 inject 里声明 connection，路径以 /api/ 开头，写明 requestBody: \'buffered\'，不要包在 ctx.effect() 里。',
-  '- 工具参数里的可选字段直接省略 required，不要写 required: false，否则宿主会拒绝注册。',
+  '- main 根容器用 flex: 1 1 0; height: 100%; min-height: 0 且自己承担滚动口（overflow-y: auto; container-type: inline-size）；不要用 position: absolute; inset: 0，否则会盖住左侧栏；窄分屏（~680px）用 @container 而非 @media。',
+  '- 颜色只用宿主的 --dsw-alias-* 变量（深浅色双检），不引用宿主内部 UI 包，不用 iframe 嵌整页；弹窗优先用原生 <dialog closedby="any">；按钮内边距用两级选择器防被 reset 吞掉。',
+  '- 0.2.3 双兼容红线：dsh.client.inject 不写 0.2.2 不存在的新服务包；嵌入会话视图时 sessions.retain 必带 facets: { conversation: true }；读待确认交互优先 uiSession.pendingInteractions 并平滑回退 sessionStatus；engines.dsh 与 @deepseek-ai/dsh-* peer 同步声明。',
+  '- connection.fetch.register 要在 inject 里声明 connection，路径以 /api/ 开头，写明 requestBody: \'buffered\'，所有注册包进 ctx.effect() 便于停用清理；工具可选参数直接省略 required，不要写 required: false。',
   '',
   '## 看效果和排错',
-  '- 只改了前端界面：按 Cmd+R（Windows 按 Ctrl+R）刷新。',
-  '- 改了后台 index.js、加了工具或重装同名插件：彻底退出再打开 DSH。',
+  '- 仅在创造模式工作区直接改前端源码：按 Cmd+R（Windows 按 Ctrl+R）看效果；但打包版桌面端重装 .tgz / npm 包、改了后台 index.js 或加了工具时，Cmd+R 不是整页重载，必须彻底退出（Cmd+Q）再打开 DSH。',
+  '- 新建或改过的 Agent 预设/模式需要新开会话才生效，旧会话不会热切。',
   '- 同一个错误连续改 3 轮没好：停下总结「试过什么、卡在哪」，开新窗口带着总结继续，别在越来越长的上下文里硬磨。',
 ].join('\n');
 

@@ -605,4 +605,35 @@ dialog.pf_modal.pf_modal_ledger { width: min(540px, calc(100vw - 32px)); }
 .pf_v8 .pf8_ledger_amt { font: 600 13.5px/1.2 var(--sans); font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--ok) 84%, var(--ink)); white-space: nowrap; }
 .pf_v8 .pf8_ledger_amt.is_create { color: color-mix(in srgb, var(--build) 82%, var(--ink)); }
 
+/* —— v0.14.0 首页可点历史行、渐进找方案理解预览、已装积木标识与商店排序筛选条 —— */
+.pf_v8 .pf8_past button.pf8_row { padding: 4px 8px; margin: -4px -8px; border-radius: 10px; }
+.pf_v8 .pf8_past button.pf8_row:hover:not(:disabled) { background: var(--hover); }
+.pf_v8 .pf8_past button.pf8_row:disabled { opacity: .55; cursor: default; }
+
+.pf_v8 .pf8_blk.pf8_blk_installed { border-color: color-mix(in srgb, var(--ok) 46%, var(--line)); background: color-mix(in srgb, var(--ok) 6%, var(--card)); }
+.pf_v8 .pf8_blk.pf8_blk_installed .pf8_bstat { color: color-mix(in srgb, var(--ok) 84%, var(--ink)); }
+
+.pf_v8 .pf8_find_intent { margin-top: 18px; padding: 13px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--subtle); }
+.pf_v8 .pf8_find_goal { font-size: 13.5px; line-height: 1.65; color: var(--ink2); }
+.pf_v8 .pf8_find_goal b { color: var(--ink); font-weight: 500; }
+.pf_v8 .pf8_find_caps { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pf_v8 .pf8_find_cap { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--have) 28%, var(--line)); background: color-mix(in srgb, var(--have) 8%, var(--card)); font-size: 12px; color: var(--ink2); }
+
+.pf_v8 .pf8_store_bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: 12px; }
+.pf_v8 .pf8_store_seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.pf_v8 .pf8_store_seg button { display: inline-flex; align-items: center; height: 28px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; font-size: 12.5px; color: var(--ink2); }
+.pf_v8 .pf8_store_seg button:hover:not(:disabled) { background: var(--hover); color: var(--ink); }
+.pf_v8 .pf8_store_seg button[aria-pressed="true"] { border-color: var(--ink); background: var(--primary); color: var(--on-primary); }
+
+.pf_v8 .pf8_store_v { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+@container finder (max-width: 600px) {
+  .pf_v8 .pf8_store_row { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .pf_v8 .pf8_store_v { grid-column: 1 / -1; justify-content: flex-start; }
+}
+.pf_v8 .pf8_store_star { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--ink3); white-space: nowrap; }
+.pf_v8 .pf8_store_badge { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 999px; border: 1px solid var(--line); background: var(--subtle); font-size: 11px; color: var(--ink2); white-space: nowrap; }
+.pf_v8 .pf8_store_badge.is_ok { border-color: color-mix(in srgb, var(--ok) 36%, var(--line)); background: color-mix(in srgb, var(--ok) 11%, transparent); color: color-mix(in srgb, var(--ok) 84%, var(--ink)); font-weight: 500; }
+.pf_v8 .pf8_store_ver { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--ink3); white-space: nowrap; }
+.pf_v8 .pf8_store_foot_links { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+
 `;

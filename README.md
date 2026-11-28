@@ -23,7 +23,7 @@
 ```text
 请通过插件管理器，从 npm 官方源安装并启用 @oxmumu3/dsh-plugin-finder@latest。完成后请核对版本和启用状态，再带我打开左侧「发现好插件」。
 ```
-（也可以在「插件 -> 添加插件」直接填入 `@oxmumu3/dsh-plugin-finder@0.13.7` 安装并启用。）
+（也可以在「插件 -> 添加插件」直接填入 `@oxmumu3/dsh-plugin-finder@latest` 安装并启用。）
 3. **说与用。** 点「帮我找方案」，用一句话说目标、约束和想要的产出；要调整就继续补一句，原输入和旧方案都会保留。现成的可直接安装；缺的补齐后接回原任务，执行回复、审批和文件预览留在当前页面。
 
 开源仓库与图文说明（觉得有帮助欢迎点个 Star）：
@@ -61,7 +61,9 @@
 
 ## 版本与兼容
 
-`@oxmumu3/dsh-plugin-finder@0.13.7` 支持官方 Harness `0.2.1-rc.5`、`0.2.2-rc.1`、`0.2.2-rc.2`、`0.2.2-rc.3`、`0.2.2-rc.4` 和 `0.2.2-rc.5`，插件的 Node 范围为 `^22.19.0 || >=24.0.0`。请使用各官方宿主发行版所配套的 SDK 和 Node。当前兼容范围以[安装说明](docs/install.md)为准。
+`@oxmumu3/dsh-plugin-finder@latest`（当前已验证版本以 npm 与 [GitHub Releases](https://github.com/oxmumu3/dsh-plugin-finder/releases) 为准）支持官方 Harness `0.2.1-rc.5`、`0.2.2-rc.1`、`0.2.2-rc.2`、`0.2.2-rc.3`、`0.2.2-rc.4`、`0.2.2-rc.5` 和 `0.2.3-alpha.2`，插件的 Node 范围为 `^22.19.0 || >=24.0.0`。请使用各官方宿主发行版所配套的 SDK 和 Node。当前兼容范围以[安装说明](docs/install.md)为准。
+
+本仓库根目录同时提供官方 `format: 1` 插件市场索引 `index.json`，可在 DSH `0.2.3+`「插件 → 发现」中直接订阅 `https://raw.githubusercontent.com/oxmumu3/dsh-plugin-finder/main/index.json`（或仓库地址 `https://github.com/oxmumu3/dsh-plugin-finder`）。
 
 Finder 沿用宿主配置的模型与账户，无需另填模型 Key；理解需求、检索、补齐和执行会使用相应额度。第三方插件可能另有服务、授权与费用。
 
