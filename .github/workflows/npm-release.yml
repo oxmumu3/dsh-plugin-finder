@@ -108,7 +108,7 @@ jobs:
           raw_pattern=os.environ.get('PUBLIC_DENYLIST_REGEX','').strip()
           assert raw_pattern,'Missing repository secret PUBLIC_DENYLIST_REGEX (fail closed)'
           rx=re.compile(raw_pattern,re.IGNORECASE)
-          search_dirs=[Path(os.environ.get('RUNNER_TEMP',''))/'release-artifact',Path('dist'),Path('dist-release'),Path('dist-pack'),Path('release'),Path('.')]
+          search_dirs=[Path(os.environ.get('ARTIFACT_DIR','')),Path(os.environ.get('RUNNER_TEMP',''))/'release-artifact',Path('dist'),Path('dist-release'),Path('dist-pack'),Path('release'),Path('.')]
           tarballs=[]
           seen_paths=set()
           for d in search_dirs:
